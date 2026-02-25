@@ -9,45 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css">
     <style>
-
-        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-        body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FFFBF0;min-height:100vh;padding-left:220px;padding-bottom:2rem}
+        /* === INDEX.HTML SPECIFIC STYLES === */
+        body{padding-left:220px;padding-bottom:2rem}
+        
         .container{max-width:800px;margin:0 auto;padding:1rem}
-        h1{font-family:'DM Serif Display',serif;font-size:1.75rem;font-weight:bold;color:#1C1410;margin-bottom:1rem}
-        h2{font-size:1.25rem;font-weight:bold;color:#1C1410;margin:1.25rem 0 .75rem}
-        h3{font-size:1rem;font-weight:600;color:#1C1410;margin-bottom:.5rem}
-        .card{background:#fff;border-radius:.75rem;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(28,20,16,0.06);border:1px solid rgba(245,166,35,0.08)}
-        .btn{padding:.875rem 1.5rem;border:none;border-radius:.75rem;font-weight:600;cursor:pointer;font-size:1rem;transition:all .15s}
-        .btn:hover{opacity:.85;transform:translateY(-1px)}
-        .btn:active{transform:translateY(0)}
-        .btn-primary{background:#F5A623;color:#1C1410;box-shadow:0 2px 8px rgba(245,166,35,0.25)}.btn-success{background:#10b981;color:#fff}.btn-danger{background:#ef4444;color:#fff}.btn-blue{background:#3b82f6;color:#fff}
-        .btn-sm{padding:.625rem 1rem;font-size:.9rem}
-        .btn-xs{padding:.4rem .75rem;font-size:.8rem}
-        .btn-block{width:100%;padding:1.1rem;font-size:1.1rem;margin-top:.75rem}
         
-        /* Kleinere Option Buttons */
-        .option-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:.5rem;margin:.75rem 0}
-        .option-btn{padding:.65rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;transition:all .2s;text-align:center;font-size:.8rem;font-weight:500}
-        .option-btn:hover{border-color:#F5A623;background:#FFF8EE;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
-        .option-btn:active{transform:translateY(0)}
-        .option-btn.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
-        .option-btn .emoji{display:block;font-size:1.5rem;margin-bottom:.3rem}
-        
-        /* Counter Buttons */
-        .counter{display:flex;align-items:center;gap:.75rem;justify-content:center}
-        .counter-btn{width:3rem;height:3rem;border:2px solid #E8DFD4;border-radius:.75rem;background:#fff;cursor:pointer;font-size:1.5rem;font-weight:bold;transition:all .2s;display:flex;align-items:center;justify-content:center}
-        .counter-btn:hover{border-color:#F5A623;background:#FFF8EE;transform:scale(1.05)}
-        .counter-value{font-size:2rem;font-weight:bold;min-width:4rem;text-align:center}
-        
-        .priority-btns{display:flex;gap:.5rem;margin:.75rem 0}
-        .priority-btn{flex:1;padding:.75rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-weight:600;transition:all .2s;font-size:.9rem}
-        .priority-btn:hover{transform:translateY(-1px)}
-        .priority-btn:active{transform:translateY(0)}
-        .priority-btn.selected.low{border-color:#10b981;background:#10b981;color:#fff}
-        .priority-btn.selected.medium{border-color:#f59e0b;background:#f59e0b;color:#fff}
-        .priority-btn.selected.high{border-color:#ef4444;background:#ef4444;color:#fff}
-        
+        /* === NAV (index-specific: sidebar layout) === */
         .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
         .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
         .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
@@ -55,28 +24,6 @@
         .nav-item:hover{background:rgba(245,166,35,0.06)}
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         .footer{position:fixed;left:220px;bottom:0;right:0;background:#FFFBF0;border-top:1px solid rgba(245,166,35,0.12);padding:.4rem;text-align:center;font-size:.7rem;color:#7A6652;z-index:40}
-        .modal{display:none;position:fixed;inset:0;background:rgba(28,20,16,0.45);z-index:100;align-items:center;justify-content:flex-end}
-        .modal.active{display:flex}
-        .modal-content{background:#fff;border-radius:1rem 0 0 1rem;width:100%;max-width:500px;height:100vh;overflow-y:auto;padding-bottom:2rem;box-shadow:-4px 0 20px rgba(28,20,16,0.15)}
-        .modal-center .modal-content{max-width:420px;height:auto;border-radius:1rem;margin:auto}
-        .modal-header{padding:1.25rem;border-bottom:2px solid rgba(245,166,35,0.12);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:linear-gradient(to right,#FFF8EE,#fff);z-index:10}
-        .modal-header h2{margin:0;font-size:1.25rem}
-        .modal-body{padding:1.5rem}
-        .form-group{margin-bottom:1.25rem}
-        .form-label{display:block;font-size:.95rem;font-weight:600;margin-bottom:.5rem;color:#3D2E1F}
-        .input{width:100%;padding:.875rem;border:2px solid #d1d5db;border-radius:.75rem;font-size:1rem;font-family:inherit;outline:none;transition:border-color .15s}
-        .input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
-        textarea.input{min-height:100px;resize:vertical}
-        .info-box{background:#dbeafe;border:1px solid #93c5fd;border-radius:.5rem;padding:.625rem;font-size:.75rem;color:#1e40af;margin-top:.5rem}
-        .warn-box{background:#FFF3D6;border:1px solid #F5A623;border-radius:.5rem;padding:.625rem;font-size:.75rem;color:#92400e;margin-top:.5rem}
-        .badge{display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
-        .badge-green{background:#d1fae5;color:#065f46}.badge-yellow{background:#FFF3D6;color:#92400e}.badge-red{background:#fee2e2;color:#991b1b}.badge-blue{background:#dbeafe;color:#1e40af}
-        .toast{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%) translateY(-120%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;font-size:.875rem;font-weight:600;box-shadow:0 4px 12px rgba(28,20,16,0.18);z-index:9999;transition:transform .3s ease;max-width:90%;text-align:center}
-        .toast.show{transform:translateX(-50%) translateY(0)}
-        .toast.success{background:#065f46}.toast.error{background:#991b1b}.toast.info{background:#1e40af}
-        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem;line-height:1;transition:color .15s}
-        .close-btn:hover{color:#1C1410}
-        .dauer-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.75rem 0}
         
         /* Timeline für Zuchtplan */
         .timeline{position:relative;padding-left:2rem}
@@ -104,7 +51,6 @@
             .option-grid{grid-template-columns:repeat(3,1fr)}
             .volk-grid{grid-template-columns:1fr}
         }
-        @media print{.nav,.footer,button,.modal,.toast{display:none!important}body{padding:0}}
 
         /* === PACKLISTE MODULE STYLES === */
         .pack-kategorie{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem}
@@ -194,8 +140,7 @@
         .methode-btn.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
         .methode-btn .emoji{display:block;font-size:1.75rem;margin-bottom:.5rem}
         
-        @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
-        @keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(400px);opacity:0}}
+        .dauer-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.75rem 0}
 
     
         /* Auth Styles */
@@ -798,18 +743,10 @@
     <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
 </nav>
 
+<script src="config.js"></script>
 <script>
 // ============================================
-// SUPABASE CLIENT
-// ============================================
-const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let currentUser = null;
-
-// ============================================
-// AUTH FUNCTIONS
+// AUTH FUNCTIONS (index.html specific)
 // ============================================
 function showAuthTab(tab) {
     document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
@@ -989,41 +926,6 @@ function showSaved() {
     el.classList.add('show');
     setTimeout(function(){ el.classList.remove('show'); }, 1500);
 }
-
-// ============================================
-// DB HELPER - Supabase CRUD
-// ============================================
-const db = {
-    async upsert(table, data) {
-        var result = await sb.from(table).upsert(data);
-        if (result.error) console.error('DB upsert error:', table, result.error);
-        showSaved();
-        return result;
-    },
-    async insert(table, data) {
-        var result = await sb.from(table).insert(data);
-        if (result.error) console.error('DB insert error:', table, result.error);
-        showSaved();
-        return result;
-    },
-    async update(table, data, id) {
-        var result = await sb.from(table).update(data).eq('id', id);
-        if (result.error) console.error('DB update error:', table, result.error);
-        showSaved();
-        return result;
-    },
-    async del(table, id) {
-        var result = await sb.from(table).delete().eq('id', id);
-        if (result.error) console.error('DB delete error:', table, result.error);
-        showSaved();
-        return result;
-    },
-    async delWhere(table, col, val) {
-        var result = await sb.from(table).delete().eq(col, val);
-        if (result.error) console.error('DB delWhere error:', table, result.error);
-        return result;
-    }
-};
 
 // ============================================
 // AUTO-BACKUP VOR LÖSCHAKTIONEN
