@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐝 Imkermeister</title>
+    <meta name="theme-color" content="#1f2937">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f3f4f6; min-height:100vh; }
+        
+        .login-screen {
+            display:flex; align-items:center; justify-content:center; min-height:100vh;
+            background:linear-gradient(135deg,#1f2937,#374151);
+        }
+        .login-box {
+            background:#fff; padding:2rem; border-radius:1rem; width:90%; max-width:400px;
+            box-shadow:0 4px 20px rgba(0,0,0,.2);
+        }
+        .login-box h1 { text-align:center; margin-bottom:1.5rem; font-size:1.5rem; }
+        .login-box input {
+            width:100%; padding:.75rem; border:2px solid #e5e7eb; border-radius:.5rem;
+            font-size:1rem; margin-bottom:1rem;
+        }
+        .login-box button {
+            width:100%; padding:.75rem; background:#FFC107; color:#1f2937; border:none;
+            border-radius:.5rem; font-size:1rem; font-weight:bold; cursor:pointer;
+        }
+        .login-box button:hover { background:#f59e0b; }
+        .login-error { color:#ef4444; font-size:.85rem; text-align:center; margin-top:.5rem; display:none; }
+        
+        .admin-container { display:none; }
+        .header {
+            background:linear-gradient(135deg,#1f2937,#374151); color:#fff;
+            padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:center;
+        }
+        .header h1 { font-size:1.25rem; }
+        .header a { color:#FFC107; text-decoration:none; font-size:.85rem; }
+        
+        .container { max-width:900px; margin:0 auto; padding:1.5rem; }
+        .card {
+            background:#fff; border-radius:.75rem; padding:1.25rem;
+            box-shadow:0 1px 3px rgba(0,0,0,.1); margin-bottom:1rem;
+        }
+        .stats-grid {
+            display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+            gap:1rem; margin-bottom:1.5rem;
+        }
+        .stat-card {
+            background:#fff; border-radius:.75rem; padding:1.25rem; text-align:center;
+            box-shadow:0 1px 3px rgba(0,0,0,.1);
+        }
+        .stat-number { font-size:2rem; font-weight:bold; color:#FFC107; }
+        .stat-label { font-size:.8rem; color:#6b7280; margin-top:.25rem; }
+        
+        table { width:100%; border-collapse:collapse; font-size:.9rem; }
+        th { text-align:left; padding:.75rem; background:#f9fafb; border-bottom:2px solid #e5e7eb; font-size:.8rem; color:#6b7280; text-transform:uppercase; }
+        td { padding:.75rem; border-bottom:1px solid #f3f4f6; }
+        tr:hover { background:#f9fafb; }
+        
+        .btn { padding:.5rem 1rem; border:none; border-radius:.5rem; cursor:pointer; font-size:.8rem; font-weight:600; }
+        .btn-danger { background:#fee2e2; color:#ef4444; }
+        .btn-danger:hover { background:#fecaca; }
+        .btn-blue { background:#dbeafe; color:#3b82f6; }
+        .btn-blue:hover { background:#bfdbfe; }
+        
+        .badge { display:inline-block; padding:.15rem .5rem; border-radius:.25rem; font-size:.7rem; font-weight:600; }
+        .badge-green { background:#d1fae5; color:#059669; }
+        .badge-gray { background:#f3f4f6; color:#6b7280; }
+        
+        .tab-bar { display:flex; gap:.5rem; margin-bottom:1.5rem; border-bottom:2px solid #e5e7eb; padding-bottom:.5rem; flex-wrap:wrap; }
+        .tab { padding:.5rem 1rem; border-radius:.5rem .5rem 0 0; cursor:pointer; font-weight:600; color:#6b7280; font-size:.9rem; }
+        .tab.active { color:#FFC107; border-bottom:3px solid #FFC107; }
+        .tab:hover { color:#1f2937; }
+        
+        .detail-card { background:#f9fafb; border-radius:.5rem; padding:1rem; margin-bottom:.75rem; border-left:4px solid #FFC107; }
+        .detail-card h4 { font-size:.9rem; margin-bottom:.5rem; }
+        .detail-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.75rem; }
+        .detail-stat { background:#fff; border-radius:.5rem; padding:.75rem; text-align:center; border:1px solid #e5e7eb; }
+        .detail-stat .num { font-size:1.5rem; font-weight:bold; color:#FFC107; }
+        .detail-stat .lbl { font-size:.7rem; color:#6b7280; margin-top:.25rem; }
+        .sub-tabs { display:flex; gap:.25rem; margin-bottom:1rem; }
+        .sub-tab { padding:.375rem .75rem; border-radius:.375rem; cursor:pointer; font-size:.8rem; font-weight:600; color:#6b7280; background:#f3f4f6; border:none; }
+        .sub-tab.active { background:#FFC107; color:#1f2937; }
+        .filter-row { display:flex; gap:.5rem; margin-bottom:1rem; align-items:center; flex-wrap:wrap; }
+        .filter-select { padding:.5rem; border:2px solid #e5e7eb; border-radius:.375rem; font-size:.8rem; background:#fff; }
+        .expand-btn { background:none; border:none; cursor:pointer; font-size:.8rem; color:#3b82f6; font-weight:600; padding:.25rem .5rem; }
+        .expand-btn:hover { text-decoration:underline; }
+        .user-detail-row { background:#fff; border-radius:.5rem; margin-bottom:.5rem; border:1px solid #e5e7eb; overflow:hidden; }
+        .user-detail-header { padding:.75rem 1rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+        .user-detail-header:hover { background:#f9fafb; }
+        .user-detail-body { display:none; padding:0 1rem 1rem; border-top:1px solid #f3f4f6; }
+        .user-detail-body.open { display:block; }
+        .mini-table { width:100%; font-size:.8rem; border-collapse:collapse; }
+        .mini-table th { text-align:left; padding:.5rem; background:#f9fafb; color:#6b7280; font-size:.7rem; text-transform:uppercase; }
+        .mini-table td { padding:.5rem; border-bottom:1px solid #f3f4f6; }
+        
+        .search-input {
+            width:100%; padding:.625rem 1rem; border:2px solid #e5e7eb; border-radius:.5rem;
+            font-size:.9rem; margin-bottom:1rem;
+        }
+        
+        @media(max-width:600px) {
+            .stats-grid { grid-template-columns:repeat(2,1fr); }
+            table { font-size:.8rem; }
+            td, th { padding:.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <h1>🐝 Imkermeister</h1>
+        <input type="password" id="adminPw" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter')checkLogin()">
+        <button onclick="checkLogin()">Anmelden</button>
+        <div class="login-error" id="loginError">Falsches Passwort</div>
+    </div>
+</div>
+
+<div class="admin-container" id="adminContainer">
+    <div class="header">
+        <h1>🐝 Imkermeister – Admin</h1>
+        <a href="index.html">← Zur App</a>
+    </div>
+    
+    <div class="container">
+        <div class="stats-grid" id="statsGrid"></div>
+        
+        <div class="tab-bar">
+            <div class="tab active" onclick="showTab('users')">👥 Benutzer</div>
+            <div class="tab" onclick="showTab('voelker')">🐝 Völker</div>
+            <div class="tab" onclick="showTab('behandlungen')">💉 Behandlungen</div>
+            <div class="tab" onclick="showTab('trachten')">🌸 Geteilte Trachten</div>
+            <div class="tab" onclick="showTab('kosten')">💰 Kosten</div>
+            <div class="tab" onclick="showTab('ernte')">🍯 Ernte</div>
+            <div class="tab" onclick="showTab('data')">📊 Übersicht</div>
+        </div>
+        
+        <div id="tabUsers">
+            <input type="text" class="search-input" placeholder="🔍 Benutzer suchen..." oninput="filterUsers(this.value)">
+            <div class="card" style="overflow-x:auto">
+                <table>
+                    <thead>
+                        <tr><th>E-Mail</th><th>Registriert</th><th>Letzter Login</th><th>Status</th><th>Aktionen</th></tr>
+                    </thead>
+                    <tbody id="usersTable"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="tabTrachten" style="display:none">
+            <div class="card" style="overflow-x:auto">
+                <table>
+                    <thead>
+                        <tr><th>Typ</th><th>Standort</th><th>Imker</th><th>Position</th><th>Zeitraum</th><th>Aktionen</th></tr>
+                    </thead>
+                    <tbody id="trachtenTable"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="tabVoelker" style="display:none">
+            <div class="filter-row">
+                <select id="voelkerUserFilter" class="filter-select" onchange="renderVoelker()">
+                    <option value="">Alle Benutzer</option>
+                </select>
+                <select id="voelkerStandortFilter" class="filter-select" onchange="renderVoelker()">
+                    <option value="">Alle Standorte</option>
+                </select>
+                <button class="btn btn-blue" style="font-size:.75rem;padding:.4rem .75rem" onclick="toggleAllVoelker()">Alle auf-/zuklappen</button>
+                <span style="font-size:.8rem;color:#6b7280" id="voelkerCount"></span>
+            </div>
+            <div id="voelkerGrouped"></div>
+        </div>
+        
+        <div id="tabBehandlungen" style="display:none">
+            <div class="filter-row">
+                <select id="behUserFilter" class="filter-select" onchange="renderBehandlungen()">
+                    <option value="">Alle Benutzer</option>
+                </select>
+                <button class="btn btn-blue" style="font-size:.75rem;padding:.4rem .75rem" onclick="toggleAllBeh()">Alle auf-/zuklappen</button>
+                <span style="font-size:.8rem;color:#6b7280" id="behCount"></span>
+            </div>
+            <div id="behGrouped"></div>
+        </div>
+        
+        <div id="tabKosten" style="display:none">
+            <div class="filter-row">
+                <select id="kostenUserFilter" class="filter-select" onchange="renderKosten()">
+                    <option value="">Alle Benutzer</option>
+                </select>
+                <button class="btn btn-blue" style="font-size:.75rem;padding:.4rem .75rem" onclick="toggleAllKosten()">Alle auf-/zuklappen</button>
+                <span style="font-size:.8rem;color:#6b7280" id="kostenCount"></span>
+            </div>
+            <div class="detail-grid" id="kostenStats" style="margin-bottom:1rem"></div>
+            <div id="kostenGrouped"></div>
+        </div>
+        
+        <div id="tabErnte" style="display:none">
+            <div class="filter-row">
+                <select id="ernteUserFilter" class="filter-select" onchange="renderErnte()">
+                    <option value="">Alle Benutzer</option>
+                </select>
+                <span style="font-size:.8rem;color:#6b7280" id="ernteCount"></span>
+            </div>
+            <div class="detail-grid" id="ernteStats" style="margin-bottom:1rem"></div>
+            <div id="ernteGrouped"></div>
+        </div>
+        
+        <div id="tabData" style="display:none">
+            <div class="card" id="dataOverview"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const ADMIN_PW_HASH = '5a9d4c2f8b1e3d7a';
+const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+});
+
+var allUsers = [];
+var allTrachten = [];
+var allData = {};
+var allVoelkerRaw = [];
+var allStandorteRaw = [];
+var allBehandlungenRaw = [];
+var allKostenRaw = [];
+var allTrachtenPrivRaw = [];
+
+function checkLogin() {
+    var pw = document.getElementById('adminPw').value;
+    if (pw === 'Veronika4701') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContainer').style.display = 'block';
+        loadAdmin();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        setTimeout(function(){ document.getElementById('loginError').style.display = 'none'; }, 2000);
+    }
+}
+
+function showTab(name) {
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    var tabs = ['Users','Trachten','Data','Voelker','Behandlungen','Kosten','Ernte'];
+    tabs.forEach(function(tn){ 
+        var el = document.getElementById('tab'+tn);
+        if(el) el.style.display = 'none'; 
+    });
+    var target = document.getElementById('tab'+name.charAt(0).toUpperCase()+name.slice(1));
+    if(target) target.style.display = 'block';
+    event.target.classList.add('active');
+}
+
+function fd(d) {
+    if (!d) return '–';
+    return new Date(d).toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function timeAgo(d) {
+    if (!d) return 'Nie';
+    var diff = Date.now() - new Date(d).getTime();
+    var mins = Math.floor(diff/60000);
+    if (mins < 60) return mins + ' Min. her';
+    var hours = Math.floor(mins/60);
+    if (hours < 24) return hours + ' Std. her';
+    var days = Math.floor(hours/24);
+    if (days < 30) return days + ' Tage her';
+    return fd(d);
+}
+
+function getUserEmail(uid) {
+    if (!uid) return '–';
+    var u = allUsers.find(function(x){return x.id===uid;});
+    if (u) return u.email;
+    // Fallback: Kurz-ID anzeigen
+    return uid.substring(0,8) + '…';
+}
+
+function getStandortName(sid) {
+    var s = allStandorteRaw.find(function(x){return x.id===sid;});
+    return s ? s.name : '–';
+}
+
+async function loadAdmin() {
+    // Load users from profiles table
+    var profilesResult = await sb.from('profiles').select('*');
+    var profiles = profilesResult.data || [];
+    
+    // Load shared trachten
+    var trachtenResult = await sb.from('trachten_shared').select('*').order('created_at', {ascending: false});
+    allTrachten = trachtenResult.data || [];
+    
+    // Load ALL detail data
+    var standorteResult = await sb.from('standorte').select('*');
+    var voelkerResult = await sb.from('voelker').select('*');
+    var aufgabenResult = await sb.from('aufgaben').select('user_id');
+    var trachtenPrivResult = await sb.from('trachten').select('*');
+    var behandlungenResult = await sb.from('behandlungen').select('*');
+    var kostenResult = await sb.from('kosten').select('*');
+    
+    allStandorteRaw = standorteResult.data || [];
+    allVoelkerRaw = voelkerResult.data || [];
+    var aufgaben = aufgabenResult.data || [];
+    allTrachtenPrivRaw = trachtenPrivResult.data || [];
+    allBehandlungenRaw = behandlungenResult.data || [];
+    allKostenRaw = kostenResult.data || [];
+    
+    // Build user list from profiles
+    allUsers = profiles.map(function(p) {
+        var uid = p.user_id || p.id;
+        return {
+            id: uid,
+            email: p.email || '–',
+            name: p.name || '',
+            created: p.created_at,
+            lastLogin: p.last_login,
+            standorte: allStandorteRaw.filter(function(x){return x.user_id===uid;}).length,
+            voelker: allVoelkerRaw.filter(function(x){return x.user_id===uid;}).length,
+            aufgaben: aufgaben.filter(function(x){return x.user_id===uid;}).length,
+            trachten: allTrachtenPrivRaw.filter(function(x){return x.user_id===uid;}).length,
+            behandlungen: allBehandlungenRaw.filter(function(x){return x.user_id===uid;}).length,
+            kosten: allKostenRaw.filter(function(x){return x.user_id===uid;}).length
+        };
+    });
+    
+    // Discover users from data tables that are NOT in profiles
+    var knownIds = allUsers.map(function(u){return u.id;});
+    var allDataTables = [].concat(allStandorteRaw, allVoelkerRaw, aufgaben, allTrachtenPrivRaw, allBehandlungenRaw, allKostenRaw);
+    var unknownIds = {};
+    allDataTables.forEach(function(row) {
+        if (row.user_id && knownIds.indexOf(row.user_id) === -1 && !unknownIds[row.user_id]) {
+            unknownIds[row.user_id] = true;
+        }
+    });
+    Object.keys(unknownIds).forEach(function(uid) {
+        allUsers.push({
+            id: uid,
+            email: uid.substring(0,8) + '… (kein Profil)',
+            name: '',
+            created: null,
+            lastLogin: null,
+            standorte: allStandorteRaw.filter(function(x){return x.user_id===uid;}).length,
+            voelker: allVoelkerRaw.filter(function(x){return x.user_id===uid;}).length,
+            aufgaben: aufgaben.filter(function(x){return x.user_id===uid;}).length,
+            trachten: allTrachtenPrivRaw.filter(function(x){return x.user_id===uid;}).length,
+            behandlungen: allBehandlungenRaw.filter(function(x){return x.user_id===uid;}).length,
+            kosten: allKostenRaw.filter(function(x){return x.user_id===uid;}).length
+        });
+        knownIds.push(uid);
+    });
+    
+    console.log('=== IMKERMEISTER DEBUG ===');
+    console.log('Profiles geladen:', profiles.length, profiles.map(function(p){return {id:p.id, user_id:p.user_id, email:p.email};}));
+    console.log('allUsers:', allUsers.length, allUsers.map(function(u){return {id:u.id, email:u.email, voelker:u.voelker};}));
+    console.log('Völker user_ids:', [...new Set(allVoelkerRaw.map(function(v){return v.user_id;}))]);
+    console.log('Standorte user_ids:', [...new Set(allStandorteRaw.map(function(s){return s.user_id;}))]);
+    console.log('Behandlungen user_ids:', [...new Set(allBehandlungenRaw.map(function(b){return b.user_id;}))]);
+    console.log('========================');
+    
+    allData = {
+        totalStandorte: allStandorteRaw.length,
+        totalVoelker: allVoelkerRaw.length,
+        totalAufgaben: aufgaben.length,
+        totalTrachten: allTrachtenPrivRaw.length,
+        totalBehandlungen: allBehandlungenRaw.length,
+        totalShared: allTrachten.length,
+        totalKosten: allKostenRaw.length
+    };
+    
+    // Populate filter dropdowns
+    populateUserFilters();
+    populateStandortFilter();
+    
+    renderStats();
+    renderUsers(allUsers);
+    renderTrachten();
+    renderDataOverview();
+    renderVoelker();
+    renderBehandlungen();
+    renderKosten();
+    renderErnte();
+}
+
+function populateUserFilters() {
+    var filterIds = ['voelkerUserFilter','behUserFilter','kostenUserFilter','ernteUserFilter'];
+    filterIds.forEach(function(fid) {
+        var sel = document.getElementById(fid);
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Alle Benutzer</option>';
+        allUsers.forEach(function(u) {
+            sel.innerHTML += '<option value="'+u.id+'">'+u.email+'</option>';
+        });
+    });
+}
+
+function populateStandortFilter() {
+    var sel = document.getElementById('voelkerStandortFilter');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Alle Standorte</option>';
+    allStandorteRaw.forEach(function(s) {
+        sel.innerHTML += '<option value="'+s.id+'">'+s.name+' ('+getUserEmail(s.user_id)+')</option>';
+    });
+}
+
+function renderStats() {
+    var totalKostenSum = allKostenRaw.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+    var totalErtrag = allVoelkerRaw.reduce(function(s,v){return s+(parseFloat(v.honigertrag)||0);},0);
+    document.getElementById('statsGrid').innerHTML = 
+        '<div class="stat-card"><div class="stat-number">'+allUsers.length+'</div><div class="stat-label">👥 Benutzer</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+allData.totalStandorte+'</div><div class="stat-label">📍 Standorte</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+allData.totalVoelker+'</div><div class="stat-label">🐝 Völker</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+allData.totalTrachten+'</div><div class="stat-label">🌸 Trachten</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+allData.totalBehandlungen+'</div><div class="stat-label">💉 Behandlungen</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+allData.totalShared+'</div><div class="stat-label">🗺️ Geteilt</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+totalKostenSum.toFixed(0)+'€</div><div class="stat-label">💰 Kosten gesamt</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+totalErtrag.toFixed(1)+'kg</div><div class="stat-label">🍯 Ertrag gesamt</div></div>';
+}
+
+function renderUsers(users) {
+    var html = '';
+    users.forEach(function(u) {
+        html += '<tr>'+
+            '<td><strong>'+u.email+'</strong>'+(u.name ? '<br><span style="font-size:.75rem;color:#6b7280">'+u.name+'</span>' : '')+
+            '<br><span style="font-size:.65rem;color:#9ca3af;font-family:monospace">ID: '+u.id+'</span></td>'+
+            '<td>'+fd(u.created)+'</td>'+
+            '<td>'+(u.lastLogin ? timeAgo(u.lastLogin) : 'Nie')+'</td>'+
+            '<td><span class="badge badge-green">Aktiv</span></td>'+
+            '<td>'+
+            '<span style="font-size:.75rem;color:#6b7280">📍'+u.standorte+' 🐝'+u.voelker+' 🌸'+u.trachten+' 💉'+u.behandlungen+' 💰'+u.kosten+'</span><br>'+
+            '<button class="btn btn-danger" style="margin-top:.25rem" onclick="deleteUserData(\''+u.id+'\',\''+u.email+'\')">🗑️ Daten löschen</button>'+
+            '</td>'+
+            '</tr>';
+    });
+    document.getElementById('usersTable').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#6b7280;padding:2rem">Keine Benutzer</td></tr>';
+}
+
+function filterUsers(query) {
+    var q = query.toLowerCase();
+    var filtered = allUsers.filter(function(u) {
+        return u.email.toLowerCase().indexOf(q) !== -1 || 
+               (u.name && u.name.toLowerCase().indexOf(q) !== -1) ||
+               u.id.toLowerCase().indexOf(q) !== -1;
+    });
+    renderUsers(filtered);
+}
+
+function renderTrachten() {
+    var html = '';
+    allTrachten.forEach(function(t) {
+        html += '<tr>'+
+            '<td><strong>'+t.typ+'</strong></td>'+
+            '<td>'+t.standort+'</td>'+
+            '<td>'+t.user_name+'</td>'+
+            '<td style="font-size:.75rem">'+(t.lat ? t.lat.toFixed(4)+', '+t.lng.toFixed(4) : '–')+'</td>'+
+            '<td style="font-size:.75rem">'+fd(t.beginn)+(t.ende ? ' → '+fd(t.ende) : '')+'</td>'+
+            '<td><button class="btn btn-danger" onclick="deleteSharedTracht(\''+t.id+'\')">🗑️</button></td>'+
+            '</tr>';
+    });
+    document.getElementById('trachtenTable').innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:2rem">Keine geteilten Trachten</td></tr>';
+}
+
+// === VÖLKER TAB (gruppiert nach Benutzer) ===
+var voelkerAllOpen = false;
+function toggleAllVoelker() {
+    voelkerAllOpen = !voelkerAllOpen;
+    document.querySelectorAll('.voelker-user-body').forEach(function(el) {
+        if (voelkerAllOpen) el.classList.add('open'); else el.classList.remove('open');
+    });
+}
+
+function renderVoelker() {
+    var userFilter = document.getElementById('voelkerUserFilter').value;
+    var standortFilter = document.getElementById('voelkerStandortFilter').value;
+    
+    var filtered = allVoelkerRaw.filter(function(v) {
+        if (userFilter && v.user_id !== userFilter) return false;
+        var sid = v.standort_id || v.standortId;
+        if (standortFilter && sid !== standortFilter) return false;
+        return true;
+    });
+    
+    document.getElementById('voelkerCount').textContent = filtered.length + ' Völker';
+    
+    // Group by user
+    var byUser = {};
+    filtered.forEach(function(v) {
+        var uid = v.user_id;
+        if (!byUser[uid]) byUser[uid] = [];
+        byUser[uid].push(v);
+    });
+    
+    var html = '';
+    Object.keys(byUser).forEach(function(uid) {
+        var userVoelker = byUser[uid];
+        var email = getUserEmail(uid);
+        var totalErtrag = userVoelker.reduce(function(s,v){return s+(parseFloat(v.honigertrag)||0);},0);
+        
+        // Group by standort within user
+        var byStandort = {};
+        userVoelker.forEach(function(v) {
+            var sid = v.standort_id || v.standortId || 'kein_standort';
+            if (!byStandort[sid]) byStandort[sid] = [];
+            byStandort[sid].push(v);
+        });
+        var standortCount = Object.keys(byStandort).length;
+        
+        html += '<div class="user-detail-row">'+
+            '<div class="user-detail-header" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+            '<div>'+
+                '<strong>'+email+'</strong>'+
+                '<span style="font-size:.75rem;color:#6b7280;margin-left:.75rem">🐝 '+userVoelker.length+' Völker · 📍 '+standortCount+' Standorte'+(totalErtrag>0?' · 🍯 '+totalErtrag.toFixed(1)+' kg':'')+'</span>'+
+            '</div>'+
+            '<span style="font-size:1.2rem;color:#6b7280">▸</span>'+
+            '</div>'+
+            '<div class="voelker-user-body user-detail-body">';
+        
+        Object.keys(byStandort).forEach(function(sid) {
+            var standortVoelker = byStandort[sid];
+            var standortName = sid === 'kein_standort' ? '(Kein Standort)' : getStandortName(sid);
+            
+            html += '<div style="margin-bottom:.75rem">'+
+                '<div style="font-size:.8rem;font-weight:700;color:#6b7280;padding:.5rem 0;border-bottom:1px solid #e5e7eb">📍 '+standortName+' ('+standortVoelker.length+' Völker)</div>'+
+                '<table class="mini-table"><thead><tr><th>Name</th><th>Beutensystem</th><th>Status</th><th>Honigertrag</th><th>Notizen</th><th>Erstellt</th></tr></thead><tbody>';
+            
+            standortVoelker.forEach(function(v) {
+                var ertrag = parseFloat(v.honigertrag) || 0;
+                html += '<tr>'+
+                    '<td><strong>'+(v.name||'–')+'</strong></td>'+
+                    '<td style="font-size:.75rem">'+(v.beutensystem||'–')+'</td>'+
+                    '<td>'+(v.status ? '<span class="badge badge-green">'+v.status+'</span>' : '–')+'</td>'+
+                    '<td>'+(ertrag > 0 ? ertrag.toFixed(1)+' kg' : '–')+'</td>'+
+                    '<td style="font-size:.75rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(v.notizen||'–')+'</td>'+
+                    '<td style="font-size:.75rem">'+fd(v.created_at)+'</td>'+
+                    '</tr>';
+            });
+            
+            html += '</tbody></table></div>';
+        });
+        
+        html += '</div></div>';
+    });
+    
+    document.getElementById('voelkerGrouped').innerHTML = html || '<div class="card" style="text-align:center;color:#6b7280;padding:2rem">Keine Völker gefunden</div>';
+}
+
+// === BEHANDLUNGEN TAB (gruppiert nach Benutzer) ===
+var behAllOpen = false;
+function toggleAllBeh() {
+    behAllOpen = !behAllOpen;
+    document.querySelectorAll('.beh-user-body').forEach(function(el) {
+        if (behAllOpen) el.classList.add('open'); else el.classList.remove('open');
+    });
+}
+
+function renderBehandlungen() {
+    var userFilter = document.getElementById('behUserFilter').value;
+    
+    var filtered = allBehandlungenRaw.filter(function(b) {
+        if (userFilter && b.user_id !== userFilter) return false;
+        return true;
+    });
+    
+    filtered.sort(function(a,b){ return (b.datum||0)-(a.datum||0); });
+    document.getElementById('behCount').textContent = filtered.length + ' Behandlungen';
+    
+    // Group by user
+    var byUser = {};
+    filtered.forEach(function(b) {
+        var uid = b.user_id;
+        if (!byUser[uid]) byUser[uid] = [];
+        byUser[uid].push(b);
+    });
+    
+    var html = '';
+    Object.keys(byUser).forEach(function(uid) {
+        var userBeh = byUser[uid];
+        var email = getUserEmail(uid);
+        
+        html += '<div class="user-detail-row">'+
+            '<div class="user-detail-header" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+            '<div><strong>'+email+'</strong><span style="font-size:.75rem;color:#6b7280;margin-left:.75rem">💉 '+userBeh.length+' Behandlungen</span></div>'+
+            '<span style="font-size:1.2rem;color:#6b7280">▸</span>'+
+            '</div>'+
+            '<div class="beh-user-body user-detail-body">'+
+            '<table class="mini-table"><thead><tr><th>Methode</th><th>Völker</th><th>Datum</th><th>Intervall</th><th>Notizen</th></tr></thead><tbody>';
+        
+        userBeh.forEach(function(b) {
+            html += '<tr>'+
+                '<td><strong>'+(b.methode_name||b.methodeName||b.methode||'–')+'</strong></td>'+
+                '<td style="font-size:.75rem">'+(b.voelker_label||b.voelkerLabel||'–')+'</td>'+
+                '<td>'+fd(b.datum)+'</td>'+
+                '<td style="font-size:.75rem">'+(b.intervall_label||b.intervallLabel||b.intervall||'Einmalig')+'</td>'+
+                '<td style="font-size:.75rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(b.notizen||'–')+'</td>'+
+                '</tr>';
+        });
+        
+        html += '</tbody></table></div></div>';
+    });
+    
+    document.getElementById('behGrouped').innerHTML = html || '<div class="card" style="text-align:center;color:#6b7280;padding:2rem">Keine Behandlungen gefunden</div>';
+}
+
+// === KOSTEN TAB (gruppiert nach Benutzer) ===
+var kostenAllOpen = false;
+function toggleAllKosten() {
+    kostenAllOpen = !kostenAllOpen;
+    document.querySelectorAll('.kosten-user-body').forEach(function(el) {
+        if (kostenAllOpen) el.classList.add('open'); else el.classList.remove('open');
+    });
+}
+
+function renderKosten() {
+    var userFilter = document.getElementById('kostenUserFilter').value;
+    
+    var filtered = allKostenRaw.filter(function(k) {
+        if (userFilter && k.user_id !== userFilter) return false;
+        return true;
+    });
+    
+    filtered.sort(function(a,b){ return (b.datum||0)-(a.datum||0); });
+    
+    var totalSum = filtered.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+    
+    // Global category stats
+    var cats = {};
+    filtered.forEach(function(k) {
+        var cat = k.kategorie || k.kat || 'Sonstiges';
+        if (!cats[cat]) cats[cat] = 0;
+        cats[cat] += parseFloat(k.betrag) || 0;
+    });
+    
+    var statsHtml = '<div class="detail-stat"><div class="num">'+totalSum.toFixed(2)+'€</div><div class="lbl">Gesamt</div></div>';
+    Object.keys(cats).forEach(function(c) {
+        statsHtml += '<div class="detail-stat"><div class="num">'+cats[c].toFixed(2)+'€</div><div class="lbl">'+c+'</div></div>';
+    });
+    document.getElementById('kostenStats').innerHTML = statsHtml;
+    document.getElementById('kostenCount').textContent = filtered.length + ' Ausgaben · '+totalSum.toFixed(2)+'€';
+    
+    // Group by user
+    var byUser = {};
+    filtered.forEach(function(k) {
+        var uid = k.user_id;
+        if (!byUser[uid]) byUser[uid] = [];
+        byUser[uid].push(k);
+    });
+    
+    var html = '';
+    Object.keys(byUser).forEach(function(uid) {
+        var userKosten = byUser[uid];
+        var email = getUserEmail(uid);
+        var userSum = userKosten.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+        
+        html += '<div class="user-detail-row">'+
+            '<div class="user-detail-header" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+            '<div><strong>'+email+'</strong><span style="font-size:.75rem;color:#6b7280;margin-left:.75rem">💰 '+userKosten.length+' Ausgaben · '+userSum.toFixed(2)+' €</span></div>'+
+            '<span style="font-size:1.2rem;color:#6b7280">▸</span>'+
+            '</div>'+
+            '<div class="kosten-user-body user-detail-body">'+
+            '<table class="mini-table"><thead><tr><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th>Datum</th></tr></thead><tbody>';
+        
+        userKosten.forEach(function(k) {
+            html += '<tr>'+
+                '<td><strong>'+(k.kategorie||k.kat||'–')+'</strong></td>'+
+                '<td>'+(k.beschreibung||'–')+'</td>'+
+                '<td style="font-weight:bold">'+(parseFloat(k.betrag)||0).toFixed(2)+' €</td>'+
+                '<td>'+fd(k.datum)+'</td>'+
+                '</tr>';
+        });
+        
+        html += '</tbody></table></div></div>';
+    });
+    
+    document.getElementById('kostenGrouped').innerHTML = html || '<div class="card" style="text-align:center;color:#6b7280;padding:2rem">Keine Kosten gefunden</div>';
+}
+
+// === ERNTE TAB (gruppiert nach Benutzer) ===
+function renderErnte() {
+    var userFilter = document.getElementById('ernteUserFilter').value;
+    
+    var filtered = allVoelkerRaw.filter(function(v) {
+        if (userFilter && v.user_id !== userFilter) return false;
+        return (parseFloat(v.honigertrag) || 0) > 0;
+    });
+    
+    var totalErtrag = filtered.reduce(function(s,v){return s+(parseFloat(v.honigertrag)||0);},0);
+    
+    // Group by user for stats
+    var perUser = {};
+    filtered.forEach(function(v) {
+        var uid = v.user_id;
+        if (!perUser[uid]) perUser[uid] = { email: getUserEmail(uid), ertrag: 0, count: 0 };
+        perUser[uid].ertrag += parseFloat(v.honigertrag) || 0;
+        perUser[uid].count++;
+    });
+    
+    var statsHtml = '<div class="detail-stat"><div class="num">'+totalErtrag.toFixed(1)+'kg</div><div class="lbl">Gesamtertrag</div></div>'+
+        '<div class="detail-stat"><div class="num">'+filtered.length+'</div><div class="lbl">Völker mit Ertrag</div></div>';
+    Object.keys(perUser).forEach(function(uid) {
+        var u = perUser[uid];
+        statsHtml += '<div class="detail-stat"><div class="num">'+u.ertrag.toFixed(1)+'kg</div><div class="lbl">'+u.email+' ('+u.count+' Völker)</div></div>';
+    });
+    document.getElementById('ernteStats').innerHTML = statsHtml;
+    document.getElementById('ernteCount').textContent = filtered.length + ' Völker · '+totalErtrag.toFixed(1)+' kg';
+    
+    // Grouped list
+    var html = '';
+    Object.keys(perUser).forEach(function(uid) {
+        var u = perUser[uid];
+        var userVoelker = filtered.filter(function(v){return v.user_id===uid;});
+        
+        html += '<div class="user-detail-row">'+
+            '<div class="user-detail-header" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+            '<div><strong>'+u.email+'</strong><span style="font-size:.75rem;color:#6b7280;margin-left:.75rem">🍯 '+u.ertrag.toFixed(1)+' kg · '+u.count+' Völker</span></div>'+
+            '<span style="font-size:1.2rem;color:#6b7280">▸</span>'+
+            '</div>'+
+            '<div class="user-detail-body">'+
+            '<table class="mini-table"><thead><tr><th>Volk</th><th>Standort</th><th>Ertrag</th></tr></thead><tbody>';
+        
+        userVoelker.forEach(function(v) {
+            var sid = v.standort_id || v.standortId;
+            var standortName = sid ? getStandortName(sid) : '–';
+            html += '<tr>'+
+                '<td><strong>'+(v.name||'–')+'</strong></td>'+
+                '<td>'+standortName+'</td>'+
+                '<td style="font-weight:bold">'+(parseFloat(v.honigertrag)||0).toFixed(1)+' kg</td>'+
+                '</tr>';
+        });
+        
+        html += '</tbody></table></div></div>';
+    });
+    
+    document.getElementById('ernteGrouped').innerHTML = html || '<div class="card" style="text-align:center;color:#6b7280;padding:2rem">Keine Erntedaten gefunden</div>';
+}
+
+function renderDataOverview() {
+    var html = '<h3 style="margin-bottom:1rem">📊 Daten pro Benutzer</h3>';
+    allUsers.forEach(function(u) {
+        var userKosten = allKostenRaw.filter(function(k){return k.user_id===u.id;}).reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
+        var userErtrag = allVoelkerRaw.filter(function(v){return v.user_id===u.id;}).reduce(function(s,v){return s+(parseFloat(v.honigertrag)||0);},0);
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #f3f4f6">'+
+            '<div><strong>'+u.email+'</strong></div>'+
+            '<div style="display:flex;gap:1rem;font-size:.8rem;color:#6b7280;flex-wrap:wrap">'+
+            '<span>📍 '+u.standorte+'</span>'+
+            '<span>🐝 '+u.voelker+'</span>'+
+            '<span>🌸 '+u.trachten+'</span>'+
+            '<span>💉 '+u.behandlungen+'</span>'+
+            '<span>💰 '+userKosten.toFixed(0)+'€</span>'+
+            '<span>🍯 '+userErtrag.toFixed(1)+'kg</span>'+
+            '<span>✓ '+u.aufgaben+'</span>'+
+            '</div></div>';
+    });
+    document.getElementById('dataOverview').innerHTML = html;
+}
+
+async function deleteSharedTracht(id) {
+    if (!confirm('Diese geteilte Tracht wirklich löschen?')) return;
+    await sb.from('trachten_shared').delete().eq('id', id);
+    allTrachten = allTrachten.filter(function(t){return t.id !== id;});
+    renderTrachten();
+    renderStats();
+}
+
+async function deleteUserData(userId, email) {
+    if (!confirm('ACHTUNG: Alle Daten von "'+email+'" werden gelöscht!\n\n(Standorte, Völker, Aufgaben, Trachten, Behandlungen, Kosten, Packliste)\n\nDer Account selbst bleibt bestehen. Um den Account zu löschen, gehe in Supabase → Authentication → Users.\n\nFortfahren?')) return;
+    
+    await sb.from('packliste').delete().eq('user_id', userId);
+    await sb.from('behandlungen').delete().eq('user_id', userId);
+    await sb.from('trachten').delete().eq('user_id', userId);
+    await sb.from('trachten_shared').delete().eq('user_id', userId);
+    await sb.from('aufgaben').delete().eq('user_id', userId);
+    await sb.from('kosten').delete().eq('user_id', userId);
+    await sb.from('voelker').delete().eq('user_id', userId);
+    await sb.from('standorte').delete().eq('user_id', userId);
+    
+    alert('Alle Daten von "'+email+'" wurden gelöscht.');
+    loadAdmin();
+}
+</script>
+</body>
+</html>
