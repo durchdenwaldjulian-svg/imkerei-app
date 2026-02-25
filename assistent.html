@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🤖 Assistent – Imkerei</title>
+<meta name="theme-color" content="#F5A623">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Outfit',sans-serif;background:#FFFBF0;min-height:100vh;padding-bottom:2rem}
+.topbar{background:linear-gradient(135deg,#1C1410,#2D1F15);color:#F5A623;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:100}
+.topbar h1{font-family:'DM Serif Display',serif;font-size:1.15rem;color:#fff;flex:1}
+.topbar a{color:#F5A623;text-decoration:none;font-size:.9rem;font-weight:600}
+.container{max-width:700px;margin:0 auto;padding:1rem}
+.card{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card h3{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:.75rem;color:#1C1410}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:.625rem 1.25rem;border-radius:.75rem;font-weight:600;border:none;cursor:pointer;font-size:.85rem;transition:all .15s}
+.btn-primary{background:#F5A623;color:#1C1410}.btn-primary:hover{background:#E09000}
+.btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+.btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-sm{padding:.375rem .75rem;font-size:.8rem}
+.btn-block{width:100%}
+.btn-outline{background:none;border:2px solid #E8DFD4;color:#7A6652}.btn-outline:hover{border-color:#F5A623;color:#1C1410}
+.input{width:100%;padding:.75rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.9rem;background:#fff;font-family:inherit}
+.input:focus{outline:none;border-color:#F5A623}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%237A6652' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom:.375rem}
+.tab-bar{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
+.tab-btn{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.8rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;white-space:nowrap}
+.tab-btn.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.wizard-step{display:none;animation:fadeIn .3s}.wizard-step.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.step-indicator{display:flex;gap:.5rem;margin-bottom:1.25rem;justify-content:center}
+.step-dot{width:10px;height:10px;border-radius:50%;background:#E8DFD4;transition:all .2s}
+.step-dot.active{background:#F5A623;transform:scale(1.2)}
+.step-dot.done{background:#10b981}
+.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem}
+.option-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.75rem;cursor:pointer;text-align:center;transition:all .15s}
+.option-card:hover{border-color:#F5A623;background:#FFF8EC}
+.option-card.selected{border-color:#F5A623;background:#FFF8EC;box-shadow:0 0 0 2px rgba(245,166,35,.2)}
+.option-card .emoji{font-size:1.5rem;display:block;margin-bottom:.25rem}
+.option-card .label{font-weight:600;font-size:.85rem;color:#1C1410}
+.option-card .desc{font-size:.75rem;color:#7A6652;margin-top:.125rem}
+.result-box{background:linear-gradient(135deg,#FFF8EC,#FEF3E0);border:2px solid #F5A623;border-radius:1rem;padding:1.25rem;margin-bottom:1rem}
+.result-box h4{color:#1C1410;margin-bottom:.75rem;font-size:1rem}
+.rec-item{display:flex;gap:.75rem;padding:.75rem 0;border-bottom:1px solid #E8DFD4}
+.rec-item:last-child{border:none}
+.rec-icon{font-size:1.5rem;flex-shrink:0}
+.rec-text h5{font-size:.9rem;color:#1C1410;margin-bottom:.25rem}
+.rec-text p{font-size:.8rem;color:#7A6652;line-height:1.4}
+.warning-box{background:#FEF2F2;border:2px solid #FECACA;border-radius:.75rem;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#991B1B}
+.info-box{background:#EFF6FF;border:2px solid #BFDBFE;border-radius:.75rem;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#1E40AF}
+.success-box{background:#ECFDF5;border:2px solid #A7F3D0;border-radius:.75rem;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#065F46}
+.nav-btns{display:flex;gap:.5rem;margin-top:1rem}
+.nav-btns .btn{flex:1}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #E8DFD4}
+.history-item:last-child{border:none}
+.tag{display:inline-block;padding:.125rem .5rem;border-radius:.375rem;font-size:.7rem;font-weight:600}
+.tag-green{background:#D1FAE5;color:#065F46}
+.tag-yellow{background:#FEF3C7;color:#92400E}
+.tag-red{background:#FEE2E2;color:#991B1B}
+.tag-blue{background:#DBEAFE;color:#1E40AF}
+.hidden{display:none}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:1rem;font-size:.85rem;z-index:999;animation:toastIn .3s}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(1rem)}to{opacity:1;transform:translateX(-50%) none}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>🤖 Assistent</h1>
+    <a href="index.html">← Zurück</a>
+</div>
+
+<div class="container">
+    <div class="tab-bar" id="mainTabs">
+        <button class="tab-btn active" onclick="switchTab('behandlung')">💉 Behandlung</button>
+        <button class="tab-btn" onclick="switchTab('historie')">📋 Historie</button>
+    </div>
+
+    <!-- ============ TAB: BEHANDLUNGSASSISTENT ============ -->
+    <div id="tab-behandlung">
+        <div class="step-indicator" id="stepIndicator"></div>
+
+        <!-- STEP 1: Jahreszeit & Monat -->
+        <div class="wizard-step active" id="step1">
+            <div class="card">
+                <h3>📅 Wann möchtest du behandeln?</h3>
+                <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Wähle den ungefähren Zeitraum</p>
+                <div class="option-grid">
+                    <div class="option-card" onclick="selectSeason('fruehling')">
+                        <span class="emoji">🌸</span>
+                        <span class="label">Frühling</span>
+                        <span class="desc">März – Mai</span>
+                    </div>
+                    <div class="option-card" onclick="selectSeason('sommer')">
+                        <span class="emoji">☀️</span>
+                        <span class="label">Sommer</span>
+                        <span class="desc">Juni – August</span>
+                    </div>
+                    <div class="option-card" onclick="selectSeason('herbst')">
+                        <span class="emoji">🍂</span>
+                        <span class="label">Herbst</span>
+                        <span class="desc">Sept – November</span>
+                    </div>
+                    <div class="option-card" onclick="selectSeason('winter')">
+                        <span class="emoji">❄️</span>
+                        <span class="label">Winter</span>
+                        <span class="desc">Dez – Februar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Situation -->
+        <div class="wizard-step" id="step2">
+            <div class="card">
+                <h3>🐝 Wie ist die Situation im Volk?</h3>
+                <div style="margin-bottom:.75rem">
+                    <label>Brut vorhanden?</label>
+                    <div class="option-grid">
+                        <div class="option-card" onclick="selectOption('brut','ja',this)">
+                            <span class="emoji">✅</span>
+                            <span class="label">Ja, Brut da</span>
+                        </div>
+                        <div class="option-card" onclick="selectOption('brut','nein',this)">
+                            <span class="emoji">❌</span>
+                            <span class="label">Brutfrei</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom:.75rem">
+                    <label>Honigräume aufgesetzt?</label>
+                    <div class="option-grid">
+                        <div class="option-card" onclick="selectOption('honig','ja',this)">
+                            <span class="emoji">🍯</span>
+                            <span class="label">Ja</span>
+                        </div>
+                        <div class="option-card" onclick="selectOption('honig','nein',this)">
+                            <span class="emoji">📦</span>
+                            <span class="label">Nein</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label>Varroa-Befall geschätzt?</label>
+                    <div class="option-grid">
+                        <div class="option-card" onclick="selectOption('befall','niedrig',this)">
+                            <span class="emoji">🟢</span>
+                            <span class="label">Niedrig</span>
+                            <span class="desc">&lt; 3 Milben/Tag</span>
+                        </div>
+                        <div class="option-card" onclick="selectOption('befall','mittel',this)">
+                            <span class="emoji">🟡</span>
+                            <span class="label">Mittel</span>
+                            <span class="desc">3–10 Milben/Tag</span>
+                        </div>
+                        <div class="option-card" onclick="selectOption('befall','hoch',this)">
+                            <span class="emoji">🔴</span>
+                            <span class="label">Hoch</span>
+                            <span class="desc">&gt; 10 Milben/Tag</span>
+                        </div>
+                        <div class="option-card" onclick="selectOption('befall','unbekannt',this)">
+                            <span class="emoji">❓</span>
+                            <span class="label">Weiß nicht</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="nav-btns">
+                    <button class="btn btn-outline" onclick="goStep(1)">← Zurück</button>
+                    <button class="btn btn-primary" onclick="goStep(3)" id="btnStep2Next" disabled>Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Volk auswählen (optional) -->
+        <div class="wizard-step" id="step3">
+            <div class="card">
+                <h3>🏠 Für welches Volk? (optional)</h3>
+                <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Wenn du ein Volk wählst, kann die Behandlung direkt eingetragen werden.</p>
+                <select class="input" id="selVolk">
+                    <option value="">– Allgemeine Empfehlung –</option>
+                </select>
+                <div class="nav-btns">
+                    <button class="btn btn-outline" onclick="goStep(2)">← Zurück</button>
+                    <button class="btn btn-primary" onclick="showResult()">🔍 Empfehlung anzeigen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Ergebnis -->
+        <div class="wizard-step" id="step4">
+            <div id="resultArea"></div>
+            <div class="nav-btns">
+                <button class="btn btn-outline" onclick="resetWizard()">🔄 Neu starten</button>
+                <button class="btn btn-success" onclick="applyTreatment()" id="btnApply" style="display:none">💉 Behandlung eintragen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ TAB: HISTORIE ============ -->
+    <div id="tab-historie" class="hidden">
+        <div class="card">
+            <h3>📋 Letzte Empfehlungen</h3>
+            <div id="historieList"><p style="color:#7A6652;font-size:.85rem">Noch keine Empfehlungen gespeichert.</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const SUPABASE_URL = 'https://gzayrgikmibnfyxfahlv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6YXlyZ2lrbWlibmZ5eGZhaGx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAxNDk1MjYsImV4cCI6MjA1NTcyNTUyNn0.LC0VNbMBaDbKy__ISmhkQPziAS8U0B_JkkIVUeVYECU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+let voelker = [];
+
+// ==================== AUTH ====================
+async function init() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) { location.href = 'index.html'; return; }
+    currentUser = data.session.user;
+    await loadVoelker();
+    renderSteps();
+    loadHistorie();
+}
+
+async function loadVoelker() {
+    const { data } = await sb.from('voelker').select('*').eq('user_id', currentUser.id);
+    voelker = data || [];
+    const sel = document.getElementById('selVolk');
+    sel.innerHTML = '<option value="">– Allgemeine Empfehlung –</option>';
+    voelker.forEach(v => {
+        sel.innerHTML += `<option value="${v.id}">${v.name}${v.standort ? ' ('+v.standort+')' : ''}</option>`;
+    });
+}
+
+// ==================== TABS ====================
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (tab==='behandlung'?0:1)===i));
+    document.getElementById('tab-behandlung').classList.toggle('hidden', tab!=='behandlung');
+    document.getElementById('tab-historie').classList.toggle('hidden', tab!=='historie');
+}
+
+// ==================== WIZARD STATE ====================
+let wiz = { step:1, season:'', brut:'', honig:'', befall:'', volkId:'' };
+const totalSteps = 4;
+
+function renderSteps() {
+    let h = '';
+    for (let i=1; i<=totalSteps; i++) {
+        const cls = i < wiz.step ? 'done' : i === wiz.step ? 'active' : '';
+        h += `<div class="step-dot ${cls}"></div>`;
+    }
+    document.getElementById('stepIndicator').innerHTML = h;
+}
+
+function goStep(n) {
+    wiz.step = n;
+    document.querySelectorAll('.wizard-step').forEach((el,i) => el.classList.toggle('active', i+1===n));
+    renderSteps();
+}
+
+function selectSeason(s) {
+    wiz.season = s;
+    document.querySelectorAll('#step1 .option-card').forEach(c => c.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    setTimeout(() => goStep(2), 200);
+}
+
+function selectOption(key, val, el) {
+    wiz[key] = val;
+    el.closest('.option-grid') && el.closest('div').querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    checkStep2();
+}
+
+function checkStep2() {
+    const ok = wiz.brut && wiz.honig && wiz.befall;
+    document.getElementById('btnStep2Next').disabled = !ok;
+}
+
+function resetWizard() {
+    wiz = { step:1, season:'', brut:'', honig:'', befall:'', volkId:'' };
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('btnStep2Next').disabled = true;
+    document.getElementById('selVolk').value = '';
+    goStep(1);
+}
+
+// ==================== BEHANDLUNGSLOGIK ====================
+const treatments = {
+    // Oxalsäure - brutfrei
+    oxal_traeufel: {
+        name: 'Oxalsäure-Träufelbehandlung',
+        emoji: '💧',
+        desc: 'Oxalsäure 3,5% ad us. vet. direkt auf die Bienentraube träufeln. 5ml je besetzter Wabengasse.',
+        when: 'Brutfreie Phase (Winter, Nov–Dez)',
+        duration: 'Einmalig',
+        temp: 'Idealerweise < 5°C, windstill',
+        warning: 'Nur 1x pro brutfreier Phase! Honigräume müssen entfernt sein.',
+        legal: 'Zugelassenes Tierarzneimittel verwenden, ins Bestandsbuch eintragen!',
+        wirkung: '90-95% bei Brutfreiheit'
+    },
+    oxal_verdampf: {
+        name: 'Oxalsäure-Verdampfung (Sublimation)',
+        emoji: '💨',
+        desc: 'Oxalsäure wird im Verdampfer erhitzt und als Dampf in den Bienenstock eingebracht.',
+        when: 'Brutfreie Phase (Winter)',
+        duration: 'Einmalig, ca. 2-3 Min pro Volk',
+        temp: '0-10°C, Flugloch verschließen für 10-15 Min',
+        warning: 'Atemschutz (FFP3) und Schutzbrille Pflicht! Nur zugelassene Geräte verwenden.',
+        legal: 'Prüfe lokale Zulassung – nicht in allen Bundesländern erlaubt.',
+        wirkung: '95-99% bei Brutfreiheit'
+    },
+    // Ameisensäure - mit Brut
+    ameisen_lang: {
+        name: 'Ameisensäure-Langzeitbehandlung',
+        emoji: '🧪',
+        desc: 'Ameisensäure 60% über Langzeitverdunster (z.B. Nassenheider Verdunster, Liebig-Dispenser). Langsame Verdunstung über 10-14 Tage.',
+        when: 'Nach Honigernte (Juli–Sept), Brut vorhanden',
+        duration: '10-14 Tage, ggf. wiederholen',
+        temp: '15-25°C (ideal), nicht über 30°C!',
+        warning: 'Bei über 30°C abbrechen! Kann Königinnenverluste verursachen. Handschuhe + Schutzbrille!',
+        legal: 'Zugelassenes Mittel verwenden, Bestandsbuch-Pflicht.',
+        wirkung: '85-95% inkl. Brut'
+    },
+    ameisen_kurz: {
+        name: 'Ameisensäure-Kurzzeitbehandlung',
+        emoji: '⚡',
+        desc: 'Ameisensäure 85% als Stoßbehandlung über Schwammtuch. Hohe Konzentration, kurze Dauer.',
+        when: 'Notfall bei hohem Befall, Sommer/Herbst',
+        duration: '3 Tage, dann Pause, ggf. wiederholen',
+        temp: '15-25°C',
+        warning: 'Sehr aggressiv – höheres Risiko für Königin und Brut! Nur bei dringendem Bedarf.',
+        legal: 'Zugelassenes Mittel, Bestandsbuch.',
+        wirkung: '80-90%'
+    },
+    // Milchsäure
+    milch: {
+        name: 'Milchsäure-Sprühbehandlung',
+        emoji: '🥛',
+        desc: 'Milchsäure 15% ad us. vet. – jede besetzte Wabenseite besprühen. Wirkt nur auf ansitzende Milben.',
+        when: 'Brutfreie Phase, Schwärme, Kunstschwärme, Ableger',
+        duration: 'Einmalig (jede Wabe besprühen)',
+        temp: 'Keine strenge Temperaturgrenze',
+        warning: 'Nur bei Brutfreiheit wirksam! Aufwändig bei großen Völkern.',
+        legal: 'Zugelassen, Bestandsbuch.',
+        wirkung: '90-95% bei Brutfreiheit'
+    },
+    // Thymol
+    thymol: {
+        name: 'Thymol-Behandlung (z.B. Apiguard, Thymovar)',
+        emoji: '🌿',
+        desc: 'Thymol-basiertes Fertigprodukt auf die Oberträger legen. Verdunstung über mehrere Wochen.',
+        when: 'Nach Honigernte (Aug–Sept), mit/ohne Brut',
+        duration: '4-6 Wochen (2 Anwendungen)',
+        temp: '15-30°C (funktioniert nur bei Wärme)',
+        warning: 'Unter 15°C kaum Wirkung. Kann Honig geschmacklich beeinträchtigen – keine Honigräume!',
+        legal: 'Zugelassenes Tierarzneimittel.',
+        wirkung: '85-95%'
+    },
+    // Drohnenbrutentnahme
+    drohnenbrut: {
+        name: 'Drohnenbrutentnahme',
+        emoji: '🔪',
+        desc: 'Verdeckelte Drohnenbrutwabe entnehmen und einschmelzen. Varroa bevorzugt Drohnenbrut.',
+        when: 'Frühling/Sommer (April–Juli), bei Drohnenbrut',
+        duration: 'Alle 3 Wochen wiederholen',
+        temp: 'Keine Einschränkung',
+        warning: 'Biotechnische Methode – kein Medikament. Reduziert Befall um 20-30%, reicht allein nicht!',
+        legal: 'Keine Dokumentationspflicht, aber empfohlen.',
+        wirkung: '20-30% Reduktion'
+    },
+    // Bannwabenverfahren
+    bannwabe: {
+        name: 'Bannwabenverfahren / Totale Brutentnahme',
+        emoji: '🔄',
+        desc: 'Alle Brutwaben entfernen, Königin auf leere Waben setzen. Brutfreies Volk mit Oxalsäure behandeln.',
+        when: 'Sommer (Juli), nach Honigernte',
+        duration: '21 Tage bis brutfrei, dann Behandlung',
+        temp: 'Sommertemperaturen',
+        warning: 'Schwächt Volk stark. Nur bei erfahrenen Imkern empfohlen.',
+        legal: 'Biotechnisch + anschließend zugelassenes Mittel.',
+        wirkung: '95-99% (mit anschl. Oxalsäure)'
+    }
+};
+
+function getRecommendations() {
+    const { season, brut, honig, befall } = wiz;
+    let recs = [];
+    let warnings = [];
+    let tips = [];
+
+    // === WINTER: brutfrei ===
+    if (season === 'winter') {
+        if (brut === 'nein') {
+            recs.push({ ...treatments.oxal_traeufel, priority: 'primary' });
+            recs.push({ ...treatments.oxal_verdampf, priority: 'alternative' });
+            recs.push({ ...treatments.milch, priority: 'alternative' });
+            tips.push('Die brutfreie Phase im Winter ist der ideale Zeitpunkt für die Oxalsäure-Behandlung.');
+            tips.push('Kontrolliere den natürlichen Milbenfall 2-3 Wochen nach der Behandlung.');
+        } else {
+            recs.push({ ...treatments.oxal_traeufel, priority: 'primary' });
+            warnings.push('Du hast angegeben, dass Brut vorhanden ist. Oxalsäure wirkt NUR auf ansitzende Milben – bei Brut ist die Wirkung deutlich reduziert (max 50-60%)! Warte möglichst auf eine brutfreie Phase.');
+            tips.push('Prüfe in 1-2 Wochen erneut auf Brutfreiheit. In kalten Wintern gibt es meist ein kurzes brutfreies Fenster.');
+        }
+    }
+
+    // === FRÜHLING ===
+    if (season === 'fruehling') {
+        recs.push({ ...treatments.drohnenbrut, priority: 'primary' });
+        tips.push('Im Frühling ist Drohnenbrutentnahme die Standardmethode – keine Chemie, kein Honig-Risiko.');
+        if (befall === 'hoch') {
+            warnings.push('Hoher Befall im Frühling ist kritisch! Prüfe, ob die Winterbehandlung ausreichend war.');
+            recs.push({ ...treatments.milch, priority: 'alternative' });
+            tips.push('Bei Kunstschwärmen oder Ablegern kann Milchsäure im brutfreien Zustand eingesetzt werden.');
+        }
+        if (honig === 'ja') {
+            warnings.push('Bei aufgesetzten Honigräumen darf KEINE chemische Behandlung erfolgen!');
+        }
+        tips.push('Gemülldiagnose durchführen um den tatsächlichen Befallsgrad zu ermitteln.');
+    }
+
+    // === SOMMER ===
+    if (season === 'sommer') {
+        if (honig === 'ja') {
+            recs.push({ ...treatments.drohnenbrut, priority: 'primary' });
+            warnings.push('Honigräume sind noch drauf → nur biotechnische Methoden erlaubt! Erst nach Honigernte chemisch behandeln.');
+            tips.push('Ernte den Honig so früh wie möglich, um rechtzeitig behandeln zu können.');
+        } else {
+            recs.push({ ...treatments.ameisen_lang, priority: 'primary' });
+            if (befall === 'hoch') {
+                recs.push({ ...treatments.ameisen_kurz, priority: 'alternative' });
+                recs.push({ ...treatments.bannwabe, priority: 'alternative' });
+                warnings.push('Bei hohem Befall im Sommer sofort handeln! Das Volk ist akut gefährdet.');
+            }
+            recs.push({ ...treatments.thymol, priority: 'alternative' });
+            tips.push('Ameisensäure-Langzeit ist der Goldstandard nach der Honigernte.');
+            tips.push('Temperatur beobachten – bei über 30°C Ameisensäure pausieren!');
+        }
+        recs.push({ ...treatments.drohnenbrut, priority: 'support' });
+    }
+
+    // === HERBST ===
+    if (season === 'herbst') {
+        if (honig === 'ja') {
+            warnings.push('Im Herbst sollten keine Honigräume mehr drauf sein! Bitte sofort ernten.');
+        }
+        if (brut === 'ja') {
+            recs.push({ ...treatments.ameisen_lang, priority: 'primary' });
+            recs.push({ ...treatments.thymol, priority: 'alternative' });
+            tips.push('Im Herbst wird die Brut weniger – eine Restentmilbung mit Oxalsäure im brutfreien Winter folgt.');
+        } else {
+            recs.push({ ...treatments.oxal_traeufel, priority: 'primary' });
+            recs.push({ ...treatments.oxal_verdampf, priority: 'alternative' });
+            tips.push('Brutfrei im Herbst? Perfekt – Oxalsäure-Behandlung jetzt möglich.');
+        }
+        if (befall === 'hoch') {
+            warnings.push('Hoher Befall im Herbst ist sehr kritisch für die Überwinterung! Sofortige Behandlung nötig.');
+        }
+        tips.push('Stelle sicher, dass das Volk ausreichend eingefüttert ist.');
+    }
+
+    // Generelle Befall-Warnung
+    if (befall === 'hoch') {
+        warnings.push('Bei hohem Befall: Kontrolle nach der Behandlung besonders wichtig! Milbenfall 3 Tage nach Behandlung zählen.');
+    }
+    if (befall === 'unbekannt') {
+        tips.push('Tipp: Führe eine Gemülldiagnose durch (Windel einlegen, 3 Tage warten, Milben zählen ÷ 3 = nat. Milbenfall/Tag).');
+    }
+
+    return { recs, warnings, tips };
+}
+
+function showResult() {
+    wiz.volkId = document.getElementById('selVolk').value;
+    const { recs, warnings, tips } = getRecommendations();
+
+    const seasonLabel = {fruehling:'Frühling 🌸',sommer:'Sommer ☀️',herbst:'Herbst 🍂',winter:'Winter ❄️'}[wiz.season];
+    const brutLabel = wiz.brut === 'ja' ? 'mit Brut' : 'brutfrei';
+    const honigLabel = wiz.honig === 'ja' ? 'Honigräume drauf' : 'keine Honigräume';
+    const befallLabel = {niedrig:'🟢 niedrig',mittel:'🟡 mittel',hoch:'🔴 hoch',unbekannt:'❓ unbekannt'}[wiz.befall];
+
+    let html = `<div class="card" style="background:#f5f0eb"><p style="font-size:.8rem;color:#7A6652">
+        ${seasonLabel} · ${brutLabel} · ${honigLabel} · Befall: ${befallLabel}</p></div>`;
+
+    // Warnings
+    warnings.forEach(w => { html += `<div class="warning-box">⚠️ ${w}</div>`; });
+
+    // Primary Recommendation
+    const primary = recs.find(r => r.priority === 'primary');
+    if (primary) {
+        html += `<div class="result-box">
+            <h4>${primary.emoji} Empfehlung: ${primary.name}</h4>
+            <p style="font-size:.85rem;margin-bottom:.75rem">${primary.desc}</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.8rem">
+                <div><strong>⏰ Zeitpunkt:</strong><br>${primary.when}</div>
+                <div><strong>⏱️ Dauer:</strong><br>${primary.duration}</div>
+                <div><strong>🌡️ Temperatur:</strong><br>${primary.temp}</div>
+                <div><strong>📊 Wirkungsgrad:</strong><br>${primary.wirkung}</div>
+            </div>
+            ${primary.warning ? `<div class="warning-box" style="margin-top:.75rem">⚠️ ${primary.warning}</div>` : ''}
+            <div class="info-box" style="margin-top:.75rem">📝 ${primary.legal}</div>
+        </div>`;
+    }
+
+    // Alternatives
+    const alts = recs.filter(r => r.priority === 'alternative');
+    if (alts.length) {
+        html += `<div class="card"><h3>🔄 Alternativen</h3>`;
+        alts.forEach(a => {
+            html += `<div class="rec-item">
+                <div class="rec-icon">${a.emoji}</div>
+                <div class="rec-text">
+                    <h5>${a.name}</h5>
+                    <p>${a.desc}</p>
+                    <p style="margin-top:.25rem"><strong>Wirkung:</strong> ${a.wirkung} · <strong>Dauer:</strong> ${a.duration}</p>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // Supporting methods
+    const support = recs.filter(r => r.priority === 'support');
+    if (support.length) {
+        html += `<div class="card"><h3>🛠️ Ergänzende Maßnahmen</h3>`;
+        support.forEach(s => {
+            html += `<div class="rec-item">
+                <div class="rec-icon">${s.emoji}</div>
+                <div class="rec-text"><h5>${s.name}</h5><p>${s.desc}</p></div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // Tips
+    if (tips.length) {
+        html += `<div class="card"><h3>💡 Tipps</h3>`;
+        tips.forEach(t => { html += `<div class="success-box">💡 ${t}</div>`; });
+        html += '</div>';
+    }
+
+    document.getElementById('resultArea').innerHTML = html;
+    document.getElementById('btnApply').style.display = wiz.volkId ? 'flex' : 'none';
+
+    // Save to history
+    saveHistorie(primary, recs);
+
+    goStep(4);
+}
+
+// ==================== BEHANDLUNG EINTRAGEN ====================
+async function applyTreatment() {
+    const { recs } = getRecommendations();
+    const primary = recs.find(r => r.priority === 'primary');
+    if (!primary || !wiz.volkId) return;
+
+    const volk = voelker.find(v => v.id === wiz.volkId);
+    if (!volk) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { error } = await sb.from('behandlungen').insert({
+        user_id: currentUser.id,
+        volk_id: wiz.volkId,
+        volk_name: volk.name || '',
+        standort_name: volk.standort || '',
+        datum: today,
+        medikament: primary.name,
+        diagnose: `Varroa (Befall: ${wiz.befall})`,
+        dosierung: primary.desc.substring(0, 100),
+        dauer: primary.duration,
+        wartezeit: '',
+        notizen: `Empfohlen vom Behandlungsassistenten. Jahreszeit: ${wiz.season}, Brut: ${wiz.brut}, Honigräume: ${wiz.honig}`,
+        chargenNr: '',
+        tierarzt: ''
+    });
+
+    if (error) {
+        toast('❌ Fehler beim Speichern: ' + error.message);
+    } else {
+        toast('✅ Behandlung eingetragen!');
+        document.getElementById('btnApply').innerHTML = '✅ Eingetragen';
+        document.getElementById('btnApply').disabled = true;
+    }
+}
+
+// ==================== HISTORIE ====================
+function saveHistorie(primary, allRecs) {
+    const hist = JSON.parse(localStorage.getItem('assistent_historie') || '[]');
+    hist.unshift({
+        ts: Date.now(),
+        season: wiz.season,
+        brut: wiz.brut,
+        honig: wiz.honig,
+        befall: wiz.befall,
+        empfehlung: primary ? primary.name : 'Keine',
+        volkId: wiz.volkId,
+        volkName: wiz.volkId ? (voelker.find(v=>v.id===wiz.volkId)?.name || '') : ''
+    });
+    if (hist.length > 30) hist.length = 30;
+    localStorage.setItem('assistent_historie', JSON.stringify(hist));
+    loadHistorie();
+}
+
+function loadHistorie() {
+    const hist = JSON.parse(localStorage.getItem('assistent_historie') || '[]');
+    const el = document.getElementById('historieList');
+    if (!hist.length) { el.innerHTML = '<p style="color:#7A6652;font-size:.85rem">Noch keine Empfehlungen.</p>'; return; }
+
+    const seasonEmoji = {fruehling:'🌸',sommer:'☀️',herbst:'🍂',winter:'❄️'};
+    const befallTag = {niedrig:'tag-green',mittel:'tag-yellow',hoch:'tag-red',unbekannt:'tag-blue'};
+
+    el.innerHTML = hist.map(h => {
+        const d = new Date(h.ts);
+        const dateStr = d.toLocaleDateString('de-DE');
+        return `<div class="history-item">
+            <div>
+                <div style="font-weight:600;font-size:.85rem">${seasonEmoji[h.season]||''} ${h.empfehlung}</div>
+                <div style="font-size:.75rem;color:#7A6652">${dateStr}${h.volkName ? ' · ' + h.volkName : ''}</div>
+            </div>
+            <span class="tag ${befallTag[h.befall]||''}">${h.befall}</span>
+        </div>`;
+    }).join('');
+}
+
+// ==================== UTILS ====================
+function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+}
+
+// ==================== PREVIEW MODE ====================
+// Falls kein Login: Demo-Daten laden
+async function initPreview() {
+    voelker = [
+        { id: 'demo1', name: 'Volk 1 – Buckfast', standort: 'Heimstand' },
+        { id: 'demo2', name: 'Volk 2 – Carnica', standort: 'Heimstand' },
+        { id: 'demo3', name: 'Volk 3 – Buckfast', standort: 'Waldstand' },
+    ];
+    const sel = document.getElementById('selVolk');
+    sel.innerHTML = '<option value="">– Allgemeine Empfehlung –</option>';
+    voelker.forEach(v => {
+        sel.innerHTML += `<option value="${v.id}">${v.name} (${v.standort})</option>`;
+    });
+    currentUser = { id: 'preview' };
+    renderSteps();
+    loadHistorie();
+}
+
+// Start
+(async () => {
+    try {
+        const { data } = await sb.auth.getSession();
+        if (!data.session) {
+            // Preview-Modus statt Redirect
+            initPreview();
+            return;
+        }
+        currentUser = data.session.user;
+        await loadVoelker();
+        renderSteps();
+        loadHistorie();
+    } catch(e) {
+        initPreview();
+    }
+})();
+</script>
+</body>
+</html>
