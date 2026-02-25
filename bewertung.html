@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⭐ Völker-Bewertung – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FFFBF0;min-height:100vh;padding-bottom:2rem}
+        .topbar{background:linear-gradient(135deg,#1C1410 0%,#2D1F15 100%);color:#F5A623;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:100}
+        .topbar h1{font-family:'DM Serif Display',serif;font-size:1.2rem;color:#fff;flex:1}
+        .topbar a{color:#F5A623;text-decoration:none;font-size:.9rem;font-weight:600}
+        .container{max-width:800px;margin:0 auto;padding:1rem}
+        .card{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:.625rem 1.25rem;border-radius:.75rem;font-weight:600;border:none;cursor:pointer;font-size:.85rem;transition:all .15s}
+        .btn-primary{background:#F5A623;color:#1C1410}.btn-primary:hover{background:#E09000}
+        .btn-success{background:#10b981;color:#fff}
+        .btn-danger{background:#ef4444;color:#fff}
+        .btn-blue{background:#3b82f6;color:#fff}
+        .btn-sm{padding:.375rem .75rem;font-size:.8rem}
+        .btn-xs{padding:.25rem .5rem;font-size:.75rem}
+        .input{width:100%;padding:.75rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.9rem;background:#fff;font-family:inherit;transition:border .15s}
+        .input:focus{outline:none;border-color:#F5A623}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.375rem}
+        .tab-bar{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
+        .tab-btn{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s}
+        .tab-btn.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+        .modal.active{display:flex}
+        .modal-content{background:#fff;border-radius:1rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem;border-bottom:2px solid #FFFBF0}
+        .modal-header h2{font-size:1.1rem}
+        .modal-body{padding:1.25rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
+        .stars{display:flex;gap:2px;cursor:pointer}
+        .stars .star{font-size:1.5rem;color:#E8DFD4;transition:color .15s;user-select:none}
+        .stars .star.active{color:#F5A623}
+        .stars .star:hover{color:#f7bc5e}
+        .radar-wrap{position:relative;width:100%;max-width:320px;margin:0 auto}
+        .badge{display:inline-block;padding:.125rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
+        .badge-green{background:#d1fae5;color:#065f46}
+        .badge-yellow{background:#fef3c7;color:#92400e}
+        .badge-red{background:#fee2e2;color:#991b1b}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1>⭐ Völker-Bewertung</h1>
+    <a href="index.html">← Zurück</a>
+</div>
+
+<div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
+    <div style="text-align:center;color:#7A6652">
+        <div style="font-size:3rem;margin-bottom:1rem">⭐</div>
+        <div>Lade Bewertungen...</div>
+    </div>
+</div>
+
+<div id="app" style="display:none"></div>
+<div id="toast" class="toast"></div>
+
+<!-- Bewertung Modal -->
+<div id="bewertungModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="bewertungModalTitle">⭐ Volk bewerten</h2>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Volk</label>
+                <select id="bewVolk" class="input">
+                    <option value="">-- Volk wählen --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Datum</label>
+                <input type="date" id="bewDatum" class="input">
+            </div>
+            
+            <div id="kriterienContainer"></div>
+            
+            <div class="form-group">
+                <label class="form-label">Notizen</label>
+                <textarea id="bewNotizen" class="input" rows="2" placeholder="Besonderheiten, Zuchtempfehlung..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveBewertung()">💾 Bewertung speichern</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// CONFIG
+// ============================================
+const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const KRITERIEN = [
+    {key:'sanftmut', label:'🤲 Sanftmut', desc:'Stechverhalten, Aggressivität'},
+    {key:'wabensitz', label:'🪵 Wabensitz', desc:'Bleiben die Bienen auf der Wabe?'},
+    {key:'schwarmtrieb', label:'🐝 Schwarmtrieb', desc:'5 = kein Schwarmtrieb'},
+    {key:'volksstaerke', label:'💪 Volksstärke', desc:'Bienenmasse, Brutnest'},
+    {key:'winterfestigkeit', label:'❄️ Winterfestigkeit', desc:'Überwinterungserfolg, Futterverbrauch'},
+    {key:'hygiene', label:'🧹 Hygieneverhalten', desc:'Kalkbrut, Varroatoleranz'},
+    {key:'wabenbau', label:'🏗️ Wabenbau', desc:'Sauberer, gleichmäßiger Bau'},
+    {key:'honigfleiss', label:'🍯 Honigfleiß', desc:'Sammeleifer, Ertrag'}
+];
+
+var currentUser = null;
+var standorte = [];
+var voelker = [];
+var bewertungen = [];
+var editId = null;
+var activeTab = 'bewerten';
+var bewertungWerte = {};
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id),
+        sb.from('bewertungen').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false})
+    ]);
+    
+    standorte = (results[0].data || []).map(function(r){
+        return {id:r.id, name:r.name};
+    });
+    voelker = (results[1].data || []).map(function(r){
+        return {id:r.id, standortId:r.standort_id, name:r.name, status:r.status};
+    });
+    bewertungen = (results[2].data || []).map(function(r){
+        return {
+            id:r.id, volkId:r.volk_id, volkName:r.volk_name, standortName:r.standort_name, datum:r.datum,
+            sanftmut:r.sanftmut||3, wabensitz:r.wabensitz||3, schwarmtrieb:r.schwarmtrieb||3,
+            volksstaerke:r.volksstaerke||3, winterfestigkeit:r.winterfestigkeit||3, hygiene:r.hygiene||3,
+            wabenbau:r.wabenbau||3, honigfleiss:r.honigfleiss||3, notizen:r.notizen||'', created:r.created_at
+        };
+    });
+    
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    var html = '<div class="container">';
+    
+    html += '<div class="tab-bar">';
+    html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="activeTab=\'bewerten\';render()">⭐ Bewerten</button>';
+    html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="activeTab=\'ranking\';render()">🏆 Ranking</button>';
+    html += '<button class="tab-btn '+(activeTab==='verlauf'?'active':'')+'" onclick="activeTab=\'verlauf\';render()">📈 Verlauf</button>';
+    html += '</div>';
+    
+    if (activeTab === 'bewerten') html += renderBewerten();
+    else if (activeTab === 'ranking') html += renderRanking();
+    else html += renderVerlauf();
+    
+    html += '</div>';
+    document.getElementById('app').innerHTML = html;
+}
+
+// ============================================
+// TAB: BEWERTEN
+// ============================================
+function renderBewerten() {
+    var html = '';
+    
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">';
+    html += '<h2 style="font-size:1.1rem">Völker bewerten</h2>';
+    html += '<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neue Bewertung</button>';
+    html += '</div>';
+    
+    // Nach Standort gruppiert
+    standorte.forEach(function(s){
+        var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
+        if (sVoelker.length === 0) return;
+        
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">📍 '+s.name+'</h3>';
+        
+        sVoelker.forEach(function(v){
+            // Letzte Bewertung für dieses Volk
+            var letzte = bewertungen.find(function(b){return b.volkId===v.id;});
+            var schnitt = letzte ? durchschnitt(letzte) : null;
+            var schnittBadge = schnitt ? getBadge(schnitt) : '';
+            
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div>';
+            html += '<div style="font-weight:600">🐝 '+v.name+'</div>';
+            if (letzte) {
+                var datum = new Date(letzte.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
+                html += '<div style="font-size:.75rem;color:#7A6652">Letzte: '+datum+' · '+renderMiniStars(schnitt)+'</div>';
+            } else {
+                html += '<div style="font-size:.75rem;color:#94a3b8">Noch nicht bewertet</div>';
+            }
+            html += '</div>';
+            html += '<div style="display:flex;gap:.25rem">';
+            html += '<button class="btn btn-primary btn-xs" onclick="openModal(null,\''+v.id+'\')">⭐</button>';
+            if (letzte) html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+letzte.id+'\')">✏️</button>';
+            html += '</div>';
+            html += '</div>';
+        });
+        
+        html += '</div>';
+    });
+    
+    // Letzte Bewertungen
+    if (bewertungen.length > 0) {
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">📋 Letzte Bewertungen</h3>';
+        bewertungen.slice(0,10).forEach(function(b){
+            var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
+            var schnitt = durchschnitt(b);
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div>';
+            html += '<div style="font-weight:500;font-size:.9rem">🐝 '+b.volkName+' '+renderMiniStars(schnitt)+'</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+(b.standortName?' · 📍 '+b.standortName:'')+'</div>';
+            if (b.notizen) html += '<div style="font-size:.75rem;color:#94a3b8">'+b.notizen+'</div>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:.25rem">';
+            html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+b.id+'\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteBewertung(\''+b.id+'\')">🗑️</button>';
+            html += '</div></div>';
+        });
+        html += '</div>';
+    }
+    
+    return html;
+}
+
+// ============================================
+// TAB: RANKING
+// ============================================
+function renderRanking() {
+    var html = '';
+    
+    // Für jedes Volk die letzte Bewertung nehmen und ranken
+    var volkRanking = [];
+    voelker.forEach(function(v){
+        var bews = bewertungen.filter(function(b){return b.volkId===v.id;});
+        if (bews.length === 0) return;
+        var letzte = bews[0]; // bereits nach Datum sortiert
+        var schnitt = durchschnitt(letzte);
+        var sName = '';
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        if (s) sName = s.name;
+        volkRanking.push({volk:v, bewertung:letzte, schnitt:schnitt, standortName:sName});
+    });
+    
+    volkRanking.sort(function(a,b){return b.schnitt - a.schnitt;});
+    
+    if (volkRanking.length === 0) {
+        html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">';
+        html += '<div style="font-size:3rem;margin-bottom:.5rem">🏆</div>';
+        html += '<p>Noch keine Bewertungen vorhanden.</p>';
+        html += '<button class="btn btn-primary" style="margin-top:1rem" onclick="activeTab=\'bewerten\';render()">Erste Bewertung erstellen</button>';
+        html += '</div>';
+        return html;
+    }
+    
+    // Top 3
+    html += '<div class="card">';
+    html += '<h3 style="margin-bottom:1rem;text-align:center">🏆 Zucht-Ranking</h3>';
+    
+    volkRanking.forEach(function(item, i){
+        var medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i+1)+'.'));
+        var b = item.bewertung;
+        var barWidth = (item.schnitt / 5 * 100);
+        var barColor = item.schnitt >= 4 ? '#10b981' : (item.schnitt >= 3 ? '#F5A623' : (item.schnitt >= 2 ? '#f59e0b' : '#ef4444'));
+        
+        html += '<div style="padding:.75rem 0;border-bottom:1px solid #FFFBF0">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.375rem">';
+        html += '<div style="display:flex;align-items:center;gap:.5rem">';
+        html += '<span style="font-size:1.25rem;width:2rem;text-align:center">'+medal+'</span>';
+        html += '<div><div style="font-weight:600">'+item.volk.name+'</div>';
+        html += '<div style="font-size:.75rem;color:#7A6652">📍 '+item.standortName+'</div></div>';
+        html += '</div>';
+        html += '<div style="font-size:1.25rem;font-weight:bold;color:'+barColor+'">'+item.schnitt.toFixed(1)+'</div>';
+        html += '</div>';
+        
+        // Mini-Balken pro Kriterium
+        html += '<div style="display:flex;gap:3px;margin-left:2.5rem">';
+        KRITERIEN.forEach(function(k){
+            var val = b[k.key] || 3;
+            var w = (val/5*100);
+            var c = val >= 4 ? '#10b981' : (val >= 3 ? '#F5A623' : '#ef4444');
+            html += '<div style="flex:1;height:6px;background:#E8DFD4;border-radius:3px" title="'+k.label+': '+val+'/5"><div style="height:100%;border-radius:3px;background:'+c+';width:'+w+'%"></div></div>';
+        });
+        html += '</div>';
+        
+        // Stärken/Schwächen
+        var staerken = KRITERIEN.filter(function(k){return (b[k.key]||3) >= 4;}).map(function(k){return k.label.split(' ')[0];});
+        var schwaechen = KRITERIEN.filter(function(k){return (b[k.key]||3) <= 2;}).map(function(k){return k.label.split(' ')[0];});
+        if (staerken.length || schwaechen.length) {
+            html += '<div style="margin-left:2.5rem;margin-top:.25rem;font-size:.7rem">';
+            if (staerken.length) html += '<span style="color:#10b981">▲ '+staerken.join(' ')+'</span> ';
+            if (schwaechen.length) html += '<span style="color:#ef4444">▼ '+schwaechen.join(' ')+'</span>';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    
+    // Empfehlung
+    if (volkRanking.length >= 2) {
+        var beste = volkRanking[0];
+        html += '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">';
+        html += '<h3 style="margin-bottom:.5rem">👑 Zuchtempfehlung</h3>';
+        html += '<p style="font-size:.9rem;color:#7A6652"><strong>'+beste.volk.name+'</strong> (📍 '+beste.standortName+') hat mit <strong>'+beste.schnitt.toFixed(1)+'/5.0</strong> die beste Gesamtbewertung. ';
+        var topKrit = KRITERIEN.slice().sort(function(a,b){return (beste.bewertung[b.key]||3)-(beste.bewertung[a.key]||3);}).slice(0,3);
+        html += 'Besonders stark bei: '+topKrit.map(function(k){return k.label;}).join(', ')+'.';
+        html += '</p></div>';
+    }
+    
+    return html;
+}
+
+// ============================================
+// TAB: VERLAUF
+// ============================================
+function renderVerlauf() {
+    var html = '';
+    
+    // Volk-Auswahl
+    html += '<div class="card">';
+    html += '<h3 style="margin-bottom:.75rem">📈 Bewertungsverlauf</h3>';
+    html += '<select class="input" onchange="selectedVerlaufVolk=this.value;render()" id="verlaufVolk">';
+    html += '<option value="">-- Volk wählen --</option>';
+    voelker.forEach(function(v){
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        var sName = s ? s.name : '';
+        var count = bewertungen.filter(function(b){return b.volkId===v.id;}).length;
+        if (count > 0) html += '<option value="'+v.id+'"'+(selectedVerlaufVolk===v.id?' selected':'')+'>'+v.name+' ('+sName+') – '+count+' Bewertungen</option>';
+    });
+    html += '</select>';
+    html += '</div>';
+    
+    if (typeof selectedVerlaufVolk !== 'undefined' && selectedVerlaufVolk) {
+        var bews = bewertungen.filter(function(b){return b.volkId===selectedVerlaufVolk;}).reverse();
+        
+        if (bews.length > 0) {
+            // Durchschnitt über Zeit
+            html += '<div class="card">';
+            html += '<h3 style="margin-bottom:.75rem">Gesamtentwicklung</h3>';
+            var maxH = 120;
+            html += '<div style="display:flex;align-items:end;gap:8px;height:'+maxH+'px;padding:0 .5rem">';
+            bews.forEach(function(b){
+                var schnitt = durchschnitt(b);
+                var h = Math.max(8, (schnitt/5)*maxH);
+                var c = schnitt >= 4 ? '#10b981' : (schnitt >= 3 ? '#F5A623' : '#ef4444');
+                var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
+                html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">';
+                html += '<div style="font-size:.65rem;font-weight:600;color:#1C1410">'+schnitt.toFixed(1)+'</div>';
+                html += '<div style="width:100%;height:'+h+'px;background:'+c+';border-radius:4px 4px 0 0"></div>';
+                html += '<div style="font-size:.6rem;color:#7A6652">'+datum+'</div>';
+                html += '</div>';
+            });
+            html += '</div></div>';
+            
+            // Pro Kriterium
+            html += '<div class="card">';
+            html += '<h3 style="margin-bottom:.75rem">Nach Kriterium</h3>';
+            var letzte = bews[bews.length-1];
+            var erste = bews[0];
+            KRITERIEN.forEach(function(k){
+                var val = letzte[k.key] || 3;
+                var altVal = erste[k.key] || 3;
+                var diff = val - altVal;
+                var trend = diff > 0 ? '<span style="color:#10b981">▲+'+diff+'</span>' : (diff < 0 ? '<span style="color:#ef4444">▼'+diff+'</span>' : '<span style="color:#94a3b8">→</span>');
+                var barColor = val >= 4 ? '#10b981' : (val >= 3 ? '#F5A623' : '#ef4444');
+                
+                html += '<div style="margin-bottom:.75rem">';
+                html += '<div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.25rem">';
+                html += '<span>'+k.label+'</span>';
+                html += '<span><strong>'+val+'/5</strong> '+(bews.length>1?trend:'')+'</span>';
+                html += '</div>';
+                html += '<div style="background:#E8DFD4;height:.5rem;border-radius:.25rem"><div style="background:'+barColor+';height:100%;border-radius:.25rem;width:'+(val/5*100)+'%;transition:width .3s"></div></div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            
+            // Alle Bewertungen
+            html += '<div class="card">';
+            html += '<h3 style="margin-bottom:.75rem">Alle Bewertungen</h3>';
+            bews.reverse().forEach(function(b){
+                var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
+                var schnitt = durchschnitt(b);
+                html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
+                html += '<div><div style="font-weight:500;font-size:.9rem">'+datum+' · '+renderMiniStars(schnitt)+' <span style="font-size:.8rem;color:#7A6652">('+schnitt.toFixed(1)+')</span></div>';
+                if (b.notizen) html += '<div style="font-size:.75rem;color:#94a3b8">'+b.notizen+'</div>';
+                html += '</div>';
+                html += '<div style="display:flex;gap:.25rem">';
+                html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+b.id+'\')">✏️</button>';
+                html += '<button class="btn btn-danger btn-xs" onclick="deleteBewertung(\''+b.id+'\')">🗑️</button>';
+                html += '</div></div>';
+            });
+            html += '</div>';
+        }
+    } else {
+        html += '<div class="card" style="text-align:center;padding:1.5rem;color:#7A6652">';
+        html += '<p>Wähle ein Volk um den Bewertungsverlauf zu sehen.</p></div>';
+    }
+    
+    return html;
+}
+
+var selectedVerlaufVolk = '';
+
+// ============================================
+// HELPERS
+// ============================================
+function durchschnitt(b) {
+    var sum = 0;
+    KRITERIEN.forEach(function(k){ sum += (b[k.key] || 3); });
+    return sum / KRITERIEN.length;
+}
+
+function getBadge(schnitt) {
+    if (schnitt >= 4) return '<span class="badge badge-green">Sehr gut</span>';
+    if (schnitt >= 3) return '<span class="badge badge-yellow">Gut</span>';
+    return '<span class="badge badge-red">Schwach</span>';
+}
+
+function renderMiniStars(schnitt) {
+    var full = Math.round(schnitt);
+    var html = '';
+    for (var i = 1; i <= 5; i++) {
+        html += '<span style="color:'+(i<=full?'#F5A623':'#E8DFD4')+';font-size:.85rem">★</span>';
+    }
+    return html;
+}
+
+// ============================================
+// MODAL
+// ============================================
+function openModal(id, volkId) {
+    editId = id || null;
+    
+    // Volk-Dropdown füllen
+    var sel = document.getElementById('bewVolk');
+    sel.innerHTML = '<option value="">-- Volk wählen --</option>';
+    standorte.forEach(function(s){
+        var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
+        if (sVoelker.length === 0) return;
+        var group = document.createElement('optgroup');
+        group.label = '📍 '+s.name;
+        sVoelker.forEach(function(v){
+            var opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.name;
+            group.appendChild(opt);
+        });
+        sel.appendChild(group);
+    });
+    
+    // Defaults
+    document.getElementById('bewDatum').value = new Date().toISOString().slice(0,10);
+    document.getElementById('bewNotizen').value = '';
+    bewertungWerte = {};
+    KRITERIEN.forEach(function(k){ bewertungWerte[k.key] = 3; });
+    document.getElementById('bewertungModalTitle').textContent = '⭐ Volk bewerten';
+    
+    if (volkId) {
+        sel.value = volkId;
+    }
+    
+    if (id) {
+        var b = bewertungen.find(function(x){return x.id===id;});
+        if (b) {
+            document.getElementById('bewertungModalTitle').textContent = '✏️ Bewertung bearbeiten';
+            sel.value = b.volkId;
+            document.getElementById('bewDatum').value = b.datum;
+            document.getElementById('bewNotizen').value = b.notizen;
+            KRITERIEN.forEach(function(k){ bewertungWerte[k.key] = b[k.key] || 3; });
+        }
+    }
+    
+    renderKriterien();
+    document.getElementById('bewertungModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('bewertungModal').classList.remove('active');
+    editId = null;
+}
+
+function renderKriterien() {
+    var container = document.getElementById('kriterienContainer');
+    var html = '';
+    KRITERIEN.forEach(function(k){
+        var val = bewertungWerte[k.key] || 3;
+        html += '<div class="form-group" style="margin-bottom:.75rem">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<label class="form-label" style="margin:0">'+k.label+'</label>';
+        html += '<span style="font-size:.75rem;color:#7A6652">'+val+'/5</span>';
+        html += '</div>';
+        html += '<div style="font-size:.7rem;color:#94a3b8;margin-bottom:.25rem">'+k.desc+'</div>';
+        html += '<div class="stars" id="stars_'+k.key+'">';
+        for (var i = 1; i <= 5; i++) {
+            html += '<span class="star '+(i<=val?'active':'')+'" onclick="setStar(\''+k.key+'\','+i+')">★</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+    });
+    container.innerHTML = html;
+}
+
+function setStar(key, val) {
+    bewertungWerte[key] = val;
+    renderKriterien();
+}
+
+// ============================================
+// CRUD
+// ============================================
+async function saveBewertung() {
+    var volkId = document.getElementById('bewVolk').value;
+    var datum = document.getElementById('bewDatum').value;
+    var notizen = document.getElementById('bewNotizen').value.trim();
+    
+    if (!volkId || !datum) {
+        alert('Bitte Volk und Datum auswählen!');
+        return;
+    }
+    
+    var v = voelker.find(function(x){return x.id===volkId;});
+    var volkName = v ? v.name : '';
+    var s = v ? standorte.find(function(x){return x.id===v.standortId;}) : null;
+    var standortName = s ? s.name : '';
+    
+    var data = {
+        volk_id: volkId,
+        volk_name: volkName,
+        standort_name: standortName,
+        datum: datum,
+        sanftmut: bewertungWerte.sanftmut,
+        wabensitz: bewertungWerte.wabensitz,
+        schwarmtrieb: bewertungWerte.schwarmtrieb,
+        volksstaerke: bewertungWerte.volksstaerke,
+        winterfestigkeit: bewertungWerte.winterfestigkeit,
+        hygiene: bewertungWerte.hygiene,
+        wabenbau: bewertungWerte.wabenbau,
+        honigfleiss: bewertungWerte.honigfleiss,
+        notizen: notizen
+    };
+    
+    if (editId) {
+        var res = await sb.from('bewertungen').update(data).eq('id', editId);
+        if (res.error) { alert('Fehler: '+res.error.message); return; }
+        
+        var idx = bewertungen.findIndex(function(x){return x.id===editId;});
+        if (idx > -1) {
+            bewertungen[idx] = Object.assign({id:editId, created:bewertungen[idx].created}, {volkId:volkId, volkName:volkName, standortName:standortName, datum:datum, notizen:notizen}, bewertungWerte);
+        }
+        toast('✅ Bewertung aktualisiert');
+    } else {
+        var id = crypto.randomUUID();
+        data.id = id;
+        data.user_id = currentUser.id;
+        var res = await sb.from('bewertungen').insert(data);
+        if (res.error) { alert('Fehler: '+res.error.message); return; }
+        
+        bewertungen.unshift(Object.assign({id:id, created:new Date().toISOString()}, {volkId:volkId, volkName:volkName, standortName:standortName, datum:datum, notizen:notizen}, bewertungWerte));
+        toast('✅ Bewertung gespeichert');
+    }
+    
+    closeModal();
+    render();
+}
+
+async function deleteBewertung(id) {
+    if (!confirm('Bewertung wirklich löschen?')) return;
+    await sb.from('bewertungen').delete().eq('id', id);
+    bewertungen = bewertungen.filter(function(b){return b.id!==id;});
+    toast('🗑️ Bewertung gelöscht');
+    render();
+}
+
+function toast(msg) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(function(){ el.style.display = 'none'; }, 2500);
+}
+
+init();
+</script>
+</body>
+</html>
