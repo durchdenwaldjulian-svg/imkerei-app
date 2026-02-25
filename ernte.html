@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍯 Honigernte – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FFFBF0;min-height:100vh;padding-bottom:2rem}
+        .topbar{background:linear-gradient(135deg,#1C1410 0%,#2D1F15 100%);color:#F5A623;padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:100}
+        .topbar a{color:#F5A623;text-decoration:none;font-size:1.1rem}
+        .topbar h1{font-family:'DM Serif Display',serif;font-size:1.2rem;color:#fff}
+        .container{max-width:800px;margin:0 auto;padding:1rem}
+        .card{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:.625rem 1.25rem;border-radius:.75rem;font-weight:600;border:none;cursor:pointer;font-size:.85rem;transition:all .15s}
+        .btn-primary{background:#F5A623;color:#1C1410}.btn-primary:hover{background:#E09000}
+        .btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+        .btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+        .btn-blue{background:#3b82f6;color:#fff}.btn-blue:hover{background:#2563eb}
+        .btn-sm{padding:.375rem .75rem;font-size:.8rem}
+        .btn-xs{padding:.25rem .5rem;font-size:.75rem}
+        .input{width:100%;padding:.75rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.9rem;background:#fff;font-family:inherit;transition:border .15s}
+        .input:focus{outline:none;border-color:#F5A623}
+        .badge{display:inline-block;padding:.125rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600}
+        .badge-green{background:#d1fae5;color:#065f46}
+        .badge-yellow{background:#fef3c7;color:#92400e}
+        .badge-red{background:#fee2e2;color:#991b1b}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.375rem}
+        .info-box{background:#FFF8EE;border:1px solid #F5A623;border-radius:.5rem;padding:.75rem;font-size:.8rem;color:#7A6652;margin-top:.5rem}
+        .tab-bar{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
+        .tab-btn{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s}
+        .tab-btn.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+        .modal.active{display:flex}
+        .modal-content{background:#fff;border-radius:1rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem;border-bottom:2px solid #FFFBF0}
+        .modal-header h2{font-size:1.1rem}
+        .modal-body{padding:1.25rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
+        .chart-bar{display:flex;align-items:end;gap:4px;height:200px;padding:0 .5rem}
+        .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .chart-col .bar{width:100%;background:linear-gradient(to top,#F5A623,#f7bc5e);border-radius:4px 4px 0 0;min-height:2px;transition:height .5s}
+        .chart-col .label{font-size:.65rem;color:#7A6652;text-align:center;word-break:break-all}
+        .chart-col .value{font-size:.7rem;font-weight:600;color:#1C1410}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <h1 style="flex:1">🍯 Honigernte</h1>
+    <a href="index.html" style="color:#F5A623;text-decoration:none;font-size:.9rem;font-weight:600">← Zurück</a>
+</div>
+
+<div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
+    <div style="text-align:center;color:#7A6652">
+        <div style="font-size:3rem;margin-bottom:1rem">🍯</div>
+        <div>Lade Erntedaten...</div>
+    </div>
+</div>
+
+<div id="app" style="display:none"></div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Ernte erfassen Modal -->
+<div id="ernteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="ernteModalTitle">🍯 Ernte erfassen</h2>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Datum</label>
+                <input type="date" id="ernteDatum" class="input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Standort</label>
+                <select id="ernteStandort" class="input" onchange="updateVoelkerSelect()">
+                    <option value="">-- Alle Standorte --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Volk (optional)</label>
+                <select id="ernteVolk" class="input">
+                    <option value="">-- Ganzer Standort --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Menge (kg)</label>
+                <input type="number" id="ernteMenge" class="input" step="0.1" min="0.1" placeholder="z.B. 12.5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Honigsorte (optional)</label>
+                <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem">
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Blüte</button>
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Linde</button>
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Wald</button>
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Raps</button>
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Akazie</button>
+                    <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4" onclick="document.getElementById('ernteSorte').value=this.textContent">Sommer</button>
+                </div>
+                <input type="text" id="ernteSorte" class="input" placeholder="z.B. Frühtracht, Sommerhonig...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen (optional)</label>
+                <textarea id="ernteNotizen" class="input" rows="2" placeholder="z.B. Wassergehalt, Besonderheiten..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width:100%" onclick="saveErnte()">💾 Ernte speichern</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// SUPABASE
+// ============================================
+const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var currentUser = null;
+var standorte = [];
+var voelker = [];
+var ernten = [];
+var editId = null;
+var activeTab = 'erfassung';
+var selectedYear = new Date().getFullYear();
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+    
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id),
+        sb.from('ernten').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false})
+    ]);
+    
+    standorte = (results[0].data || []).map(function(r){
+        return {id:r.id, name:r.name, lat:r.lat, lng:r.lng};
+    });
+    voelker = (results[1].data || []).map(function(r){
+        return {id:r.id, standortId:r.standort_id, name:r.name};
+    });
+    ernten = (results[2].data || []).map(function(r){
+        return {id:r.id, datum:r.datum, standortId:r.standort_id, standortName:r.standort_name, volkId:r.volk_id, volkName:r.volk_name, menge:parseFloat(r.menge)||0, sorte:r.sorte||'', notizen:r.notizen||'', created:r.created_at};
+    });
+    
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    var html = '<div class="container">';
+    
+    // Tab-Bar
+    html += '<div class="tab-bar">';
+    html += '<button class="tab-btn '+(activeTab==='erfassung'?'active':'')+'" onclick="activeTab=\'erfassung\';render()">🍯 Erfassung</button>';
+    html += '<button class="tab-btn '+(activeTab==='archiv'?'active':'')+'" onclick="activeTab=\'archiv\';render()">📊 Archiv</button>';
+    html += '</div>';
+    
+    if (activeTab === 'erfassung') {
+        html += renderErfassung();
+    } else {
+        html += renderArchiv();
+    }
+    
+    html += '</div>';
+    document.getElementById('app').innerHTML = html;
+}
+
+// ============================================
+// TAB: ERFASSUNG
+// ============================================
+function renderErfassung() {
+    var jahr = new Date().getFullYear();
+    var erntenJahr = ernten.filter(function(e){ return e.datum && e.datum.startsWith(String(jahr)); });
+    var gesamt = erntenJahr.reduce(function(s,e){return s+e.menge;}, 0);
+    
+    var html = '';
+    
+    // Gesamtertrag
+    html += '<div class="card" style="text-align:center">';
+    html += '<h3 style="margin-bottom:.75rem">Gesamtertrag '+jahr+'</h3>';
+    html += '<div style="font-size:3rem;font-weight:bold;color:#F5A623">'+gesamt.toFixed(1)+' kg</div>';
+    html += '<div style="font-size:.85rem;color:#7A6652;margin-top:.5rem">'+erntenJahr.length+' Ernten erfasst</div>';
+    html += '<button class="btn btn-primary" style="margin-top:1rem" onclick="openModal()">+ Neue Ernte erfassen</button>';
+    html += '</div>';
+    
+    // Ertrag nach Standort
+    if (erntenJahr.length > 0) {
+        var nachStandort = {};
+        erntenJahr.forEach(function(e){
+            var key = e.standortName || 'Unbekannt';
+            if (!nachStandort[key]) nachStandort[key] = 0;
+            nachStandort[key] += e.menge;
+        });
+        
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">Nach Standort</h3>';
+        Object.keys(nachStandort).sort(function(a,b){return nachStandort[b]-nachStandort[a];}).forEach(function(name){
+            var kg = nachStandort[name];
+            var pct = gesamt > 0 ? (kg/gesamt*100) : 0;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div style="flex:1"><div style="font-weight:600">📍 '+name+'</div>';
+            html += '<div style="background:#E8DFD4;height:.375rem;border-radius:.25rem;margin-top:.25rem;max-width:200px">';
+            html += '<div style="background:#F5A623;height:100%;border-radius:.25rem;width:'+pct+'%"></div></div></div>';
+            html += '<div style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    // Letzte Ernten
+    html += '<div class="card">';
+    html += '<h3 style="margin-bottom:.75rem">Letzte Ernten</h3>';
+    
+    if (erntenJahr.length === 0) {
+        html += '<div style="text-align:center;padding:1.5rem;color:#7A6652">Noch keine Ernten in '+jahr+' erfasst</div>';
+    } else {
+        erntenJahr.slice(0, 20).forEach(function(e){
+            var datum = new Date(e.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div>';
+            html += '<div style="font-weight:600">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+e.sorte:'')+'</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · 📍 '+(e.standortName||'?')+(e.volkName?' · 🐝 '+e.volkName:'')+'</div>';
+            if (e.notizen) html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.125rem">'+e.notizen+'</div>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:.25rem">';
+            html += '<button class="btn btn-blue btn-xs" onclick="editErnte(\''+e.id+'\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteErnte(\''+e.id+'\')">🗑️</button>';
+            html += '</div></div>';
+        });
+    }
+    html += '</div>';
+    
+    return html;
+}
+
+// ============================================
+// TAB: ARCHIV
+// ============================================
+function renderArchiv() {
+    // Alle Jahre ermitteln
+    var jahre = {};
+    ernten.forEach(function(e){
+        if (e.datum) {
+            var j = parseInt(e.datum.substring(0,4));
+            if (!jahre[j]) jahre[j] = [];
+            jahre[j].push(e);
+        }
+    });
+    var jahreList = Object.keys(jahre).sort(function(a,b){return b-a;});
+    if (jahreList.length === 0) jahreList = [new Date().getFullYear()];
+    
+    var html = '';
+    
+    // Jahres-Auswahl
+    html += '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">';
+    jahreList.forEach(function(j){
+        html += '<button class="btn btn-sm '+(selectedYear==j?'btn-primary':'')+'" style="'+(selectedYear!=j?'background:#fff;border:2px solid #E8DFD4;color:#7A6652':'')+'" onclick="selectedYear='+j+';render()">'+j+'</button>';
+    });
+    html += '</div>';
+    
+    var erntenJahr = jahre[selectedYear] || [];
+    var gesamt = erntenJahr.reduce(function(s,e){return s+e.menge;}, 0);
+    
+    // Jahresübersicht
+    html += '<div class="card" style="text-align:center">';
+    html += '<h3 style="margin-bottom:.5rem">📊 Jahresübersicht '+selectedYear+'</h3>';
+    html += '<div style="font-size:2.5rem;font-weight:bold;color:#F5A623">'+gesamt.toFixed(1)+' kg</div>';
+    html += '<div style="font-size:.85rem;color:#7A6652">'+erntenJahr.length+' Ernten</div>';
+    html += '</div>';
+    
+    // Diagramm: Ertrag pro Monat
+    if (erntenJahr.length > 0) {
+        var monate = {};
+        var monateNamen = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+        for (var m = 0; m < 12; m++) monate[m] = 0;
+        erntenJahr.forEach(function(e){
+            var monat = parseInt(e.datum.substring(5,7)) - 1;
+            monate[monat] += e.menge;
+        });
+        var maxMonat = Math.max.apply(null, Object.values(monate)) || 1;
+        
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:1rem">📅 Ertrag pro Monat</h3>';
+        html += '<div class="chart-bar">';
+        for (var m = 0; m < 12; m++) {
+            var h = monate[m] > 0 ? Math.max(8, (monate[m]/maxMonat)*180) : 0;
+            html += '<div class="chart-col">';
+            if (monate[m] > 0) html += '<div class="value">'+monate[m].toFixed(1)+'</div>';
+            html += '<div class="bar" style="height:'+h+'px;'+(monate[m]===0?'background:#E8DFD4;min-height:4px':'')+'"></div>';
+            html += '<div class="label">'+monateNamen[m]+'</div>';
+            html += '</div>';
+        }
+        html += '</div></div>';
+        
+        // Diagramm: Ertrag pro Standort
+        var nachStandort = {};
+        erntenJahr.forEach(function(e){
+            var key = e.standortName || 'Unbekannt';
+            if (!nachStandort[key]) nachStandort[key] = 0;
+            nachStandort[key] += e.menge;
+        });
+        var standortKeys = Object.keys(nachStandort).sort(function(a,b){return nachStandort[b]-nachStandort[a];});
+        
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:1rem">📍 Ertrag pro Standort</h3>';
+        var maxStandort = nachStandort[standortKeys[0]] || 1;
+        standortKeys.forEach(function(name){
+            var kg = nachStandort[name];
+            var pct = (kg/maxStandort*100);
+            html += '<div style="margin-bottom:.75rem">';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:.25rem"><span style="font-weight:600;font-size:.9rem">'+name+'</span><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</span></div>';
+            html += '<div style="background:#E8DFD4;height:.75rem;border-radius:.375rem"><div style="background:linear-gradient(90deg,#F5A623,#f7bc5e);height:100%;border-radius:.375rem;width:'+pct+'%;transition:width .5s"></div></div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        
+        // Nach Sorte
+        var nachSorte = {};
+        erntenJahr.forEach(function(e){
+            var key = e.sorte || 'Ohne Angabe';
+            if (!nachSorte[key]) nachSorte[key] = 0;
+            nachSorte[key] += e.menge;
+        });
+        var sorteKeys = Object.keys(nachSorte).sort(function(a,b){return nachSorte[b]-nachSorte[a];});
+        
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">🍯 Nach Honigsorte</h3>';
+        sorteKeys.forEach(function(name){
+            var kg = nachSorte[name];
+            var pct = gesamt > 0 ? (kg/gesamt*100) : 0;
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div style="font-weight:500">'+name+'</div>';
+            html += '<div><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</span> <span style="font-size:.75rem;color:#7A6652">('+pct.toFixed(0)+'%)</span></div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    // Jahresvergleich
+    if (jahreList.length > 1) {
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:1rem">📈 Jahresvergleich</h3>';
+        var maxJahr = 0;
+        jahreList.forEach(function(j){ 
+            var s = (jahre[j]||[]).reduce(function(s,e){return s+e.menge;},0);
+            if (s > maxJahr) maxJahr = s;
+        });
+        jahreList.forEach(function(j){
+            var kg = (jahre[j]||[]).reduce(function(s,e){return s+e.menge;},0);
+            var pct = maxJahr > 0 ? (kg/maxJahr*100) : 0;
+            var anzahl = (jahre[j]||[]).length;
+            html += '<div style="margin-bottom:.75rem">';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:.25rem"><span style="font-weight:600">'+j+'</span><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg <span style="font-size:.75rem;font-weight:400;color:#7A6652">('+anzahl+' Ernten)</span></span></div>';
+            html += '<div style="background:#E8DFD4;height:.75rem;border-radius:.375rem"><div style="background:linear-gradient(90deg,#F5A623,#f7bc5e);height:100%;border-radius:.375rem;width:'+pct+'%;transition:width .5s"></div></div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+    
+    // Alle Ernten des Jahres
+    if (erntenJahr.length > 0) {
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">📋 Alle Ernten '+selectedYear+'</h3>';
+        erntenJahr.sort(function(a,b){return b.datum.localeCompare(a.datum);}).forEach(function(e){
+            var datum = new Date(e.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
+            html += '<div><div style="font-weight:500;font-size:.9rem">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+e.sorte:'')+'</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · '+(e.standortName||'?')+(e.volkName?' · '+e.volkName:'')+'</div></div>';
+            html += '<div style="display:flex;gap:.25rem">';
+            html += '<button class="btn btn-blue btn-xs" onclick="editErnte(\''+e.id+'\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteErnte(\''+e.id+'\')">🗑️</button>';
+            html += '</div></div>';
+        });
+        html += '</div>';
+    } else {
+        html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">';
+        html += '<div style="font-size:2rem;margin-bottom:.5rem">📊</div>';
+        html += '<p>Keine Ernten in '+selectedYear+' erfasst.</p></div>';
+    }
+    
+    return html;
+}
+
+// ============================================
+// MODAL
+// ============================================
+function openModal(id) {
+    editId = id || null;
+    document.getElementById('ernteDatum').value = new Date().toISOString().slice(0,10);
+    document.getElementById('ernteMenge').value = '';
+    document.getElementById('ernteSorte').value = '';
+    document.getElementById('ernteNotizen').value = '';
+    document.getElementById('ernteModalTitle').textContent = '🍯 Ernte erfassen';
+    
+    // Standort-Dropdown füllen
+    var sel = document.getElementById('ernteStandort');
+    sel.innerHTML = '<option value="">-- Standort wählen --</option>';
+    standorte.forEach(function(s){
+        sel.innerHTML += '<option value="'+s.id+'">'+s.name+'</option>';
+    });
+    
+    document.getElementById('ernteVolk').innerHTML = '<option value="">-- Ganzer Standort --</option>';
+    
+    if (id) {
+        var e = ernten.find(function(x){return x.id===id;});
+        if (e) {
+            document.getElementById('ernteModalTitle').textContent = '✏️ Ernte bearbeiten';
+            document.getElementById('ernteDatum').value = e.datum;
+            document.getElementById('ernteMenge').value = e.menge;
+            document.getElementById('ernteSorte').value = e.sorte;
+            document.getElementById('ernteNotizen').value = e.notizen;
+            if (e.standortId) {
+                sel.value = e.standortId;
+                updateVoelkerSelect();
+                if (e.volkId) document.getElementById('ernteVolk').value = e.volkId;
+            }
+        }
+    }
+    
+    document.getElementById('ernteModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('ernteModal').classList.remove('active');
+    editId = null;
+}
+
+function updateVoelkerSelect() {
+    var standortId = document.getElementById('ernteStandort').value;
+    var sel = document.getElementById('ernteVolk');
+    sel.innerHTML = '<option value="">-- Ganzer Standort --</option>';
+    if (standortId) {
+        voelker.filter(function(v){return v.standortId===standortId;}).forEach(function(v){
+            sel.innerHTML += '<option value="'+v.id+'">'+v.name+'</option>';
+        });
+    }
+}
+
+// ============================================
+// CRUD
+// ============================================
+async function saveErnte() {
+    var datum = document.getElementById('ernteDatum').value;
+    var standortId = document.getElementById('ernteStandort').value;
+    var volkId = document.getElementById('ernteVolk').value;
+    var menge = parseFloat(document.getElementById('ernteMenge').value);
+    var sorte = document.getElementById('ernteSorte').value.trim();
+    var notizen = document.getElementById('ernteNotizen').value.trim();
+    
+    if (!datum || !menge || menge <= 0) {
+        alert('Bitte Datum und Menge (> 0 kg) eingeben!');
+        return;
+    }
+    if (!standortId) {
+        alert('Bitte einen Standort wählen!');
+        return;
+    }
+    
+    var standortName = '';
+    var s = standorte.find(function(x){return x.id===standortId;});
+    if (s) standortName = s.name;
+    
+    var volkName = '';
+    if (volkId) {
+        var v = voelker.find(function(x){return x.id===volkId;});
+        if (v) volkName = v.name;
+    }
+    
+    if (editId) {
+        // Update
+        var res = await sb.from('ernten').update({
+            datum: datum,
+            standort_id: standortId,
+            standort_name: standortName,
+            volk_id: volkId || null,
+            volk_name: volkName || null,
+            menge: menge,
+            sorte: sorte,
+            notizen: notizen
+        }).eq('id', editId);
+        
+        if (res.error) { alert('Fehler: '+res.error.message); return; }
+        
+        var idx = ernten.findIndex(function(x){return x.id===editId;});
+        if (idx > -1) {
+            ernten[idx] = {id:editId, datum:datum, standortId:standortId, standortName:standortName, volkId:volkId, volkName:volkName, menge:menge, sorte:sorte, notizen:notizen, created:ernten[idx].created};
+        }
+        toast('✅ Ernte aktualisiert');
+    } else {
+        // Insert
+        var id = crypto.randomUUID();
+        var res = await sb.from('ernten').insert({
+            id: id,
+            user_id: currentUser.id,
+            datum: datum,
+            standort_id: standortId,
+            standort_name: standortName,
+            volk_id: volkId || null,
+            volk_name: volkName || null,
+            menge: menge,
+            sorte: sorte,
+            notizen: notizen
+        });
+        
+        if (res.error) { alert('Fehler: '+res.error.message); return; }
+        
+        ernten.unshift({id:id, datum:datum, standortId:standortId, standortName:standortName, volkId:volkId, volkName:volkName, menge:menge, sorte:sorte, notizen:notizen, created:new Date().toISOString()});
+        toast('✅ Ernte gespeichert');
+    }
+    
+    closeModal();
+    render();
+}
+
+function editErnte(id) {
+    openModal(id);
+}
+
+async function deleteErnte(id) {
+    if (!confirm('Ernte wirklich löschen?')) return;
+    
+    await sb.from('ernten').delete().eq('id', id);
+    ernten = ernten.filter(function(e){return e.id!==id;});
+    toast('🗑️ Ernte gelöscht');
+    render();
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function toast(msg) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(function(){ el.style.display = 'none'; }, 2500);
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
