@@ -5,7 +5,7 @@
 
 const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 
@@ -90,4 +90,14 @@ function showToast(msg, typ, dauer) {
     } else {
         setTimeout(function(){ el.classList.remove('show'); }, dauer);
     }
+}
+
+// ============================================
+// PUBLIC CLIENT (ohne Session, für öffentliche Seiten)
+// Verwendet von: trachtkarte.html, imkermeister.html
+// ============================================
+function createPublicClient() {
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
 }
