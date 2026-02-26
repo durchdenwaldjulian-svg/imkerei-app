@@ -88,6 +88,7 @@ var bewertungen = [];
 var editId = null;
 var activeTab = 'bewerten';
 var bewertungWerte = {};
+var collapsedStandorte = [];
 
 // ============================================
 // INIT
@@ -100,7 +101,8 @@ async function init() {
     var results = await Promise.all([
         sb.from('standorte').select('*').eq('user_id', currentUser.id),
         sb.from('voelker').select('*').eq('user_id', currentUser.id),
-        sb.from('bewertungen').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false})
+        sb.from('bewertungen').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false}),
+        sb.from('profiles').select('bewertung_collapsed').eq('id', currentUser.id).single()
     ]);
     
     standorte = (results[0].data || []).map(function(r){
@@ -117,6 +119,11 @@ async function init() {
             wabenbau:r.wabenbau||3, honigfleiss:r.honigfleiss||3, notizen:r.notizen||'', created:r.created_at
         };
     });
+    
+    // Einklapp-Zustand laden
+    if (results[3].data && results[3].data.bewertung_collapsed) {
+        collapsedStandorte = results[3].data.bewertung_collapsed;
+    }
     
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -159,9 +166,16 @@ function renderBewerten() {
         var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
         if (sVoelker.length === 0) return;
         
-        html += '<div class="card">';
-        html += '<h3 style="margin-bottom:.75rem">📍 '+s.name+'</h3>';
+        var isCollapsed = collapsedStandorte.indexOf(s.id) > -1;
+        var pfeil = isCollapsed ? '▶' : '▼';
         
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem;cursor:pointer;user-select:none;display:flex;align-items:center;gap:.5rem" onclick="toggleStandort(\''+s.id+'\')">';
+        html += '<span style="font-size:.8rem;color:#7A6652;width:1rem;text-align:center">'+pfeil+'</span>';
+        html += '📍 '+s.name+' <span style="font-size:.75rem;color:#7A6652;font-weight:400">('+sVoelker.length+' Völker)</span>';
+        html += '</h3>';
+        
+        if (!isCollapsed) {
         sVoelker.forEach(function(v){
             // Letzte Bewertung für dieses Volk
             var letzte = bewertungen.find(function(b){return b.volkId===v.id;});
@@ -184,6 +198,7 @@ function renderBewerten() {
             html += '</div>';
             html += '</div>';
         });
+        }
         
         html += '</div>';
     });
@@ -567,6 +582,19 @@ function toast(msg) {
     el.textContent = msg;
     el.style.display = 'block';
     setTimeout(function(){ el.style.display = 'none'; }, 2500);
+}
+
+function toggleStandort(id) {
+    var idx = collapsedStandorte.indexOf(id);
+    if (idx > -1) {
+        collapsedStandorte.splice(idx, 1);
+    } else {
+        collapsedStandorte.push(id);
+    }
+    // In Supabase speichern
+    sb.from('profiles').update({bewertung_collapsed: collapsedStandorte}).eq('id', currentUser.id)
+        .then(function(res){ if(res.error) console.error('Collapse speichern Fehler:', res.error); });
+    render();
 }
 
 init();
