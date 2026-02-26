@@ -3802,6 +3802,10 @@ const packlisteMod = {
         if (item) { 
             item.checked = !item.checked; 
             console.log('[Packliste] Toggle:', id, '→ checked:', item.checked);
+            // Auth prüfen
+            sb.auth.getSession().then(function(sess){
+                console.log('[Packliste] Session:', sess.data.session ? 'JA (uid: '+sess.data.session.user.id+')' : 'NEIN');
+            });
             sb.from('packliste').update({checked: item.checked}).eq('id', id).select()
                 .then(function(res){
                     console.log('[Packliste] Response data:', res.data, 'error:', res.error);
