@@ -3939,6 +3939,14 @@ const trachtkalenderMod = {
     async saveTracht() {
         var typ = document.getElementById('trachtTypE').value;
         var standort = document.getElementById('trachtStandortE').value.trim();
+        // Fallback: Wenn Textfeld leer aber Dropdown gewählt, Standort-Name übernehmen
+        if (!standort) {
+            var selId = document.getElementById('trachtStandortSelect').value;
+            if (selId) {
+                var selStandort = app.data.standorte.find(function(x){return x.id===selId;});
+                if (selStandort) standort = selStandort.name;
+            }
+        }
         var beginn = document.getElementById('trachtBeginnE').value;
         var ende = document.getElementById('trachtEndeE').value;
         var ertrag = parseFloat(document.getElementById('trachtErtragE').value) || 0;
