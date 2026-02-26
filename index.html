@@ -3956,8 +3956,13 @@ const trachtkalenderMod = {
         var lat = parseFloat(latRaw) || null;
         var lng = parseFloat(lngRaw) || null;
         var share = document.getElementById('trachtShareE').checked;
+        // Wenn Position gesetzt aber kein Standort-Name: automatisch generieren
+        if (!standort && lat && lng) {
+            standort = 'Position '+lat.toFixed(4)+', '+lng.toFixed(4);
+        }
         console.log('SAVE TRACHT: typ='+typ+' standort='+standort+' latRaw='+latRaw+' lngRaw='+lngRaw+' lat='+lat+' lng='+lng+' share='+share);
-        if (!typ || !standort) { alert('Bitte Typ und Standort eingeben!'); return; }
+        if (!typ) { alert('Bitte Tracht-Typ wählen!'); return; }
+        if (!standort) { alert('Bitte Standort eingeben oder Position auf der Karte klicken!'); return; }
         
         if (this._editId) {
             // Bestehende Tracht aktualisieren
