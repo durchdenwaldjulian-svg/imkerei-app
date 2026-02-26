@@ -3795,7 +3795,27 @@ const packlisteMod = {
         this.speichern();
     },
     
-    speichern() { /* Supabase-Updates passieren direkt in toggle/changeMenge/etc */ },
+    speichern() {
+        if (!currentUser) return;
+        var rows = this.items.map(function(item){
+            return {
+                id: item.id,
+                user_id: currentUser.id,
+                kategorie: item.kategorie,
+                name: item.name,
+                checked: item.checked || false,
+                menge: item.menge || 1,
+                ist_schnell: item.istSchnell || false,
+                schnell_typ: item.schnellTyp || null
+            };
+        });
+        if (rows.length > 0) {
+            sb.from('packliste').upsert(rows).then(function(res){
+                if (res.error) console.error('[Packliste] Speichern Fehler:', res.error);
+                else console.log('[Packliste] ✅ ' + rows.length + ' Items in Supabase gespeichert');
+            });
+        }
+    },
     
     toggle(id) {
         var item = this.items.find(function(i){return i.id === id;});
