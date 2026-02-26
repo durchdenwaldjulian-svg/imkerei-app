@@ -3801,8 +3801,14 @@ const packlisteMod = {
         var item = this.items.find(function(i){return i.id === id;});
         if (item) { 
             item.checked = !item.checked; 
-            this.speichern(); 
-            db.update('packliste', {checked: item.checked}, id);
+            console.log('[Packliste] Toggle:', id, '→ checked:', item.checked);
+            sb.from('packliste').update({checked: item.checked}).eq('id', id).select()
+                .then(function(res){
+                    console.log('[Packliste] Response data:', res.data, 'error:', res.error);
+                    if(res.error) console.error('[Packliste] ❌', res.error.message);
+                    else if(!res.data || res.data.length === 0) console.warn('[Packliste] ⚠️ Kein Datensatz aktualisiert!');
+                    else console.log('[Packliste] ✅ Gespeichert');
+                });
             app.render(); 
         }
     },
