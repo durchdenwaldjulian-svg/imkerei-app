@@ -777,7 +777,7 @@
     <button class="nav-item" data-page="standorte">📍 Standorte</button>
     <button class="nav-item" data-page="aufgaben">📝 Aufgaben</button>
     <div class="nav-section">Völker</div>
-    <button class="nav-item" data-page="koeniginnen">👑 Königinnenzucht</button>
+    <a href="zuchtplan.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">👑 Königinnenzucht</a>
     <button class="nav-item" data-page="behandlung">💉 Behandlungen</button>
     <a href="bewertung.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">⭐ Völker-Bewertung</a>
     <a href="assistent.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🤖 Assistent</a>
@@ -820,7 +820,7 @@
         </div>
         <div class="mobile-menu-section">Völker</div>
         <div class="mobile-menu-grid">
-            <button class="mobile-menu-item" data-mmpage="koeniginnen"><span class="mm-icon">👑</span>Zucht</button>
+            <a href="zuchtplan.html" class="mobile-menu-item"><span class="mm-icon">👑</span>Zucht</a>
             <button class="mobile-menu-item" data-mmpage="behandlung"><span class="mm-icon">💉</span>Behandlung</button>
             <a href="bewertung.html" class="mobile-menu-item"><span class="mm-icon">⭐</span>Bewertung</a>
         </div>
@@ -2204,7 +2204,7 @@ const app={
             standorte: this.selectedStandortId ? this.rStandortDetails.bind(this) : this.rStandorte.bind(this),
             aufgaben: this.rAufgaben.bind(this),
             kosten: this.rKosten.bind(this),
-            koeniginnen: this.rZuchtplanEnhanced.bind(this),
+            koeniginnen: function(){ window.location.href='zuchtplan.html'; return '<div class="container"><p>Weiterleitung...</p></div>'; },
             tracht: this.rTracht.bind(this),
             ernte: this.rErnte.bind(this),
             tagebuch: this.rPlaceholder.bind(this),
