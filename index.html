@@ -1069,6 +1069,15 @@ const autoBackup = {
             await sb.from('trachten').insert(d.trachten.map(function(t){
                 return {id:t.id, user_id:currentUser.id, typ:t.typ, standort:t.standort, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, lat:t.lat||null, lng:t.lng||null, shared:t.shared||false, created_at:t.created};
             }));
+            // Geteilte Trachten auch in trachten_shared wiederherstellen
+            var geteilte = d.trachten.filter(function(t){ return t.shared && t.lat && t.lng; });
+            if (geteilte.length > 0) {
+                await sb.from('trachten_shared').delete().eq('user_id', currentUser.id);
+                var userName = app.data.user ? (app.data.user.name || app.data.user.email || 'Anonym') : 'Anonym';
+                await sb.from('trachten_shared').insert(geteilte.map(function(t){
+                    return {id:t.id, user_id:currentUser.id, user_name:userName, typ:t.typ, standort:t.standort, lat:t.lat, lng:t.lng, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, jahr:new Date().getFullYear()};
+                }));
+            }
         }
         if (d.packliste && d.packliste.length) {
             await sb.from('packliste').delete().eq('user_id', currentUser.id);
