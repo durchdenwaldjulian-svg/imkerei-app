@@ -131,31 +131,15 @@ sb = createPublicClient();
 // Prüfe ob User eingeloggt ist (für Lösch-Button)
 var loggedInUserId = null;
 
-// Backup ins autoBackup-System (localStorage) speichern
-function backupTrachten(trachten, grund) {
-    try {
-        var backup = {
-            datum: new Date().toISOString(),
-            grund: grund,
-            version: 1,
-            daten: {
-                trachten: trachten
-            }
-        };
-        var backups = JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
-        backups.unshift(backup);
-        if (backups.length > 10) backups = backups.slice(0, 10);
-        localStorage.setItem('imkerei_backups', JSON.stringify(backups));
-        console.log('✅ Trachten-Backup erstellt:', grund, '(' + trachten.length + ' Einträge)');
-    } catch(e) {
-        console.error('Backup Fehler:', e);
-    }
+// Log vor dem Entfernen (kein autoBackup, da Trachtkarte keinen Zugriff auf alle App-Daten hat)
+function logTrachtenEntfernt(trachten, grund) {
+    console.log('🗑️ ' + grund + ':', trachten.length + ' Einträge von der Karte entfernt');
 }
 
 // Einzelne geteilte Tracht von der Karte entfernen
 async function deleteSharedTracht(id) {
     var tracht = allTrachten.find(function(t){ return t.id === id; });
-    if (tracht) backupTrachten([tracht], 'Geteilte Tracht entfernt: ' + tracht.typ);
+    if (tracht) logTrachtenEntfernt([tracht], 'Geteilte Tracht entfernt: ' + tracht.typ);
     var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     var result = await authSb.from('trachten_shared').delete().eq('id', id);
     if (result.error) { alert('Fehler: ' + result.error.message); return; }
@@ -172,7 +156,7 @@ async function deleteAllMyTrachten() {
     if (!loggedInUserId) { alert('Du bist nicht eingeloggt.'); return; }
     var meine = allTrachten.filter(function(t){ return t.user_id === loggedInUserId; });
     if (meine.length === 0) { alert('Keine geteilten Trachten vorhanden.'); return; }
-    backupTrachten(meine, 'Alle geteilten Trachten entfernt (' + meine.length + ')');
+    logTrachtenEntfernt(meine, 'Alle geteilten Trachten entfernt (' + meine.length + ')');
     var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // Aus trachten_shared löschen
     var result = await authSb.from('trachten_shared').delete().eq('user_id', loggedInUserId);
