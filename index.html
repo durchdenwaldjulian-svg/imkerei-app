@@ -21,7 +21,7 @@
         .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
         .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
         .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
         .nav-item:hover{background:rgba(245,166,35,0.06)}
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         .footer{position:fixed;left:220px;bottom:0;right:0;background:#FFFBF0;border-top:1px solid rgba(245,166,35,0.12);padding:.4rem;text-align:center;font-size:.7rem;color:#7A6652;z-index:40}
@@ -728,29 +728,29 @@
         <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
     </div>
     <div class="nav-section">Übersicht</div>
-    <button class="nav-item active" data-page="heute">📅 Heute</button>
-    <button class="nav-item" data-page="standorte">📍 Standorte</button>
-    <button class="nav-item" data-page="aufgaben">📝 Aufgaben</button>
+    <a href="index.html#heute" class="nav-item active">📅 Heute</a>
+    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
+    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
     <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">👑 Königinnenzucht</a>
-    <button class="nav-item" data-page="behandlung">💉 Behandlungen</button>
-    <a href="bewertung.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">⭐ Völker-Bewertung</a>
-    <a href="assistent.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🤖 Assistent</a>
-    <a href="bestandsbuch.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">📋 Bestandsbuch</a>
+    <a href="zuchtplan.html" class="nav-item">👑 Königinnenzucht</a>
+    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
+    <a href="bewertung.html" class="nav-item">⭐ Völker-Bewertung</a>
+    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
+    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
     <div class="nav-section">Ernte & Planung</div>
-    <a href="ernte.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🍯 Honigernte</a>
-    <button class="nav-item" data-page="tracht">🌸 Tracht</button>
-    <button class="nav-item" data-page="packliste">📦 Packliste</button>
+    <a href="ernte.html" class="nav-item">🍯 Honigernte</a>
+    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
+    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
     <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">💬 Forum</a>
+    <a href="forum.html" class="nav-item">💬 Forum</a>
     <div class="nav-section">Verwaltung</div>
-    <button class="nav-item" data-page="kosten">💰 Kosten</button>
-    <button class="nav-item" data-page="einstellungen">⚙️ Einstellungen</button>
+    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
     <div style="flex:1"></div>
     <div class="nav-section">Rechtliches</div>
     <a href="impressum.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
     <a href="datenschutz.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
     <a href="agb.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
+    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
     <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
 </nav>
 
@@ -1034,10 +1034,10 @@ async function startApp() {
     // Hash-Navigation: z.B. index.html#tracht → direkt zur Tracht-Seite
     if (_startPageHash && ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'].indexOf(_startPageHash) > -1) {
         app.page = _startPageHash;
-        // Aktiven Nav-Button setzen
-        document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.remove('active'); });
-        var navBtn = document.querySelector('.nav-item[data-page="'+_startPageHash+'"]');
-        if (navBtn) navBtn.classList.add('active');
+        // Aktiven Nav-Link setzen
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){ b.classList.remove('active'); });
+        var navLink = document.querySelector('.nav .nav-item[href="index.html#'+_startPageHash+'"]');
+        if (navLink) navLink.classList.add('active');
         history.replaceState(null, '', window.location.pathname); // Hash sauber entfernen
     }
     
@@ -1325,12 +1325,18 @@ const app={
     
     initUI(){
         const self=this;
-        document.querySelectorAll('.nav-item[data-page]').forEach(function(btn){
-            btn.addEventListener('click',function(){
-                document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-                btn.classList.add('active');
-                self.page=btn.dataset.page;
+        
+        // Desktop-Sidebar: <a href="index.html#page"> Links abfangen
+        document.querySelectorAll('.nav .nav-item[href^="index.html#"]').forEach(function(link){
+            link.addEventListener('click',function(e){
+                e.preventDefault();
+                var page = link.getAttribute('href').replace('index.html#','');
+                document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+                link.classList.add('active');
+                self.page = page;
+                window.location.hash = page;
                 self.render();
+                window.scrollTo(0,0);
             });
         });
         
@@ -4448,9 +4454,9 @@ document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn
     btn.addEventListener('click', function(){
         var page = btn.dataset.mmpage;
         // Desktop nav sync
-        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-        var deskBtn = document.querySelector('.nav-item[data-page="'+page+'"]');
-        if(deskBtn) deskBtn.classList.add('active');
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+        var deskLink = document.querySelector('.nav .nav-item[href="index.html#'+page+'"]');
+        if(deskLink) deskLink.classList.add('active');
         app.page = page;
         app.render();
         mobileMenuClose();
@@ -4461,9 +4467,9 @@ document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn
 document.querySelectorAll('.mobile-nav-btn[data-mpage]').forEach(function(btn){
     btn.addEventListener('click', function(){
         var page = btn.dataset.mpage;
-        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-        var deskBtn = document.querySelector('.nav-item[data-page="'+page+'"]');
-        if(deskBtn) deskBtn.classList.add('active');
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+        var deskLink = document.querySelector('.nav .nav-item[href="index.html#'+page+'"]');
+        if(deskLink) deskLink.classList.add('active');
         app.page = page;
         app.render();
         updateMobileNav(page);
@@ -4507,8 +4513,8 @@ function updateMobileNav(page){
         if (diffX < 0) { newIdx = idx + 1; } else { newIdx = idx - 1; }
         if (newIdx < 0 || newIdx >= swipePages.length) return;
         
-        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
-        var btn = document.querySelector('.nav-item[data-page="'+swipePages[newIdx]+'"]');
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+        var btn = document.querySelector('.nav .nav-item[href="index.html#'+swipePages[newIdx]+'"]');
         if (btn) btn.classList.add('active');
         app.page = swipePages[newIdx];
         app.render();
