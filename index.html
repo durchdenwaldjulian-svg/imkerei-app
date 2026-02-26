@@ -488,51 +488,6 @@
     </div>
 </div>
 
-<!-- Zuchtplan Modal (enhanced) -->
-<div id="zuchtModalEnhanced" class="modal modal-center">
-    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
-        <div class="modal-header">
-            <h2 id="zuchtModalEnhancedTitle">👑 Neuer Zuchtplan</h2>
-            <button class="close-btn" onclick="zuchtplanMod.closeModal()">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Königin Name/Nummer *</label>
-                <input type="text" id="zuchtNameE" class="input" placeholder="z.B. Königin 2025-1">
-            </div>
-            <div class="form-group">
-                <label class="form-label">📦 Sammelbrutableger erstellt *</label>
-                <input type="date" id="zuchtSammelE" class="input" onchange="zuchtplanMod.berechneAlles()">
-                <div class="info-box">💡 Startpunkt</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">🔬 Umlarven - Tage nach Sammelbrut</label>
-                <div class="tage-counter">
-                    <button class="counter-btn" onclick="zuchtplanMod.changeTage('umlarven',-1)">−</button>
-                    <div class="counter-value" id="tageUmlarvenE">4</div>
-                    <button class="counter-btn" onclick="zuchtplanMod.changeTage('umlarven',1)">+</button>
-                    <div class="counter-label">Tage</div>
-                </div>
-                <input type="date" id="zuchtUmlarvenE" class="input" style="margin-top:.5rem" disabled>
-            </div>
-            <div class="form-group">
-                <label class="form-label">👑 Zusetzen - Tage nach Umlarven</label>
-                <div class="tage-counter">
-                    <button class="counter-btn" onclick="zuchtplanMod.changeTage('zusetzen',-1)">−</button>
-                    <div class="counter-value" id="tageZusetzenE">12</div>
-                    <button class="counter-btn" onclick="zuchtplanMod.changeTage('zusetzen',1)">+</button>
-                    <div class="counter-label">Tage</div>
-                </div>
-                <input type="date" id="zuchtZusetzenE" class="input" style="margin-top:.5rem" disabled>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Notizen</label>
-                <textarea id="zuchtNotizenE" class="input" placeholder="Linie, Herkunft..."></textarea>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="zuchtplanMod.saveZucht()">Zuchtplan speichern</button>
-        </div>
-    </div>
-</div>
 
 <!-- Tracht Modal -->
 <div id="trachtModalEnhanced" class="modal modal-center">
@@ -777,7 +732,7 @@
     <button class="nav-item" data-page="standorte">📍 Standorte</button>
     <button class="nav-item" data-page="aufgaben">📝 Aufgaben</button>
     <div class="nav-section">Völker</div>
-    <button class="nav-item" data-page="koeniginnen">👑 Königinnenzucht</button>
+    <a href="zuchtplan.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">👑 Königinnenzucht</a>
     <button class="nav-item" data-page="behandlung">💉 Behandlungen</button>
     <a href="bewertung.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">⭐ Völker-Bewertung</a>
     <a href="assistent.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🤖 Assistent</a>
@@ -786,10 +741,16 @@
     <a href="ernte.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🍯 Honigernte</a>
     <button class="nav-item" data-page="tracht">🌸 Tracht</button>
     <button class="nav-item" data-page="packliste">📦 Packliste</button>
+    <div class="nav-section">Community</div>
+    <a href="forum.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">💬 Forum</a>
     <div class="nav-section">Verwaltung</div>
     <button class="nav-item" data-page="kosten">💰 Kosten</button>
-    <div style="flex:1"></div>
     <button class="nav-item" data-page="einstellungen">⚙️ Einstellungen</button>
+    <div style="flex:1"></div>
+    <div class="nav-section">Rechtliches</div>
+    <a href="impressum.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
+    <a href="datenschutz.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
+    <a href="agb.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
     <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
 </nav>
 
@@ -818,7 +779,7 @@
         </div>
         <div class="mobile-menu-section">Völker</div>
         <div class="mobile-menu-grid">
-            <button class="mobile-menu-item" data-mmpage="koeniginnen"><span class="mm-icon">👑</span>Zucht</button>
+            <a href="zuchtplan.html" class="mobile-menu-item"><span class="mm-icon">👑</span>Zucht</a>
             <button class="mobile-menu-item" data-mmpage="behandlung"><span class="mm-icon">💉</span>Behandlung</button>
             <a href="bewertung.html" class="mobile-menu-item"><span class="mm-icon">⭐</span>Bewertung</a>
         </div>
@@ -834,10 +795,20 @@
             <button class="mobile-menu-item" data-mmpage="packliste"><span class="mm-icon">📦</span>Packliste</button>
             <button class="mobile-menu-item" data-mmpage="kosten"><span class="mm-icon">💰</span>Kosten</button>
         </div>
+        <div class="mobile-menu-section">Community</div>
+        <div class="mobile-menu-grid">
+            <a href="forum.html" class="mobile-menu-item"><span class="mm-icon">💬</span>Forum</a>
+        </div>
         <div class="mobile-menu-section">Verwaltung</div>
         <div class="mobile-menu-grid">
             <button class="mobile-menu-item" data-mmpage="einstellungen"><span class="mm-icon">⚙️</span>Einstellungen</button>
             <button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();doLogout()"><span class="mm-icon">🚪</span>Abmelden</button>
+        </div>
+        <div class="mobile-menu-section">Rechtliches</div>
+        <div class="mobile-menu-grid">
+            <a href="impressum.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">📄</span>Impressum</a>
+            <a href="datenschutz.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">🔒</span>Datenschutz</a>
+            <a href="agb.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">📋</span>AGB</a>
         </div>
     </div>
 </div>
@@ -1061,7 +1032,7 @@ async function startApp() {
     app.initUI();
     
     // Hash-Navigation: z.B. index.html#tracht → direkt zur Tracht-Seite
-    if (_startPageHash && ['heute','standorte','aufgaben','voelker','koeniginnen','behandlung','tracht','packliste','kosten','einstellungen'].indexOf(_startPageHash) > -1) {
+    if (_startPageHash && ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'].indexOf(_startPageHash) > -1) {
         app.page = _startPageHash;
         // Aktiven Nav-Button setzen
         document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.remove('active'); });
@@ -1541,10 +1512,6 @@ const app={
             document.getElementById('volkName').value = '';
             document.getElementById('volkNotizen').value = '';
             document.getElementById('volkHonig').value = '';
-        }else if(id === 'zuchtModal'){
-            this.editZuchtId = null;
-            document.getElementById('zuchtName').value = '';
-            document.getElementById('zuchtNotizen').value = '';
         }else if(id === 'trachtModal'){
             document.getElementById('trachtStandort').value = '';
             document.getElementById('trachtErtrag').value = '';
@@ -2063,63 +2030,13 @@ const app={
         }
     },
     
-    // === ZUCHTPLAN ===
+    // === ZUCHTPLAN === (jetzt in zuchtplan.html)
     openZuchtModal(id){
-        if(id){
-            const z = this.data.zuchtplaene.find(function(x){return x.id === id;});
-            if(z){
-                this.editZuchtId = id;
-                document.getElementById('zuchtName').value = z.name;
-                document.getElementById('zuchtSammelbrut').value = new Date(z.sammelbrut).toISOString().split('T')[0];
-                document.getElementById('zuchtUmlarven').value = new Date(z.umlarven).toISOString().split('T')[0];
-                document.getElementById('zuchtZusetzen').value = new Date(z.zusetzen).toISOString().split('T')[0];
-                document.getElementById('zuchtNotizen').value = z.notizen || '';
-            }
-        }else{
-            this.editZuchtId = null;
-        }
-        this.openModal('zuchtModal');
+        window.location.href = 'zuchtplan.html';
     },
     
     saveZucht(){
-        const name = document.getElementById('zuchtName').value.trim();
-        const sammelbrut = document.getElementById('zuchtSammelbrut').value;
-        const umlarven = document.getElementById('zuchtUmlarven').value;
-        const zusetzen = document.getElementById('zuchtZusetzen').value;
-        const notizen = document.getElementById('zuchtNotizen').value.trim();
-        
-        if(!name || !sammelbrut){
-            alert('Bitte Namen und Sammelbrut-Datum eingeben!');
-            return;
-        }
-        
-        if(!this.data.zuchtplaene) this.data.zuchtplaene = [];
-        
-        if(this.editZuchtId){
-            const z = this.data.zuchtplaene.find(function(x){return x.id === app.editZuchtId;});
-            if(z){
-                z.name = name;
-                z.sammelbrut = new Date(sammelbrut).getTime();
-                z.umlarven = umlarven ? new Date(umlarven).getTime() : null;
-                z.zusetzen = zusetzen ? new Date(zusetzen).getTime() : null;
-                z.notizen = notizen;
-            }
-        }else{
-            this.data.zuchtplaene.push({
-                id: 'z' + this.uid(),
-                name: name,
-                sammelbrut: new Date(sammelbrut).getTime(),
-                umlarven: umlarven ? new Date(umlarven).getTime() : null,
-                zusetzen: zusetzen ? new Date(zusetzen).getTime() : null,
-                notizen: notizen,
-                status: 'geplant',
-                created: Date.now()
-            });
-        }
-        
-        this.save();
-        this.closeModal('zuchtModal');
-        this.render();
+        // Nicht mehr verwendet – Zuchtplan-Verwaltung ist in zuchtplan.html
     },
     
     // === TRACHT === (wird über trachtkalenderMod.saveTracht() gesteuert)
@@ -2712,87 +2629,9 @@ const app={
     },
     
     rZuchtplan(){
-        const self = this;
-        if(!this.data.zuchtplaene) this.data.zuchtplaene = [];
-        const plaene = this.data.zuchtplaene.sort(function(a,b){return b.created - a.created;});
-        
-        return '<div class="container">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
-        '<h1>👑 Königinnenzucht</h1>'+
-        '<button class="btn btn-primary btn-sm" onclick="app.openZuchtModal()">+ Neuer Zuchtplan</button>'+
-        '</div>'+
-        
-        plaene.map(function(z){
-            const heute = Date.now();
-            let phase = 'Vorbereitung';
-            let phaseColor = '#7A6652';
-            
-            if(z.zusetzen && heute >= z.zusetzen){
-                phase = 'Zugesetzt';
-                phaseColor = '#10b981';
-            }else if(z.umlarven && heute >= z.umlarven){
-                phase = 'Nach Umlarven';
-                phaseColor = '#f59e0b';
-            }else if(heute >= z.sammelbrut){
-                phase = 'Sammelbrut läuft';
-                phaseColor = '#3b82f6';
-            }
-            
-            return '<div class="card">'+
-            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem">'+
-            '<div>'+
-            '<h3>'+z.name+'</h3>'+
-            '<div style="display:inline-block;padding:.25rem .75rem;background:'+phaseColor+';color:#fff;border-radius:.5rem;font-size:.75rem;font-weight:600;margin-top:.25rem">'+phase+'</div>'+
-            '</div>'+
-            '<button class="btn btn-primary btn-xs" onclick="app.openZuchtModal(\''+z.id+'\')">✏️</button>'+
-            '</div>'+
-            
-            '<div class="timeline">'+
-            '<div class="timeline-item">'+
-            '<div class="timeline-dot" style="background:'+(heute >= z.sammelbrut ? '#10b981' : '#E8DFD4')+'"></div>'+
-            '<div class="timeline-content">'+
-            '<div style="font-weight:600;margin-bottom:.25rem">📦 Sammelbrutableger</div>'+
-            '<div style="font-size:.85rem;color:#7A6652">'+self.fd(z.sammelbrut)+'</div>'+
-            '</div>'+
-            '</div>'+
-            
-            (z.umlarven ? 
-                '<div class="timeline-item">'+
-                '<div class="timeline-dot" style="background:'+(heute >= z.umlarven ? '#10b981' : '#E8DFD4')+'"></div>'+
-                '<div class="timeline-content">'+
-                '<div style="font-weight:600;margin-bottom:.25rem">🔬 Umlarven</div>'+
-                '<div style="font-size:.85rem;color:#7A6652">'+self.fd(z.umlarven)+'</div>'+
-                '</div>'+
-                '</div>'
-                : ''
-            )+
-            
-            (z.zusetzen ? 
-                '<div class="timeline-item">'+
-                '<div class="timeline-dot" style="background:'+(heute >= z.zusetzen ? '#10b981' : '#E8DFD4')+'"></div>'+
-                '<div class="timeline-content">'+
-                '<div style="font-weight:600;margin-bottom:.25rem">👑 Zusetzen</div>'+
-                '<div style="font-size:.85rem;color:#7A6652">'+self.fd(z.zusetzen)+'</div>'+
-                '</div>'+
-                '</div>'
-                : ''
-            )+
-            '</div>'+
-            
-            (z.notizen ? '<div style="margin-top:.75rem;padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#7A6652">💭 '+z.notizen+'</div>' : '')+
-            '</div>';
-        }).join('')+
-        
-        (!plaene.length ? 
-            '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">'+
-            '<div style="font-size:3rem;margin-bottom:1rem">👑</div>'+
-            '<h3>Noch keine Zuchtpläne</h3>'+
-            '<p style="margin:.5rem 0 1.5rem">Erstelle deinen ersten Zuchtplan!</p>'+
-            '<button class="btn btn-primary" onclick="app.openZuchtModal()">Ersten Zuchtplan erstellen</button>'+
-            '</div>'
-            : ''
-        )+
-        '</div>';
+        // Zuchtplan ist jetzt eine eigenständige Seite
+        window.location.href = 'zuchtplan.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
     
     rTracht(){
@@ -3294,45 +3133,9 @@ const app={
     },
     
     rZuchtplanEnhanced(){
-        var self = this;
-        var plaene = zuchtplanMod.plaene.slice().sort(function(a,b){return b.created-a.created;});
-        
-        var html = '<div class="container" style="max-width:900px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
-        '<h1>👑 Königinnenzucht</h1>'+
-        '<button class="btn btn-primary btn-sm" onclick="zuchtplanMod.openModal()">+ Neuer Zuchtplan</button>'+
-        '</div>'+
-        '<div class="info-box">✨ <strong>Intelligente Datumsberechnung:</strong> Gib das Sammelbrut-Datum ein und passe die Tage an. Termine werden automatisch berechnet!</div>';
-        
-        if (!plaene.length) {
-            html += '<div class="card" style="text-align:center;padding:3rem;color:#7A6652"><div style="font-size:3rem;margin-bottom:1rem">👑</div><h3>Noch keine Zuchtpläne</h3><p style="margin:.5rem 0 1.5rem">Erstelle deinen ersten Zuchtplan!</p><button class="btn btn-primary" onclick="zuchtplanMod.openModal()">Ersten Zuchtplan erstellen</button></div>';
-        }
-        
-        var jetzt = Date.now();
-        plaene.forEach(function(plan) {
-            var phase = zuchtplanMod.getPhase(plan);
-            var badgeClass = jetzt>=plan.zusetzen ? 'badge-completed' : (jetzt>=plan.sammelbrut ? 'badge-active' : 'badge-upcoming');
-            
-            var naechster = null; var naechstesDatum = null;
-            if (jetzt<plan.sammelbrut) { naechster='Sammelbrut'; naechstesDatum=plan.sammelbrut; }
-            else if (jetzt<plan.umlarven) { naechster='Umlarven'; naechstesDatum=plan.umlarven; }
-            else if (jetzt<plan.zusetzen) { naechster='Zusetzen'; naechstesDatum=plan.zusetzen; }
-            var verbleibend = naechstesDatum ? zuchtplanMod.getTageVerbleibend(naechstesDatum) : null;
-            
-            html += '<div class="zucht-card"><div class="zucht-header"><div><div class="zucht-title">'+plan.name+'</div>'+
-                '<div class="badge '+badgeClass+'" style="margin-top:.5rem">'+phase+'</div>'+
-                (verbleibend ? '<div style="margin-top:.5rem;font-size:.85rem;color:#7A6652">⏭️ <strong>'+naechster+':</strong> <span style="color:#F5A623;font-weight:600">'+verbleibend+'</span></div>' : '')+
-                '</div><div style="display:flex;gap:.5rem"><button class="btn btn-blue btn-xs" onclick="zuchtplanMod.openModal(\''+plan.id+'\')">✏️</button><button class="btn btn-danger btn-xs" onclick="zuchtplanMod.deleteZucht(\''+plan.id+'\')">🗑️</button></div></div>'+
-                '<div class="timeline" style="margin:1.5rem 0">'+
-                '<div class="timeline-item"><div class="timeline-dot '+(jetzt>=plan.sammelbrut?'completed':'upcoming')+'"></div><div class="timeline-content"><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">'+zuchtplanMod.formatDatum(plan.sammelbrut)+'</div></div></div>'+
-                '<div class="timeline-item"><div class="timeline-dot '+(jetzt>=plan.umlarven?(jetzt<plan.zusetzen?'active':'completed'):'upcoming')+'"></div><div class="timeline-content"><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">'+zuchtplanMod.formatDatum(plan.umlarven)+' <small style="color:#A69580">(+'+(plan.tageUmlarven||4)+' Tage)</small></div>'+(jetzt>=plan.umlarven&&jetzt<plan.zusetzen?'<div class="timeline-note">🐝 Weiselzellen wachsen...</div>':'')+'</div></div>'+
-                '<div class="timeline-item"><div class="timeline-dot '+(jetzt>=plan.zusetzen?'completed':'upcoming')+'"></div><div class="timeline-content"><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">'+zuchtplanMod.formatDatum(plan.zusetzen)+' <small style="color:#A69580">(+'+(plan.tageZusetzen||12)+' Tage)</small></div>'+(jetzt>=plan.zusetzen?'<div class="timeline-note">✅ Zuchtplan abgeschlossen!</div>':'')+'</div></div>'+
-                '</div>'+
-                (plan.notizen ? '<div style="margin-top:1rem;padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#7A6652">💭 '+plan.notizen+'</div>' : '')+
-                '</div>';
-        });
-        
-        return html + '</div>';
+        // Zuchtplan ist jetzt eine eigenständige Seite
+        window.location.href = 'zuchtplan.html';
+        return '<div class="container" style="max-width:900px;text-align:center;padding:3rem"><div style="font-size:3rem;margin-bottom:1rem">👑</div><p>Weiterleitung zur Königinnenzucht...</p></div>';
     },
     
     rBehandlungen(){
@@ -4245,85 +4048,11 @@ const trachtkalenderMod = {
 };
 
 // ============================================
-// MODUL: ZUCHTPLAN (enhanced)
+// MODUL: ZUCHTPLAN (nur Daten-Helfer für Heute-Seite)
+// Volle Zuchtplan-Verwaltung ist in zuchtplan.html
 // ============================================
 const zuchtplanMod = {
     plaene: [],
-    editId: null,
-    tageUmlarven: 4,
-    tageZusetzen: 12,
-    
-    init() {
-        var gespeichert = localStorage.getItem('imkerei_zuchtplaene');
-        if (gespeichert) { try { this.plaene = JSON.parse(gespeichert); } catch(e) { this.plaene = []; } }
-    },
-    
-    speichern() { localStorage.setItem('imkerei_zuchtplaene', JSON.stringify(this.plaene)); },
-    
-    openModal(id) {
-        if (id) {
-            var plan = this.plaene.find(function(p){return p.id === id;});
-            if (!plan) return;
-            this.editId = id;
-            document.getElementById('zuchtModalEnhancedTitle').textContent = '👑 Zuchtplan bearbeiten';
-            document.getElementById('zuchtNameE').value = plan.name;
-            document.getElementById('zuchtSammelE').value = new Date(plan.sammelbrut).toISOString().split('T')[0];
-            document.getElementById('zuchtNotizenE').value = plan.notizen || '';
-            if (plan.tageUmlarven) this.tageUmlarven = plan.tageUmlarven;
-            if (plan.tageZusetzen) this.tageZusetzen = plan.tageZusetzen;
-            document.getElementById('tageUmlarvenE').textContent = this.tageUmlarven;
-            document.getElementById('tageZusetzenE').textContent = this.tageZusetzen;
-            this.berechneAlles();
-        } else {
-            this.editId = null;
-            document.getElementById('zuchtModalEnhancedTitle').textContent = '👑 Neuer Zuchtplan';
-            document.getElementById('zuchtNameE').value = '';
-            document.getElementById('zuchtSammelE').value = new Date().toISOString().split('T')[0];
-            document.getElementById('zuchtNotizenE').value = '';
-            this.tageUmlarven = 4; this.tageZusetzen = 12;
-            document.getElementById('tageUmlarvenE').textContent = '4';
-            document.getElementById('tageZusetzenE').textContent = '12';
-            this.berechneAlles();
-        }
-        document.getElementById('zuchtModalEnhanced').classList.add('active');
-    },
-    
-    closeModal() { document.getElementById('zuchtModalEnhanced').classList.remove('active'); this.editId = null; },
-    
-    changeTage(typ, delta) {
-        if (typ === 'umlarven') { this.tageUmlarven = Math.max(1, this.tageUmlarven + delta); document.getElementById('tageUmlarvenE').textContent = this.tageUmlarven; }
-        else { this.tageZusetzen = Math.max(1, this.tageZusetzen + delta); document.getElementById('tageZusetzenE').textContent = this.tageZusetzen; }
-        this.berechneAlles();
-    },
-    
-    berechneAlles() {
-        var sammelbrut = document.getElementById('zuchtSammelE').value;
-        if (!sammelbrut) return;
-        var d = new Date(sammelbrut);
-        var u = new Date(d); u.setDate(u.getDate() + this.tageUmlarven);
-        document.getElementById('zuchtUmlarvenE').value = u.toISOString().split('T')[0];
-        var z = new Date(u); z.setDate(z.getDate() + this.tageZusetzen);
-        document.getElementById('zuchtZusetzenE').value = z.toISOString().split('T')[0];
-    },
-    
-    saveZucht() {
-        var name = document.getElementById('zuchtNameE').value.trim();
-        var sammelbrut = document.getElementById('zuchtSammelE').value;
-        var notizen = document.getElementById('zuchtNotizenE').value.trim();
-        if (!name || !sammelbrut) { alert('Bitte Namen und Datum eingeben!'); return; }
-        var sTs = new Date(sammelbrut).getTime();
-        var uTs = new Date(document.getElementById('zuchtUmlarvenE').value).getTime();
-        var zTs = new Date(document.getElementById('zuchtZusetzenE').value).getTime();
-        if (this.editId) {
-            var plan = this.plaene.find(function(p){return p.id === zuchtplanMod.editId;});
-            if (plan) { plan.name=name; plan.sammelbrut=sTs; plan.umlarven=uTs; plan.zusetzen=zTs; plan.notizen=notizen; plan.tageUmlarven=this.tageUmlarven; plan.tageZusetzen=this.tageZusetzen; }
-        } else {
-            this.plaene.push({id:'zucht_'+Date.now(), name:name, sammelbrut:sTs, umlarven:uTs, zusetzen:zTs, notizen:notizen, tageUmlarven:this.tageUmlarven, tageZusetzen:this.tageZusetzen, created:Date.now()});
-        }
-        this.speichern(); this.closeModal(); app.render(); app.toast('✓ Zuchtplan gespeichert!','success');
-    },
-    
-    deleteZucht(id) { if (!confirm('Zuchtplan löschen?')) return; this.plaene = this.plaene.filter(function(p){return p.id !== id;}); this.speichern(); app.render(); },
     
     formatDatum(ts) { return new Date(ts).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}); },
     
@@ -4607,7 +4336,7 @@ const behandlungMod = {
 
 packlisteMod.init();
 trachtkalenderMod.init();
-zuchtplanMod.init();
+// zuchtplanMod: Daten werden via Supabase in loadData geladen (Zeile ~1037)
 behandlungMod.init();
 
 
@@ -4749,7 +4478,7 @@ function updateMobileNav(page){
 
 // === SWIPE NAVIGATION (Mobile) ===
 (function(){
-    var swipePages = ['heute','standorte','aufgaben','koeniginnen','behandlung','tracht','packliste','kosten','einstellungen'];
+    var swipePages = ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'];
     var touchStartX = 0;
     var touchStartY = 0;
     var touchEndX = 0;
