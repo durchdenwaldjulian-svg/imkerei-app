@@ -714,10 +714,155 @@ function closePreview() {
 
 function alleStandortePDF() {
     if (standorte.length === 0) { toast('⚠️ Keine Standorte vorhanden'); return; }
+    if (!window.jspdf) { toast('⏳ PDF-Bibliothek lädt noch...'); return; }
+    
+    var jsPDF = window.jspdf.jsPDF;
+    var combined = null;
+    var yearFilter = document.getElementById('yearFilter').value;
+    
     standorte.forEach(function(s, idx) {
-        setTimeout(function() { erzeugeBestandsbuchPDF(s.id, false); }, 600 * idx);
+        var singleDoc = erzeugeBestandsbuchPDF(s.id, true);
+        if (!singleDoc) return;
+        
+        if (idx === 0) {
+            combined = singleDoc;
+        } else {
+            // Seiten aus dem Einzel-PDF in das Gesamt-PDF kopieren
+            var pageCount = singleDoc.internal.getNumberOfPages();
+            for (var p = 1; p <= pageCount; p++) {
+                combined.addPage('a4', 'landscape');
+                // Neues PDF für diesen Standort erzeugen und als Inhalt einfügen
+            }
+            // Einfacher Ansatz: jedes Standort-PDF separat erzeugen und in combined einfügen
+            // Da jsPDF kein page-merging kann, erzeugen wir alles direkt in einem Doc
+        }
     });
-    toast('📥 ' + standorte.length + ' PDFs werden erzeugt...');
+    
+    // Besserer Ansatz: Alles in einem Dokument erzeugen
+    combined = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+    var imker = getImkerData();
+    
+    standorte.forEach(function(s, idx) {
+        if (idx > 0) combined.addPage('a4', 'landscape');
+        
+        var sVoelker = voelker.filter(function(v){ return v.standortId === s.id; });
+        var zeilen = getBehandlungenForStandort(s.id, yearFilter);
+        var blattNr = idx + 1;
+        var pw = combined.internal.pageSize.getWidth();
+        var ph = combined.internal.pageSize.getHeight();
+        
+        // TOP BORDER
+        combined.setDrawColor(180, 140, 80);
+        combined.setLineWidth(0.8);
+        combined.line(10, 10, pw - 10, 10);
+        
+        // TITLE
+        combined.setFont('helvetica', 'bold');
+        combined.setFontSize(16);
+        combined.setTextColor(28, 20, 16);
+        combined.text('Bestandsbuch', 14, 20);
+        
+        combined.setFont('helvetica', 'normal');
+        combined.setFontSize(9);
+        combined.setTextColor(100, 80, 60);
+        combined.text('über die Anwendung von Arzneimitteln bei Bienenvölkern', 14, 26);
+        
+        combined.setFont('helvetica', 'bold');
+        combined.setFontSize(10);
+        combined.setTextColor(28, 20, 16);
+        combined.text('Blatt Nr. ' + blattNr, pw - 14, 20, { align:'right' });
+        
+        // IMKER INFO
+        combined.setDrawColor(200, 185, 165);
+        combined.setLineWidth(0.3);
+        combined.roundedRect(14, 30, pw - 28, 22, 2, 2);
+        
+        combined.setFontSize(7.5);
+        combined.setTextColor(120, 102, 82);
+        combined.setFont('helvetica', 'normal');
+        
+        var y1 = 36;
+        combined.text('Bienenhalter/in:', 18, y1);
+        combined.text('Straße:', 90, y1);
+        combined.text('PLZ / Ort:', 170, y1);
+        combined.text('Tel.:', 230, y1);
+        
+        combined.setFont('helvetica', 'bold');
+        combined.setFontSize(9);
+        combined.setTextColor(28, 20, 16);
+        combined.text(imker.name || '–', 18, y1 + 6);
+        combined.text(imker.strasse || '–', 90, y1 + 6);
+        combined.text((imker.plz || '') + ' ' + (imker.ort || ''), 170, y1 + 6);
+        combined.text(imker.tel || '–', 230, y1 + 6);
+        
+        var y2 = y1 + 12;
+        combined.setFont('helvetica', 'normal');
+        combined.setFontSize(7.5);
+        combined.setTextColor(120, 102, 82);
+        combined.text('Bienenstand:', 18, y2);
+        combined.text('Betriebsnummer:', 170, y2);
+        
+        combined.setFont('helvetica', 'bold');
+        combined.setFontSize(9);
+        combined.setTextColor(28, 20, 16);
+        combined.text(s.name, 60, y2);
+        combined.text(imker.betrieb || '–', 200, y2);
+        
+        combined.setFont('helvetica', 'italic');
+        combined.setFontSize(7);
+        combined.setTextColor(160, 140, 120);
+        combined.text('je Standort ein Blatt', pw - 14, y2, { align:'right' });
+        
+        // TABLE
+        var tableData = zeilen.map(function(z, i) {
+            return [
+                (i + 1).toString(), z.datum, z.voelker,
+                z.arzneimittel + (z.lieferant !== '–' ? '\n' + z.lieferant : ''),
+                z.menge, z.verabreichung,
+                z.lieferant !== '–' ? 'Rechnung\n' + z.lieferant : '–',
+                z.wartezeit, z.dauer, z.behandler
+            ];
+        });
+        var minRows = Math.max(15, zeilen.length + 3);
+        while (tableData.length < minRows) {
+            tableData.push(['', '', '', '', '', '', '', '', '', '']);
+        }
+        
+        combined.autoTable({
+            startY: 56,
+            margin: { left:14, right:14 },
+            head: [['Nr.', 'Datum', 'Volkbezeichnung', 'Arzneimittel,\nName/Anschrift Lieferant', 'Menge', 'Art der\nVerabreichung', 'Beleg / ggf. Name\nverschr. Tierarzt', 'Wartezeit', 'Behandlungs-\ndauer', 'Behandelnde\nPerson']],
+            body: tableData,
+            styles: { fontSize:7.5, cellPadding:2, lineColor:[200,185,165], lineWidth:0.2, textColor:[28,20,16], font:'helvetica', overflow:'linebreak', valign:'top' },
+            headStyles: { fillColor:[245,237,227], textColor:[100,80,60], fontStyle:'bold', fontSize:6.5, cellPadding:3, halign:'center', valign:'middle' },
+            columnStyles: { 0:{cellWidth:10,halign:'center',fontStyle:'bold'}, 1:{cellWidth:20}, 2:{cellWidth:35}, 3:{cellWidth:45}, 4:{cellWidth:22}, 5:{cellWidth:30}, 6:{cellWidth:35}, 7:{cellWidth:28}, 8:{cellWidth:22}, 9:{cellWidth:22} },
+            alternateRowStyles: { fillColor:[252,249,245] },
+            didParseCell: function(data) {
+                if (data.section === 'body' && data.column.index === 0 && data.cell.text[0]) {
+                    data.cell.styles.textColor = [180, 140, 80];
+                }
+            }
+        });
+        
+        // FOOTER
+        combined.setFont('helvetica', 'italic');
+        combined.setFontSize(6.5);
+        combined.setTextColor(160, 140, 120);
+        combined.text('laut Verordnung (EU) 2019/6 des Europäischen Parlaments und des Rates vom 11. Dezember 2018 über Tierarzneimittel | § 108 (2) Beleg 5 Jahre aufbewahren.', pw / 2, ph - 8, { align:'center' });
+        
+        combined.setFont('helvetica', 'normal');
+        combined.setFontSize(6);
+        combined.text('Erstellt am: ' + new Date().toLocaleDateString('de-DE') + ' · ImkereiCloud', 14, ph - 8);
+        combined.text('Seite ' + (idx + 1) + ' von ' + standorte.length, pw - 14, ph - 8, { align:'right' });
+        
+        combined.setDrawColor(180, 140, 80);
+        combined.setLineWidth(0.4);
+        combined.line(10, ph - 12, pw - 10, ph - 12);
+    });
+    
+    var dateiname = 'Bestandsbuch_Alle_Standorte_' + (yearFilter !== 'alle' ? yearFilter : new Date().getFullYear()) + '.pdf';
+    combined.save(dateiname);
+    toast('✅ PDF mit ' + standorte.length + ' Standorten heruntergeladen');
 }
 
 // Toast
