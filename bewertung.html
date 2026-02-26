@@ -10,33 +10,60 @@
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         /* === BEWERTUNG-SPECIFIC STYLES === */
+        body{padding-left:220px;padding-bottom:2rem}
+        
+        .container{max-width:800px;margin:0 auto;padding:1rem}
+        
+        /* === NAV (gleiche Sidebar wie index.html) === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+        
         .stars{display:flex;gap:2px;cursor:pointer}
         .stars .star{font-size:1.5rem;color:#E8DFD4;transition:color .15s;user-select:none}
         .stars .star.active{color:#F5A623}
         .stars .star:hover{color:#f7bc5e}
         .radar-wrap{position:relative;width:100%;max-width:320px;margin:0 auto}
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+        }
     </style>
 </head>
 <body>
 
-<div class="topbar">
-    <h1>⭐ Völker-Bewertung</h1>
-</div>
-<nav style="background:#1C1410;display:flex;overflow-x:auto;gap:0;border-bottom:2px solid #2D1F15;-webkit-overflow-scrolling:touch">
-    <a href="index.html#heute" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">📅 Heute</a>
-    <a href="index.html#standorte" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">📍 Standorte</a>
-    <a href="index.html#aufgaben" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">📝 Aufgaben</a>
-    <a href="index.html#koeniginnen" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">👑 Zucht</a>
-    <a href="index.html#behandlung" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">💉 Behandlung</a>
-    <span style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#F5A623;white-space:nowrap;border-bottom:2px solid #F5A623;font-weight:600">⭐ Bewertung</span>
-    <a href="assistent.html" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">🤖 Assistent</a>
-    <a href="bestandsbuch.html" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">📋 Bestandsbuch</a>
-    <a href="ernte.html" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">🍯 Ernte</a>
-    <a href="index.html#tracht" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">🌸 Tracht</a>
-    <a href="index.html#packliste" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">📦 Packliste</a>
-    <a href="index.html#kosten" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">💰 Kosten</a>
-    <a href="index.html#einstellungen" style="flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;color:#7A6652;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent">⚙️ Einstellungen</a>
+<nav class="nav">
+    <div class="nav-brand">
+        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
+        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
+        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
+    </div>
+    <div class="nav-section">Übersicht</div>
+    <a href="index.html#heute" class="nav-item">📅 Heute</a>
+    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
+    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
+    <div class="nav-section">Völker</div>
+    <a href="index.html#koeniginnen" class="nav-item">👑 Königinnenzucht</a>
+    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
+    <a href="bewertung.html" class="nav-item active">⭐ Völker-Bewertung</a>
+    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
+    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
+    <div class="nav-section">Ernte & Planung</div>
+    <a href="ernte.html" class="nav-item">🍯 Honigernte</a>
+    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
+    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
+    <div class="nav-section">Verwaltung</div>
+    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
+    <div style="flex:1"></div>
+    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
 </nav>
 
 <div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
