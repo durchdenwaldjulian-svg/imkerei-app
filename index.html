@@ -982,13 +982,27 @@ async function startApp() {
     }
     
     // UI-State aus Profil laden (Aufgaben ein-/zugeklappt)
+    var uiLoaded = false;
     if (profileRes.data && profileRes.data.ui_state) {
         var saved = profileRes.data.ui_state;
-        if (saved.ueberfaellig !== undefined) app.uiState.ueberfaellig = saved.ueberfaellig;
+        if (saved.ueberfaellig !== undefined) { app.uiState.ueberfaellig = saved.ueberfaellig; uiLoaded = true; }
         if (saved.heute !== undefined) app.uiState.heute = saved.heute;
         if (saved.naechste7 !== undefined) app.uiState.naechste7 = saved.naechste7;
         if (saved.spaeter !== undefined) app.uiState.spaeter = saved.spaeter;
         if (saved.packliste !== undefined) app.uiState.packliste = saved.packliste;
+    }
+    // Fallback: localStorage
+    if (!uiLoaded) {
+        try {
+            var local = JSON.parse(localStorage.getItem('imkerei_uiState'));
+            if (local) {
+                if (local.ueberfaellig !== undefined) app.uiState.ueberfaellig = local.ueberfaellig;
+                if (local.heute !== undefined) app.uiState.heute = local.heute;
+                if (local.naechste7 !== undefined) app.uiState.naechste7 = local.naechste7;
+                if (local.spaeter !== undefined) app.uiState.spaeter = local.spaeter;
+                if (local.packliste !== undefined) app.uiState.packliste = local.packliste;
+            }
+        } catch(e){}
     }
     
     // Load all data in parallel
@@ -1311,9 +1325,19 @@ const app={
     
     toggleUI(key){
         this.uiState[key] = !this.uiState[key];
+        // Immer in localStorage speichern (sicherer Fallback)
+        try { localStorage.setItem('imkerei_uiState', JSON.stringify(this.uiState)); } catch(e){}
+        // Auch in Supabase versuchen
         if (currentUser) {
+            console.log('[toggleUI] Speichere ui_state für User:', currentUser.id, 'State:', JSON.stringify(this.uiState));
             sb.from('profiles').update({ui_state: this.uiState}).eq('id', currentUser.id)
-                .then(function(res){ if(res.error) console.error('UI-State speichern Fehler:', res.error); });
+                .then(function(res){ 
+                    console.log('[toggleUI] Supabase Antwort:', JSON.stringify(res));
+                    if(res.error) console.error('[toggleUI] Fehler:', res.error);
+                    else console.log('[toggleUI] ✅ Erfolgreich gespeichert');
+                });
+        } else {
+            console.warn('[toggleUI] ⚠️ currentUser ist null/undefined!');
         }
         this.render();
     },
