@@ -107,6 +107,12 @@
             table { font-size:.8rem; }
             td, th { padding:.5rem; }
         }
+        
+        @keyframes pulse {
+            0% { box-shadow:0 0 0 0 rgba(34,197,94,.4); }
+            70% { box-shadow:0 0 0 6px rgba(34,197,94,0); }
+            100% { box-shadow:0 0 0 0 rgba(34,197,94,0); }
+        }
     </style>
 </head>
 <body>
@@ -131,12 +137,25 @@
         
         <div class="tab-bar">
             <div class="tab active" onclick="showTab('users')">👥 Benutzer</div>
+            <div class="tab" onclick="showTab('online')">🟢 Online</div>
             <div class="tab" onclick="showTab('voelker')">🐝 Völker</div>
             <div class="tab" onclick="showTab('behandlungen')">💉 Behandlungen</div>
             <div class="tab" onclick="showTab('trachten')">🌸 Geteilte Trachten</div>
             <div class="tab" onclick="showTab('kosten')">💰 Kosten</div>
             <div class="tab" onclick="showTab('ernte')">🍯 Ernte</div>
             <div class="tab" onclick="showTab('data')">📊 Übersicht</div>
+        </div>
+        
+        <div id="tabOnline" style="display:none">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                    <h3 style="font-size:1rem">🟢 Gerade online</h3>
+                    <span style="font-size:.8rem;color:#6b7280" id="onlineCount">0 Nutzer online</span>
+                </div>
+                <div id="onlineList" style="min-height:100px">
+                    <div style="text-align:center;color:#6b7280;padding:2rem">Lade Echtzeit-Daten...</div>
+                </div>
+            </div>
         </div>
         
         <div id="tabUsers">
@@ -248,7 +267,7 @@ function checkLogin() {
 
 function showTab(name) {
     document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    var tabs = ['Users','Trachten','Data','Voelker','Behandlungen','Kosten','Ernte'];
+    var tabs = ['Users','Online','Trachten','Data','Voelker','Behandlungen','Kosten','Ernte'];
     tabs.forEach(function(tn){ 
         var el = document.getElementById('tab'+tn);
         if(el) el.style.display = 'none'; 
@@ -794,6 +813,90 @@ async function deleteUserData(userId, email) {
     alert('Alle Daten von "'+email+'" wurden gelöscht.');
     loadAdmin();
 }
+
+// ============================================
+// PRESENCE – Echtzeit Online-Anzeige
+// ============================================
+var onlineChannel = null;
+
+function startPresenceListener() {
+    onlineChannel = sb.channel('online-users');
+    
+    onlineChannel.on('presence', { event: 'sync' }, function() {
+        renderOnlineUsers();
+    });
+    
+    onlineChannel.subscribe();
+}
+
+function renderOnlineUsers() {
+    if (!onlineChannel) return;
+    var state = onlineChannel.presenceState();
+    var users = [];
+    
+    Object.keys(state).forEach(function(key) {
+        var presences = state[key];
+        if (presences && presences.length > 0) {
+            users.push(presences[0]);
+        }
+    });
+    
+    var countEl = document.getElementById('onlineCount');
+    if (countEl) countEl.textContent = users.length + ' Nutzer online';
+    
+    // Update stats grid – add online counter
+    var statsOnline = document.querySelector('.stat-card-online');
+    if (!statsOnline) {
+        var grid = document.getElementById('statsGrid');
+        if (grid) {
+            var div = document.createElement('div');
+            div.className = 'stat-card stat-card-online';
+            div.innerHTML = '<div class="stat-number" style="color:#22c55e" id="onlineStatNum">'+users.length+'</div><div class="stat-label">🟢 Online</div>';
+            grid.insertBefore(div, grid.firstChild);
+        }
+    } else {
+        var numEl = document.getElementById('onlineStatNum');
+        if (numEl) numEl.textContent = users.length;
+    }
+    
+    var listEl = document.getElementById('onlineList');
+    if (!listEl) return;
+    
+    if (users.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center;color:#6b7280;padding:2rem">Niemand online</div>';
+        return;
+    }
+    
+    var html = '';
+    users.forEach(function(u) {
+        var onlineSince = u.online_at ? timeAgo(u.online_at) : '–';
+        var page = u.page || 'Unbekannt';
+        // Clean page name
+        page = page.replace('🐝 ', '').replace('Imkerei Tagesplaner – ', '').replace('Imkerei Tagesplaner', 'Hauptseite');
+        
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;border-bottom:1px solid #f3f4f6">'+
+            '<div style="display:flex;align-items:center;gap:.75rem">'+
+                '<div style="width:10px;height:10px;background:#22c55e;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite"></div>'+
+                '<div>'+
+                    '<strong style="font-size:.9rem">'+(u.email||'Unbekannt')+'</strong>'+
+                    '<div style="font-size:.75rem;color:#6b7280">📄 '+page+'</div>'+
+                '</div>'+
+            '</div>'+
+            '<div style="font-size:.75rem;color:#6b7280;text-align:right">'+
+                'online seit<br>'+onlineSince+
+            '</div>'+
+        '</div>';
+    });
+    
+    listEl.innerHTML = html;
+}
+
+// Start presence listener after admin login
+var _origLoadAdmin = loadAdmin;
+loadAdmin = async function() {
+    await _origLoadAdmin();
+    startPresenceListener();
+};
 </script>
 </body>
 </html>

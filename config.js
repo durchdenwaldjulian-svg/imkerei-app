@@ -55,6 +55,7 @@ async function checkAuth(opts) {
         var result = await sb.auth.getSession();
         if (result.data.session) {
             currentUser = result.data.session.user;
+            initPresence(currentUser);
             return currentUser;
         }
     } catch(e) {
@@ -99,5 +100,27 @@ function showToast(msg, typ, dauer) {
 function createPublicClient() {
     return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+}
+
+// ============================================
+// PRESENCE – Echtzeit Online-Status
+// Wird automatisch nach checkAuth() gestartet
+// ============================================
+var presenceChannel = null;
+
+function initPresence(user) {
+    if (!user || presenceChannel) return;
+    var pageName = document.title || location.pathname.split('/').pop() || 'Unbekannt';
+    presenceChannel = sb.channel('online-users', { config: { presence: { key: user.id } } });
+    presenceChannel.subscribe(function(status) {
+        if (status === 'SUBSCRIBED') {
+            presenceChannel.track({
+                user_id: user.id,
+                email: user.email,
+                page: pageName,
+                online_at: new Date().toISOString()
+            });
+        }
     });
 }
