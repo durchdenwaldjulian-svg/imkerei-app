@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗺️ Trachtkarte – Imkerei Gemeinschaft</title>
+    <meta name="theme-color" content="#FFC107">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+        
+        .header {
+            background:linear-gradient(135deg,#FFC107,#FFD54F);
+            padding:1rem 1.5rem;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            box-shadow:0 2px 8px rgba(0,0,0,.1);
+            z-index:1000;
+            position:relative;
+        }
+        .header h1 { font-size:1.25rem; color:#1f2937; }
+        .header-sub { font-size:.8rem; color:#92400e; }
+        .header-link { 
+            background:#1f2937; color:#FFC107; padding:.5rem 1rem; border-radius:.5rem;
+            text-decoration:none; font-weight:600; font-size:.85rem;
+        }
+        .header-link:hover { background:#374151; }
+        
+        #map { height:calc(100vh - 60px); width:100%; }
+        
+        .filter-bar {
+            position:absolute; top:70px; left:10px; right:10px; z-index:1000;
+            background:#fff; border-radius:.75rem; padding:.75rem 1rem;
+            box-shadow:0 2px 12px rgba(0,0,0,.15);
+            display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;
+            max-width:600px;
+        }
+        .filter-bar select, .filter-bar input {
+            padding:.5rem .75rem; border:1px solid #d1d5db; border-radius:.5rem;
+            font-size:.85rem; background:#fff;
+        }
+        .filter-label { font-size:.8rem; color:#6b7280; font-weight:600; }
+        .stat-bar {
+            position:absolute; bottom:20px; left:10px; z-index:1000;
+            background:#fff; border-radius:.75rem; padding:.75rem 1rem;
+            box-shadow:0 2px 12px rgba(0,0,0,.15);
+            font-size:.85rem; color:#1f2937;
+        }
+        .stat-bar strong { color:#FFC107; }
+        
+        .leaflet-popup-content { min-width:200px; }
+        .popup-title { font-size:1.1rem; font-weight:bold; margin-bottom:.5rem; }
+        .popup-info { font-size:.85rem; color:#6b7280; line-height:1.6; }
+        .popup-badge {
+            display:inline-block; padding:.15rem .5rem; border-radius:.25rem;
+            font-size:.7rem; font-weight:600; color:#fff; margin-left:.25rem;
+        }
+        .popup-user { font-size:.75rem; color:#9ca3af; margin-top:.5rem; border-top:1px solid #f3f4f6; padding-top:.5rem; }
+        
+        .legend {
+            position:absolute; bottom:20px; right:10px; z-index:1000;
+            background:#fff; border-radius:.75rem; padding:1rem;
+            box-shadow:0 2px 12px rgba(0,0,0,.15);
+            max-height:50vh; overflow-y:auto;
+        }
+        .legend h3 { font-size:.85rem; margin-bottom:.5rem; color:#1f2937; }
+        .legend-item { display:flex; align-items:center; gap:.5rem; font-size:.8rem; padding:.2rem 0; }
+        .legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+        
+        @media (max-width:600px) {
+            .filter-bar { left:5px; right:5px; top:65px; }
+            .legend { display:none; }
+            .stat-bar { left:5px; right:5px; bottom:10px; text-align:center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>🐝 Trachtkarte</h1>
+        <div class="header-sub" id="lastUpdate">Lade Daten...</div>
+    </div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+        <button id="btnDeleteAll" onclick="deleteAllMyTrachten()" style="background:#ef4444;color:#fff;border:none;padding:.5rem .75rem;border-radius:.5rem;font-size:.8rem;font-weight:600;cursor:pointer">🗑️ Alle meine Trachten entfernen</button>
+        <a href="index.html#tracht" class="header-link">← Zur App</a>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <select id="filterTyp" onchange="applyFilters()">
+        <option value="">Alle Trachten</option>
+    </select>
+    <select id="filterJahr" onchange="applyFilters()">
+        <option value="">Alle Jahre</option>
+    </select>
+    <select id="filterStatus" onchange="applyFilters()">
+        <option value="">Alle</option>
+        <option value="aktiv">Aktiv</option>
+        <option value="vergangen">Vergangen</option>
+        <option value="geplant">Geplant</option>
+    </select>
+</div>
+
+<div id="map"></div>
+
+<div class="stat-bar" id="stats">
+    Lade...
+</div>
+
+<div class="legend" id="legend">
+    <h3>🌸 Legende</h3>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+window.onload = function() {
+
+if (typeof L === 'undefined') {
+    document.getElementById('stats').innerHTML = '❌ Kartenbibliothek konnte nicht geladen werden. Bitte Seite neu laden.';
+    return;
+}
+
+sb = createPublicClient();
+
+// Prüfe ob User eingeloggt ist (für Lösch-Button)
+var loggedInUserId = null;
+
+// Backup ins autoBackup-System (localStorage) speichern
+function backupTrachten(trachten, grund) {
+    try {
+        var backup = {
+            datum: new Date().toISOString(),
+            grund: grund,
+            version: 1,
+            daten: {
+                trachten: trachten
+            }
+        };
+        var backups = JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
+        backups.unshift(backup);
+        if (backups.length > 10) backups = backups.slice(0, 10);
+        localStorage.setItem('imkerei_backups', JSON.stringify(backups));
+        console.log('✅ Trachten-Backup erstellt:', grund, '(' + trachten.length + ' Einträge)');
+    } catch(e) {
+        console.error('Backup Fehler:', e);
+    }
+}
+
+// Lösch-Funktion für eigene geteilte Trachten
+async function deleteSharedTracht(id) {
+    var tracht = allTrachten.find(function(t){ return t.id === id; });
+    if (tracht) backupTrachten([tracht], 'Einzelne Tracht gelöscht: ' + tracht.typ);
+    var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var result = await authSb.from('trachten_shared').delete().eq('id', id);
+    if (result.error) { alert('Fehler: ' + result.error.message); return; }
+    allTrachten = allTrachten.filter(function(t){ return t.id !== id; });
+    renderMarkers(allTrachten);
+    buildFilters(allTrachten);
+}
+window.deleteSharedTracht = deleteSharedTracht;
+
+// ALLE eigenen Trachten von der Karte löschen
+async function deleteAllMyTrachten() {
+    if (!loggedInUserId) { alert('Du bist nicht eingeloggt.'); return; }
+    var meine = allTrachten.filter(function(t){ return t.user_id === loggedInUserId; });
+    if (meine.length === 0) return;
+    backupTrachten(meine, 'Alle eigenen Trachten gelöscht (' + meine.length + ')');
+    var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var result = await authSb.from('trachten_shared').delete().eq('user_id', loggedInUserId);
+    if (result.error) { alert('Fehler: ' + result.error.message); return; }
+    allTrachten = allTrachten.filter(function(t){ return t.user_id !== loggedInUserId; });
+    renderMarkers(allTrachten);
+    buildFilters(allTrachten);
+}
+window.deleteAllMyTrachten = deleteAllMyTrachten;
+
+// Auth prüfen, dann Trachten laden
+(async function(){
+    try {
+        var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var sess = await authSb.auth.getSession();
+        if (sess.data.session) {
+            loggedInUserId = sess.data.session.user.id;
+            console.log('✅ Eingeloggt als:', loggedInUserId);
+        }
+    } catch(e) { console.log('Nicht eingeloggt'); }
+    // Jetzt erst Trachten laden (loggedInUserId ist gesetzt)
+    loadTrachten();
+})();
+
+const TRACHT_COLORS = {
+    'Haselnuss': '#8B7355', 'Weide': '#4ade80', 'Kirsche': '#f472b6',
+    'Löwenzahn': '#facc15', 'Raps': '#eab308', 'Obstblüte': '#ec4899',
+    'Akazie (Robinie)': '#a3e635', 'Linde (Sommer)': '#22c55e',
+    'Kastanie': '#92400e', 'Phacelia': '#a855f7', 'Sonnenblume': '#f59e0b',
+    'Fichte (Honigtau)': '#166534', 'Tanne (Honigtau)': '#14532d',
+    'Heide': '#d946ef', 'Efeu': '#15803d', 'Andere': '#6b7280'
+};
+
+const TRACHT_EMOJIS = {
+    'Haselnuss': '🌰', 'Weide': '🌿', 'Kirsche': '🍒',
+    'Löwenzahn': '🌼', 'Raps': '🌾', 'Obstblüte': '🌸',
+    'Akazie (Robinie)': '🌳', 'Linde (Sommer)': '🍃',
+    'Kastanie': '🌰', 'Phacelia': '💜', 'Sonnenblume': '🌻',
+    'Fichte (Honigtau)': '🌲', 'Tanne (Honigtau)': '🌲',
+    'Heide': '🌸', 'Efeu': '🌿', 'Andere': '🌺'
+};
+
+// Initialize map centered on Germany
+var map = L.map('map').setView([51.1657, 10.4515], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18
+}).addTo(map);
+
+var allTrachten = [];
+var markers = L.layerGroup().addTo(map);
+
+function createIcon(typ) {
+    var color = TRACHT_COLORS[typ] || '#6b7280';
+    return L.divIcon({
+        html: '<div style="background:'+color+';width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:14px">'+(TRACHT_EMOJIS[typ]||'🌺')+'</div>',
+        className: '',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -16]
+    });
+}
+
+function getStatus(t) {
+    var now = Date.now();
+    if (t.beginn && t.ende) {
+        if (now < t.beginn) return {text:'Geplant', color:'#3b82f6', key:'geplant'};
+        if (now > t.ende) return {text:'Vergangen', color:'#9ca3af', key:'vergangen'};
+        return {text:'Aktiv', color:'#10b981', key:'aktiv'};
+    }
+    if (t.beginn && now >= t.beginn) return {text:'Aktiv', color:'#10b981', key:'aktiv'};
+    return {text:'Unbekannt', color:'#9ca3af', key:'vergangen'};
+}
+
+function formatDate(ts) {
+    if (!ts) return '–';
+    return new Date(ts).toLocaleDateString('de-DE', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function renderMarkers(trachten) {
+    markers.clearLayers();
+    trachten.forEach(function(t) {
+        if (!t.lat || !t.lng) return;
+        var status = getStatus(t);
+        var emoji = TRACHT_EMOJIS[t.typ] || '🌺';
+        
+        var popup = '<div class="popup-title">'+emoji+' '+t.typ+'</div>'+
+            '<div class="popup-info">'+
+            '📍 <strong>'+t.standort+'</strong><br>'+
+            '📅 '+formatDate(t.beginn)+(t.ende ? ' → '+formatDate(t.ende) : '')+'<br>'+
+            '<span class="popup-badge" style="background:'+status.color+'">'+status.text+'</span>'+
+            (t.ertrag > 0 ? '<br>🍯 Ertrag: <strong>'+parseFloat(t.ertrag).toFixed(1)+' kg</strong>' : '')+
+            (t.notizen ? '<br>💭 '+t.notizen : '')+
+            '</div>'+
+            '<div class="popup-user">👤 '+t.user_name+'</div>'+
+            (loggedInUserId && t.user_id === loggedInUserId ? '<div style="margin-top:.5rem;text-align:center"><button onclick="deleteSharedTracht(\''+t.id+'\')" style="background:#ef4444;color:#fff;border:none;padding:.4rem .75rem;border-radius:.4rem;font-size:.8rem;cursor:pointer;font-weight:600">🗑️ Entfernen</button></div>' : '');
+        
+        var marker = L.marker([t.lat, t.lng], {icon: createIcon(t.typ)})
+            .bindPopup(popup);
+        markers.addLayer(marker);
+    });
+    
+    // Fit bounds if markers exist
+    if (trachten.length > 0 && markers.getLayers().length > 0) {
+        var group = new L.featureGroup(markers.getLayers());
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+    
+    // Update stats
+    var aktiv = trachten.filter(function(t){ return getStatus(t).key === 'aktiv'; }).length;
+    document.getElementById('stats').innerHTML = 
+        '🌸 <strong>'+trachten.length+'</strong> Trachten · '+
+        '✅ <strong>'+aktiv+'</strong> aktiv · '+
+        '👥 <strong>'+[...new Set(trachten.map(function(t){return t.user_id;}))].length+'</strong> Imker';
+}
+
+function applyFilters() {
+    var typ = document.getElementById('filterTyp').value;
+    var jahr = document.getElementById('filterJahr').value;
+    var status = document.getElementById('filterStatus').value;
+    
+    var filtered = allTrachten.filter(function(t) {
+        if (typ && t.typ !== typ) return false;
+        if (jahr && t.jahr != jahr) return false;
+        if (status && getStatus(t).key !== status) return false;
+        return true;
+    });
+    
+    renderMarkers(filtered);
+}
+
+function buildFilters(trachten) {
+    // Typ filter
+    var typen = [...new Set(trachten.map(function(t){return t.typ;}))].sort();
+    var typSelect = document.getElementById('filterTyp');
+    typen.forEach(function(typ) {
+        var opt = document.createElement('option');
+        opt.value = typ; opt.textContent = (TRACHT_EMOJIS[typ]||'🌺')+' '+typ;
+        typSelect.appendChild(opt);
+    });
+    
+    // Jahr filter
+    var jahre = [...new Set(trachten.map(function(t){return t.jahr;}))].sort().reverse();
+    var jahrSelect = document.getElementById('filterJahr');
+    jahre.forEach(function(j) {
+        var opt = document.createElement('option');
+        opt.value = j; opt.textContent = j;
+        jahrSelect.appendChild(opt);
+    });
+    
+    // Legend
+    var legend = document.getElementById('legend');
+    legend.innerHTML = '<h3>🌸 Legende</h3>';
+    typen.forEach(function(typ) {
+        var color = TRACHT_COLORS[typ] || '#6b7280';
+        var count = trachten.filter(function(t){return t.typ===typ;}).length;
+        legend.innerHTML += '<div class="legend-item"><div class="legend-dot" style="background:'+color+'"></div>'+
+            (TRACHT_EMOJIS[typ]||'🌺')+' '+typ+' ('+count+')</div>';
+    });
+}
+
+// Load data
+async function loadTrachten() {
+    try {
+        var result = await sb.from('trachten_shared').select('*').order('created_at', {ascending: false});
+        if (result.error) throw new Error(result.error.message);
+        allTrachten = result.data || [];
+    } catch(e) {
+        document.getElementById('stats').innerHTML = '❌ Fehler beim Laden: ' + e.message;
+        return;
+    }
+    
+    document.getElementById('lastUpdate').textContent = allTrachten.length+' Trachten von der Gemeinschaft';
+    
+    buildFilters(allTrachten);
+    renderMarkers(allTrachten);
+}
+
+// loadTrachten() wird oben nach Auth-Check aufgerufen
+
+// Make filter function available to HTML onchange handlers
+window.applyFilters = applyFilters;
+
+}; // end window.onload
+</script>
+</body>
+</html>
