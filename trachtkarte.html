@@ -136,7 +136,10 @@ async function erstelleVollBackup(grund) {
     try {
         var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         var sess = await authSb.auth.getSession();
-        if (!sess.data.session) { console.warn('Nicht eingeloggt, kein Backup möglich'); return; }
+        if (!sess.data.session) { 
+            alert('⚠️ Backup nicht möglich: Du bist nicht eingeloggt.');
+            return false; 
+        }
         var uid = sess.data.session.user.id;
         
         var results = await Promise.all([
@@ -171,8 +174,11 @@ async function erstelleVollBackup(grund) {
         if (backups.length > 10) backups = backups.slice(0, 10);
         localStorage.setItem('imkerei_backups', JSON.stringify(backups));
         console.log('✅ Vollständiges Backup erstellt:', grund);
+        return true;
     } catch(e) {
-        console.error('Backup Fehler:', e);
+        console.error('❌ Backup Fehler:', e);
+        alert('❌ Backup fehlgeschlagen: ' + e.message);
+        return false;
     }
 }
 
@@ -195,12 +201,17 @@ async function deleteAllMyTrachten() {
     if (!loggedInUserId) { alert('Du bist nicht eingeloggt.'); return; }
     var meine = allTrachten.filter(function(t){ return t.user_id === loggedInUserId; });
     if (meine.length === 0) { alert('Keine geteilten Trachten vorhanden.'); return; }
-    await erstelleVollBackup('Alle geteilten Trachten entfernt (' + meine.length + ')');
+    if (!confirm('Alle ' + meine.length + ' geteilten Trachten von der Karte entfernen?\n\nEs wird vorher ein vollständiges Backup erstellt.')) return;
+    // Vollständiges Backup erstellen
+    var backupOk = await erstelleVollBackup('Alle geteilten Trachten entfernt (' + meine.length + ')');
+    if (!backupOk) {
+        if (!confirm('⚠️ Backup konnte nicht erstellt werden!\nTrotzdem fortfahren?')) return;
+    } else {
+        alert('✅ Backup erstellt! Trachten werden jetzt von der Karte entfernt.');
+    }
     var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    // Aus trachten_shared löschen
     var result = await authSb.from('trachten_shared').delete().eq('user_id', loggedInUserId);
     if (result.error) { alert('Fehler: ' + result.error.message); return; }
-    // shared-Flag in eigener trachten-Tabelle auf false setzen
     await authSb.from('trachten').update({shared: false}).eq('user_id', loggedInUserId).eq('shared', true);
     allTrachten = allTrachten.filter(function(t){ return t.user_id !== loggedInUserId; });
     renderMarkers(allTrachten);
