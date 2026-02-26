@@ -117,6 +117,10 @@
     <div class="nav-section">Verwaltung</div>
     <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
     <div style="flex:1"></div>
+    <div class="nav-section">Rechtliches</div>
+    <a href="impressum.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
+    <a href="datenschutz.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
+    <a href="agb.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
     <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
 </nav>
 
@@ -207,22 +211,28 @@ const DEMO_PLAENE = [
 // INIT
 // ============================================
 async function init() {
+    console.log('[Zucht] Init startet...');
     try {
+        console.log('[Zucht] Prüfe Auth...');
         var user = await checkAuth({preview: true});
+        console.log('[Zucht] Auth Result:', user);
         if (!user) {
+            console.log('[Zucht] Kein User → Preview-Modus');
             isPreview = true;
             plaene = DEMO_PLAENE;
         } else {
+            console.log('[Zucht] User gefunden:', user.id);
             await loadFromSupabase();
         }
     } catch(e) {
-        console.warn('Auth/DB Fehler, lade Preview:', e);
+        console.error('[Zucht] Init Fehler:', e);
         isPreview = true;
         plaene = DEMO_PLAENE;
     }
 
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    console.log('[Zucht] Render mit', plaene.length, 'Plänen');
     render();
 }
 
