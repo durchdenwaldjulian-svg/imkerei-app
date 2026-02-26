@@ -42,16 +42,65 @@
         .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
         
         @media(max-width:768px){
-            body{padding-left:0;padding-bottom:70px}
-            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden;background:#FFFBF0;padding:.25rem 0}
-            .nav-brand,.nav-section{display:none}
-            .nav-item{flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap;min-width:auto;line-height:1.3}
-            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            body{padding-left:0;padding-bottom:64px}
+            .nav{display:none}
             .footer{display:none}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
             .option-grid{grid-template-columns:repeat(3,1fr)}
             .volk-grid{grid-template-columns:1fr}
+            .mobile-nav{display:flex}
+            .mobile-menu-overlay{display:none}
+            .mobile-menu-overlay.active{display:flex}
         }
+
+        /* === MOBILE NAV BAR === */
+        .mobile-nav{
+            display:none;
+            position:fixed;left:0;right:0;bottom:0;z-index:200;
+            background:#FFFBF0;border-top:2px solid rgba(245,166,35,0.12);
+            flex-direction:row;align-items:stretch;height:62px;
+            box-shadow:0 -2px 8px rgba(28,20,16,0.06);
+        }
+        .mobile-nav-btn{
+            flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+            border:none;background:none;cursor:pointer;color:#7A6652;
+            font-size:.65rem;font-weight:500;gap:2px;padding:.25rem 0;
+            border-top:3px solid transparent;transition:all .15s;
+        }
+        .mobile-nav-btn .mn-icon{font-size:1.3rem;line-height:1}
+        .mobile-nav-btn.active{color:#92400E;font-weight:700;border-top-color:#F5A623;background:#FFF8EE}
+        .mobile-nav-btn:active{background:rgba(245,166,35,0.1)}
+
+        /* === MOBILE FULLSCREEN MENU === */
+        .mobile-menu-overlay{
+            display:none;position:fixed;inset:0;z-index:300;
+            background:rgba(28,20,16,0.5);
+            flex-direction:column;align-items:center;justify-content:center;
+        }
+        .mobile-menu-box{
+            background:#FFFBF0;border-radius:1.25rem;width:92%;max-width:400px;
+            max-height:85vh;overflow-y:auto;padding:1.25rem;
+            box-shadow:0 12px 40px rgba(28,20,16,0.25);
+            animation:menuSlideUp .25s ease;
+        }
+        @keyframes menuSlideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+        .mobile-menu-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid rgba(245,166,35,0.15)}
+        .mobile-menu-header h2{font-size:1.15rem;color:#1C1410;margin:0;display:flex;align-items:center;gap:.5rem}
+        .mobile-menu-close{width:36px;height:36px;border:none;background:#f5f0eb;border-radius:.5rem;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7A6652}
+        .mobile-menu-close:active{background:#E8DFD4}
+        .mobile-menu-section{font-size:.7rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;padding-left:.25rem}
+        .mobile-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+        .mobile-menu-item{
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:.75rem .5rem;border:2px solid #E8DFD4;border-radius:.75rem;
+            background:#fff;cursor:pointer;text-decoration:none;color:#1C1410;
+            font-size:.78rem;font-weight:500;gap:.3rem;transition:all .15s;min-height:70px;
+        }
+        .mobile-menu-item:active{border-color:#F5A623;background:#FFF8EE;transform:scale(0.96)}
+        .mobile-menu-item.mm-active{border-color:#F5A623;background:#FFF8EE;font-weight:700;color:#92400E}
+        .mobile-menu-item .mm-icon{font-size:1.5rem}
+        .mobile-menu-item.mm-danger{color:#ef4444;border-color:#fee2e2}
+        .mobile-menu-item.mm-danger:active{background:#fef2f2}
 
         /* === PACKLISTE MODULE STYLES === */
         .pack-kategorie{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem}
@@ -743,6 +792,55 @@
     <button class="nav-item" data-page="einstellungen">⚙️ Einstellungen</button>
     <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
 </nav>
+
+<!-- MOBILE NAV BAR -->
+<div class="mobile-nav" id="mobileNav">
+    <button class="mobile-nav-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>
+    <button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>
+    <button class="mobile-nav-btn" data-mpage="standorte"><span class="mn-icon">📍</span>Standorte</button>
+    <button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>
+    <button class="mobile-nav-btn" data-mpage="tracht"><span class="mn-icon">🌸</span>Tracht</button>
+    <button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>
+</div>
+
+<!-- MOBILE FULLSCREEN MENU -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()">
+    <div class="mobile-menu-box">
+        <div class="mobile-menu-header">
+            <h2>🐝 Navigation</h2>
+            <button class="mobile-menu-close" onclick="mobileMenuClose()">✕</button>
+        </div>
+        <div class="mobile-menu-section">Übersicht</div>
+        <div class="mobile-menu-grid">
+            <button class="mobile-menu-item" data-mmpage="heute"><span class="mm-icon">📅</span>Heute</button>
+            <button class="mobile-menu-item" data-mmpage="standorte"><span class="mm-icon">📍</span>Standorte</button>
+            <button class="mobile-menu-item" data-mmpage="aufgaben"><span class="mm-icon">📝</span>Aufgaben</button>
+        </div>
+        <div class="mobile-menu-section">Völker</div>
+        <div class="mobile-menu-grid">
+            <button class="mobile-menu-item" data-mmpage="koeniginnen"><span class="mm-icon">👑</span>Zucht</button>
+            <button class="mobile-menu-item" data-mmpage="behandlung"><span class="mm-icon">💉</span>Behandlung</button>
+            <a href="bewertung.html" class="mobile-menu-item"><span class="mm-icon">⭐</span>Bewertung</a>
+        </div>
+        <div class="mobile-menu-section">Tools</div>
+        <div class="mobile-menu-grid">
+            <a href="assistent.html" class="mobile-menu-item"><span class="mm-icon">🤖</span>Assistent</a>
+            <a href="bestandsbuch.html" class="mobile-menu-item"><span class="mm-icon">📋</span>Bestandsbuch</a>
+            <a href="ernte.html" class="mobile-menu-item"><span class="mm-icon">🍯</span>Ernte</a>
+        </div>
+        <div class="mobile-menu-section">Ernte & Planung</div>
+        <div class="mobile-menu-grid">
+            <button class="mobile-menu-item" data-mmpage="tracht"><span class="mm-icon">🌸</span>Tracht</button>
+            <button class="mobile-menu-item" data-mmpage="packliste"><span class="mm-icon">📦</span>Packliste</button>
+            <button class="mobile-menu-item" data-mmpage="kosten"><span class="mm-icon">💰</span>Kosten</button>
+        </div>
+        <div class="mobile-menu-section">Verwaltung</div>
+        <div class="mobile-menu-grid">
+            <button class="mobile-menu-item" data-mmpage="einstellungen"><span class="mm-icon">⚙️</span>Einstellungen</button>
+            <button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();doLogout()"><span class="mm-icon">🚪</span>Abmelden</button>
+        </div>
+    </div>
+</div>
 
 <script src="config.js"></script>
 <script>
@@ -4522,6 +4620,51 @@ behandlungMod.init();
 </div>
 
 <script>
+// === MOBILE MENU ===
+function mobileMenuOpen(){
+    var overlay = document.getElementById('mobileMenuOverlay');
+    overlay.classList.add('active');
+    // Aktive Seite markieren
+    document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn){
+        btn.classList.toggle('mm-active', btn.dataset.mmpage === app.page);
+    });
+}
+function mobileMenuClose(){
+    document.getElementById('mobileMenuOverlay').classList.remove('active');
+}
+// Mobile Menu: interne Seiten navigieren
+document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        var page = btn.dataset.mmpage;
+        // Desktop nav sync
+        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+        var deskBtn = document.querySelector('.nav-item[data-page="'+page+'"]');
+        if(deskBtn) deskBtn.classList.add('active');
+        app.page = page;
+        app.render();
+        mobileMenuClose();
+        updateMobileNav(page);
+    });
+});
+// Mobile bottom bar: direkte Navigation
+document.querySelectorAll('.mobile-nav-btn[data-mpage]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        var page = btn.dataset.mpage;
+        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+        var deskBtn = document.querySelector('.nav-item[data-page="'+page+'"]');
+        if(deskBtn) deskBtn.classList.add('active');
+        app.page = page;
+        app.render();
+        updateMobileNav(page);
+    });
+});
+function updateMobileNav(page){
+    var quickPages = ['heute','standorte','aufgaben','tracht','einstellungen'];
+    document.querySelectorAll('.mobile-nav-btn[data-mpage]').forEach(function(btn){
+        btn.classList.toggle('active', btn.dataset.mpage === page);
+    });
+}
+
 // === SWIPE NAVIGATION (Mobile) ===
 (function(){
     var swipePages = ['heute','standorte','aufgaben','koeniginnen','behandlung','tracht','packliste','kosten','einstellungen'];
@@ -4541,23 +4684,16 @@ behandlungMod.init();
         touchEndY = e.changedTouches[0].screenY;
         var diffX = touchEndX - touchStartX;
         var diffY = Math.abs(touchEndY - touchStartY);
-        // Nur horizontale Swipes (nicht vertikal scrollen)
         if (Math.abs(diffX) < minSwipe || diffY > Math.abs(diffX)) return;
-        // Nicht swipen wenn Modal offen
         if (document.querySelector('.modal.active')) return;
+        if (document.getElementById('mobileMenuOverlay').classList.contains('active')) return;
         
         var current = app.page;
         var idx = swipePages.indexOf(current);
         if (idx === -1) return;
         
         var newIdx;
-        if (diffX < 0) {
-            // Nach links wischen → nächste Seite
-            newIdx = idx + 1;
-        } else {
-            // Nach rechts wischen → vorherige Seite
-            newIdx = idx - 1;
-        }
+        if (diffX < 0) { newIdx = idx + 1; } else { newIdx = idx - 1; }
         if (newIdx < 0 || newIdx >= swipePages.length) return;
         
         document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
@@ -4565,11 +4701,7 @@ behandlungMod.init();
         if (btn) btn.classList.add('active');
         app.page = swipePages[newIdx];
         app.render();
-        
-        // Nav-Leiste zum aktiven Item scrollen
-        if (btn && window.innerWidth <= 768) {
-            btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
-        }
+        updateMobileNav(swipePages[newIdx]);
     }, {passive:true});
 })();
 </script>
