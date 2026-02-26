@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Imkerei Planer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Imkerei Planer">
     <title>🍯 Honigernte – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -10,54 +20,15 @@
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         /* === ERNTE-SPECIFIC STYLES === */
-        body{padding-left:220px;padding-bottom:2rem}
-        .container{max-width:800px;margin:0 auto;padding:1rem}
-        
-        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-        .nav-item:hover{background:rgba(245,166,35,0.06)}
-        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
-        
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
-        
-        @media(max-width:768px){
-            body{padding-left:0;padding-bottom:90px}
-            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
-            .nav-brand,.nav-section{display:none}
-            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
-        }
     </style>
 </head>
 <body>
 
-<nav class="nav">
-    <div class="nav-brand">
-        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
-        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
-        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
-    </div>
-    <div class="nav-section">Übersicht</div>
-    <a href="index.html#heute" class="nav-item">📅 Heute</a>
-    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
-    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
-    <div class="nav-section">Völker</div>
-    <a href="index.html#koeniginnen" class="nav-item">👑 Königinnenzucht</a>
-    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
-    <a href="bewertung.html" class="nav-item">⭐ Völker-Bewertung</a>
-    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
-    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
-    <div class="nav-section">Ernte & Planung</div>
-    <a href="ernte.html" class="nav-item active">🍯 Honigernte</a>
-    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
-    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
-    <div class="nav-section">Verwaltung</div>
-    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
-    <div style="flex:1"></div>
-    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
-</nav>
+<div class="topbar">
+    <h1 style="flex:1">🍯 Honigernte</h1>
+    <a href="index.html" style="color:#F5A623;text-decoration:none;font-size:.9rem;font-weight:600">← Zurück</a>
+</div>
 
 <div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
     <div style="text-align:center;color:#7A6652">
@@ -555,5 +526,15 @@ function toast(msg) {
 // Start
 init();
 </script>
+    <!-- PWA Service Worker -->
+    <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("sw.js").then(r=>{
+          console.log("[PWA] Service Worker registriert:",r.scope);
+        }).catch(e=>console.warn("[PWA] SW Fehler:",e));
+      });
+    }
+    </script>
 </body>
 </html>

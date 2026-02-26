@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Imkerei Planer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Imkerei Planer">
 <title>Imkerei Tagesplaner – Deine Bienen. Dein Überblick.</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -1210,5 +1220,15 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
   });
 });
 </script>
+    <!-- PWA Service Worker -->
+    <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("sw.js").then(r=>{
+          console.log("[PWA] Service Worker registriert:",r.scope);
+        }).catch(e=>console.warn("[PWA] SW Fehler:",e));
+      });
+    }
+    </script>
 </body>
 </html>

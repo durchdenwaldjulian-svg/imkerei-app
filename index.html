@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Imkerei Tagesplaner</title>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Imkerei Planer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Imkerei Planer">
+    <title>Imkerei Planer</title>
     <meta name="theme-color" content="#F5A623">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -867,28 +877,6 @@ async function startApp() {
     var profileRes = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     app.data.user = profileRes.data || { name: currentUser.email, email: currentUser.email };
     
-    // Kalender-Zustand aus Profil laden
-    if (profileRes.data && profileRes.data.kalender_offen !== undefined) {
-        trachtkalenderMod.kalenderOffen = profileRes.data.kalender_offen;
-    }
-    
-    // Wetter-Ort aus Profil laden
-    if (profileRes.data) {
-        if (profileRes.data.wetter_ort) wetterMod.customOrt = profileRes.data.wetter_ort;
-        if (profileRes.data.wetter_lat) wetterMod.customLat = profileRes.data.wetter_lat;
-        if (profileRes.data.wetter_lng) wetterMod.customLng = profileRes.data.wetter_lng;
-    }
-    
-    // UI-State aus Profil laden (Aufgaben ein-/zugeklappt)
-    if (profileRes.data && profileRes.data.ui_state) {
-        var saved = profileRes.data.ui_state;
-        if (saved.ueberfaellig !== undefined) app.uiState.ueberfaellig = saved.ueberfaellig;
-        if (saved.heute !== undefined) app.uiState.heute = saved.heute;
-        if (saved.naechste7 !== undefined) app.uiState.naechste7 = saved.naechste7;
-        if (saved.spaeter !== undefined) app.uiState.spaeter = saved.spaeter;
-        if (saved.packliste !== undefined) app.uiState.packliste = saved.packliste;
-    }
-    
     // Load all data in parallel
     var results = await Promise.all([
         sb.from('standorte').select('*').eq('user_id', currentUser.id),
@@ -921,8 +909,6 @@ async function startApp() {
     trachtkalenderMod.trachten = (results[5].data || []).map(function(r) {
         return { id: r.id, typ: r.typ, standort: r.standort, beginn: r.beginn, ende: r.ende, ertrag: parseFloat(r.ertrag)||0, notizen: r.notizen, lat: r.lat||null, lng: r.lng||null, shared: r.shared||false, created: r.created_at };
     });
-    console.log('🌸 Trachten geladen:', trachtkalenderMod.trachten.length, trachtkalenderMod.trachten.map(function(t){return t.id+' ('+t.typ+')';}).join(', '));
-    if (results[5].error) console.error('❌ Trachten Lade-Fehler:', results[5].error);
     behandlungMod.behandlungen = (results[6].data || []).map(function(r) {
         return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
     });
@@ -939,17 +925,6 @@ async function startApp() {
     
     document.getElementById('loadingOverlay').style.display = 'none';
     app.initUI();
-    
-    // Hash-Navigation: z.B. index.html#tracht → direkt zur Tracht-Seite
-    if (_startPageHash && ['heute','standorte','aufgaben','voelker','koeniginnen','behandlung','tracht','packliste','kosten','einstellungen'].indexOf(_startPageHash) > -1) {
-        app.page = _startPageHash;
-        // Aktiven Nav-Button setzen
-        document.querySelectorAll('.nav-item').forEach(function(b){ b.classList.remove('active'); });
-        var navBtn = document.querySelector('.nav-item[data-page="'+_startPageHash+'"]');
-        if (navBtn) navBtn.classList.add('active');
-        history.replaceState(null, '', window.location.pathname); // Hash sauber entfernen
-    }
-    
     app.render();
     
     // Wetter im Hintergrund laden
@@ -1021,89 +996,68 @@ const autoBackup = {
     },
     
     // Stellt ein bestimmtes Backup wieder her
-    // Intelligent: Nur Tabellen überschreiben, die im Backup enthalten sind
     async restore(index) {
         var backups = this.getAll();
         if (!backups[index]) { alert('Backup nicht gefunden!'); return; }
         
         var backup = backups[index];
+        if (!confirm('Backup vom ' + new Date(backup.datum).toLocaleString('de-DE') + ' wiederherstellen?\n\nGrund: ' + backup.grund + '\n\n⚠️ Alle aktuellen Daten werden überschrieben!')) return;
+        
         var d = backup.daten;
         
-        // Prüfe welche Daten im Backup enthalten sind
-        var tabellen = [];
-        if (d.standorte && d.standorte.length) tabellen.push('Standorte ('+d.standorte.length+')');
-        if (d.voelker && d.voelker.length) tabellen.push('Völker ('+d.voelker.length+')');
-        if (d.aufgaben && d.aufgaben.length) tabellen.push('Aufgaben ('+d.aufgaben.length+')');
-        if (d.kosten && d.kosten.length) tabellen.push('Kosten ('+d.kosten.length+')');
-        if (d.behandlungen && d.behandlungen.length) tabellen.push('Behandlungen ('+d.behandlungen.length+')');
-        if (d.zuchtplaene && d.zuchtplaene.length) tabellen.push('Zuchtpläne ('+d.zuchtplaene.length+')');
-        if (d.trachten && d.trachten.length) tabellen.push('Trachten ('+d.trachten.length+')');
-        if (d.packliste && d.packliste.length) tabellen.push('Packliste ('+d.packliste.length+')');
+        // 1. Alle bestehenden Daten in Supabase löschen
+        await sb.from('standorte').delete().eq('user_id', currentUser.id);
+        await sb.from('voelker').delete().eq('user_id', currentUser.id);
+        await sb.from('aufgaben').delete().eq('user_id', currentUser.id);
+        await sb.from('kosten').delete().eq('user_id', currentUser.id);
+        await sb.from('behandlungen').delete().eq('user_id', currentUser.id);
+        await sb.from('zuchtplaene').delete().eq('user_id', currentUser.id);
+        await sb.from('trachten').delete().eq('user_id', currentUser.id);
+        await sb.from('packliste').delete().eq('user_id', currentUser.id);
         
-        if (tabellen.length === 0) { alert('Backup enthält keine Daten!'); return; }
-        
-        if (!confirm('Backup vom ' + new Date(backup.datum).toLocaleString('de-DE') + ' wiederherstellen?\n\nGrund: ' + backup.grund + '\n\nEnthaltene Daten:\n• ' + tabellen.join('\n• ') + '\n\n⚠️ Nur diese Bereiche werden überschrieben.\nAlle anderen Daten bleiben erhalten!')) return;
-        
-        // Nur Tabellen löschen und neu befüllen, die im Backup enthalten sind
+        // 2. Backup-Daten in Supabase einfügen
         if (d.standorte && d.standorte.length) {
-            await sb.from('standorte').delete().eq('user_id', currentUser.id);
             await sb.from('standorte').insert(d.standorte.map(function(s){
                 return {id:s.id, user_id:currentUser.id, name:s.name, notizen:s.notizen, maps_link:s.mapsLink, lat:s.lat, lng:s.lng, created_at:s.created};
             }));
         }
         if (d.voelker && d.voelker.length) {
-            await sb.from('voelker').delete().eq('user_id', currentUser.id);
             await sb.from('voelker').insert(d.voelker.map(function(v){
                 return {id:v.id, user_id:currentUser.id, standort_id:v.standortId, name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen||'', honigertrag:v.honigertrag||0, created_at:v.created};
             }));
         }
         if (d.aufgaben && d.aufgaben.length) {
-            await sb.from('aufgaben').delete().eq('user_id', currentUser.id);
             await sb.from('aufgaben').insert(d.aufgaben.map(function(a){
                 return {id:a.id, user_id:currentUser.id, typ:a.typ, notiz:a.notiz, faelligkeit:a.faelligkeit, dauer:a.dauer, prio:a.prio, erledigt:a.erledigt||null, standort_id:a.standortId||null, intervall_tage:a.intervallTage||0, created_at:a.created};
             }));
         }
         if (d.kosten && d.kosten.length) {
-            await sb.from('kosten').delete().eq('user_id', currentUser.id);
             await sb.from('kosten').insert(d.kosten.map(function(k){
                 return {id:k.id, user_id:currentUser.id, beschreibung:k.beschreibung, betrag:k.betrag, kat:k.kat, datum:k.datum};
             }));
         }
         if (d.behandlungen && d.behandlungen.length) {
-            await sb.from('behandlungen').delete().eq('user_id', currentUser.id);
             await sb.from('behandlungen').insert(d.behandlungen.map(function(b){
                 return {id:b.id, user_id:currentUser.id, voelker_ids:b.voelkerIds, voelker_label:b.voelkerLabel, methode:b.methode, methode_name:b.methodeName, datum:b.datum, intervall:b.intervall, intervall_label:b.intervallLabel, termine:b.termine, notizen:b.notizen, standort_id:b.standortId||null, menge:b.menge||'', verabreichung:b.verabreichung||'', lieferant:b.lieferant||'', wartezeit:b.wartezeit||'', behandler:b.behandler||'', created_at:b.created};
             }));
         }
         if (d.zuchtplaene && d.zuchtplaene.length) {
-            await sb.from('zuchtplaene').delete().eq('user_id', currentUser.id);
             await sb.from('zuchtplaene').insert(d.zuchtplaene.map(function(z){
                 return {id:z.id, user_id:currentUser.id, name:z.name, sammelbrut:z.sammelbrut, umlarven:z.umlarven, zusetzen:z.zusetzen, notizen:z.notizen, tage_umlarven:z.tageUmlarven, tage_zusetzen:z.tageZusetzen, created_at:z.created};
             }));
         }
         if (d.trachten && d.trachten.length) {
-            await sb.from('trachten').delete().eq('user_id', currentUser.id);
             await sb.from('trachten').insert(d.trachten.map(function(t){
                 return {id:t.id, user_id:currentUser.id, typ:t.typ, standort:t.standort, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, lat:t.lat||null, lng:t.lng||null, shared:t.shared||false, created_at:t.created};
             }));
-            // Geteilte Trachten auch in trachten_shared wiederherstellen
-            var geteilte = d.trachten.filter(function(t){ return t.shared && t.lat && t.lng; });
-            if (geteilte.length > 0) {
-                await sb.from('trachten_shared').delete().eq('user_id', currentUser.id);
-                var userName = app.data.user ? (app.data.user.name || app.data.user.email || 'Anonym') : 'Anonym';
-                await sb.from('trachten_shared').insert(geteilte.map(function(t){
-                    return {id:t.id, user_id:currentUser.id, user_name:userName, typ:t.typ, standort:t.standort, lat:t.lat, lng:t.lng, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, jahr:new Date().getFullYear()};
-                }));
-            }
         }
         if (d.packliste && d.packliste.length) {
-            await sb.from('packliste').delete().eq('user_id', currentUser.id);
             await sb.from('packliste').insert(d.packliste.map(function(p){
                 return {id:p.id, user_id:currentUser.id, kategorie:p.kategorie, name:p.name, checked:p.checked, menge:p.menge, ist_schnell:p.istSchnell, schnell_typ:p.schnellTyp};
             }));
         }
         
-        // Seite neu laden um alles frisch von Supabase zu holen
+        // 3. Seite neu laden um alles frisch von Supabase zu holen
         alert('✅ Backup wiederhergestellt! Seite wird neu geladen.');
         location.reload();
     },
@@ -1204,15 +1158,6 @@ const app={
         naechste7: true,       // standardmäßig offen
         spaeter: false,        // standardmäßig zu
         packliste: false       // standardmäßig zu
-    },
-    
-    toggleUI(key){
-        this.uiState[key] = !this.uiState[key];
-        if (currentUser) {
-            sb.from('profiles').update({ui_state: this.uiState}).eq('id', currentUser.id)
-                .then(function(res){ if(res.error) console.error('UI-State speichern Fehler:', res.error); });
-        }
-        this.render();
     },
     
     init(){
@@ -1989,7 +1934,37 @@ const app={
         this.render();
     },
     
-    // === TRACHT === (wird über trachtkalenderMod.saveTracht() gesteuert)
+    // === TRACHT ===
+    saveTracht(){
+        const typ = document.getElementById('trachtTyp').value;
+        const standort = document.getElementById('trachtStandort').value.trim();
+        const beginn = document.getElementById('trachtBeginn').value;
+        const ende = document.getElementById('trachtEnde').value;
+        const ertrag = parseFloat(document.getElementById('trachtErtrag').value) || 0;
+        const notizen = document.getElementById('trachtNotizen').value.trim();
+        
+        if(!typ || !standort || !beginn){
+            alert('Bitte Typ, Standort und Blühbeginn eingeben!');
+            return;
+        }
+        
+        if(!this.data.trachten) this.data.trachten = [];
+        
+        this.data.trachten.push({
+            id: 't' + this.uid(),
+            typ: typ,
+            standort: standort,
+            beginn: new Date(beginn).getTime(),
+            ende: ende ? new Date(ende).getTime() : null,
+            ertrag: ertrag,
+            notizen: notizen,
+            created: Date.now()
+        });
+        
+        this.save();
+        this.closeModal('trachtModal');
+        this.render();
+    },
     
     // === KOSTEN ===
     selectKostenKat(kat){
@@ -2257,7 +2232,7 @@ const app={
         // ⚠️ ÜBERFÄLLIG
         (ueberfaellig.length ?
             '<div class="card" style="background:linear-gradient(135deg,#fef2f2,#fff);border-left:4px solid #ef4444">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI(\'ueberfaellig\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.ueberfaellig=!app.uiState.ueberfaellig;app.render()">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#ef4444">'+(app.uiState.ueberfaellig?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;color:#ef4444;font-size:1.1rem">⚠️ Überfällig ('+ueberfaellig.length+')</h2>'+
@@ -2270,7 +2245,7 @@ const app={
         
         // 🔥 HEUTE
         '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI(\'heute\')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.heute=!app.uiState.heute;app.render()">'+
         '<div style="display:flex;align-items:center;gap:.5rem">'+
         '<span style="font-size:.7rem;color:#10b981">'+(app.uiState.heute?'▼':'▶')+'</span>'+
         '<h2 style="margin:0;font-size:1.1rem">🔥 Heute ('+heuteEvents.length+')</h2>'+
@@ -2287,7 +2262,7 @@ const app={
         // 📅 NÄCHSTE 7 TAGE
         (naechste7.length ?
             '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff);border-left:4px solid #F5A623">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI(\'naechste7\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.naechste7=!app.uiState.naechste7;app.render()">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#F5A623">'+(app.uiState.naechste7?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem">📅 Nächste 7 Tage ('+naechste7.length+')</h2>'+
@@ -2301,7 +2276,7 @@ const app={
         // 🔮 SPÄTER
         (spaeter.length ?
             '<div class="card" style="border-left:4px solid #94a3b8">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.toggleUI(\'spaeter\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.uiState.spaeter=!app.uiState.spaeter;app.render()">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.spaeter?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem;color:#64748b">🔮 Später geplant ('+spaeter.length+')</h2>'+
@@ -2345,7 +2320,7 @@ const app={
                 }).join('');
             
             return '<div class="card" style="background:linear-gradient(135deg,#f0f9ff,#fff);border-left:4px solid #3b82f6;padding:.75rem 1rem">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.toggleUI(\'packliste\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.uiState.packliste=!app.uiState.packliste;app.render()">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.packliste?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1rem">📦 Packliste</h2>'+
@@ -3139,7 +3114,7 @@ const app={
         
         return '<div style="max-width:900px;margin-top:2rem">'+
         '<div class="card">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="trachtkalenderMod.kalenderOffen=!trachtkalenderMod.kalenderOffen;if(currentUser)db.update(\'profiles\',{kalender_offen:trachtkalenderMod.kalenderOffen},currentUser.id);app.render()">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="trachtkalenderMod.kalenderOffen=!trachtkalenderMod.kalenderOffen;app.render()">'+
         '<div style="display:flex;align-items:center;gap:.5rem">'+
         '<span style="font-size:.7rem;color:#F5A623">'+(trachtkalenderMod.kalenderOffen?'▼':'▶')+'</span>'+
         '<h2 style="margin:0;font-size:1.1rem">🌸 Trachtkalender <span style="font-size:.8rem;color:#7A6652;font-weight:normal">('+sichtbar.length+'/'+sortiert.length+' sichtbar)</span></h2>'+
@@ -3368,129 +3343,14 @@ const wetterMod = {
     loading: false,
     error: null,
     letzterAbruf: null,
-    customOrt: null,
-    customLat: null,
-    customLng: null,
-    editMode: false,
     
     getStandortKoords(){
-        // Zuerst custom Ort aus Profil
-        if (this.customLat && this.customLng) {
-            return {lat: this.customLat, lng: this.customLng, name: this.customOrt || 'Mein Standort'};
-        }
-        // Fallback: Ersten Standort mit Koordinaten nehmen
+        // Ersten Standort mit Koordinaten nehmen
         var standorte = app.data.standorte || [];
         for (var i=0; i<standorte.length; i++) {
             if (standorte[i].lat && standorte[i].lng) return {lat:standorte[i].lat, lng:standorte[i].lng, name:standorte[i].name};
         }
         return null;
-    },
-    
-    async ortAendern(){
-        // Modal öffnen
-        document.getElementById('wetterOrtModal').classList.add('active');
-        
-        // Standort-Liste befüllen
-        var liste = document.getElementById('wetterStandortListe');
-        var standorte = app.data.standorte || [];
-        var gpsStandorte = standorte.filter(function(s){ return s.lat && s.lng; });
-        
-        if (gpsStandorte.length > 0) {
-            var html = '';
-            gpsStandorte.forEach(function(s){
-                var istAktiv = wetterMod.customOrt === s.name;
-                html += '<button class="btn '+(istAktiv?'btn-primary':'btn-outline')+' btn-sm" style="margin:.25rem" onclick="wetterMod.ortWaehlen(\''+s.name+'\','+s.lat+','+s.lng+')">📍 '+s.name+'</button>';
-            });
-            liste.innerHTML = html;
-        } else {
-            liste.innerHTML = '<div style="font-size:.8rem;color:#94a3b8">Keine Standorte mit GPS vorhanden</div>';
-        }
-        
-        // Suchergebnis zurücksetzen
-        document.getElementById('wetterSuchErgebnis').innerHTML = '';
-        document.getElementById('wetterOrtSuche').value = '';
-        document.getElementById('wetterKarteInfo').innerHTML = 'Klicke auf die Karte um einen Standort zu wählen';
-        
-        // Karte initialisieren
-        setTimeout(function(){
-            var container = document.getElementById('wetterKarte');
-            if (wetterMod._karte) { wetterMod._karte.remove(); wetterMod._karte = null; }
-            var startLat = wetterMod.customLat || 49.0;
-            var startLng = wetterMod.customLng || 8.4;
-            var karte = L.map('wetterKarte').setView([startLat, startLng], 8);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:18}).addTo(karte);
-            wetterMod._karte = karte;
-            wetterMod._marker = null;
-            
-            // Bestehenden Standort markieren
-            if (wetterMod.customLat && wetterMod.customLng) {
-                wetterMod._marker = L.marker([wetterMod.customLat, wetterMod.customLng]).addTo(karte);
-            }
-            
-            // Standort-Marker anzeigen
-            gpsStandorte.forEach(function(s){
-                L.circleMarker([s.lat, s.lng], {radius:6, color:'#F5A623', fillColor:'#F5A623', fillOpacity:0.8})
-                    .bindTooltip(s.name)
-                    .addTo(karte);
-            });
-            
-            // Klick auf Karte
-            karte.on('click', async function(e){
-                var lat = e.latlng.lat;
-                var lng = e.latlng.lng;
-                if (wetterMod._marker) karte.removeLayer(wetterMod._marker);
-                wetterMod._marker = L.marker([lat, lng]).addTo(karte);
-                document.getElementById('wetterKarteInfo').innerHTML = '⏳ Ort wird ermittelt...';
-                try {
-                    var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+lat.toFixed(2)+','+lng.toFixed(2)+'&count=1&language=de');
-                    // Reverse geocoding gibts nicht bei open-meteo, also nehmen wir die Koordinaten direkt
-                    var ortName = 'Standort ('+lat.toFixed(4)+', '+lng.toFixed(4)+')';
-                    document.getElementById('wetterKarteInfo').innerHTML = '📍 '+ortName+' <button class="btn btn-primary btn-sm" style="margin-left:.5rem" onclick="wetterMod.ortWaehlen(\''+ortName+'\','+lat+','+lng+')">✓ Übernehmen</button>';
-                } catch(err) {
-                    document.getElementById('wetterKarteInfo').innerHTML = '📍 '+lat.toFixed(4)+', '+lng.toFixed(4)+' <button class="btn btn-primary btn-sm" style="margin-left:.5rem" onclick="wetterMod.ortWaehlen(\'Standort\','+lat+','+lng+')">✓ Übernehmen</button>';
-                }
-            });
-        }, 300);
-    },
-    
-    async ortSuchen(){
-        var ort = document.getElementById('wetterOrtSuche').value.trim();
-        if (!ort) return;
-        var ergebnis = document.getElementById('wetterSuchErgebnis');
-        ergebnis.innerHTML = '⏳ Suche...';
-        try {
-            var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(ort)+'&count=5&language=de');
-            var data = await resp.json();
-            if (!data.results || data.results.length === 0) {
-                ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Kein Ergebnis für "'+ort+'"</div>';
-                return;
-            }
-            var html = '';
-            data.results.forEach(function(r){
-                var label = r.name + (r.admin1 ? ', '+r.admin1 : '') + (r.country ? ' ('+r.country+')' : '');
-                html += '<button class="btn btn-outline btn-sm" style="margin:.25rem;display:block;width:100%;text-align:left" onclick="wetterMod.ortWaehlen(\''+r.name.replace(/'/g,"\\'")+'\','+r.latitude+','+r.longitude+')">📍 '+label+'</button>';
-            });
-            ergebnis.innerHTML = html;
-        } catch(e) {
-            ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Fehler bei der Suche</div>';
-        }
-    },
-    
-    async ortWaehlen(name, lat, lng){
-        this.customOrt = name;
-        this.customLat = lat;
-        this.customLng = lng;
-        // In Supabase speichern
-        await sb.from('profiles').update({wetter_ort: name, wetter_lat: lat, wetter_lng: lng}).eq('id', currentUser.id);
-        // Modal schließen
-        document.getElementById('wetterOrtModal').classList.remove('active');
-        if (this._karte) { this._karte.remove(); this._karte = null; }
-        // Wetter neu laden
-        this.daten = null;
-        this.letzterAbruf = null;
-        await this.laden();
-        app.render();
-        app.toast('✅ Wetter-Standort: '+name, 'success');
     },
     
     async ladenFuerStandort(standortId, lat, lng){
@@ -3612,7 +3472,7 @@ const wetterMod = {
         var html = '<div class="card" style="border-left:4px solid #0ea5e9">'+
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
             '<h2 style="margin:0">🌤️ Wetter</h2>'+
-            '<span style="font-size:.75rem;color:#7A6652;cursor:pointer" onclick="wetterMod.ortAendern()" title="Ort ändern">📍 '+standortName+' ✏️</span>'+
+            '<span style="font-size:.75rem;color:#7A6652">📍 '+standortName+'</span>'+
             '</div>'+
             
             // Aktuell
@@ -3809,7 +3669,17 @@ const packlisteMod = {
             });
         });
         
-        html += '</body></html>';
+        html += '    <!-- PWA Service Worker -->
+    <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("sw.js").then(r=>{
+          console.log("[PWA] Service Worker registriert:",r.scope);
+        }).catch(e=>console.warn("[PWA] SW Fehler:",e));
+      });
+    }
+    </script>
+</body></html>';
         
         var win = window.open('','_blank');
         win.document.write(html);
@@ -3997,15 +3867,8 @@ const trachtkalenderMod = {
         } else {
             // Neue Tracht erstellen
             var t = {id:'tracht_'+Date.now(), typ:typ, standort:standort, beginn:beginn?new Date(beginn).getTime():null, ende:ende?new Date(ende).getTime():null, ertrag:ertrag, notizen:notizen, lat:lat, lng:lng, shared:share, created:Date.now()};
-            console.log('💾 Tracht Insert-Daten:', JSON.stringify({id:t.id,user_id:currentUser.id,typ:t.typ,standort:t.standort,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,lat:lat,lng:lng,shared:share,created_at:t.created}));
-            var insertResult = await db.insert('trachten',{id:t.id,user_id:currentUser.id,typ:t.typ,standort:t.standort,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,lat:lat,lng:lng,shared:share,created_at:t.created});
-            console.log('💾 Tracht Insert-Ergebnis:', JSON.stringify(insertResult));
-            if (insertResult && insertResult.error) {
-                console.error('❌ Tracht Insert Fehler:', insertResult.error);
-                app.toast('❌ Speichern fehlgeschlagen: ' + insertResult.error.message, 'error');
-                return;
-            }
             this.trachten.push(t);
+            db.insert('trachten',{id:t.id,user_id:currentUser.id,typ:t.typ,standort:t.standort,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,lat:lat,lng:lng,shared:share,created_at:t.created});
             
             if (share && lat && lng) {
                 var profile = app.data.user;
@@ -4451,9 +4314,6 @@ behandlungMod.init();
 // ============================================
 // APP STARTUP - Check auth state
 // ============================================
-// Hash sofort speichern bevor Supabase ihn entfernt
-var _startPageHash = window.location.hash.replace('#','');
-
 (async function() {
     // Check if this is a password recovery link
     var hash = window.location.hash;
@@ -4501,35 +4361,15 @@ var _startPageHash = window.location.hash.replace('#','');
 })();
 
 </script>
-
-<!-- Wetter-Standort Modal -->
-<div id="wetterOrtModal" class="modal modal-center">
-    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
-        <div class="modal-header">
-            <h2>🌤️ Wetter-Standort wählen</h2>
-            <button class="close-btn" onclick="document.getElementById('wetterOrtModal').classList.remove('active')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">📍 Aus deinen Standorten wählen</label>
-                <div id="wetterStandortListe"></div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">🔍 Oder Ort suchen</label>
-                <div style="display:flex;gap:.5rem">
-                    <input type="text" id="wetterOrtSuche" class="input" placeholder="z.B. Karlsruhe, München..." style="flex:1">
-                    <button class="btn btn-primary" onclick="wetterMod.ortSuchen()">Suchen</button>
-                </div>
-                <div id="wetterSuchErgebnis" style="margin-top:.5rem"></div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">🗺️ Oder auf der Karte klicken</label>
-                <div id="wetterKarte" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4"></div>
-                <div id="wetterKarteInfo" style="font-size:.8rem;color:#7A6652;margin-top:.5rem"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
+    <!-- PWA Service Worker -->
+    <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("sw.js").then(r=>{
+          console.log("[PWA] Service Worker registriert:",r.scope);
+        }).catch(e=>console.warn("[PWA] SW Fehler:",e));
+      });
+    }
+    </script>
 </body>
 </html>

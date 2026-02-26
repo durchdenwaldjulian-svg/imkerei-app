@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Imkerei Planer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Imkerei Planer">
     <title>🐝 Imkermeister</title>
     <meta name="theme-color" content="#1f2937">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -151,10 +161,6 @@
         </div>
         
         <div id="tabTrachten" style="display:none">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-                <div style="font-size:.9rem;color:#6b7280" id="trachtenCount"></div>
-                <button onclick="deleteAllTrachten()" style="background:#ef4444;color:#fff;border:none;padding:.5rem 1rem;border-radius:.5rem;font-size:.85rem;font-weight:600;cursor:pointer">🗑️ ALLE Trachten löschen</button>
-            </div>
             <div class="card" style="overflow-x:auto">
                 <table>
                     <thead>
@@ -463,8 +469,6 @@ function renderTrachten() {
             '</tr>';
     });
     document.getElementById('trachtenTable').innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:2rem">Keine geteilten Trachten</td></tr>';
-    var countEl = document.getElementById('trachtenCount');
-    if (countEl) countEl.textContent = allTrachten.length + ' geteilte Trachten';
 }
 
 // === VÖLKER TAB (gruppiert nach Benutzer) ===
@@ -768,16 +772,6 @@ async function deleteSharedTracht(id) {
     renderStats();
 }
 
-async function deleteAllTrachten() {
-    if (!confirm('ACHTUNG: Wirklich ALLE '+allTrachten.length+' geteilten Trachten von ALLEN Usern löschen?\n\nDas kann nicht rückgängig gemacht werden!')) return;
-    if (!confirm('Bist du sicher? Letzte Chance!')) return;
-    await sb.from('trachten_shared').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    allTrachten = [];
-    renderTrachten();
-    renderStats();
-    alert('✅ Alle geteilten Trachten wurden gelöscht.');
-}
-
 async function deleteUserData(userId, email) {
     if (!confirm('ACHTUNG: Alle Daten von "'+email+'" werden gelöscht!\n\n(Standorte, Völker, Aufgaben, Trachten, Behandlungen, Kosten, Packliste)\n\nDer Account selbst bleibt bestehen. Um den Account zu löschen, gehe in Supabase → Authentication → Users.\n\nFortfahren?')) return;
     
@@ -794,5 +788,15 @@ async function deleteUserData(userId, email) {
     loadAdmin();
 }
 </script>
+    <!-- PWA Service Worker -->
+    <script>
+    if("serviceWorker" in navigator){
+      window.addEventListener("load",()=>{
+        navigator.serviceWorker.register("sw.js").then(r=>{
+          console.log("[PWA] Service Worker registriert:",r.scope);
+        }).catch(e=>console.warn("[PWA] SW Fehler:",e));
+      });
+    }
+    </script>
 </body>
 </html>
