@@ -815,43 +815,49 @@ async function deleteUserData(userId, email) {
 }
 
 // ============================================
-// ONLINE-STATUS – liest aus profiles Tabelle
+// PRESENCE – Echtzeit Online-Anzeige
 // ============================================
-var onlineRefreshInterval = null;
+var onlineChannel = null;
 
 function startPresenceListener() {
-    // Sofort laden
-    loadOnlineUsers();
-    // Alle 15 Sekunden aktualisieren
-    onlineRefreshInterval = setInterval(loadOnlineUsers, 15000);
+    // Eigener Client für Realtime Presence (braucht andere Config als PublicClient)
+    var realtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    onlineChannel = realtimeClient.channel('online-users');
+    
+    onlineChannel.on('presence', { event: 'sync' }, function() {
+        console.log('[Imkermeister Presence] Sync event!', onlineChannel.presenceState());
+        renderOnlineUsers();
+    });
+    
+    onlineChannel.on('presence', { event: 'join' }, function(key, newPresences) {
+        console.log('[Imkermeister Presence] Join:', key, newPresences);
+    });
+    
+    onlineChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
+        console.log('[Imkermeister Presence] Leave:', key, leftPresences);
+    });
+    
+    onlineChannel.subscribe(function(status) {
+        console.log('[Imkermeister Presence] Subscribe status:', status);
+    });
 }
 
-async function loadOnlineUsers() {
-    try {
-        var result = await sb.from('profiles').select('email, name, last_active, current_page');
-        var profiles = result.data || [];
-        
-        // Wer in den letzten 60 Sekunden aktiv war gilt als online
-        var now = Date.now();
-        var onlineUsers = profiles.filter(function(p) {
-            if (!p.last_active) return false;
-            var diff = now - new Date(p.last_active).getTime();
-            return diff < 60000; // 60 Sekunden
-        });
-        
-        renderOnlineUsers(onlineUsers);
-    } catch(e) {
-        console.warn('[Online] Fehler:', e);
-    }
-}
-
-function renderOnlineUsers(users) {
-    users = users || [];
+function renderOnlineUsers() {
+    if (!onlineChannel) return;
+    var state = onlineChannel.presenceState();
+    var users = [];
+    
+    Object.keys(state).forEach(function(key) {
+        var presences = state[key];
+        if (presences && presences.length > 0) {
+            users.push(presences[0]);
+        }
+    });
     
     var countEl = document.getElementById('onlineCount');
     if (countEl) countEl.textContent = users.length + ' Nutzer online';
     
-    // Update stats grid
+    // Update stats grid – add online counter
     var statsOnline = document.querySelector('.stat-card-online');
     if (!statsOnline) {
         var grid = document.getElementById('statsGrid');
@@ -876,20 +882,21 @@ function renderOnlineUsers(users) {
     
     var html = '';
     users.forEach(function(u) {
-        var page = u.current_page || 'Unbekannt';
-        var activeTime = u.last_active ? timeAgo(u.last_active) : '–';
+        var onlineSince = u.online_at ? timeAgo(u.online_at) : '–';
+        var page = u.page || 'Unbekannt';
+        // Clean page name
+        page = page.replace('🐝 ', '').replace('Imkerei Tagesplaner – ', '').replace('Imkerei Tagesplaner', 'Hauptseite');
         
         html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;border-bottom:1px solid #f3f4f6">'+
             '<div style="display:flex;align-items:center;gap:.75rem">'+
                 '<div style="width:10px;height:10px;background:#22c55e;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite"></div>'+
                 '<div>'+
                     '<strong style="font-size:.9rem">'+(u.email||'Unbekannt')+'</strong>'+
-                    (u.name ? '<span style="font-size:.75rem;color:#6b7280;margin-left:.5rem">('+u.name+')</span>' : '')+
                     '<div style="font-size:.75rem;color:#6b7280">📄 '+page+'</div>'+
                 '</div>'+
             '</div>'+
             '<div style="font-size:.75rem;color:#6b7280;text-align:right">'+
-                activeTime+
+                'online seit<br>'+onlineSince+
             '</div>'+
         '</div>';
     });
@@ -897,7 +904,7 @@ function renderOnlineUsers(users) {
     listEl.innerHTML = html;
 }
 
-// Start nach Admin-Login
+// Start presence listener after admin login
 var _origLoadAdmin = loadAdmin;
 loadAdmin = async function() {
     await _origLoadAdmin();

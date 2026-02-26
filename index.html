@@ -2215,12 +2215,6 @@ const app={
         };
         document.getElementById('app').innerHTML = pages[this.page] ? pages[this.page]() : '<div class="container"><h1>Seite nicht gefunden</h1></div>';
         
-        // Presence aktualisieren bei Seitenwechsel
-        if (typeof updatePresencePage === 'function') {
-            var pageNames = {heute:'Heute',standorte:'Standorte',voelker:'Völker',aufgaben:'Aufgaben',tracht:'Tracht',wetter:'Wetter',kosten:'Kosten',tagebuch:'Tagebuch',behandlung:'Behandlung',packliste:'Packliste',datenexport:'Backup',einstellungen:'Einstellungen'};
-            updatePresencePage(pageNames[this.page] || this.page);
-        }
-        
         // Mini-Maps initialisieren nach DOM-Update
         if (this.page === 'standorte' && !this.selectedStandortId) {
             this.initMiniMaps();

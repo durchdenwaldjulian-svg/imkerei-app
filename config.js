@@ -104,51 +104,27 @@ function createPublicClient() {
 }
 
 // ============================================
-// PRESENCE – Online-Status via profiles Tabelle
-// Aktualisiert last_active + current_page alle 30 Sekunden
+// PRESENCE – Echtzeit Online-Status
+// Wird automatisch nach checkAuth() gestartet
 // ============================================
 var presenceChannel = null;
-var _presenceInterval = null;
 
 function initPresence(user) {
-    if (!user || _presenceInterval) return;
+    if (!user || presenceChannel) return;
     console.log('[Presence] Starte für:', user.email);
-    
     var pageName = document.title || location.pathname.split('/').pop() || 'Unbekannt';
-    
-    // Sofort aktualisieren
-    _updatePresence(user.id, pageName);
-    
-    // Alle 30 Sekunden aktualisieren
-    _presenceInterval = setInterval(function() {
-        _updatePresence(user.id, window._currentPage || pageName);
-    }, 30000);
-    
-    // Bei Tab-Schließen: offline setzen
-    window.addEventListener('beforeunload', function() {
-        navigator.sendBeacon && navigator.sendBeacon(
-            SUPABASE_URL + '/rest/v1/profiles?id=eq.' + user.id,
-            '' // sendBeacon kann kein PATCH, daher setzen wir es beim nächsten Load zurück
-        );
+    presenceChannel = sb.channel('online-users', { config: { presence: { key: user.id } } });
+    presenceChannel.subscribe(function(status) {
+        console.log('[Presence] Subscribe status:', status);
+        if (status === 'SUBSCRIBED') {
+            presenceChannel.track({
+                user_id: user.id,
+                email: user.email,
+                page: pageName,
+                online_at: new Date().toISOString()
+            }).then(function(res) {
+                console.log('[Presence] Track result:', res);
+            });
+        }
     });
-}
-
-async function _updatePresence(userId, page) {
-    try {
-        await sb.from('profiles').update({
-            last_active: new Date().toISOString(),
-            current_page: page
-        }).eq('id', userId);
-        console.log('[Presence] Updated:', page);
-    } catch(e) {
-        console.warn('[Presence] Update failed:', e);
-    }
-}
-
-// Wird von index.html aufgerufen bei Seitenwechsel
-function updatePresencePage(page) {
-    window._currentPage = page;
-    if (currentUser && currentUser.id) {
-        _updatePresence(currentUser.id, page);
-    }
 }
