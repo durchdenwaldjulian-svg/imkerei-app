@@ -3825,9 +3825,14 @@ const packlisteMod = {
     },
     
     loescheItem(id) {
+        console.log('[Packliste] Lösche Item:', id);
         this.items = this.items.filter(function(i){return i.id !== id;});
-        this.speichern(); 
-        db.del('packliste', id);
+        sb.from('packliste').delete().eq('id', id)
+            .then(function(res){
+                console.log('[Packliste] Delete Response:', res.data, 'error:', res.error);
+                if(res.error) console.error('[Packliste] ❌ Lösch-Fehler:', res.error.message);
+                else console.log('[Packliste] ✅ Gelöscht aus Supabase');
+            });
         app.render(); 
         app.toast('🗑️ Gelöscht','info');
     },
