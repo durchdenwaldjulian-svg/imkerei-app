@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👑 Königinnenzucht – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+
+        /* === SIDEBAR NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        /* === TOAST === */
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+
+        /* === PREVIEW BANNER === */
+        .preview-banner{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:.75rem 1rem;border-radius:.75rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;font-size:.85rem;font-weight:500}
+
+        /* === ZUCHT HEADER === */
+        .zucht-header-banner{background:linear-gradient(135deg,#1C1410 0%,#3D2E1F 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+        .zucht-header-banner::before{content:'';position:absolute;top:-30%;right:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);border-radius:50%}
+        .zucht-header-banner h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.5rem;position:relative}
+        .zucht-header-banner p{color:#C4A882;font-size:.9rem;position:relative}
+
+        /* === STATS ROW === */
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem}
+        .stat-card{background:#fff;border-radius:.75rem;padding:1rem;text-align:center;border:1px solid rgba(245,166,35,0.08)}
+        .stat-value{font-size:1.75rem;font-weight:700;color:#1C1410}
+        .stat-label{font-size:.75rem;color:#A69580;margin-top:.25rem}
+
+        /* === ZUCHT CARD === */
+        .zucht-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;transition:all .2s}
+        .zucht-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+        .zucht-card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem}
+        .zucht-title{font-size:1.25rem;font-weight:bold;color:#1C1410}
+
+        /* === TIMELINE === */
+        .timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
+        .timeline-item{position:relative;padding-bottom:1.5rem;border-left:2px solid #E8DFD4}
+        .timeline-item:last-child{border-left:none;padding-bottom:0}
+        .timeline-dot{position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:#E8DFD4;border:2px solid #fff;box-shadow:0 0 0 2px #E8DFD4}
+        .timeline-dot.completed{background:#10b981;box-shadow:0 0 0 2px #10b981}
+        .timeline-dot.active{background:#F5A623;box-shadow:0 0 0 2px #F5A623;animation:pulse 2s infinite}
+        .timeline-dot.upcoming{background:#E8DFD4}
+        .timeline-content{margin-left:1rem;background:#FFF8EE;padding:.75rem;border-radius:.5rem}
+        .timeline-title{font-weight:600;font-size:.9rem;color:#1C1410}
+        .timeline-date{font-size:.8rem;color:#7A6652;margin-top:.25rem}
+        .timeline-note{font-size:.8rem;color:#F5A623;font-weight:600;margin-top:.35rem}
+
+        /* === BADGES === */
+        .badge-completed{background:#d1fae5;color:#065f46;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+        .badge-active{background:#FFF3D6;color:#92400e;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+        .badge-upcoming{background:#dbeafe;color:#1e40af;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+
+        /* === TAGE COUNTER (Modal) === */
+        .tage-counter{display:flex;align-items:center;gap:.75rem}
+        .tage-counter .counter-value{font-size:1.5rem;min-width:2.5rem}
+        .tage-counter .counter-label{font-size:.85rem;color:#7A6652;margin-left:.25rem}
+
+        /* === FILTER TABS === */
+        .filter-tabs{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
+        .filter-tab{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;text-align:center}
+        .filter-tab.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+        /* === MOBILE === */
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .stats-row{grid-template-columns:1fr 1fr 1fr}
+            .stat-value{font-size:1.25rem}
+            .zucht-header-banner{padding:1.5rem 1rem}
+            .zucht-header-banner h1{font-size:1.35rem}
+        }
+
+        @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .anim-in{animation:cardIn .35s ease forwards}
+    </style>
+</head>
+<body>
+
+<!-- === SIDEBAR NAVIGATION === -->
+<nav class="nav">
+    <div class="nav-brand">
+        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
+        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
+        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
+    </div>
+    <div class="nav-section">Übersicht</div>
+    <a href="index.html#heute" class="nav-item">📅 Heute</a>
+    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
+    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
+    <div class="nav-section">Völker</div>
+    <a href="zuchtplan.html" class="nav-item active">👑 Königinnenzucht</a>
+    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
+    <a href="bewertung.html" class="nav-item">⭐ Völker-Bewertung</a>
+    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
+    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
+    <div class="nav-section">Ernte & Planung</div>
+    <a href="ernte.html" class="nav-item">🍯 Honigernte</a>
+    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
+    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
+    <div class="nav-section">Community</div>
+    <a href="forum.html" class="nav-item">💬 Forum</a>
+    <div class="nav-section">Verwaltung</div>
+    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
+    <div style="flex:1"></div>
+    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
+</nav>
+
+<!-- === LOADING === -->
+<div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
+    <div style="text-align:center;color:#7A6652">
+        <div style="font-size:3rem;margin-bottom:1rem">👑</div>
+        <div>Lade Zuchtpläne...</div>
+    </div>
+</div>
+
+<!-- === MAIN APP === -->
+<div id="app" class="container" style="display:none;max-width:900px"></div>
+
+<!-- === TOAST === -->
+<div id="toast" class="toast"></div>
+
+<!-- === ZUCHTPLAN MODAL === -->
+<div id="zuchtModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2 id="zuchtModalTitle">👑 Neuer Zuchtplan</h2>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Königin Name/Nummer *</label>
+                <input type="text" id="zuchtName" class="input" placeholder="z.B. Königin 2025-1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">📦 Sammelbrutableger erstellt *</label>
+                <input type="date" id="zuchtSammel" class="input" onchange="berechneAlles()">
+                <div class="info-box">💡 Startpunkt – ab hier werden alle Termine berechnet</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🔬 Umlarven – Tage nach Sammelbrut</label>
+                <div class="tage-counter">
+                    <button class="counter-btn" onclick="changeTage('umlarven',-1)">−</button>
+                    <div class="counter-value" id="tageUmlarvenVal">4</div>
+                    <button class="counter-btn" onclick="changeTage('umlarven',1)">+</button>
+                    <div class="counter-label">Tage</div>
+                </div>
+                <input type="date" id="zuchtUmlarven" class="input" style="margin-top:.5rem" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">👑 Zusetzen – Tage nach Umlarven</label>
+                <div class="tage-counter">
+                    <button class="counter-btn" onclick="changeTage('zusetzen',-1)">−</button>
+                    <div class="counter-value" id="tageZusetzenVal">12</div>
+                    <button class="counter-btn" onclick="changeTage('zusetzen',1)">+</button>
+                    <div class="counter-label">Tage</div>
+                </div>
+                <input type="date" id="zuchtZusetzen" class="input" style="margin-top:.5rem" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen</label>
+                <textarea id="zuchtNotizen" class="input" placeholder="Linie, Herkunft, Zuchtziel..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="saveZucht()">Zuchtplan speichern</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ============================================
+// KÖNIGINNENZUCHT – Eigenständiges Modul
+// Speichert direkt nach Supabase
+// ============================================
+
+let isPreview = false;
+let plaene = [];
+let editId = null;
+let tageUmlarven = 4;
+let tageZusetzen = 12;
+let currentFilter = 'alle'; // alle | aktiv | abgeschlossen
+
+// ============================================
+// DEMO-DATEN für Preview
+// ============================================
+const DEMO_PLAENE = [
+    {id:'z1', name:'Königin 2026-1 (Buckfast)', sammelbrut: new Date('2026-03-15').getTime(), umlarven: new Date('2026-03-19').getTime(), zusetzen: new Date('2026-03-31').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-20').getTime()},
+    {id:'z2', name:'Königin 2026-2 (Carnica)', sammelbrut: new Date('2026-04-01').getTime(), umlarven: new Date('2026-04-05').getTime(), zusetzen: new Date('2026-04-17').getTime(), notizen:'Carnica aus dem Verein. Schwarmträge Linie.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-22').getTime()},
+    {id:'z3', name:'Standbegattung Ableger 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Bereits abgeschlossen. Königin zeichnen!', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-01-15').getTime()}
+];
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    try {
+        var user = await checkAuth({preview: true});
+        if (!user) {
+            isPreview = true;
+            plaene = DEMO_PLAENE;
+        } else {
+            await loadFromSupabase();
+        }
+    } catch(e) {
+        console.warn('Auth/DB Fehler, lade Preview:', e);
+        isPreview = true;
+        plaene = DEMO_PLAENE;
+    }
+
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+}
+
+async function loadFromSupabase() {
+    console.log('[Zucht] Lade aus Supabase für User:', currentUser.id);
+    var res = await sb.from('zuchtplaene').select('*').eq('user_id', currentUser.id);
+    console.log('[Zucht] SELECT Result:', res);
+    if (res.error) {
+        console.error('[Zucht] ❌ SELECT Fehler:', res.error);
+        showToast('Ladefehler: ' + res.error.message, 'error');
+    }
+    plaene = (res.data || []).map(function(r) {
+        return {
+            id: r.id,
+            name: r.name,
+            sammelbrut: r.sammelbrut,
+            umlarven: r.umlarven,
+            zusetzen: r.zusetzen,
+            notizen: r.notizen,
+            tageUmlarven: r.tage_umlarven || 4,
+            tageZusetzen: r.tage_zusetzen || 12,
+            created: new Date(r.created_at).getTime()
+        };
+    });
+    console.log('[Zucht] Geladene Pläne:', plaene.length);
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    var app = document.getElementById('app');
+    var html = '';
+
+    if (isPreview) {
+        html += '<div class="preview-banner"><span>👁️</span> Vorschau-Modus – Du siehst Demo-Daten. Melde dich an, um deine Zuchtpläne zu verwalten.</div>';
+    }
+
+    // Header
+    html += '<div class="zucht-header-banner">';
+    html += '<h1>👑 Königinnenzucht</h1>';
+    html += '<p>Plane deine Zucht mit automatischer Datumsberechnung.</p>';
+    html += '</div>';
+
+    // Stats
+    var jetzt = Date.now();
+    var aktive = plaene.filter(function(p) { return jetzt < p.zusetzen; });
+    var abgeschlossen = plaene.filter(function(p) { return jetzt >= p.zusetzen; });
+    var naechsterTermin = null;
+    aktive.forEach(function(p) {
+        [p.sammelbrut, p.umlarven, p.zusetzen].forEach(function(t) {
+            if (t > jetzt && (!naechsterTermin || t < naechsterTermin)) naechsterTermin = t;
+        });
+    });
+
+    html += '<div class="stats-row">';
+    html += '<div class="stat-card"><div class="stat-value">' + plaene.length + '</div><div class="stat-label">Zuchtpläne</div></div>';
+    html += '<div class="stat-card"><div class="stat-value" style="color:#F5A623">' + aktive.length + '</div><div class="stat-label">Aktiv</div></div>';
+    html += '<div class="stat-card"><div class="stat-value" style="color:#10b981">' + abgeschlossen.length + '</div><div class="stat-label">Abgeschlossen</div></div>';
+    html += '</div>';
+
+    // Nächster Termin Highlight
+    if (naechsterTermin) {
+        var tageVerbl = Math.ceil((naechsterTermin - jetzt) / (1000*60*60*24));
+        var naechsterPlan = null;
+        var naechsterStep = '';
+        aktive.forEach(function(p) {
+            if (p.sammelbrut === naechsterTermin) { naechsterPlan = p; naechsterStep = '📦 Sammelbrut'; }
+            else if (p.umlarven === naechsterTermin) { naechsterPlan = p; naechsterStep = '🔬 Umlarven'; }
+            else if (p.zusetzen === naechsterTermin) { naechsterPlan = p; naechsterStep = '👑 Zusetzen'; }
+        });
+        if (naechsterPlan) {
+            html += '<div class="card" style="border-left:4px solid #F5A623;background:#FFFCF5;margin-bottom:1rem">';
+            html += '<div style="font-size:.8rem;color:#A69580;margin-bottom:.25rem">Nächster Termin</div>';
+            html += '<div style="font-weight:700;font-size:1.1rem;color:#1C1410">' + naechsterStep + ' – ' + esc(naechsterPlan.name) + '</div>';
+            html += '<div style="color:#F5A623;font-weight:600;margin-top:.25rem">';
+            if (tageVerbl === 0) html += '🔴 Heute!';
+            else if (tageVerbl === 1) html += '🟡 Morgen';
+            else html += 'In ' + tageVerbl + ' Tagen (' + formatDatum(naechsterTermin) + ')';
+            html += '</div></div>';
+        }
+    }
+
+    // Action Bar
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">';
+    if (!isPreview) {
+        html += '<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neuer Zuchtplan</button>';
+    } else {
+        html += '<div></div>';
+    }
+    html += '<div class="filter-tabs" style="margin-bottom:0">';
+    html += '<button class="filter-tab' + (currentFilter === 'alle' ? ' active' : '') + '" onclick="setFilter(\'alle\')">Alle (' + plaene.length + ')</button>';
+    html += '<button class="filter-tab' + (currentFilter === 'aktiv' ? ' active' : '') + '" onclick="setFilter(\'aktiv\')">Aktiv (' + aktive.length + ')</button>';
+    html += '<button class="filter-tab' + (currentFilter === 'abgeschlossen' ? ' active' : '') + '" onclick="setFilter(\'abgeschlossen\')">Fertig (' + abgeschlossen.length + ')</button>';
+    html += '</div></div>';
+
+    // Gefilterte Pläne
+    var filtered = plaene.slice();
+    if (currentFilter === 'aktiv') filtered = aktive;
+    else if (currentFilter === 'abgeschlossen') filtered = abgeschlossen;
+    filtered.sort(function(a, b) { return b.created - a.created; });
+
+    if (filtered.length === 0) {
+        html += '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">';
+        html += '<div style="font-size:3rem;margin-bottom:1rem">👑</div>';
+        if (plaene.length === 0) {
+            html += '<h3>Noch keine Zuchtpläne</h3>';
+            html += '<p style="margin:.5rem 0 1.5rem">Erstelle deinen ersten Zuchtplan!</p>';
+            if (!isPreview) html += '<button class="btn btn-primary" onclick="openModal()">Ersten Zuchtplan erstellen</button>';
+        } else {
+            html += '<h3>Keine ' + (currentFilter === 'aktiv' ? 'aktiven' : 'abgeschlossenen') + ' Zuchtpläne</h3>';
+        }
+        html += '</div>';
+    }
+
+    filtered.forEach(function(plan, idx) {
+        var phase = getPhase(plan);
+        var badgeClass = jetzt >= plan.zusetzen ? 'badge-completed' : (jetzt >= plan.sammelbrut ? 'badge-active' : 'badge-upcoming');
+
+        var naechster = null;
+        var naechstesDatum = null;
+        if (jetzt < plan.sammelbrut) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
+        else if (jetzt < plan.umlarven) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
+        else if (jetzt < plan.zusetzen) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
+        var verbleibend = naechstesDatum ? getTageVerbleibend(naechstesDatum) : null;
+
+        html += '<div class="zucht-card anim-in" style="animation-delay:' + (idx * 0.06) + 's">';
+        html += '<div class="zucht-card-header"><div>';
+        html += '<div class="zucht-title">' + esc(plan.name) + '</div>';
+        html += '<div class="' + badgeClass + '" style="margin-top:.5rem">' + phase + '</div>';
+        if (verbleibend) {
+            html += '<div style="margin-top:.5rem;font-size:.85rem;color:#7A6652">⏭️ <strong>' + naechster + ':</strong> <span style="color:#F5A623;font-weight:600">' + verbleibend + '</span></div>';
+        }
+        html += '</div>';
+        if (!isPreview) {
+            html += '<div style="display:flex;gap:.5rem">';
+            html += '<button class="btn btn-blue btn-xs" onclick="openModal(\'' + plan.id + '\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteZucht(\'' + plan.id + '\')">🗑️</button>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Timeline
+        html += '<div class="timeline">';
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.sammelbrut ? 'completed' : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div></div>';
+
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.umlarven ? (jetzt < plan.zusetzen ? 'active' : 'completed') : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div>';
+        if (jetzt >= plan.umlarven && jetzt < plan.zusetzen) html += '<div class="timeline-note">🐝 Weiselzellen wachsen...</div>';
+        html += '</div></div>';
+
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.zusetzen ? 'completed' : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div>';
+        if (jetzt >= plan.zusetzen) html += '<div class="timeline-note">✅ Zuchtplan abgeschlossen!</div>';
+        html += '</div></div>';
+        html += '</div>';
+
+        // Notizen
+        if (plan.notizen) {
+            html += '<div style="margin-top:.5rem;padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#7A6652">💭 ' + esc(plan.notizen) + '</div>';
+        }
+
+        html += '</div>';
+    });
+
+    app.innerHTML = html;
+}
+
+// ============================================
+// MODAL
+// ============================================
+function openModal(id) {
+    if (isPreview) { showToast('Bitte einloggen', 'error'); return; }
+
+    if (id) {
+        var plan = plaene.find(function(p) { return p.id === id; });
+        if (!plan) return;
+        editId = id;
+        document.getElementById('zuchtModalTitle').textContent = '✏️ Zuchtplan bearbeiten';
+        document.getElementById('zuchtName').value = plan.name;
+        document.getElementById('zuchtSammel').value = new Date(plan.sammelbrut).toISOString().split('T')[0];
+        document.getElementById('zuchtNotizen').value = plan.notizen || '';
+        tageUmlarven = plan.tageUmlarven || 4;
+        tageZusetzen = plan.tageZusetzen || 12;
+    } else {
+        editId = null;
+        document.getElementById('zuchtModalTitle').textContent = '👑 Neuer Zuchtplan';
+        document.getElementById('zuchtName').value = '';
+        document.getElementById('zuchtSammel').value = new Date().toISOString().split('T')[0];
+        document.getElementById('zuchtNotizen').value = '';
+        tageUmlarven = 4;
+        tageZusetzen = 12;
+    }
+
+    document.getElementById('tageUmlarvenVal').textContent = tageUmlarven;
+    document.getElementById('tageZusetzenVal').textContent = tageZusetzen;
+    berechneAlles();
+    document.getElementById('zuchtModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('zuchtModal').classList.remove('active');
+    editId = null;
+}
+
+function changeTage(typ, delta) {
+    if (typ === 'umlarven') {
+        tageUmlarven = Math.max(1, tageUmlarven + delta);
+        document.getElementById('tageUmlarvenVal').textContent = tageUmlarven;
+    } else {
+        tageZusetzen = Math.max(1, tageZusetzen + delta);
+        document.getElementById('tageZusetzenVal').textContent = tageZusetzen;
+    }
+    berechneAlles();
+}
+
+function berechneAlles() {
+    var sammelbrut = document.getElementById('zuchtSammel').value;
+    if (!sammelbrut) return;
+    var d = new Date(sammelbrut);
+    var u = new Date(d);
+    u.setDate(u.getDate() + tageUmlarven);
+    document.getElementById('zuchtUmlarven').value = u.toISOString().split('T')[0];
+    var z = new Date(u);
+    z.setDate(z.getDate() + tageZusetzen);
+    document.getElementById('zuchtZusetzen').value = z.toISOString().split('T')[0];
+}
+
+// ============================================
+// SAVE – direkt nach Supabase!
+// ============================================
+async function saveZucht() {
+    if (isPreview) return;
+
+    var name = document.getElementById('zuchtName').value.trim();
+    var sammelbrut = document.getElementById('zuchtSammel').value;
+    var notizen = document.getElementById('zuchtNotizen').value.trim();
+
+    if (!name || !sammelbrut) { alert('Bitte Namen und Datum eingeben!'); return; }
+
+    var sTs = new Date(sammelbrut).getTime();
+    var uTs = new Date(document.getElementById('zuchtUmlarven').value).getTime();
+    var zTs = new Date(document.getElementById('zuchtZusetzen').value).getTime();
+
+    console.log('[Zucht] User ID:', currentUser.id);
+    console.log('[Zucht] Speichere:', {name, sammelbrut: sTs, umlarven: uTs, zusetzen: zTs, tageUmlarven, tageZusetzen});
+
+    var dbData = {
+        user_id: currentUser.id,
+        name: name,
+        sammelbrut: sTs,
+        umlarven: uTs,
+        zusetzen: zTs,
+        notizen: notizen,
+        tage_umlarven: tageUmlarven,
+        tage_zusetzen: tageZusetzen
+    };
+
+    try {
+        if (editId) {
+            console.log('[Zucht] UPDATE id:', editId);
+            var res = await sb.from('zuchtplaene').update(dbData).eq('id', editId);
+            console.log('[Zucht] UPDATE Result:', res);
+            if (res.error) { 
+                console.error('[Zucht] ❌ UPDATE Fehler:', res.error); 
+                showToast('Fehler: ' + res.error.message, 'error'); 
+                return; 
+            }
+            showToast('✅ Zuchtplan aktualisiert!', 'success');
+        } else {
+            dbData.id = crypto.randomUUID ? crypto.randomUUID() : 'zucht_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            console.log('[Zucht] INSERT mit id:', dbData.id);
+            var res = await sb.from('zuchtplaene').insert(dbData);
+            console.log('[Zucht] INSERT Result:', res);
+            if (res.error) { 
+                console.error('[Zucht] ❌ INSERT Fehler:', res.error); 
+                showToast('Fehler: ' + res.error.message, 'error'); 
+                return; 
+            }
+            showToast('✅ Zuchtplan erstellt!', 'success');
+        }
+
+        // Reload aus Supabase
+        console.log('[Zucht] Lade Pläne neu aus Supabase...');
+        await loadFromSupabase();
+        console.log('[Zucht] Pläne nach Reload:', plaene.length, plaene);
+        closeModal();
+        render();
+    } catch(e) {
+        console.error('[Zucht] ❌ Exception:', e);
+        showToast('Fehler beim Speichern: ' + e.message, 'error');
+    }
+}
+
+// ============================================
+// DELETE – direkt aus Supabase!
+// ============================================
+async function deleteZucht(id) {
+    if (isPreview) return;
+    if (!confirm('Zuchtplan wirklich löschen?')) return;
+
+    var res = await db.del('zuchtplaene', id);
+    if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
+
+    await loadFromSupabase();
+    render();
+    showToast('🗑️ Zuchtplan gelöscht', '');
+}
+
+// ============================================
+// FILTER
+// ============================================
+function setFilter(f) {
+    currentFilter = f;
+    render();
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function getPhase(plan) {
+    var j = Date.now();
+    if (j >= plan.zusetzen) return '✅ Abgeschlossen';
+    if (j >= plan.umlarven) return '🔬 Nach Umlarven';
+    if (j >= plan.sammelbrut) return '📦 Sammelbrut läuft';
+    return '📋 Geplant';
+}
+
+function getTageVerbleibend(d) {
+    var t = Math.ceil((d - Date.now()) / (1000*60*60*24));
+    if (t < 0) return null;
+    if (t === 0) return 'Heute!';
+    if (t === 1) return 'Morgen';
+    return 'In ' + t + ' Tagen';
+}
+
+function formatDatum(ts) {
+    return new Date(ts).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric'});
+}
+
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function showToast(msg, typ) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = typ === 'error' ? '#991b1b' : typ === 'success' ? '#065f46' : '#1C1410';
+    setTimeout(function() { el.style.display = 'none'; }, 2500);
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+</body>
+</html>
