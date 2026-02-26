@@ -184,7 +184,8 @@ async function erstelleVollBackup(grund) {
 
 // Einzelne geteilte Tracht von der Karte entfernen
 async function deleteSharedTracht(id) {
-    if (!confirm('Diese Tracht von der Karte entfernen?')) return;
+    var tracht = allTrachten.find(function(t){ return t.id === id; });
+    if (tracht) backupTrachten([tracht], 'Geteilte Tracht entfernt: ' + tracht.typ);
     var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     var result = await authSb.from('trachten_shared').delete().eq('id', id);
     if (result.error) { alert('Fehler: ' + result.error.message); return; }
@@ -201,8 +202,7 @@ async function deleteAllMyTrachten() {
     if (!loggedInUserId) { alert('Du bist nicht eingeloggt.'); return; }
     var meine = allTrachten.filter(function(t){ return t.user_id === loggedInUserId; });
     if (meine.length === 0) { alert('Keine geteilten Trachten vorhanden.'); return; }
-    if (!confirm('Alle '+meine.length+' geteilten Trachten von der Karte entfernen? Ein Backup wird vorher erstellt.')) return;
-    await erstelleVollBackup('Alle geteilten Trachten entfernt (' + meine.length + ')');
+    backupTrachten(meine, 'Alle geteilten Trachten entfernt (' + meine.length + ')');
     var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     // Aus trachten_shared löschen
     var result = await authSb.from('trachten_shared').delete().eq('user_id', loggedInUserId);
@@ -214,6 +214,36 @@ async function deleteAllMyTrachten() {
     buildFilters(allTrachten);
 }
 window.deleteAllMyTrachten = deleteAllMyTrachten;
+
+// Auth prüfen, dann Trachten laden
+(async function(){
+    try {
+        var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var sess = await authSb.auth.getSession();
+        if (sess.data.session) {
+            loggedInUserId = sess.data.session.user.id;
+            console.log('✅ Eingeloggt als:', loggedInUserId);
+        }
+    } catch(e) { console.log('Nicht eingeloggt'); }
+    // Jetzt erst Trachten laden (loggedInUserId ist gesetzt)
+    loadTrachten();
+})();
+
+// Prüfe ob User eingeloggt ist (für Lösch-Button)
+var loggedInUserId = null;
+
+// Lösch-Funktion für eigene geteilte Trachten
+async function deleteSharedTracht(id) {
+    if (!confirm('Diese Tracht von der Karte entfernen?')) return;
+    // Nutze authentifizierten Client zum Löschen (RLS)
+    var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var result = await authSb.from('trachten_shared').delete().eq('id', id);
+    if (result.error) { alert('Fehler: ' + result.error.message); return; }
+    allTrachten = allTrachten.filter(function(t){ return t.id !== id; });
+    renderMarkers(allTrachten);
+    buildFilters(allTrachten);
+}
+window.deleteSharedTracht = deleteSharedTracht;
 
 // Auth prüfen, dann Trachten laden
 (async function(){
