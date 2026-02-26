@@ -3387,33 +3387,110 @@ const wetterMod = {
     },
     
     async ortAendern(){
-        var ort = prompt('Wetter-Standort eingeben (z.B. "Karlsruhe" oder "München"):');
-        if (!ort || !ort.trim()) return;
-        ort = ort.trim();
+        // Modal öffnen
+        document.getElementById('wetterOrtModal').classList.add('active');
+        
+        // Standort-Liste befüllen
+        var liste = document.getElementById('wetterStandortListe');
+        var standorte = app.data.standorte || [];
+        var gpsStandorte = standorte.filter(function(s){ return s.lat && s.lng; });
+        
+        if (gpsStandorte.length > 0) {
+            var html = '';
+            gpsStandorte.forEach(function(s){
+                var istAktiv = wetterMod.customOrt === s.name;
+                html += '<button class="btn '+(istAktiv?'btn-primary':'btn-outline')+' btn-sm" style="margin:.25rem" onclick="wetterMod.ortWaehlen(\''+s.name+'\','+s.lat+','+s.lng+')">📍 '+s.name+'</button>';
+            });
+            liste.innerHTML = html;
+        } else {
+            liste.innerHTML = '<div style="font-size:.8rem;color:#94a3b8">Keine Standorte mit GPS vorhanden</div>';
+        }
+        
+        // Suchergebnis zurücksetzen
+        document.getElementById('wetterSuchErgebnis').innerHTML = '';
+        document.getElementById('wetterOrtSuche').value = '';
+        document.getElementById('wetterKarteInfo').innerHTML = 'Klicke auf die Karte um einen Standort zu wählen';
+        
+        // Karte initialisieren
+        setTimeout(function(){
+            var container = document.getElementById('wetterKarte');
+            if (wetterMod._karte) { wetterMod._karte.remove(); wetterMod._karte = null; }
+            var startLat = wetterMod.customLat || 49.0;
+            var startLng = wetterMod.customLng || 8.4;
+            var karte = L.map('wetterKarte').setView([startLat, startLng], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:18}).addTo(karte);
+            wetterMod._karte = karte;
+            wetterMod._marker = null;
+            
+            // Bestehenden Standort markieren
+            if (wetterMod.customLat && wetterMod.customLng) {
+                wetterMod._marker = L.marker([wetterMod.customLat, wetterMod.customLng]).addTo(karte);
+            }
+            
+            // Standort-Marker anzeigen
+            gpsStandorte.forEach(function(s){
+                L.circleMarker([s.lat, s.lng], {radius:6, color:'#F5A623', fillColor:'#F5A623', fillOpacity:0.8})
+                    .bindTooltip(s.name)
+                    .addTo(karte);
+            });
+            
+            // Klick auf Karte
+            karte.on('click', async function(e){
+                var lat = e.latlng.lat;
+                var lng = e.latlng.lng;
+                if (wetterMod._marker) karte.removeLayer(wetterMod._marker);
+                wetterMod._marker = L.marker([lat, lng]).addTo(karte);
+                document.getElementById('wetterKarteInfo').innerHTML = '⏳ Ort wird ermittelt...';
+                try {
+                    var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+lat.toFixed(2)+','+lng.toFixed(2)+'&count=1&language=de');
+                    // Reverse geocoding gibts nicht bei open-meteo, also nehmen wir die Koordinaten direkt
+                    var ortName = 'Standort ('+lat.toFixed(4)+', '+lng.toFixed(4)+')';
+                    document.getElementById('wetterKarteInfo').innerHTML = '📍 '+ortName+' <button class="btn btn-primary btn-sm" style="margin-left:.5rem" onclick="wetterMod.ortWaehlen(\''+ortName+'\','+lat+','+lng+')">✓ Übernehmen</button>';
+                } catch(err) {
+                    document.getElementById('wetterKarteInfo').innerHTML = '📍 '+lat.toFixed(4)+', '+lng.toFixed(4)+' <button class="btn btn-primary btn-sm" style="margin-left:.5rem" onclick="wetterMod.ortWaehlen(\'Standort\','+lat+','+lng+')">✓ Übernehmen</button>';
+                }
+            });
+        }, 300);
+    },
+    
+    async ortSuchen(){
+        var ort = document.getElementById('wetterOrtSuche').value.trim();
+        if (!ort) return;
+        var ergebnis = document.getElementById('wetterSuchErgebnis');
+        ergebnis.innerHTML = '⏳ Suche...';
         try {
-            // Geocoding via Open-Meteo
-            var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(ort)+'&count=1&language=de');
+            var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(ort)+'&count=5&language=de');
             var data = await resp.json();
             if (!data.results || data.results.length === 0) {
-                app.toast('❌ Ort "'+ort+'" nicht gefunden', 'error');
+                ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Kein Ergebnis für "'+ort+'"</div>';
                 return;
             }
-            var r = data.results[0];
-            this.customOrt = r.name;
-            this.customLat = r.latitude;
-            this.customLng = r.longitude;
-            // In Supabase speichern
-            await sb.from('profiles').update({wetter_ort: r.name, wetter_lat: r.latitude, wetter_lng: r.longitude}).eq('id', currentUser.id);
-            // Wetter neu laden
-            this.daten = null;
-            this.letzterAbruf = null;
-            await this.laden();
-            app.render();
-            app.toast('✅ Wetter-Standort: '+r.name, 'success');
+            var html = '';
+            data.results.forEach(function(r){
+                var label = r.name + (r.admin1 ? ', '+r.admin1 : '') + (r.country ? ' ('+r.country+')' : '');
+                html += '<button class="btn btn-outline btn-sm" style="margin:.25rem;display:block;width:100%;text-align:left" onclick="wetterMod.ortWaehlen(\''+r.name.replace(/'/g,"\\'")+'\','+r.latitude+','+r.longitude+')">📍 '+label+'</button>';
+            });
+            ergebnis.innerHTML = html;
         } catch(e) {
-            console.error('Geocoding Fehler:', e);
-            app.toast('❌ Fehler beim Suchen', 'error');
+            ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Fehler bei der Suche</div>';
         }
+    },
+    
+    async ortWaehlen(name, lat, lng){
+        this.customOrt = name;
+        this.customLat = lat;
+        this.customLng = lng;
+        // In Supabase speichern
+        await sb.from('profiles').update({wetter_ort: name, wetter_lat: lat, wetter_lng: lng}).eq('id', currentUser.id);
+        // Modal schließen
+        document.getElementById('wetterOrtModal').classList.remove('active');
+        if (this._karte) { this._karte.remove(); this._karte = null; }
+        // Wetter neu laden
+        this.daten = null;
+        this.letzterAbruf = null;
+        await this.laden();
+        app.render();
+        app.toast('✅ Wetter-Standort: '+name, 'success');
     },
     
     async ladenFuerStandort(standortId, lat, lng){
@@ -4424,5 +4501,35 @@ var _startPageHash = window.location.hash.replace('#','');
 })();
 
 </script>
+
+<!-- Wetter-Standort Modal -->
+<div id="wetterOrtModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2>🌤️ Wetter-Standort wählen</h2>
+            <button class="close-btn" onclick="document.getElementById('wetterOrtModal').classList.remove('active')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">📍 Aus deinen Standorten wählen</label>
+                <div id="wetterStandortListe"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🔍 Oder Ort suchen</label>
+                <div style="display:flex;gap:.5rem">
+                    <input type="text" id="wetterOrtSuche" class="input" placeholder="z.B. Karlsruhe, München..." style="flex:1">
+                    <button class="btn btn-primary" onclick="wetterMod.ortSuchen()">Suchen</button>
+                </div>
+                <div id="wetterSuchErgebnis" style="margin-top:.5rem"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🗺️ Oder auf der Karte klicken</label>
+                <div id="wetterKarte" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4"></div>
+                <div id="wetterKarteInfo" style="font-size:.8rem;color:#7A6652;margin-top:.5rem"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
