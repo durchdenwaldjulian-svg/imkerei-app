@@ -83,7 +83,10 @@
         <h1>🐝 Trachtkarte</h1>
         <div class="header-sub" id="lastUpdate">Lade Daten...</div>
     </div>
-    <a href="index.html" class="header-link">← Zur App</a>
+    <div style="display:flex;gap:.5rem;align-items:center">
+        <button id="btnDeleteAll" onclick="deleteAllMyTrachten()" style="background:#ef4444;color:#fff;border:none;padding:.5rem .75rem;border-radius:.5rem;font-size:.8rem;font-weight:600;cursor:pointer">🗑️ Alle geteilten Trachten entfernen</button>
+        <a href="index.html#tracht" class="header-link">← Zur App</a>
+    </div>
 </div>
 
 <div class="filter-bar">
@@ -124,6 +127,107 @@ if (typeof L === 'undefined') {
 }
 
 sb = createPublicClient();
+
+// Prüfe ob User eingeloggt ist (für Lösch-Button)
+var loggedInUserId = null;
+
+// Vollständiges Backup aus Supabase erstellen (alle Tabellen laden)
+async function erstelleVollBackup(grund) {
+    try {
+        var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var sess = await authSb.auth.getSession();
+        if (!sess.data.session) { 
+            alert('⚠️ Backup nicht möglich: Du bist nicht eingeloggt.');
+            return false; 
+        }
+        var uid = sess.data.session.user.id;
+        
+        var results = await Promise.all([
+            authSb.from('standorte').select('*').eq('user_id', uid),
+            authSb.from('voelker').select('*').eq('user_id', uid),
+            authSb.from('aufgaben').select('*').eq('user_id', uid),
+            authSb.from('kosten').select('*').eq('user_id', uid),
+            authSb.from('zuchtplaene').select('*').eq('user_id', uid),
+            authSb.from('trachten').select('*').eq('user_id', uid),
+            authSb.from('behandlungen').select('*').eq('user_id', uid),
+            authSb.from('packliste').select('*').eq('user_id', uid)
+        ]);
+        
+        var backup = {
+            datum: new Date().toISOString(),
+            grund: grund,
+            version: 1,
+            daten: {
+                standorte: (results[0].data||[]).map(function(r){ return {id:r.id,name:r.name,notizen:r.notizen,mapsLink:r.maps_link,lat:r.lat,lng:r.lng,created:r.created_at}; }),
+                voelker: (results[1].data||[]).map(function(r){ return {id:r.id,standortId:r.standort_id,name:r.name,beutensystem:r.beutensystem,status:r.status,notizen:r.notizen,honigertrag:parseFloat(r.honigertrag)||0,created:r.created_at}; }),
+                aufgaben: (results[2].data||[]).map(function(r){ return {id:r.id,typ:r.typ,notiz:r.notiz,faelligkeit:r.faelligkeit,dauer:r.dauer,prio:r.prio,erledigt:r.erledigt,standortId:r.standort_id||null,intervallTage:r.intervall_tage||0,created:r.created_at}; }),
+                kosten: (results[3].data||[]).map(function(r){ return {id:r.id,beschreibung:r.beschreibung,betrag:parseFloat(r.betrag)||0,kat:r.kat,datum:r.datum}; }),
+                zuchtplaene: (results[4].data||[]).map(function(r){ return {id:r.id,name:r.name,sammelbrut:r.sammelbrut,umlarven:r.umlarven,zusetzen:r.zusetzen,notizen:r.notizen,tageUmlarven:r.tage_umlarven,tageZusetzen:r.tage_zusetzen,created:r.created_at}; }),
+                trachten: (results[5].data||[]).map(function(r){ return {id:r.id,typ:r.typ,standort:r.standort,beginn:r.beginn,ende:r.ende,ertrag:parseFloat(r.ertrag)||0,notizen:r.notizen,lat:r.lat||null,lng:r.lng||null,shared:r.shared||false,created:r.created_at}; }),
+                behandlungen: (results[6].data||[]).map(function(r){ return {id:r.id,voelkerIds:r.voelker_ids,voelkerLabel:r.voelker_label,methode:r.methode,methodeName:r.methode_name,datum:r.datum,intervall:r.intervall,intervallLabel:r.intervall_label,termine:r.termine,notizen:r.notizen,standortId:r.standort_id||null,menge:r.menge||'',verabreichung:r.verabreichung||'',lieferant:r.lieferant||'',wartezeit:r.wartezeit||'',behandler:r.behandler||'',created:r.created_at}; }),
+                packliste: (results[7].data||[]).map(function(r){ return {id:r.id,kategorie:r.kategorie,name:r.name,checked:r.checked,menge:r.menge,istSchnell:r.ist_schnell,schnellTyp:r.schnell_typ}; })
+            }
+        };
+        
+        var backups = JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
+        backups.unshift(backup);
+        if (backups.length > 10) backups = backups.slice(0, 10);
+        localStorage.setItem('imkerei_backups', JSON.stringify(backups));
+        console.log('✅ Vollständiges Backup erstellt:', grund);
+        return true;
+    } catch(e) {
+        console.error('❌ Backup Fehler:', e);
+        alert('❌ Backup fehlgeschlagen: ' + e.message);
+        return false;
+    }
+}
+
+// Einzelne geteilte Tracht von der Karte entfernen
+async function deleteSharedTracht(id) {
+    var tracht = allTrachten.find(function(t){ return t.id === id; });
+    if (tracht) backupTrachten([tracht], 'Geteilte Tracht entfernt: ' + tracht.typ);
+    var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var result = await authSb.from('trachten_shared').delete().eq('id', id);
+    if (result.error) { alert('Fehler: ' + result.error.message); return; }
+    // shared-Flag in eigener trachten-Tabelle zurücksetzen
+    await authSb.from('trachten').update({shared: false}).eq('id', id);
+    allTrachten = allTrachten.filter(function(t){ return t.id !== id; });
+    renderMarkers(allTrachten);
+    buildFilters(allTrachten);
+}
+window.deleteSharedTracht = deleteSharedTracht;
+
+// ALLE eigenen Trachten von der Karte entfernen (shared=false setzen)
+async function deleteAllMyTrachten() {
+    if (!loggedInUserId) { alert('Du bist nicht eingeloggt.'); return; }
+    var meine = allTrachten.filter(function(t){ return t.user_id === loggedInUserId; });
+    if (meine.length === 0) { alert('Keine geteilten Trachten vorhanden.'); return; }
+    backupTrachten(meine, 'Alle geteilten Trachten entfernt (' + meine.length + ')');
+    var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Aus trachten_shared löschen
+    var result = await authSb.from('trachten_shared').delete().eq('user_id', loggedInUserId);
+    if (result.error) { alert('Fehler: ' + result.error.message); return; }
+    // shared-Flag in eigener trachten-Tabelle auf false setzen
+    await authSb.from('trachten').update({shared: false}).eq('user_id', loggedInUserId).eq('shared', true);
+    allTrachten = allTrachten.filter(function(t){ return t.user_id !== loggedInUserId; });
+    renderMarkers(allTrachten);
+    buildFilters(allTrachten);
+}
+window.deleteAllMyTrachten = deleteAllMyTrachten;
+
+// Auth prüfen, dann Trachten laden
+(async function(){
+    try {
+        var authSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        var sess = await authSb.auth.getSession();
+        if (sess.data.session) {
+            loggedInUserId = sess.data.session.user.id;
+            console.log('✅ Eingeloggt als:', loggedInUserId);
+        }
+    } catch(e) { console.log('Nicht eingeloggt'); }
+    // Jetzt erst Trachten laden (loggedInUserId ist gesetzt)
+    loadTrachten();
+})();
 
 // Prüfe ob User eingeloggt ist (für Lösch-Button)
 var loggedInUserId = null;

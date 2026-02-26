@@ -151,6 +151,10 @@
         </div>
         
         <div id="tabTrachten" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                <div style="font-size:.9rem;color:#6b7280" id="trachtenCount"></div>
+                <button onclick="deleteAllTrachten()" style="background:#ef4444;color:#fff;border:none;padding:.5rem 1rem;border-radius:.5rem;font-size:.85rem;font-weight:600;cursor:pointer">🗑️ ALLE Trachten löschen</button>
+            </div>
             <div class="card" style="overflow-x:auto">
                 <table>
                     <thead>
@@ -459,6 +463,8 @@ function renderTrachten() {
             '</tr>';
     });
     document.getElementById('trachtenTable').innerHTML = html || '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:2rem">Keine geteilten Trachten</td></tr>';
+    var countEl = document.getElementById('trachtenCount');
+    if (countEl) countEl.textContent = allTrachten.length + ' geteilte Trachten';
 }
 
 // === VÖLKER TAB (gruppiert nach Benutzer) ===
@@ -760,6 +766,16 @@ async function deleteSharedTracht(id) {
     allTrachten = allTrachten.filter(function(t){return t.id !== id;});
     renderTrachten();
     renderStats();
+}
+
+async function deleteAllTrachten() {
+    if (!confirm('ACHTUNG: Wirklich ALLE '+allTrachten.length+' geteilten Trachten von ALLEN Usern löschen?\n\nDas kann nicht rückgängig gemacht werden!')) return;
+    if (!confirm('Bist du sicher? Letzte Chance!')) return;
+    await sb.from('trachten_shared').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    allTrachten = [];
+    renderTrachten();
+    renderStats();
+    alert('✅ Alle geteilten Trachten wurden gelöscht.');
 }
 
 async function deleteUserData(userId, email) {
