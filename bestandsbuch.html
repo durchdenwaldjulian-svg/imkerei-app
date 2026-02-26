@@ -174,7 +174,7 @@ tbody tr:last-child td { border-bottom:none; }
     <a href="index.html#standorte" class="nav-link">📍 Standorte</a>
     <a href="index.html#aufgaben" class="nav-link">📝 Aufgaben</a>
     <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-link">👑 Königinnenzucht</a>
+    <a href="index.html#koeniginnen" class="nav-link">👑 Königinnenzucht</a>
     <a href="index.html#behandlung" class="nav-link">💉 Behandlungen</a>
     <a href="bewertung.html" class="nav-link">⭐ Völker-Bewertung</a>
     <a href="assistent.html" class="nav-link">🤖 Assistent</a>
@@ -183,15 +183,9 @@ tbody tr:last-child td { border-bottom:none; }
     <a href="ernte.html" class="nav-link">🍯 Honigernte</a>
     <a href="index.html#tracht" class="nav-link">🌸 Tracht</a>
     <a href="index.html#packliste" class="nav-link">📦 Packliste</a>
-    <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-link">💬 Forum</a>
     <div class="nav-section">Verwaltung</div>
     <a href="index.html#kosten" class="nav-link">💰 Kosten</a>
     <div style="flex:1"></div>
-    <div class="nav-section">Rechtliches</div>
-    <a href="impressum.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
-    <a href="datenschutz.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
-    <a href="agb.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
     <a href="index.html#einstellungen" class="nav-link">⚙️ Einstellungen</a>
 </nav>
 
@@ -293,6 +287,7 @@ async function init() {
         return;
     }
     currentUser = session.user;
+    if (typeof initPresence === 'function') initPresence(currentUser);
     await loadData();
     loadImkerDaten();
     buildYearFilter();

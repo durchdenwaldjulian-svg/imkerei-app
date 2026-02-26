@@ -92,7 +92,7 @@ label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom
     <a href="index.html#standorte" class="nav-item-link">📍 Standorte</a>
     <a href="index.html#aufgaben" class="nav-item-link">📝 Aufgaben</a>
     <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-item-link">👑 Königinnenzucht</a>
+    <a href="index.html#koeniginnen" class="nav-item-link">👑 Königinnenzucht</a>
     <a href="index.html#behandlung" class="nav-item-link">💉 Behandlungen</a>
     <a href="bewertung.html" class="nav-item-link">⭐ Völker-Bewertung</a>
     <a href="assistent.html" class="nav-item-link active">🤖 Assistent</a>
@@ -101,15 +101,9 @@ label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom
     <a href="ernte.html" class="nav-item-link">🍯 Honigernte</a>
     <a href="index.html#tracht" class="nav-item-link">🌸 Tracht</a>
     <a href="index.html#packliste" class="nav-item-link">📦 Packliste</a>
-    <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-item-link">💬 Forum</a>
     <div class="nav-section">Verwaltung</div>
     <a href="index.html#kosten" class="nav-item-link">💰 Kosten</a>
     <div style="flex:1"></div>
-    <div class="nav-section">Rechtliches</div>
-    <a href="impressum.html" class="nav-item-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
-    <a href="datenschutz.html" class="nav-item-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
-    <a href="agb.html" class="nav-item-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
     <a href="index.html#einstellungen" class="nav-item-link">⚙️ Einstellungen</a>
 </nav>
 
@@ -258,6 +252,7 @@ async function init() {
     const { data } = await sb.auth.getSession();
     if (!data.session) { location.href = 'index.html'; return; }
     currentUser = data.session.user;
+    if (typeof initPresence === 'function') initPresence(currentUser);
     await loadVoelker();
     renderSteps();
     loadHistorie();
