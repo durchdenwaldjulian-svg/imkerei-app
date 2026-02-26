@@ -1329,15 +1329,18 @@ const app={
         try { localStorage.setItem('imkerei_uiState', JSON.stringify(this.uiState)); } catch(e){}
         // Auch in Supabase versuchen
         if (currentUser) {
-            console.log('[toggleUI] Speichere ui_state für User:', currentUser.id, 'State:', JSON.stringify(this.uiState));
-            sb.from('profiles').update({ui_state: this.uiState}).eq('id', currentUser.id)
+            var uid = currentUser.id;
+            var state = JSON.parse(JSON.stringify(this.uiState));
+            console.log('[toggleUI] ➡️ Update profiles SET ui_state =', state, 'WHERE id =', uid);
+            sb.from('profiles').update({ui_state: state}).eq('id', uid).select()
                 .then(function(res){ 
-                    console.log('[toggleUI] Supabase Antwort:', JSON.stringify(res));
-                    if(res.error) console.error('[toggleUI] Fehler:', res.error);
-                    else console.log('[toggleUI] ✅ Erfolgreich gespeichert');
+                    console.log('[toggleUI] ⬅️ Response data:', res.data, 'error:', res.error, 'count:', res.count, 'status:', res.status);
+                    if(res.error) console.error('[toggleUI] ❌ Fehler:', res.error.message);
+                    else if(!res.data || res.data.length === 0) console.warn('[toggleUI] ⚠️ Kein Datensatz aktualisiert! Falsche ID oder RLS blockiert.');
+                    else console.log('[toggleUI] ✅ Gespeichert:', res.data[0].ui_state);
                 });
         } else {
-            console.warn('[toggleUI] ⚠️ currentUser ist null/undefined!');
+            console.warn('[toggleUI] ⚠️ currentUser ist null!');
         }
         this.render();
     },
@@ -2374,6 +2377,7 @@ const app={
         
         return '<div class="container">'+
         '<h1>📅 Heute</h1>'+
+        '<div class="card" onclick="console.log(\'KLICK TEST!\');app.toggleUI(\'packliste\')" style="cursor:pointer;background:yellow;padding:1rem;margin-bottom:1rem"><b>🧪 KLICK-TEST (Console prüfen)</b></div>'+
         '<div class="card">'+
         '<h3>'+heute.toLocaleDateString('de-DE', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})+'</h3>'+
         '</div>'+
