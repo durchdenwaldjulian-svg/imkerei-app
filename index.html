@@ -2387,11 +2387,11 @@ const app={
         // ⚠️ ÜBERFÄLLIG
         (ueberfaellig.length ?
             '<div class="card" style="background:linear-gradient(135deg,#fef2f2,#fff);border-left:4px solid #ef4444">'+
-            '<button type="button" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;width:100%;background:none;border:none;padding:0;font-family:inherit" onclick="app.toggleUI(\'ueberfaellig\')">'+
+            '<div data-toggle-ui="ueberfaellig" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#ef4444">'+(app.uiState.ueberfaellig?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;color:#ef4444;font-size:1.1rem">⚠️ Überfällig ('+ueberfaellig.length+')</h2>'+
-            '</div></button>'+
+            '</div></div>'+
             '<div style="'+(app.uiState.ueberfaellig?'':'display:none;')+'margin-top:.75rem">'+
             ueberfaellig.map(renderEvent).join('')+
             '</div></div>'
@@ -2401,10 +2401,10 @@ const app={
         // 🔥 HEUTE
         '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">'+
         '<div style="display:flex;justify-content:space-between;align-items:center">'+
-        '<button type="button" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;background:none;border:none;padding:0;font-family:inherit" onclick="app.toggleUI(\'heute\')">'+
+        '<div data-toggle-ui="heute" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;flex:1">'+
         '<span style="font-size:.7rem;color:#10b981">'+(app.uiState.heute?'▼':'▶')+'</span>'+
         '<h2 style="margin:0;font-size:1.1rem">🔥 Heute ('+heuteEvents.length+')</h2>'+
-        '</button>'+
+        '</div>'+
         '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();app.openAufgabeModal()">+ Aufgabe</button>'+
         '</div>'+
         '<div style="'+(app.uiState.heute?'':'display:none;')+'margin-top:.75rem">'+
@@ -2417,11 +2417,11 @@ const app={
         // 📅 NÄCHSTE 7 TAGE
         (naechste7.length ?
             '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff);border-left:4px solid #F5A623">'+
-            '<button type="button" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;width:100%;background:none;border:none;padding:0;font-family:inherit" onclick="app.toggleUI(\'naechste7\')">'+
+            '<div data-toggle-ui="naechste7" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#F5A623">'+(app.uiState.naechste7?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem">📅 Nächste 7 Tage ('+naechste7.length+')</h2>'+
-            '</div></button>'+
+            '</div></div>'+
             '<div style="'+(app.uiState.naechste7?'':'display:none;')+'margin-top:.75rem">'+
             naechste7.map(renderEvent).join('')+
             '</div></div>'
@@ -2431,11 +2431,11 @@ const app={
         // 🔮 SPÄTER
         (spaeter.length ?
             '<div class="card" style="border-left:4px solid #94a3b8">'+
-            '<button type="button" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%;background:none;border:none;padding:0;font-family:inherit" onclick="app.toggleUI(\'spaeter\')">'+
+            '<div data-toggle-ui="spaeter" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.spaeter?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem;color:#64748b">🔮 Später geplant ('+spaeter.length+')</h2>'+
-            '</div></button>'+
+            '</div></div>'+
             '<div style="'+(app.uiState.spaeter?'':'display:none;')+'margin-top:.75rem">'+
             spaeter.map(renderEvent).join('')+
             '</div></div>'
@@ -2475,7 +2475,7 @@ const app={
                 }).join('');
             
             return '<div class="card" style="background:linear-gradient(135deg,#f0f9ff,#fff);border-left:4px solid #3b82f6;padding:.75rem 1rem">'+
-            '<button type="button" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%;background:none;border:none;padding:0;font-family:inherit" onclick="app.toggleUI(\'packliste\')">'+
+            '<div data-toggle-ui="packliste" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.packliste?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1rem">📦 Packliste</h2>'+
@@ -2485,7 +2485,7 @@ const app={
             '<div style="background:#3b82f6;border-radius:999px;height:100%;width:'+prozent+'%"></div></div>'+
             '<span class="badge '+(unchecked.length===0?'badge-green':'badge-yellow')+'" style="font-size:.7rem">'+checked+'/'+total+'</span>'+
             '</div>'+
-            '</button>'+
+            '</div>'+
             '<div style="'+(app.uiState.packliste?'':'display:none;')+'margin-top:.75rem">'+
             detailHtml+
             '<div style="margin-top:.5rem;text-align:center">'+
@@ -4647,6 +4647,16 @@ behandlungMod.init();
 </div>
 
 <script>
+// === TOGGLE UI: Event Delegation (fängt ALLE Klicks auf data-toggle-ui ab) ===
+document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-toggle-ui]');
+    if (el) {
+        var key = el.getAttribute('data-toggle-ui');
+        console.log('[EVENT] Klick auf data-toggle-ui:', key);
+        app.toggleUI(key);
+    }
+});
+
 // === MOBILE MENU ===
 function mobileMenuOpen(){
     var overlay = document.getElementById('mobileMenuOverlay');
