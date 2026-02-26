@@ -777,7 +777,7 @@
     <button class="nav-item" data-page="standorte">📍 Standorte</button>
     <button class="nav-item" data-page="aufgaben">📝 Aufgaben</button>
     <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">👑 Königinnenzucht</a>
+    <button class="nav-item" data-page="koeniginnen">👑 Königinnenzucht</button>
     <button class="nav-item" data-page="behandlung">💉 Behandlungen</button>
     <a href="bewertung.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">⭐ Völker-Bewertung</a>
     <a href="assistent.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🤖 Assistent</a>
@@ -786,15 +786,9 @@
     <a href="ernte.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">🍯 Honigernte</a>
     <button class="nav-item" data-page="tracht">🌸 Tracht</button>
     <button class="nav-item" data-page="packliste">📦 Packliste</button>
-    <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-item" style="text-decoration:none;display:flex;align-items:center;gap:.5rem">💬 Forum</a>
     <div class="nav-section">Verwaltung</div>
     <button class="nav-item" data-page="kosten">💰 Kosten</button>
     <div style="flex:1"></div>
-    <div class="nav-section">Rechtliches</div>
-    <a href="impressum.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
-    <a href="datenschutz.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
-    <a href="agb.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
     <button class="nav-item" data-page="einstellungen">⚙️ Einstellungen</button>
     <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
 </nav>
@@ -824,7 +818,7 @@
         </div>
         <div class="mobile-menu-section">Völker</div>
         <div class="mobile-menu-grid">
-            <a href="zuchtplan.html" class="mobile-menu-item"><span class="mm-icon">👑</span>Zucht</a>
+            <button class="mobile-menu-item" data-mmpage="koeniginnen"><span class="mm-icon">👑</span>Zucht</button>
             <button class="mobile-menu-item" data-mmpage="behandlung"><span class="mm-icon">💉</span>Behandlung</button>
             <a href="bewertung.html" class="mobile-menu-item"><span class="mm-icon">⭐</span>Bewertung</a>
         </div>
@@ -842,14 +836,8 @@
         </div>
         <div class="mobile-menu-section">Verwaltung</div>
         <div class="mobile-menu-grid">
-            <a href="forum.html" class="mobile-menu-item"><span class="mm-icon">💬</span>Forum</a>
             <button class="mobile-menu-item" data-mmpage="einstellungen"><span class="mm-icon">⚙️</span>Einstellungen</button>
             <button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();doLogout()"><span class="mm-icon">🚪</span>Abmelden</button>
-        </div>
-        <div style="padding:.75rem 1rem;display:flex;justify-content:center;gap:1rem;font-size:.7rem;color:#A69580;border-top:1px solid #E8DFD4;margin-top:.5rem">
-            <a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>
-            <a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>
-            <a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>
         </div>
     </div>
 </div>
@@ -977,6 +965,9 @@ async function startApp() {
     document.querySelector('.nav').style.display = '';
     document.querySelector('.footer').style.display = '';
     
+    // Presence starten
+    if (typeof initPresence === 'function') initPresence(currentUser);
+    
     // Load profile
     var profileRes = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     app.data.user = profileRes.data || { name: currentUser.email, email: currentUser.email };
@@ -1044,7 +1035,7 @@ async function startApp() {
         return { id: r.id, beschreibung: r.beschreibung, betrag: parseFloat(r.betrag)||0, kat: r.kat, datum: r.datum };
     });
     zuchtplanMod.plaene = (results[4].data || []).map(function(r) {
-        return { id: r.id, name: r.name, sammelbrut: r.sammelbrut, umlarven: r.umlarven, zusetzen: r.zusetzen, notizen: r.notizen, tageUmlarven: r.tage_umlarven, tageZusetzen: r.tage_zusetzen, erledigtSchritte: r.erledigt_schritte || [], created: r.created_at };
+        return { id: r.id, name: r.name, sammelbrut: r.sammelbrut, umlarven: r.umlarven, zusetzen: r.zusetzen, notizen: r.notizen, tageUmlarven: r.tage_umlarven, tageZusetzen: r.tage_zusetzen, created: r.created_at };
     });
     trachtkalenderMod.trachten = (results[5].data || []).map(function(r) {
         return { id: r.id, typ: r.typ, standort: r.standort, beginn: r.beginn, ende: r.ende, ertrag: parseFloat(r.ertrag)||0, notizen: r.notizen, lat: r.lat||null, lng: r.lng||null, shared: r.shared||false, created: r.created_at };
@@ -2213,7 +2204,7 @@ const app={
             standorte: this.selectedStandortId ? this.rStandortDetails.bind(this) : this.rStandorte.bind(this),
             aufgaben: this.rAufgaben.bind(this),
             kosten: this.rKosten.bind(this),
-            koeniginnen: function(){ window.location.href='zuchtplan.html'; return '<div class="container"><p>Weiterleitung...</p></div>'; },
+            koeniginnen: this.rZuchtplanEnhanced.bind(this),
             tracht: this.rTracht.bind(this),
             ernte: this.rErnte.bind(this),
             tagebuch: this.rPlaceholder.bind(this),
@@ -2299,20 +2290,18 @@ const app={
             });
         });
         
-        // 3. Zuchtplan-Termine (alle 3 Schritte, erledigte ausblenden)
+        // 3. Zuchtplan-Termine
         zuchtplanMod.plaene.forEach(function(p){
-            var erledigt = p.erledigtSchritte || [];
-            [{key:'sammelbrut',name:'Sammelbrut',ts:p.sammelbrut,emoji:'📦'},{key:'umlarven',name:'Umlarven',ts:p.umlarven,emoji:'🔬'},{key:'zusetzen',name:'Zusetzen',ts:p.zusetzen,emoji:'👑'}].forEach(function(step){
-                if (step.ts && erledigt.indexOf(step.key) === -1) {
+            [{name:'Umlarven',ts:p.umlarven,emoji:'🔬'},{name:'Zusetzen',ts:p.zusetzen,emoji:'👑'}].forEach(function(step){
+                if (step.ts) {
                     var tage = Math.ceil((step.ts - heuteTs)/(1000*60*60*24));
-                    if (new Date(step.ts).toDateString() === heuteStr) tage = 0;
-                    if (tage >= -7 && tage <= 90) {
+                    if (tage >= -1 && tage <= 90) {
                         timeline.push({
                             typ: 'zucht',
                             ts: step.ts,
                             tage: tage,
                             status: tage < 0 ? 'overdue' : (tage === 0 ? 'today' : 'upcoming'),
-                            data: {plan:p, step:step.name, stepKey:step.key, emoji:step.emoji}
+                            data: {plan:p, step:step.name, emoji:step.emoji}
                         });
                     }
                 }
@@ -2360,8 +2349,6 @@ const app={
                 emoji = e.data.emoji;
                 titel = e.data.step + ': ' + e.data.plan.name;
                 sub = '👑 Zuchtplan';
-                aktionen = '<button class="btn btn-success btn-xs" onclick="zuchtplanMod.doneStep(\'' + e.data.plan.id + '\',\'' + e.data.stepKey + '\')">✓</button>' +
-                    '<a href="zuchtplan.html" class="btn btn-blue btn-xs" style="text-decoration:none">📋</a>';
             }
             
             // Zeitlabel
@@ -4267,29 +4254,11 @@ const zuchtplanMod = {
     tageZusetzen: 12,
     
     init() {
-        // Daten kommen aus Supabase via startApp() - kein localStorage mehr
+        var gespeichert = localStorage.getItem('imkerei_zuchtplaene');
+        if (gespeichert) { try { this.plaene = JSON.parse(gespeichert); } catch(e) { this.plaene = []; } }
     },
     
-    speichern() { /* nicht mehr nötig - wird direkt nach Supabase gespeichert via zuchtplan.html */ },
-    
-    async doneStep(planId, stepKey) {
-        var plan = this.plaene.find(function(p) { return p.id === planId; });
-        if (!plan) return;
-        var erledigt = plan.erledigtSchritte || [];
-        if (erledigt.indexOf(stepKey) > -1) return; // schon erledigt
-        erledigt.push(stepKey);
-        plan.erledigtSchritte = erledigt;
-        
-        // Nach Supabase speichern
-        var res = await sb.from('zuchtplaene').update({erledigt_schritte: erledigt}).eq('id', planId);
-        if (res.error) {
-            console.error('[Zucht] doneStep Fehler:', res.error);
-            app.toast('Fehler beim Abhaken', 'error');
-            return;
-        }
-        app.toast('✅ ' + stepKey.charAt(0).toUpperCase() + stepKey.slice(1) + ' erledigt!', 'success');
-        app.render();
-    },
+    speichern() { localStorage.setItem('imkerei_zuchtplaene', JSON.stringify(this.plaene)); },
     
     openModal(id) {
         if (id) {
