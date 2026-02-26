@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💬 Forum – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+
+        /* === SIDEBAR NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        /* === TOAST === */
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+
+        /* === FORUM HEADER === */
+        .forum-header{background:linear-gradient(135deg,#1C1410 0%,#3D2E1F 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+        .forum-header::before{content:'';position:absolute;top:-30%;right:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);border-radius:50%}
+        .forum-header h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.5rem;position:relative}
+        .forum-header p{color:#C4A882;font-size:.9rem;position:relative}
+
+        /* === PREVIEW BANNER === */
+        .preview-banner{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:.75rem 1rem;border-radius:.75rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;font-size:.85rem;font-weight:500}
+        .preview-banner .icon{font-size:1.2rem}
+
+        /* === BREADCRUMB === */
+        .breadcrumb{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;font-size:.85rem;color:#7A6652;flex-wrap:wrap}
+        .breadcrumb a{color:#F5A623;text-decoration:none;font-weight:600;cursor:pointer}
+        .breadcrumb a:hover{text-decoration:underline}
+        .breadcrumb .sep{color:#C4A882}
+
+        /* === KATEGORIE GRID === */
+        .kat-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+        .kat-card{background:#fff;border:2px solid rgba(245,166,35,0.08);border-radius:1rem;padding:1.25rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+        .kat-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,166,35,0.12)}
+        .kat-card .emoji{font-size:2rem;margin-bottom:.5rem;display:block}
+        .kat-card .name{font-weight:700;font-size:1.05rem;color:#1C1410;margin-bottom:.25rem}
+        .kat-card .desc{font-size:.8rem;color:#7A6652;line-height:1.4}
+        .kat-card .count{position:absolute;top:1rem;right:1rem;background:#FFF3D6;color:#92400e;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:1rem}
+
+        /* === THREAD LIST === */
+        .thread-item{background:#fff;border:1px solid rgba(245,166,35,0.08);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:.5rem;cursor:pointer;transition:all .15s;display:flex;gap:1rem;align-items:flex-start}
+        .thread-item:hover{border-color:#F5A623;box-shadow:0 2px 12px rgba(245,166,35,0.08)}
+        .thread-item.pinned{border-left:3px solid #F5A623;background:#FFFCF5}
+        .thread-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#f7bc5e);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#1C1410;flex-shrink:0}
+        .thread-body{flex:1;min-width:0}
+        .thread-title{font-weight:700;font-size:1rem;color:#1C1410;margin-bottom:.25rem;display:flex;align-items:center;gap:.5rem}
+        .thread-title .pin-icon{color:#F5A623;font-size:.8rem}
+        .thread-meta{font-size:.75rem;color:#A69580;display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:.35rem}
+        .thread-preview{font-size:.85rem;color:#5C4A3A;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .thread-stats{display:flex;gap:1rem;flex-shrink:0;align-items:center;color:#A69580;font-size:.8rem}
+        .thread-stats span{display:flex;align-items:center;gap:.25rem}
+
+        /* === SORT BAR === */
+        .sort-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:.5rem;flex-wrap:wrap}
+        .sort-bar .sort-btns{display:flex;gap:.25rem}
+        .sort-btn{padding:.4rem .75rem;border:1px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.8rem;color:#7A6652;transition:all .15s}
+        .sort-btn.active{background:#F5A623;color:#1C1410;border-color:#F5A623;font-weight:600}
+        .sort-btn:hover:not(.active){background:#FFF8EE;border-color:#F5A623}
+
+        /* === THREAD VIEW (einzelner Beitrag) === */
+        .post-card{background:#fff;border-radius:1rem;padding:1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(28,20,16,0.04);border:1px solid rgba(245,166,35,0.08)}
+        .post-card.op{border:2px solid rgba(245,166,35,0.15);box-shadow:0 4px 16px rgba(245,166,35,0.08)}
+        .post-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+        .post-header .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#f7bc5e);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#1C1410}
+        .post-header .info{flex:1}
+        .post-header .author{font-weight:700;color:#1C1410;font-size:.95rem}
+        .post-header .time{font-size:.75rem;color:#A69580}
+        .post-inhalt{font-size:.95rem;color:#3D2E1F;line-height:1.7;margin-bottom:1rem;white-space:pre-wrap}
+        .post-actions{display:flex;gap:1rem;align-items:center;padding-top:.75rem;border-top:1px solid rgba(245,166,35,0.08)}
+        .post-action{display:flex;align-items:center;gap:.35rem;color:#A69580;font-size:.85rem;cursor:pointer;padding:.35rem .5rem;border-radius:.5rem;transition:all .15s;border:none;background:none}
+        .post-action:hover{background:#FFF8EE;color:#F5A623}
+        .post-action.liked{color:#ef4444}
+
+        /* === ANTWORT SCHREIBEN === */
+        .reply-box{background:#fff;border-radius:1rem;padding:1.25rem;margin-top:1rem;border:2px solid rgba(245,166,35,0.1)}
+        .reply-box textarea{width:100%;padding:.875rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.95rem;font-family:inherit;resize:vertical;min-height:100px;outline:none;transition:border-color .15s}
+        .reply-box textarea:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+        .reply-box .actions{display:flex;justify-content:flex-end;margin-top:.75rem}
+
+        /* === NEW POST MODAL === */
+        .modal-body .form-group{margin-bottom:1.25rem}
+        .modal-body .kat-select{display:flex;flex-wrap:wrap;gap:.5rem}
+        .modal-body .kat-chip{padding:.5rem .75rem;border:2px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.85rem;transition:all .15s;background:#fff}
+        .modal-body .kat-chip:hover{border-color:#F5A623;background:#FFF8EE}
+        .modal-body .kat-chip.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
+
+        /* === EMPTY STATE === */
+        .empty-state{text-align:center;padding:3rem 1rem;color:#A69580}
+        .empty-state .emoji{font-size:3rem;margin-bottom:1rem;display:block}
+        .empty-state .text{font-size:1rem;margin-bottom:1rem}
+
+        /* === ANTWORTEN SECTION === */
+        .antworten-header{font-size:1rem;font-weight:700;color:#1C1410;margin:1.5rem 0 1rem;display:flex;align-items:center;gap:.5rem}
+        .antworten-header .count{background:#FFF3D6;color:#92400e;font-size:.75rem;padding:.15rem .5rem;border-radius:1rem;font-weight:600}
+
+        /* === MOBILE === */
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .kat-grid{grid-template-columns:1fr}
+            .forum-header{padding:1.5rem 1rem}
+            .forum-header h1{font-size:1.35rem}
+            .thread-stats{display:none}
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .anim-in{animation:cardIn .35s ease forwards}
+    </style>
+</head>
+<body>
+
+<!-- === SIDEBAR NAVIGATION === -->
+<nav class="nav">
+    <div class="nav-brand">
+        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
+        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
+        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
+    </div>
+    <div class="nav-section">Übersicht</div>
+    <a href="index.html#heute" class="nav-item">📅 Heute</a>
+    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
+    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
+    <div class="nav-section">Völker</div>
+    <a href="index.html#koeniginnen" class="nav-item">👑 Königinnenzucht</a>
+    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
+    <a href="bewertung.html" class="nav-item">⭐ Völker-Bewertung</a>
+    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
+    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
+    <div class="nav-section">Ernte & Planung</div>
+    <a href="ernte.html" class="nav-item">🍯 Honigernte</a>
+    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
+    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
+    <div class="nav-section">Community</div>
+    <a href="forum.html" class="nav-item active">💬 Forum</a>
+    <div class="nav-section">Verwaltung</div>
+    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
+    <div style="flex:1"></div>
+    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
+</nav>
+
+<!-- === LOADING === -->
+<div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
+    <div style="text-align:center;color:#7A6652">
+        <div style="font-size:3rem;margin-bottom:1rem">💬</div>
+        <div>Lade Forum...</div>
+    </div>
+</div>
+
+<!-- === MAIN APP === -->
+<div id="app" class="container" style="display:none"></div>
+
+<!-- === TOAST === -->
+<div id="toast" class="toast"></div>
+
+<!-- === NEUER BEITRAG MODAL === -->
+<div id="newPostModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:520px;height:auto;border-radius:1rem;margin:auto">
+        <div class="modal-header">
+            <h2>✏️ Neuer Beitrag</h2>
+            <button class="close-btn" onclick="closeNewPost()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Kategorie</label>
+                <div id="katChips" class="kat-select"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Titel</label>
+                <input id="postTitel" class="input" placeholder="Worum geht's?" maxlength="120">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Inhalt</label>
+                <textarea id="postInhalt" class="input" placeholder="Schreib deinen Beitrag..." rows="5"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="submitPost()">Beitrag veröffentlichen</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ============================================
+// IMKEREI FORUM – Hauptlogik
+// ============================================
+
+let isPreview = false;
+let kategorien = [];
+let beitraege = [];
+let antworten = [];
+let currentView = 'kategorien'; // kategorien | threads | thread
+let currentKategorie = null;
+let currentThread = null;
+let currentSort = 'neueste';
+let selectedKatId = null;
+
+// ============================================
+// DEMO-DATEN für Preview-Modus
+// ============================================
+const DEMO_KATEGORIEN = [
+    {id:'k1', name:'Allgemein', beschreibung:'Smalltalk, Neuigkeiten und alles rund um die Imkerei', emoji:'💬', sortierung:1},
+    {id:'k2', name:'Varroa & Bienengesundheit', beschreibung:'Behandlungsmethoden, Krankheiten, Vorsorge', emoji:'🔬', sortierung:2},
+    {id:'k3', name:'Tracht & Honig', beschreibung:'Trachtquellen, Honigqualität, Verarbeitung', emoji:'🌸', sortierung:3},
+    {id:'k4', name:'Anfänger-Fragen', beschreibung:'Keine Frage ist zu einfach – hier helfen erfahrene Imker', emoji:'🎓', sortierung:4},
+    {id:'k5', name:'Marktplatz', beschreibung:'Verkauf, Tausch und Suche von Equipment, Völkern und mehr', emoji:'🏪', sortierung:5}
+];
+
+const DEMO_BEITRAEGE = [
+    {id:'b1', kategorie_id:'k1', user_id:'u1', titel:'Willkommen im Imkerei-Forum!', inhalt:'Hallo zusammen! 🐝\n\nSchön, dass ihr hier seid. In diesem Forum könnt ihr euch austauschen, Fragen stellen und eure Erfahrungen teilen.\n\nEin paar Regeln:\n• Seid freundlich zueinander\n• Teilt euer Wissen\n• Keine Werbung ohne Bezug zur Imkerei\n\nViel Spaß!', autor_name:'Julian (Admin)', likes:12, antworten_count:3, angeheftet:true, created_at:'2026-02-25T10:00:00Z'},
+    {id:'b2', kategorie_id:'k1', titel:'Wie war eure Saison 2025?', inhalt:'Mich würde mal interessieren, wie eure letzte Saison so lief. Bei mir war der Frühtrachtertrag deutlich besser als im Vorjahr, dafür war die Sommertracht eher mau.\n\nWie sah es bei euch aus?', autor_name:'BienenPeter', likes:8, antworten_count:5, angeheftet:false, created_at:'2026-02-24T14:30:00Z', user_id:'u2'},
+    {id:'b3', kategorie_id:'k2', titel:'Oxalsäure im Winter – eure Erfahrungen?', inhalt:'Ich habe diesen Winter zum ersten Mal Oxalsäure geträufelt statt zu verdampfen. Die Wirksamkeit scheint ähnlich zu sein, aber ich bin mir unsicher ob die Verträglichkeit für die Bienen gleich gut ist.\n\nHat jemand Langzeiterfahrungen mit beiden Methoden?', autor_name:'VarroaJäger', likes:15, antworten_count:7, angeheftet:false, created_at:'2026-02-23T09:15:00Z', user_id:'u3'},
+    {id:'b4', kategorie_id:'k2', titel:'Faulbrut im Nachbarverein – was tun?', inhalt:'Im Nachbarverein (ca. 3km entfernt) wurde Faulbrut festgestellt. Sperrbezirk ist eingerichtet. Was sollte ich jetzt konkret beachten? Muss ich meine Völker untersuchen lassen?', autor_name:'ImkerNeuling42', likes:6, antworten_count:4, angeheftet:true, created_at:'2026-02-26T08:00:00Z', user_id:'u4'},
+    {id:'b5', kategorie_id:'k3', titel:'Rapshonig kristallisiert zu schnell', inhalt:'Mein Rapshonig von letztem Jahr ist extrem schnell kristallisiert – teilweise schon im Honigeimer. Hat jemand Tipps, wie man die Kristallisation besser steuern kann? Impfen? Rühren?', autor_name:'HonigLiebhaber', likes:4, antworten_count:2, angeheftet:false, created_at:'2026-02-22T16:45:00Z', user_id:'u5'},
+    {id:'b6', kategorie_id:'k3', titel:'Welche Tracht bringt bei euch am meisten?', inhalt:'Bei mir in der Oberrheinebene ist die Akazientracht (Robinie) der absolute Star. 20-30kg pro Volk sind keine Seltenheit. Wie sieht es in euren Regionen aus?', autor_name:'BienenPeter', likes:11, antworten_count:6, angeheftet:false, created_at:'2026-02-21T11:00:00Z', user_id:'u2'},
+    {id:'b7', kategorie_id:'k4', titel:'Erstes Volk – welches Beutensystem?', inhalt:'Hallo, ich möchte nächstes Frühjahr mit der Imkerei anfangen und bin etwas überfordert von den ganzen Beutensystemen. Zander, Dadant, DN... Was würdet ihr einem Anfänger empfehlen?\n\nIch bin im Raum Karlsruhe.', autor_name:'BienenRookie', likes:9, antworten_count:8, angeheftet:false, created_at:'2026-02-20T13:20:00Z', user_id:'u6'},
+    {id:'b8', kategorie_id:'k4', titel:'Wann erste Durchsicht im Frühjahr?', inhalt:'Die Temperaturen steigen langsam. Ab wann sollte man die erste Durchsicht machen? Ich lese überall unterschiedliche Angaben (10°C, 12°C, 15°C...). Was ist euer Richtwert?', autor_name:'NeuerImker2026', likes:3, antworten_count:3, angeheftet:false, created_at:'2026-02-25T17:00:00Z', user_id:'u7'},
+    {id:'b9', kategorie_id:'k5', titel:'[Verkauf] 5x Dadant US Beuten, gebraucht', inhalt:'Biete 5 Dadant US Beuten (Holz, Weymouthskiefer) mit je 2 Honigräumen. Guter Zustand, 3 Jahre alt. Anstrich muss erneuert werden.\n\nPreis: 60€ pro Beute, bei Abnahme aller 5: 250€\nAbholung in 76297 Stutensee', autor_name:'ImkerHans', likes:2, antworten_count:1, angeheftet:false, created_at:'2026-02-24T10:00:00Z', user_id:'u8'},
+    {id:'b10', kategorie_id:'k5', titel:'[Suche] Ableger Carnica für Frühjahr', inhalt:'Suche 2-3 Carnica-Ableger auf Zander für das Frühjahr 2026. Raum Karlsruhe/Bruchsal bevorzugt.\n\nBitte mit Gesundheitszeugnis. Zahle fairen Preis!', autor_name:'BienenRookie', likes:1, antworten_count:2, angeheftet:false, created_at:'2026-02-23T14:30:00Z', user_id:'u6'}
+];
+
+const DEMO_ANTWORTEN = [
+    {id:'a1', beitrag_id:'b1', user_id:'u2', inhalt:'Super Idee mit dem Forum! Wird Zeit, dass wir uns hier austauschen können. 🎉', autor_name:'BienenPeter', likes:5, created_at:'2026-02-25T10:30:00Z'},
+    {id:'a2', beitrag_id:'b1', user_id:'u3', inhalt:'Freue mich auch! Besonders die Kategorie für Anfänger-Fragen finde ich klasse.', autor_name:'VarroaJäger', likes:3, created_at:'2026-02-25T11:00:00Z'},
+    {id:'a3', beitrag_id:'b1', user_id:'u6', inhalt:'Als Anfänger bin ich hier genau richtig. Danke fürs Einrichten! 🐝', autor_name:'BienenRookie', likes:2, created_at:'2026-02-25T12:15:00Z'},
+    {id:'a4', beitrag_id:'b3', user_id:'u2', inhalt:'Ich verdampfe seit 5 Jahren und habe damit sehr gute Erfahrungen. Die Verträglichkeit ist meiner Meinung nach besser als beim Träufeln, weil die Bienen nicht nass werden.', autor_name:'BienenPeter', likes:7, created_at:'2026-02-23T10:00:00Z'},
+    {id:'a5', beitrag_id:'b3', user_id:'u4', inhalt:'Habe beides probiert. Verdampfen ist effektiver, aber man braucht die richtige Ausrüstung. Beim Träufeln ist die Dosierung einfacher zu kontrollieren.', autor_name:'ImkerNeuling42', likes:4, created_at:'2026-02-23T11:30:00Z'},
+    {id:'a6', beitrag_id:'b7', user_id:'u3', inhalt:'Für Anfänger im Raum Karlsruhe empfehle ich Zander. Die meisten Vereine hier arbeiten damit, und du kannst leichter Ableger tauschen oder kaufen. Dadant ist auch super, aber weniger verbreitet in der Region.', autor_name:'VarroaJäger', likes:6, created_at:'2026-02-20T14:00:00Z'},
+    {id:'a7', beitrag_id:'b7', user_id:'u2', inhalt:'Ich bin von DN auf Dadant umgestiegen und bereue es nicht. Größerer Brutraum = weniger Schwarmstimmung. Aber VarroaJäger hat recht – nimm das, was dein Verein nutzt.', autor_name:'BienenPeter', likes:5, created_at:'2026-02-20T15:30:00Z'}
+];
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    try {
+        var user = await checkAuth({preview: true});
+        if (!user) {
+            isPreview = true;
+            kategorien = DEMO_KATEGORIEN;
+            beitraege = DEMO_BEITRAEGE;
+            antworten = DEMO_ANTWORTEN;
+        } else {
+            await loadFromSupabase();
+        }
+    } catch(e) {
+        console.warn('Auth/DB Fehler, lade Preview:', e);
+        isPreview = true;
+        kategorien = DEMO_KATEGORIEN;
+        beitraege = DEMO_BEITRAEGE;
+        antworten = DEMO_ANTWORTEN;
+    }
+
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+}
+
+async function loadFromSupabase() {
+    var [katRes, beiRes] = await Promise.all([
+        sb.from('forum_kategorien').select('*').order('sortierung'),
+        sb.from('forum_beitraege').select('*').order('created_at', {ascending: false})
+    ]);
+    kategorien = katRes.data || [];
+    beitraege = beiRes.data || [];
+}
+
+// ============================================
+// RENDER ENGINE
+// ============================================
+function render() {
+    var app = document.getElementById('app');
+    var html = '';
+
+    if (isPreview) {
+        html += '<div class="preview-banner"><span class="icon">👁️</span> Vorschau-Modus – Du siehst Demo-Daten. Melde dich an, um echte Beiträge zu sehen und zu schreiben.</div>';
+    }
+
+    if (currentView === 'kategorien') {
+        html += renderKategorien();
+    } else if (currentView === 'threads') {
+        html += renderThreads();
+    } else if (currentView === 'thread') {
+        html += renderThread();
+    }
+
+    app.innerHTML = html;
+
+    // Animations
+    requestAnimationFrame(function() {
+        app.querySelectorAll('.anim-target').forEach(function(el, i) {
+            el.style.animationDelay = (i * 0.06) + 's';
+            el.classList.add('anim-in');
+        });
+    });
+}
+
+// ============================================
+// VIEW 1: KATEGORIEN-ÜBERSICHT
+// ============================================
+function renderKategorien() {
+    var html = '';
+    html += '<div class="forum-header">';
+    html += '<h1>🐝 Imker-Community</h1>';
+    html += '<p>Tausche dich mit anderen Imkern aus, stelle Fragen und teile dein Wissen.</p>';
+    html += '</div>';
+
+    if (!isPreview) {
+        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">';
+        html += '<button class="btn btn-primary" onclick="openNewPost()">✏️ Neuer Beitrag</button>';
+        html += '</div>';
+    }
+
+    html += '<div class="kat-grid">';
+    kategorien.forEach(function(kat) {
+        var count = beitraege.filter(function(b) { return b.kategorie_id === kat.id; }).length;
+        html += '<div class="kat-card anim-target" onclick="openKategorie(\'' + kat.id + '\')">';
+        html += '<span class="emoji">' + kat.emoji + '</span>';
+        html += '<div class="name">' + esc(kat.name) + '</div>';
+        html += '<div class="desc">' + esc(kat.beschreibung) + '</div>';
+        html += '<span class="count">' + count + ' Beiträge</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    // Letzte Beiträge
+    html += '<h2 style="margin-top:2rem;display:flex;align-items:center;gap:.5rem">🔥 Neueste Beiträge</h2>';
+    var recent = beitraege.slice().sort(function(a,b) { return new Date(b.created_at) - new Date(a.created_at); }).slice(0, 5);
+    recent.forEach(function(b) {
+        html += renderThreadItem(b);
+    });
+
+    return html;
+}
+
+// ============================================
+// VIEW 2: THREAD-LISTE (pro Kategorie)
+// ============================================
+function renderThreads() {
+    var kat = kategorien.find(function(k) { return k.id === currentKategorie; });
+    if (!kat) return '<p>Kategorie nicht gefunden.</p>';
+
+    var html = '';
+    html += '<div class="breadcrumb">';
+    html += '<a onclick="goToKategorien()">Forum</a>';
+    html += '<span class="sep">›</span>';
+    html += '<span>' + kat.emoji + ' ' + esc(kat.name) + '</span>';
+    html += '</div>';
+
+    // Sort Bar
+    html += '<div class="sort-bar">';
+    html += '<div style="font-size:1.1rem;font-weight:700;color:#1C1410">' + kat.emoji + ' ' + esc(kat.name) + '</div>';
+    html += '<div class="sort-btns">';
+    html += '<button class="sort-btn' + (currentSort === 'neueste' ? ' active' : '') + '" onclick="setSort(\'neueste\')">Neueste</button>';
+    html += '<button class="sort-btn' + (currentSort === 'beliebt' ? ' active' : '') + '" onclick="setSort(\'beliebt\')">Beliebteste</button>';
+    html += '</div>';
+    html += '</div>';
+
+    if (!isPreview) {
+        html += '<button class="btn btn-primary btn-sm" onclick="openNewPost(\'' + kat.id + '\')" style="margin-bottom:1rem">✏️ Neuer Beitrag in ' + esc(kat.name) + '</button>';
+    }
+
+    var threads = beitraege.filter(function(b) { return b.kategorie_id === currentKategorie; });
+
+    // Sort: Angeheftete immer oben
+    var pinned = threads.filter(function(b) { return b.angeheftet; });
+    var normal = threads.filter(function(b) { return !b.angeheftet; });
+
+    if (currentSort === 'beliebt') {
+        normal.sort(function(a,b) { return b.likes - a.likes; });
+    } else {
+        normal.sort(function(a,b) { return new Date(b.created_at) - new Date(a.created_at); });
+    }
+
+    var sorted = pinned.concat(normal);
+
+    if (sorted.length === 0) {
+        html += '<div class="empty-state"><span class="emoji">🌱</span><div class="text">Noch keine Beiträge in dieser Kategorie.</div></div>';
+    }
+
+    sorted.forEach(function(b) {
+        html += renderThreadItem(b, true);
+    });
+
+    return html;
+}
+
+function renderThreadItem(b, showAnim) {
+    var kat = kategorien.find(function(k) { return k.id === b.kategorie_id; });
+    var initial = (b.autor_name || 'I').charAt(0).toUpperCase();
+    var html = '';
+    html += '<div class="thread-item' + (b.angeheftet ? ' pinned' : '') + (showAnim ? ' anim-target' : '') + '" onclick="openThread(\'' + b.id + '\')">';
+    html += '<div class="thread-avatar">' + initial + '</div>';
+    html += '<div class="thread-body">';
+    html += '<div class="thread-title">';
+    if (b.angeheftet) html += '<span class="pin-icon">📌</span>';
+    html += esc(b.titel);
+    html += '</div>';
+    html += '<div class="thread-meta">';
+    html += '<span>' + esc(b.autor_name || 'Imker') + '</span>';
+    html += '<span>' + zeitAgo(b.created_at) + '</span>';
+    if (kat) html += '<span>' + kat.emoji + ' ' + esc(kat.name) + '</span>';
+    html += '</div>';
+    html += '<div class="thread-preview">' + esc(b.inhalt) + '</div>';
+    html += '</div>';
+    html += '<div class="thread-stats">';
+    html += '<span>❤️ ' + (b.likes || 0) + '</span>';
+    html += '<span>💬 ' + (b.antworten_count || 0) + '</span>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+// ============================================
+// VIEW 3: EINZELNER THREAD
+// ============================================
+function renderThread() {
+    var b = beitraege.find(function(p) { return p.id === currentThread; });
+    if (!b) return '<p>Beitrag nicht gefunden.</p>';
+
+    var kat = kategorien.find(function(k) { return k.id === b.kategorie_id; });
+    var threadAntworten = [];
+
+    if (isPreview) {
+        threadAntworten = DEMO_ANTWORTEN.filter(function(a) { return a.beitrag_id === b.id; });
+    } else {
+        threadAntworten = antworten.filter(function(a) { return a.beitrag_id === b.id; });
+    }
+
+    threadAntworten.sort(function(a, c) { return new Date(a.created_at) - new Date(c.created_at); });
+
+    var html = '';
+
+    // Breadcrumb
+    html += '<div class="breadcrumb">';
+    html += '<a onclick="goToKategorien()">Forum</a>';
+    html += '<span class="sep">›</span>';
+    if (kat) html += '<a onclick="openKategorie(\'' + kat.id + '\')">' + kat.emoji + ' ' + esc(kat.name) + '</a><span class="sep">›</span>';
+    html += '<span>' + esc(b.titel) + '</span>';
+    html += '</div>';
+
+    // Original Post
+    var initial = (b.autor_name || 'I').charAt(0).toUpperCase();
+    html += '<div class="post-card op">';
+    html += '<div class="post-header">';
+    html += '<div class="avatar">' + initial + '</div>';
+    html += '<div class="info">';
+    html += '<div class="author">' + esc(b.autor_name || 'Imker') + '</div>';
+    html += '<div class="time">' + formatDatum(b.created_at) + '</div>';
+    html += '</div>';
+    if (b.angeheftet) html += '<span class="badge badge-yellow">📌 Angeheftet</span>';
+    html += '</div>';
+    html += '<div class="post-inhalt">' + esc(b.inhalt) + '</div>';
+    html += '<div class="post-actions">';
+    html += '<button class="post-action" onclick="likePost(\'' + b.id + '\')">❤️ ' + (b.likes || 0) + '</button>';
+    html += '<span class="post-action">💬 ' + (b.antworten_count || 0) + ' Antworten</span>';
+    html += '</div>';
+    html += '</div>';
+
+    // Antworten
+    if (threadAntworten.length > 0) {
+        html += '<div class="antworten-header">Antworten <span class="count">' + threadAntworten.length + '</span></div>';
+        threadAntworten.forEach(function(a) {
+            var aInitial = (a.autor_name || 'I').charAt(0).toUpperCase();
+            html += '<div class="post-card anim-target">';
+            html += '<div class="post-header">';
+            html += '<div class="avatar" style="width:36px;height:36px;font-size:1rem">' + aInitial + '</div>';
+            html += '<div class="info">';
+            html += '<div class="author">' + esc(a.autor_name || 'Imker') + '</div>';
+            html += '<div class="time">' + formatDatum(a.created_at) + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div class="post-inhalt">' + esc(a.inhalt) + '</div>';
+            html += '<div class="post-actions">';
+            html += '<button class="post-action" onclick="likeAntwort(\'' + a.id + '\')">❤️ ' + (a.likes || 0) + '</button>';
+            html += '</div>';
+            html += '</div>';
+        });
+    }
+
+    // Antwort schreiben
+    if (!isPreview) {
+        html += '<div class="reply-box">';
+        html += '<h3 style="margin-bottom:.75rem">💬 Antwort schreiben</h3>';
+        html += '<textarea id="replyText" placeholder="Deine Antwort..."></textarea>';
+        html += '<div class="actions"><button class="btn btn-primary btn-sm" onclick="submitReply(\'' + b.id + '\')">Antworten</button></div>';
+        html += '</div>';
+    } else {
+        html += '<div class="reply-box" style="text-align:center;padding:2rem;opacity:.7">';
+        html += '<p>🔒 Melde dich an, um zu antworten</p>';
+        html += '</div>';
+    }
+
+    return html;
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function goToKategorien() {
+    currentView = 'kategorien';
+    currentKategorie = null;
+    currentThread = null;
+    render();
+    window.scrollTo(0,0);
+}
+
+function openKategorie(id) {
+    currentView = 'threads';
+    currentKategorie = id;
+    currentThread = null;
+    render();
+    window.scrollTo(0,0);
+}
+
+function openThread(id) {
+    currentView = 'thread';
+    currentThread = id;
+
+    // Lade Antworten wenn nicht Preview
+    if (!isPreview) {
+        sb.from('forum_antworten').select('*').eq('beitrag_id', id).order('created_at').then(function(res) {
+            antworten = res.data || [];
+            render();
+        });
+    } else {
+        render();
+    }
+    window.scrollTo(0,0);
+}
+
+function setSort(type) {
+    currentSort = type;
+    render();
+}
+
+// ============================================
+// NEUER BEITRAG
+// ============================================
+function openNewPost(katId) {
+    if (isPreview) {
+        showToast('Bitte einloggen um zu posten', 'error');
+        return;
+    }
+    selectedKatId = katId || null;
+    var modal = document.getElementById('newPostModal');
+    modal.classList.add('active');
+
+    // Kategorie-Chips rendern
+    var chipsHtml = '';
+    kategorien.forEach(function(k) {
+        chipsHtml += '<div class="kat-chip' + (selectedKatId === k.id ? ' selected' : '') + '" onclick="selectKat(\'' + k.id + '\')">' + k.emoji + ' ' + esc(k.name) + '</div>';
+    });
+    document.getElementById('katChips').innerHTML = chipsHtml;
+    document.getElementById('postTitel').value = '';
+    document.getElementById('postInhalt').value = '';
+}
+
+function closeNewPost() {
+    document.getElementById('newPostModal').classList.remove('active');
+}
+
+function selectKat(id) {
+    selectedKatId = id;
+    var chips = document.querySelectorAll('.kat-chip');
+    chips.forEach(function(c) { c.classList.remove('selected'); });
+    event.target.classList.add('selected');
+}
+
+async function submitPost() {
+    if (isPreview) return;
+    var titel = document.getElementById('postTitel').value.trim();
+    var inhalt = document.getElementById('postInhalt').value.trim();
+
+    if (!selectedKatId) { showToast('Bitte Kategorie wählen', 'error'); return; }
+    if (!titel) { showToast('Bitte Titel eingeben', 'error'); return; }
+    if (!inhalt) { showToast('Bitte Inhalt eingeben', 'error'); return; }
+
+    // Autorname aus Profil holen
+    var profRes = await sb.from('profiles').select('name').eq('id', currentUser.id).single();
+    var autorName = (profRes.data && profRes.data.name) || currentUser.email.split('@')[0];
+
+    var res = await db.insert('forum_beitraege', {
+        user_id: currentUser.id,
+        kategorie_id: selectedKatId,
+        titel: titel,
+        inhalt: inhalt,
+        autor_name: autorName
+    });
+
+    if (!res.error) {
+        closeNewPost();
+        await loadFromSupabase();
+        showToast('Beitrag veröffentlicht! 🎉', 'success');
+        openKategorie(selectedKatId);
+    } else {
+        showToast('Fehler: ' + res.error.message, 'error');
+    }
+}
+
+// ============================================
+// ANTWORT
+// ============================================
+async function submitReply(beitragId) {
+    if (isPreview) return;
+    var text = document.getElementById('replyText').value.trim();
+    if (!text) { showToast('Bitte Antwort eingeben', 'error'); return; }
+
+    var profRes = await sb.from('profiles').select('name').eq('id', currentUser.id).single();
+    var autorName = (profRes.data && profRes.data.name) || currentUser.email.split('@')[0];
+
+    var res = await db.insert('forum_antworten', {
+        user_id: currentUser.id,
+        beitrag_id: beitragId,
+        inhalt: text,
+        autor_name: autorName
+    });
+
+    if (!res.error) {
+        showToast('Antwort gepostet! 💬', 'success');
+        openThread(beitragId); // Reloads
+    } else {
+        showToast('Fehler: ' + res.error.message, 'error');
+    }
+}
+
+// ============================================
+// LIKES
+// ============================================
+async function likePost(id) {
+    if (isPreview) { showToast('Im Preview nicht verfügbar', ''); return; }
+
+    // Check ob schon geliked
+    var existing = await sb.from('forum_likes').select('id').eq('user_id', currentUser.id).eq('beitrag_id', id).maybeSingle();
+    if (existing.data) {
+        // Unlike
+        await sb.from('forum_likes').delete().eq('id', existing.data.id);
+        await sb.from('forum_beitraege').update({likes: Math.max(0, (beitraege.find(function(b){return b.id===id}).likes||1)-1)}).eq('id', id);
+    } else {
+        // Like
+        await sb.from('forum_likes').insert({user_id: currentUser.id, beitrag_id: id});
+        await sb.from('forum_beitraege').update({likes: (beitraege.find(function(b){return b.id===id}).likes||0)+1}).eq('id', id);
+    }
+    await loadFromSupabase();
+    render();
+}
+
+async function likeAntwort(id) {
+    if (isPreview) { showToast('Im Preview nicht verfügbar', ''); return; }
+
+    var existing = await sb.from('forum_likes').select('id').eq('user_id', currentUser.id).eq('antwort_id', id).maybeSingle();
+    if (existing.data) {
+        await sb.from('forum_likes').delete().eq('id', existing.data.id);
+    } else {
+        await sb.from('forum_likes').insert({user_id: currentUser.id, antwort_id: id});
+    }
+    openThread(currentThread);
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function zeitAgo(dateStr) {
+    var d = new Date(dateStr);
+    var now = new Date();
+    var diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'gerade eben';
+    if (diff < 3600) return Math.floor(diff/60) + ' Min.';
+    if (diff < 86400) return Math.floor(diff/3600) + ' Std.';
+    if (diff < 604800) return Math.floor(diff/86400) + ' Tage';
+    return d.toLocaleDateString('de-DE', {day:'numeric', month:'short'});
+}
+
+function formatDatum(dateStr) {
+    var d = new Date(dateStr);
+    return d.toLocaleDateString('de-DE', {day:'numeric', month:'long', year:'numeric'}) + ' um ' + d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+}
+
+function showToast(msg, typ) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = typ === 'error' ? '#991b1b' : typ === 'success' ? '#065f46' : '#1C1410';
+    setTimeout(function() { el.style.display = 'none'; }, 2500);
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+</body>
+</html>
