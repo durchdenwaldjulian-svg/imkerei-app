@@ -228,7 +228,7 @@ tbody tr:last-child td { border-bottom:none; }
         <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
             <div class="year-filter">
                 <label style="font-size:.8rem;color:var(--text-sub);font-weight:600">Jahr:</label>
-                <select id="yearFilter" onchange="renderStandorte()"></select>
+                <select id="yearFilter" onchange="localStorage.setItem('bestandsbuch_year',this.value);renderStandorte()"></select>
             </div>
             <div class="btn-group">
                 <button class="btn btn-all btn-sm" onclick="alleStandortePDF()">📥 Alle als PDF</button>
@@ -378,10 +378,14 @@ function buildYearFilter() {
     });
     var sel = document.getElementById('yearFilter');
     var sorted = Array.from(years).sort((a,b) => b - a);
-    sel.innerHTML = '<option value="alle" selected>Alle Jahre</option>';
+    sel.innerHTML = '<option value="alle">Alle Jahre</option>';
     sorted.forEach(function(y) {
         sel.innerHTML += '<option value="'+y+'">'+y+'</option>';
     });
+    var saved = localStorage.getItem('bestandsbuch_year');
+    if (saved && (saved === 'alle' || sorted.indexOf(parseInt(saved)) !== -1)) {
+        sel.value = saved;
+    }
 }
 
 // ============================================
