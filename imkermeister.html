@@ -820,7 +820,9 @@ async function deleteUserData(userId, email) {
 var onlineChannel = null;
 
 function startPresenceListener() {
-    onlineChannel = sb.channel('online-users');
+    // Eigener Client für Realtime Presence (braucht andere Config als PublicClient)
+    var realtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    onlineChannel = realtimeClient.channel('online-users');
     
     onlineChannel.on('presence', { event: 'sync' }, function() {
         renderOnlineUsers();
