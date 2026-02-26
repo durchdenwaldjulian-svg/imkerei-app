@@ -42,12 +42,12 @@
         .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
         
         @media(max-width:768px){
-            body{padding-left:0;padding-bottom:90px}
-            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            body{padding-left:0;padding-bottom:70px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden;background:#FFFBF0;padding:.25rem 0}
             .nav-brand,.nav-section{display:none}
-            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item{flex:0 0 auto;padding:.5rem .75rem;font-size:.75rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap;min-width:auto;line-height:1.3}
             .nav-item.active{border-left:none;border-bottom-color:#F5A623}
-            .footer{left:0;bottom:60px}
+            .footer{display:none}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
             .option-grid{grid-template-columns:repeat(3,1fr)}
             .volk-grid{grid-template-columns:1fr}
@@ -4520,6 +4520,59 @@ behandlungMod.init();
         </div>
     </div>
 </div>
+
+<script>
+// === SWIPE NAVIGATION (Mobile) ===
+(function(){
+    var swipePages = ['heute','standorte','aufgaben','koeniginnen','behandlung','tracht','packliste','kosten','einstellungen'];
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var touchEndX = 0;
+    var touchEndY = 0;
+    var minSwipe = 80;
+
+    document.addEventListener('touchstart', function(e){
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, {passive:true});
+
+    document.addEventListener('touchend', function(e){
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        var diffX = touchEndX - touchStartX;
+        var diffY = Math.abs(touchEndY - touchStartY);
+        // Nur horizontale Swipes (nicht vertikal scrollen)
+        if (Math.abs(diffX) < minSwipe || diffY > Math.abs(diffX)) return;
+        // Nicht swipen wenn Modal offen
+        if (document.querySelector('.modal.active')) return;
+        
+        var current = app.page;
+        var idx = swipePages.indexOf(current);
+        if (idx === -1) return;
+        
+        var newIdx;
+        if (diffX < 0) {
+            // Nach links wischen → nächste Seite
+            newIdx = idx + 1;
+        } else {
+            // Nach rechts wischen → vorherige Seite
+            newIdx = idx - 1;
+        }
+        if (newIdx < 0 || newIdx >= swipePages.length) return;
+        
+        document.querySelectorAll('.nav-item').forEach(function(b){b.classList.remove('active');});
+        var btn = document.querySelector('.nav-item[data-page="'+swipePages[newIdx]+'"]');
+        if (btn) btn.classList.add('active');
+        app.page = swipePages[newIdx];
+        app.render();
+        
+        // Nav-Leiste zum aktiven Item scrollen
+        if (btn && window.innerWidth <= 768) {
+            btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+        }
+    }, {passive:true});
+})();
+</script>
 
 </body>
 </html>
