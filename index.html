@@ -3796,7 +3796,7 @@ const packlisteMod = {
     },
     
     speichern() {
-        if (!currentUser) return;
+        if (!currentUser) { console.warn('[Packliste] speichern: kein User'); return; }
         var rows = this.items.map(function(item){
             return {
                 id: item.id,
@@ -3809,9 +3809,10 @@ const packlisteMod = {
                 schnell_typ: item.schnellTyp || null
             };
         });
+        console.log('[Packliste] speichern() aufgerufen, ' + rows.length + ' Items');
         if (rows.length > 0) {
             sb.from('packliste').upsert(rows).then(function(res){
-                if (res.error) console.error('[Packliste] Speichern Fehler:', res.error);
+                if (res.error) console.error('[Packliste] ❌ Speichern Fehler:', res.error);
                 else console.log('[Packliste] ✅ ' + rows.length + ' Items in Supabase gespeichert');
             });
         }
@@ -3822,15 +3823,21 @@ const packlisteMod = {
         if (item) { 
             item.checked = !item.checked; 
             console.log('[Packliste] Toggle:', id, '→ checked:', item.checked);
-            // Auth prüfen
-            sb.auth.getSession().then(function(sess){
-                console.log('[Packliste] Session:', sess.data.session ? 'JA (uid: '+sess.data.session.user.id+')' : 'NEIN');
-            });
-            sb.from('packliste').update({checked: item.checked}).eq('id', id).select()
+            // Upsert statt update - damit wird der Datensatz angelegt falls er fehlt
+            var row = {
+                id: item.id,
+                user_id: currentUser.id,
+                kategorie: item.kategorie,
+                name: item.name,
+                checked: item.checked,
+                menge: item.menge || 1,
+                ist_schnell: item.istSchnell || false,
+                schnell_typ: item.schnellTyp || null
+            };
+            sb.from('packliste').upsert(row).select()
                 .then(function(res){
-                    console.log('[Packliste] Response data:', res.data, 'error:', res.error);
                     if(res.error) console.error('[Packliste] ❌', res.error.message);
-                    else if(!res.data || res.data.length === 0) console.warn('[Packliste] ⚠️ Kein Datensatz aktualisiert!');
+                    else if(!res.data || res.data.length === 0) console.warn('[Packliste] ⚠️ Kein Datensatz!');
                     else console.log('[Packliste] ✅ Gespeichert');
                 });
             app.render(); 
