@@ -111,15 +111,19 @@ var presenceChannel = null;
 
 function initPresence(user) {
     if (!user || presenceChannel) return;
+    console.log('[Presence] Starte für:', user.email);
     var pageName = document.title || location.pathname.split('/').pop() || 'Unbekannt';
     presenceChannel = sb.channel('online-users', { config: { presence: { key: user.id } } });
     presenceChannel.subscribe(function(status) {
+        console.log('[Presence] Subscribe status:', status);
         if (status === 'SUBSCRIBED') {
             presenceChannel.track({
                 user_id: user.id,
                 email: user.email,
                 page: pageName,
                 online_at: new Date().toISOString()
+            }).then(function(res) {
+                console.log('[Presence] Track result:', res);
             });
         }
     });

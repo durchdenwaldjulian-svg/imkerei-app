@@ -825,10 +825,21 @@ function startPresenceListener() {
     onlineChannel = realtimeClient.channel('online-users');
     
     onlineChannel.on('presence', { event: 'sync' }, function() {
+        console.log('[Imkermeister Presence] Sync event!', onlineChannel.presenceState());
         renderOnlineUsers();
     });
     
-    onlineChannel.subscribe();
+    onlineChannel.on('presence', { event: 'join' }, function(key, newPresences) {
+        console.log('[Imkermeister Presence] Join:', key, newPresences);
+    });
+    
+    onlineChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
+        console.log('[Imkermeister Presence] Leave:', key, leftPresences);
+    });
+    
+    onlineChannel.subscribe(function(status) {
+        console.log('[Imkermeister Presence] Subscribe status:', status);
+    });
 }
 
 function renderOnlineUsers() {
