@@ -872,6 +872,23 @@ async function startApp() {
         trachtkalenderMod.kalenderOffen = profileRes.data.kalender_offen;
     }
     
+    // Wetter-Ort aus Profil laden
+    if (profileRes.data) {
+        if (profileRes.data.wetter_ort) wetterMod.customOrt = profileRes.data.wetter_ort;
+        if (profileRes.data.wetter_lat) wetterMod.customLat = profileRes.data.wetter_lat;
+        if (profileRes.data.wetter_lng) wetterMod.customLng = profileRes.data.wetter_lng;
+    }
+    
+    // UI-State aus Profil laden (Aufgaben ein-/zugeklappt)
+    if (profileRes.data && profileRes.data.ui_state) {
+        var saved = profileRes.data.ui_state;
+        if (saved.ueberfaellig !== undefined) app.uiState.ueberfaellig = saved.ueberfaellig;
+        if (saved.heute !== undefined) app.uiState.heute = saved.heute;
+        if (saved.naechste7 !== undefined) app.uiState.naechste7 = saved.naechste7;
+        if (saved.spaeter !== undefined) app.uiState.spaeter = saved.spaeter;
+        if (saved.packliste !== undefined) app.uiState.packliste = saved.packliste;
+    }
+    
     // Load all data in parallel
     var results = await Promise.all([
         sb.from('standorte').select('*').eq('user_id', currentUser.id),
@@ -1187,6 +1204,15 @@ const app={
         naechste7: true,       // standardmäßig offen
         spaeter: false,        // standardmäßig zu
         packliste: false       // standardmäßig zu
+    },
+    
+    toggleUI(key){
+        this.uiState[key] = !this.uiState[key];
+        if (currentUser) {
+            sb.from('profiles').update({ui_state: this.uiState}).eq('id', currentUser.id)
+                .then(function(res){ if(res.error) console.error('UI-State speichern Fehler:', res.error); });
+        }
+        this.render();
     },
     
     init(){
@@ -2231,7 +2257,7 @@ const app={
         // ⚠️ ÜBERFÄLLIG
         (ueberfaellig.length ?
             '<div class="card" style="background:linear-gradient(135deg,#fef2f2,#fff);border-left:4px solid #ef4444">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.ueberfaellig=!app.uiState.ueberfaellig;app.render()">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI('ueberfaellig')">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#ef4444">'+(app.uiState.ueberfaellig?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;color:#ef4444;font-size:1.1rem">⚠️ Überfällig ('+ueberfaellig.length+')</h2>'+
@@ -2244,7 +2270,7 @@ const app={
         
         // 🔥 HEUTE
         '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.heute=!app.uiState.heute;app.render()">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI('heute')">'+
         '<div style="display:flex;align-items:center;gap:.5rem">'+
         '<span style="font-size:.7rem;color:#10b981">'+(app.uiState.heute?'▼':'▶')+'</span>'+
         '<h2 style="margin:0;font-size:1.1rem">🔥 Heute ('+heuteEvents.length+')</h2>'+
@@ -2261,7 +2287,7 @@ const app={
         // 📅 NÄCHSTE 7 TAGE
         (naechste7.length ?
             '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff);border-left:4px solid #F5A623">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.uiState.naechste7=!app.uiState.naechste7;app.render()">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="app.toggleUI('naechste7')">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#F5A623">'+(app.uiState.naechste7?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem">📅 Nächste 7 Tage ('+naechste7.length+')</h2>'+
@@ -2275,7 +2301,7 @@ const app={
         // 🔮 SPÄTER
         (spaeter.length ?
             '<div class="card" style="border-left:4px solid #94a3b8">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.uiState.spaeter=!app.uiState.spaeter;app.render()">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.toggleUI('spaeter')">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.spaeter?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1.1rem;color:#64748b">🔮 Später geplant ('+spaeter.length+')</h2>'+
@@ -2319,7 +2345,7 @@ const app={
                 }).join('');
             
             return '<div class="card" style="background:linear-gradient(135deg,#f0f9ff,#fff);border-left:4px solid #3b82f6;padding:.75rem 1rem">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.uiState.packliste=!app.uiState.packliste;app.render()">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="app.toggleUI('packliste')">'+
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.packliste?'▼':'▶')+'</span>'+
             '<h2 style="margin:0;font-size:1rem">📦 Packliste</h2>'+
@@ -3342,14 +3368,52 @@ const wetterMod = {
     loading: false,
     error: null,
     letzterAbruf: null,
+    customOrt: null,
+    customLat: null,
+    customLng: null,
+    editMode: false,
     
     getStandortKoords(){
-        // Ersten Standort mit Koordinaten nehmen
+        // Zuerst custom Ort aus Profil
+        if (this.customLat && this.customLng) {
+            return {lat: this.customLat, lng: this.customLng, name: this.customOrt || 'Mein Standort'};
+        }
+        // Fallback: Ersten Standort mit Koordinaten nehmen
         var standorte = app.data.standorte || [];
         for (var i=0; i<standorte.length; i++) {
             if (standorte[i].lat && standorte[i].lng) return {lat:standorte[i].lat, lng:standorte[i].lng, name:standorte[i].name};
         }
         return null;
+    },
+    
+    async ortAendern(){
+        var ort = prompt('Wetter-Standort eingeben (z.B. "Karlsruhe" oder "München"):');
+        if (!ort || !ort.trim()) return;
+        ort = ort.trim();
+        try {
+            // Geocoding via Open-Meteo
+            var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(ort)+'&count=1&language=de');
+            var data = await resp.json();
+            if (!data.results || data.results.length === 0) {
+                app.toast('❌ Ort "'+ort+'" nicht gefunden', 'error');
+                return;
+            }
+            var r = data.results[0];
+            this.customOrt = r.name;
+            this.customLat = r.latitude;
+            this.customLng = r.longitude;
+            // In Supabase speichern
+            await sb.from('profiles').update({wetter_ort: r.name, wetter_lat: r.latitude, wetter_lng: r.longitude}).eq('id', currentUser.id);
+            // Wetter neu laden
+            this.daten = null;
+            this.letzterAbruf = null;
+            await this.laden();
+            app.render();
+            app.toast('✅ Wetter-Standort: '+r.name, 'success');
+        } catch(e) {
+            console.error('Geocoding Fehler:', e);
+            app.toast('❌ Fehler beim Suchen', 'error');
+        }
     },
     
     async ladenFuerStandort(standortId, lat, lng){
@@ -3471,7 +3535,7 @@ const wetterMod = {
         var html = '<div class="card" style="border-left:4px solid #0ea5e9">'+
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
             '<h2 style="margin:0">🌤️ Wetter</h2>'+
-            '<span style="font-size:.75rem;color:#7A6652">📍 '+standortName+'</span>'+
+            '<span style="font-size:.75rem;color:#7A6652;cursor:pointer" onclick="wetterMod.ortAendern()" title="Ort ändern">📍 '+standortName+' ✏️</span>'+
             '</div>'+
             
             // Aktuell
