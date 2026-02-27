@@ -1632,20 +1632,19 @@ const app={
         // Packliste
         (function(){
             var packItems = packlisteMod.items || [];
-            var unchecked = packItems.filter(function(i){return !i.checked;});
             var total = packItems.length;
             if (total === 0) return '';
-            var checked = total - unchecked.length;
-            var prozent = total > 0 ? Math.round(checked/total*100) : 0;
+            var checkedCount = packItems.filter(function(i){return i.checked;}).length;
+            var prozent = total > 0 ? Math.round(checkedCount/total*100) : 0;
             
             var kategorien = {};
-            unchecked.forEach(function(item){
+            packItems.forEach(function(item){
                 var kat = item.kategorie || 'Sonstiges';
                 if (!kategorien[kat]) kategorien[kat] = [];
                 kategorien[kat].push(item);
             });
             
-            var detailHtml = unchecked.length === 0 ?
+            var detailHtml = checkedCount === total ?
                 '<div style="text-align:center;padding:.75rem;color:#10b981;font-weight:600">Alles eingepackt! ✅</div>'
                 :
                 Object.keys(kategorien).map(function(kat){
@@ -1653,9 +1652,10 @@ const app={
                     '<div style="font-size:.7rem;font-weight:600;color:#7A6652;text-transform:uppercase;margin-bottom:.25rem">'+kat+'</div>'+
                     kategorien[kat].map(function(item){
                         var menge = item.menge || 1;
+                        var checkedStyle = item.checked ? 'text-decoration:line-through;color:#A69580' : '';
                         return '<div style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px solid #FFFBF0">'+
-                        '<input type="checkbox" style="width:1rem;height:1rem;cursor:pointer" onchange="packlisteMod.toggle(\''+item.id+'\');app.render()">'+
-                        '<span style="font-size:.85rem">'+(menge>1?'<strong>'+menge+'x</strong> ':'')+item.name+'</span>'+
+                        '<input type="checkbox" '+(item.checked?'checked':'')+' style="width:1rem;height:1rem;cursor:pointer;accent-color:#F5A623" onchange="packlisteMod.toggle(\''+item.id+'\')">'+
+                        '<span style="font-size:.85rem;'+checkedStyle+'">'+(menge>1?'<strong>'+menge+'x</strong> ':'')+item.name+'</span>'+
                         '</div>';
                     }).join('')+
                     '</div>';
@@ -1670,7 +1670,7 @@ const app={
             '<div style="display:flex;align-items:center;gap:.5rem">'+
             '<div style="width:60px;background:#E8DFD4;border-radius:999px;height:5px">'+
             '<div style="background:#3b82f6;border-radius:999px;height:100%;width:'+prozent+'%"></div></div>'+
-            '<span class="badge '+(unchecked.length===0?'badge-green':'badge-yellow')+'" style="font-size:.7rem">'+checked+'/'+total+'</span>'+
+            '<span class="badge '+(checkedCount===total?'badge-green':'badge-yellow')+'" style="font-size:.7rem">'+checkedCount+'/'+total+'</span>'+
             '</div>'+
             '</div>'+
             '<div style="'+(app.uiState.packliste?'':'display:none;')+'margin-top:.75rem">'+
@@ -2401,7 +2401,15 @@ const packlisteMod = {
     },
     toggle(id) {
         var item = this.items.find(function(i){return i.id===id;});
-        if (item) { item.checked=!item.checked; sb.from('packliste').upsert({id:item.id,user_id:currentUser.id,kategorie:item.kategorie,name:item.name,checked:item.checked,menge:item.menge||1,ist_schnell:item.istSchnell||false,schnell_typ:item.schnellTyp||null}); app.render(); }
+        if (item) {
+            item.checked = !item.checked;
+            var row = {id:item.id, user_id:currentUser.id, kategorie:item.kategorie, name:item.name, checked:item.checked, menge:item.menge||1, ist_schnell:item.istSchnell||false, schnell_typ:item.schnellTyp||null};
+            sb.from('packliste').upsert(row).select().then(function(res){
+                if(res.error) console.error('Packliste Toggle Fehler:', res.error);
+                else console.log('Packliste Toggle OK:', item.name, '→', item.checked);
+            });
+            app.render();
+        }
     },
     getStatistik() { var a=this.items.filter(function(i){return i.checked;}).length; return {abgehakt:a,offen:this.items.length-a,gesamt:this.items.length}; }
 };
