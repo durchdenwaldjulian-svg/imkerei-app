@@ -280,7 +280,8 @@ function selectSeason(s) {
 
 function selectOption(key, val, el) {
     wiz[key] = val;
-    el.closest('.option-grid') && el.closest('div').querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    var grid = el.closest('.option-grid');
+    if (grid) grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
     checkStep2();
 }
