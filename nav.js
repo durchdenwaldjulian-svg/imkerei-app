@@ -23,7 +23,7 @@
         ]},
         { title: 'Ernte & Planung', items: [
             { href: 'ernte.html', icon: '🍯', label: 'Honigernte' },
-            { href: 'index.html#tracht', icon: '🌸', label: 'Tracht' },
+            { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
             { href: 'index.html#packliste', icon: '📦', label: 'Packliste' }
         ]},
         { title: 'Community', items: [
@@ -113,7 +113,7 @@
                 { href: 'ernte.html', icon: '🍯', label: 'Ernte' }
             ]},
             { title: 'Ernte & Planung', items: [
-                { page: 'tracht', icon: '🌸', label: 'Tracht' },
+                { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
                 { page: 'packliste', icon: '📦', label: 'Packliste' },
                 { page: 'kosten', icon: '💰', label: 'Kosten' }
             ]},
