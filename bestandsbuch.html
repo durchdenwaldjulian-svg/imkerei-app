@@ -44,12 +44,12 @@ if (!window.jspdf) {
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; min-height:100vh; padding-left:220px; }
 
 /* Sidebar Nav */
-.side-nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-.side-nav .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-.side-nav .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-.side-nav .nav-link{display:block;padding:.625rem 1rem;text-align:left;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-.side-nav .nav-link:hover{background:rgba(245,166,35,0.06)}
-.side-nav .nav-link.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+.nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+.nav .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+.nav .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+.nav .nav-item{display:block;padding:.625rem 1rem;text-align:left;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+.nav .nav-item:hover{background:rgba(245,166,35,0.06)}
+.nav .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
 
 /* Loading */
 .loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
@@ -143,10 +143,10 @@ tbody tr:last-child td { border-bottom:none; }
 /* Responsive */
 @media (max-width:640px) {
     body { padding-left:0; padding-bottom:90px; }
-    .side-nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
-    .side-nav .nav-brand,.side-nav .nav-section{display:none}
-    .side-nav .nav-link{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-    .side-nav .nav-link.active{border-left:none;border-bottom-color:#F5A623}
+    .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+    .nav .nav-brand,.nav .nav-section{display:none}
+    .nav .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+    .nav .nav-item.active{border-left:none;border-bottom-color:#F5A623}
     .header { padding:.75rem 1rem; flex-direction:column; gap:.5rem; text-align:center; }
     .main { padding:1rem; }
     .profil-grid { grid-template-columns:1fr; }
@@ -163,37 +163,8 @@ tbody tr:last-child td { border-bottom:none; }
 </head>
 <body>
 
-<nav class="side-nav">
-    <div class="nav-brand">
-        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
-        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
-        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
-    </div>
-    <div class="nav-section">Übersicht</div>
-    <a href="index.html#heute" class="nav-link">📅 Heute</a>
-    <a href="index.html#standorte" class="nav-link">📍 Standorte</a>
-    <a href="index.html#aufgaben" class="nav-link">📝 Aufgaben</a>
-    <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-link">👑 Königinnenzucht</a>
-    <a href="index.html#behandlung" class="nav-link">💉 Behandlungen</a>
-    <a href="bewertung.html" class="nav-link">⭐ Völker-Bewertung</a>
-    <a href="assistent.html" class="nav-link">🤖 Assistent</a>
-    <a href="bestandsbuch.html" class="nav-link active">📋 Bestandsbuch</a>
-    <div class="nav-section">Ernte & Planung</div>
-    <a href="ernte.html" class="nav-link">🍯 Honigernte</a>
-    <a href="index.html#tracht" class="nav-link">🌸 Tracht</a>
-    <a href="index.html#packliste" class="nav-link">📦 Packliste</a>
-    <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-link">💬 Forum</a>
-    <div class="nav-section">Verwaltung</div>
-    <a href="index.html#kosten" class="nav-link">💰 Kosten</a>
-    <div style="flex:1"></div>
-    <div class="nav-section">Rechtliches</div>
-    <a href="impressum.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
-    <a href="datenschutz.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
-    <a href="agb.html" class="nav-link" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
-    <a href="index.html#einstellungen" class="nav-link">⚙️ Einstellungen</a>
-</nav>
+<nav class="nav" id="mainNav"></nav>
+<script src="nav.js"></script>
 
 <!-- Loading Screen -->
 <div class="loading-screen" id="loadingScreen">
