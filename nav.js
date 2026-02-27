@@ -11,7 +11,7 @@
     var sections = [
         { title: 'Übersicht', items: [
             { href: 'index.html#heute', icon: '📅', label: 'Heute' },
-            { href: 'index.html#standorte', icon: '📍', label: 'Standorte' },
+            { href: 'standorte.html', icon: '📍', label: 'Standorte' },
             { href: 'index.html#aufgaben', icon: '📝', label: 'Aufgaben' }
         ]},
         { title: 'Völker', items: [
@@ -99,7 +99,7 @@
         var groups = [
             { title: 'Übersicht', items: [
                 { page: 'heute', icon: '📅', label: 'Heute' },
-                { page: 'standorte', icon: '📍', label: 'Standorte' },
+                { href: 'standorte.html', icon: '📍', label: 'Standorte' },
                 { page: 'aufgaben', icon: '📝', label: 'Aufgaben' }
             ]},
             { title: 'Völker', items: [

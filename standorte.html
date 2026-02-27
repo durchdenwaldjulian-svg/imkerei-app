@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>📍 Standorte – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+        .container{max-width:900px;margin:0 auto;padding:1rem}
+
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        .volk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
+        .volk-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;cursor:pointer;transition:all .2s}
+        .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+
+        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:100;overflow-y:auto;padding:1rem}
+        .modal.active{display:flex;align-items:center;justify-content:center}
+        .modal-content{background:#FFFBF0;border-radius:1rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:auto}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
+        .modal-header h2{margin:0;font-size:1.1rem}
+        .modal-body{padding:1.25rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom:.375rem}
+        .info-box{font-size:.8rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin:.5rem 0}
+
+        .counter{display:flex;align-items:center;gap:.75rem;margin:.5rem 0}
+        .counter-btn{width:2.5rem;height:2.5rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:1.25rem;font-weight:bold;display:flex;align-items:center;justify-content:center;transition:all .15s;color:#7A6652}
+        .counter-btn:hover{border-color:#F5A623;background:#FFF8EE}
+        .counter-value{font-size:1.5rem;font-weight:bold;min-width:2rem;text-align:center}
+
+        .option-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:1rem}
+        .option-btn{background:#fff;border:2px solid #E8DFD4;border-radius:.5rem;padding:.5rem;cursor:pointer;font-size:.85rem;transition:all .15s;text-align:center}
+        .option-btn:hover{border-color:#F5A623;background:#FFF8EC}
+        .option-btn.selected{border-color:#F5A623;background:#FFF8EC;font-weight:600}
+
+        .badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.72rem;font-weight:600}
+        .badge-green{background:#E8F5EC;color:#2D8A4E}
+        .badge-blue{background:#EEF2FF;color:#3B82F6}
+
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast.show{display:block}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+        .toast.info{background:#3B82F6}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
+        .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .volk-grid{grid-template-columns:1fr}
+            .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
+            .option-grid{grid-template-columns:repeat(2,1fr)}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<script src="nav.js"></script>
+
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color:#7A6652;font-size:.85rem">Standorte laden...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="app"></div>
+
+<!-- Standort Modal -->
+<div id="standortModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="standortModalTitle">📍 Neuer Standort</h2>
+            <button class="close-btn" onclick="closeModal('standortModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name des Standorts *</label>
+                <input type="text" id="standortName" class="input" placeholder="z.B. Heimstand Garten">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Anzahl Völker</label>
+                <div class="counter">
+                    <button class="counter-btn" onclick="changeVoelkerCount(-1)">−</button>
+                    <div class="counter-value" id="standortVoelkerCount">2</div>
+                    <button class="counter-btn" onclick="changeVoelkerCount(1)">+</button>
+                </div>
+                <div class="info-box">Die Völker werden automatisch erstellt</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen (optional)</label>
+                <textarea id="standortNotizen" class="input" placeholder="z.B. Südseite, geschützter Bereich"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">📍 Position auf Karte wählen</label>
+                <div id="standortMapPicker" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;position:relative;z-index:1"></div>
+                <input type="hidden" id="standortLat" value="">
+                <input type="hidden" id="standortLng" value="">
+                <div id="standortKoordStatus" style="font-size:.8rem;color:#7A6652"></div>
+                <div class="info-box">💡 Klicke auf die Karte um den Standort zu setzen.</div>
+            </div>
+            <button style="width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem" onclick="saveStandort()">Standort speichern</button>
+        </div>
+    </div>
+</div>
+
+<!-- Volk Modal -->
+<div id="volkModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="volkModalTitle">🐝 Volk Details</h2>
+            <button class="close-btn" onclick="closeModal('volkModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name des Volkes *</label>
+                <input type="text" id="volkName" class="input" placeholder="z.B. Volk 1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Beutensystem</label>
+                <select id="volkBeute" class="input">
+                    <option value="Dadant">Dadant</option>
+                    <option value="Zander">Zander</option>
+                    <option value="Deutsch Normal">Deutsch Normal</option>
+                    <option value="Langstroth">Langstroth</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <div class="option-grid" id="volkStatusGrid">
+                    <button class="option-btn selected" onclick="setVolkStatus('ok',this)">✅ Gut</button>
+                    <button class="option-btn" onclick="setVolkStatus('schwach',this)">⚠️ Schwach</button>
+                    <button class="option-btn" onclick="setVolkStatus('weisellos',this)">👑 Weisellos</button>
+                    <button class="option-btn" onclick="setVolkStatus('problem',this)">❌ Problem</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen</label>
+                <textarea id="volkNotizen" class="input" placeholder="Besonderheiten..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🍯 Honigernte</label>
+                <div id="volkHonigInfo" style="padding:.5rem .75rem;background:#FFF8EE;border-radius:.5rem;font-size:.9rem;color:#7A6652">Lade...</div>
+                <div style="font-size:.75rem;color:#94a3b8;margin-top:.25rem">Erträge werden über <a href="ernte.html" style="color:#F5A623">🍯 Honigernte</a> erfasst</div>
+            </div>
+            <button style="width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem" onclick="saveVolk()">Volk speichern</button>
+            <button style="width:100%;padding:.75rem;background:#ef4444;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem;margin-top:.5rem" onclick="deleteVolk()">🗑️ Volk löschen</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ============================================
+// STANDORTE & VÖLKER - EIGENSTÄNDIGE SEITE
+// ============================================
+
+var standorte = [];
+var voelker = [];
+var selectedStandortId = null;
+var editStandortId = null;
+var editVolkId = null;
+var selectedVolkStatus = 'ok';
+var voelkerCount = 2;
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id)
+    ]);
+
+    standorte = (results[0].data || []).map(function(r) {
+        return { id: r.id, name: r.name, notizen: r.notizen, mapsLink: r.maps_link, lat: r.lat, lng: r.lng, created: r.created_at };
+    });
+    voelker = (results[1].data || []).map(function(r) {
+        return { id: r.id, standortId: r.standort_id, name: r.name, beutensystem: r.beutensystem, status: r.status, notizen: r.notizen, honigertrag: parseFloat(r.honigertrag)||0, created: r.created_at };
+    });
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    render();
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function fd(ts) { if (!ts) return '-'; return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function toast(msg, type) {
+    type = type || 'success';
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type + ' show';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    if (id === 'standortModal') { editStandortId = null; }
+    if (id === 'volkModal') { editVolkId = null; }
+}
+
+// ============================================
+// MAP PICKER
+// ============================================
+function initMapPicker() {
+    var container = document.getElementById('standortMapPicker');
+    if (!container) return;
+    if (container._mapInstance) { container._mapInstance.remove(); container._mapInstance = null; }
+    container.innerHTML = '';
+    var startLat = parseFloat(document.getElementById('standortLat').value) || 49.0;
+    var startLng = parseFloat(document.getElementById('standortLng').value) || 10.0;
+    var startZoom = document.getElementById('standortLat').value ? 14 : 6;
+    var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
+    container._mapInstance = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:19}).addTo(map);
+    var marker = null;
+    if (document.getElementById('standortLat').value) {
+        marker = L.marker([startLat, startLng]).addTo(map);
+        document.getElementById('standortKoordStatus').innerHTML = '<span style="color:#10b981">✅ Position: '+startLat.toFixed(4)+', '+startLng.toFixed(4)+'</span>';
+    }
+    map.on('click', function(e){
+        document.getElementById('standortLat').value = e.latlng.lat;
+        document.getElementById('standortLng').value = e.latlng.lng;
+        document.getElementById('standortKoordStatus').innerHTML = '<span style="color:#10b981">✅ Position: '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4)+'</span>';
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+    });
+    setTimeout(function(){ map.invalidateSize(); }, 100);
+    setTimeout(function(){ map.invalidateSize(); }, 500);
+}
+
+// ============================================
+// STANDORT CRUD
+// ============================================
+function changeVoelkerCount(delta) {
+    voelkerCount = Math.max(0, voelkerCount + delta);
+    document.getElementById('standortVoelkerCount').textContent = voelkerCount;
+}
+
+function openStandortModal(id) {
+    if (id) {
+        var s = standorte.find(function(x){return x.id === id;});
+        if (s) {
+            editStandortId = id;
+            document.getElementById('standortModalTitle').textContent = '📍 Standort bearbeiten';
+            document.getElementById('standortName').value = s.name;
+            var vAnzahl = voelker.filter(function(v){return v.standortId === id;}).length;
+            voelkerCount = vAnzahl;
+            document.getElementById('standortVoelkerCount').textContent = vAnzahl;
+            document.getElementById('standortNotizen').value = s.notizen || '';
+            document.getElementById('standortLat').value = s.lat || '';
+            document.getElementById('standortLng').value = s.lng || '';
+        }
+    } else {
+        editStandortId = null;
+        voelkerCount = 2;
+        document.getElementById('standortModalTitle').textContent = '📍 Neuer Standort';
+        document.getElementById('standortName').value = '';
+        document.getElementById('standortVoelkerCount').textContent = '2';
+        document.getElementById('standortNotizen').value = '';
+        document.getElementById('standortLat').value = '';
+        document.getElementById('standortLng').value = '';
+        document.getElementById('standortKoordStatus').innerHTML = '';
+    }
+    openModal('standortModal');
+    setTimeout(function(){ initMapPicker(); }, 300);
+}
+
+function saveStandort() {
+    var name = document.getElementById('standortName').value.trim();
+    var notizen = document.getElementById('standortNotizen').value.trim();
+    var lat = parseFloat(document.getElementById('standortLat').value) || null;
+    var lng = parseFloat(document.getElementById('standortLng').value) || null;
+
+    if (!name) { alert('Bitte Namen eingeben!'); return; }
+
+    if (editStandortId) {
+        var s = standorte.find(function(x){return x.id === editStandortId;});
+        if (s) {
+            s.name = name; s.notizen = notizen; s.lat = lat; s.lng = lng;
+
+            var aktuelleVoelker = voelker.filter(function(v){return v.standortId === editStandortId;});
+            var diff = voelkerCount - aktuelleVoelker.length;
+
+            if (diff > 0) {
+                for (var i = 0; i < diff; i++) {
+                    var nv = { id: 'v' + uid(), standortId: editStandortId, name: 'Volk ' + (aktuelleVoelker.length + i + 1), beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
+                    voelker.push(nv);
+                    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
+                }
+            } else if (diff < 0) {
+                var zuLoeschen = aktuelleVoelker.slice(diff);
+                zuLoeschen.forEach(function(v){
+                    voelker = voelker.filter(function(x){return x.id !== v.id;});
+                    db.del('voelker', v.id);
+                });
+            }
+
+            db.update('standorte', {name:s.name, notizen:s.notizen, lat:s.lat, lng:s.lng}, s.id);
+        }
+    } else {
+        var standortId = 's' + uid();
+        standorte.push({ id: standortId, name: name, notizen: notizen, mapsLink: '', lat: lat, lng: lng, created: Date.now() });
+        db.upsert('standorte', {id:standortId, user_id:currentUser.id, name:name, notizen:notizen, maps_link:'', lat:lat, lng:lng, created_at:Date.now()});
+
+        for (var i = 1; i <= voelkerCount; i++) {
+            var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + i, beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
+            voelker.push(nv);
+            db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
+        }
+    }
+
+    closeModal('standortModal');
+    render();
+    toast(editStandortId ? '✓ Standort aktualisiert!' : '✓ Standort erstellt!', 'success');
+}
+
+function delStandort(id) {
+    if (!confirm('Standort und alle Völker wirklich löschen?')) return;
+    standorte = standorte.filter(function(s){return s.id !== id;});
+    voelker = voelker.filter(function(v){return v.standortId !== id;});
+    db.del('standorte', id);
+    db.delWhere('voelker', 'standort_id', id);
+    if (selectedStandortId === id) selectedStandortId = null;
+    render();
+    toast('🗑️ Standort gelöscht', 'info');
+}
+
+// ============================================
+// VOLK CRUD
+// ============================================
+function openVolkModal(id) {
+    var v = voelker.find(function(x){return x.id === id;});
+    if (!v) return;
+    editVolkId = id;
+    selectedVolkStatus = v.status || 'ok';
+    document.getElementById('volkModalTitle').textContent = '🐝 ' + v.name;
+    document.getElementById('volkName').value = v.name;
+    document.getElementById('volkBeute').value = v.beutensystem || 'Dadant';
+    document.getElementById('volkNotizen').value = v.notizen || '';
+
+    document.getElementById('volkHonigInfo').textContent = 'Lade...';
+    sb.from('ernten').select('menge').eq('user_id', currentUser.id).eq('volk_id', id).then(function(res){
+        var total = (res.data||[]).reduce(function(s,r){return s+parseFloat(r.menge||0);},0);
+        document.getElementById('volkHonigInfo').innerHTML = '<strong style="color:#F5A623;font-size:1.1rem">'+total.toFixed(1)+' kg</strong> <span style="font-size:.8rem">('+((res.data||[]).length)+' Ernten)</span>';
+    });
+
+    document.querySelectorAll('#volkStatusGrid .option-btn').forEach(function(btn){ btn.classList.remove('selected'); });
+    openModal('volkModal');
+    setTimeout(function(){
+        var statusMap = {'ok':0,'schwach':1,'weisellos':2,'problem':3};
+        var btns = document.querySelectorAll('#volkStatusGrid .option-btn');
+        var idx = statusMap[v.status] || 0;
+        if (btns[idx]) btns[idx].classList.add('selected');
+    }, 50);
+}
+
+function setVolkStatus(status, btn) {
+    selectedVolkStatus = status;
+    document.querySelectorAll('#volkStatusGrid .option-btn').forEach(function(b){ b.classList.remove('selected'); });
+    if (btn) btn.classList.add('selected');
+}
+
+function saveVolk() {
+    if (!editVolkId) return;
+    var v = voelker.find(function(x){return x.id === editVolkId;});
+    if (!v) return;
+    v.name = document.getElementById('volkName').value.trim();
+    v.beutensystem = document.getElementById('volkBeute').value;
+    v.status = selectedVolkStatus;
+    v.notizen = document.getElementById('volkNotizen').value.trim();
+    db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen}, v.id);
+    closeModal('volkModal');
+    render();
+    toast('✓ Volk aktualisiert!', 'success');
+}
+
+function deleteVolk() {
+    if (!editVolkId) return;
+    if (!confirm('Volk wirklich löschen?')) return;
+    voelker = voelker.filter(function(v){return v.id !== editVolkId;});
+    db.del('voelker', editVolkId);
+    closeModal('volkModal');
+    render();
+    toast('🗑️ Volk gelöscht', 'info');
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    if (selectedStandortId) {
+        renderDetails();
+    } else {
+        renderList();
+    }
+}
+
+function renderList() {
+    var html = '<div class="container">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+    '<h1 style="margin:0">📍 Standorte</h1>'+
+    '<button onclick="openStandortModal()" style="padding:.4rem .8rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.8rem">+ Neuer Standort</button>'+
+    '</div>';
+
+    if (standorte.length) {
+        standorte.forEach(function(s){
+            var sVoelker = voelker.filter(function(v){return v.standortId === s.id;});
+            html += '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;cursor:pointer;transition:all .2s" onclick="showDetails(\''+s.id+'\')">'+
+            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">'+
+            '<div style="flex:1"><h3 style="margin:0;font-family:DM Serif Display,serif">'+s.name+'</h3>'+
+            (s.notizen ? '<div style="font-size:.85rem;color:#7A6652;margin-top:.25rem">'+s.notizen+'</div>' : '')+'</div>'+
+            '<div style="display:flex;gap:.5rem">'+
+            '<button onclick="event.stopPropagation();openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️</button>'+
+            '<button onclick="event.stopPropagation();delStandort(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem">🗑️</button>'+
+            '</div></div>'+
+            (s.lat && s.lng ? '<div id="minimap_'+s.id+'" style="height:150px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;overflow:hidden" onclick="event.stopPropagation()"></div>' : '')+
+            '<div style="background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem">'+
+            '<div style="font-weight:600;margin-bottom:.25rem">🐝 '+sVoelker.length+' Völker</div>'+
+            '<div style="font-size:.8rem;color:#7A6652">Klicken für Details</div>'+
+            '</div></div>';
+        });
+    } else {
+        html += '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;text-align:center;padding:3rem;color:#7A6652">'+
+        '<div style="font-size:3rem;margin-bottom:1rem">📍</div>'+
+        '<h3>Noch keine Standorte</h3>'+
+        '<p style="margin:.5rem 0 1.5rem">Erstelle deinen ersten Standort und füge Völker hinzu!</p>'+
+        '<button onclick="openStandortModal()" style="padding:.6rem 1.5rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer">Ersten Standort erstellen</button></div>';
+    }
+
+    html += '</div>';
+    document.getElementById('app').innerHTML = html;
+    initMiniMaps();
+}
+
+function renderDetails() {
+    var s = standorte.find(function(x){return x.id === selectedStandortId;});
+    if (!s) { selectedStandortId = null; renderList(); return; }
+    var sVoelker = voelker.filter(function(v){return v.standortId === s.id;});
+
+    var statusColors = {'ok':'#10b981','schwach':'#f59e0b','weisellos':'#8b5cf6','problem':'#ef4444'};
+    var statusLabels = {'ok':'✅ Gut','schwach':'⚠️ Schwach','weisellos':'👑 Weisellos','problem':'❌ Problem'};
+
+    var html = '<div class="container">'+
+    '<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">'+
+    '<button onclick="selectedStandortId=null;render()" style="padding:.4rem .8rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.85rem;font-weight:600">← Zurück</button>'+
+    '<h1 style="margin:0">'+s.name+'</h1></div>'+
+
+    '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;align-items:start">'+
+    '<div>'+(s.notizen ? '<p style="color:#7A6652;margin-bottom:.5rem">'+s.notizen+'</p>' : '')+'</div>'+
+    '<button onclick="openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️ Bearbeiten</button>'+
+    '</div></div>'+
+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">'+
+    '<h2 style="margin:0">🐝 Völker ('+sVoelker.length+')</h2>'+
+    '<div style="display:flex;gap:.5rem">'+
+    '<button onclick="quickRemoveVolk(\''+s.id+'\')" style="padding:.3rem .6rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">− Volk</button>'+
+    '<button onclick="quickAddVolk(\''+s.id+'\')" style="padding:.3rem .6rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">+ Volk</button>'+
+    '</div></div>'+
+
+    '<div class="volk-grid">';
+
+    sVoelker.forEach(function(v){
+        var sc = statusColors[v.status] || statusColors.ok;
+        var sl = statusLabels[v.status] || statusLabels.ok;
+        html += '<div class="volk-card" onclick="openVolkModal(\''+v.id+'\')">'+
+        '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
+        '<h3 style="margin:0;font-size:.95rem">'+v.name+'</h3>'+
+        '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div></div>'+
+        '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.25rem">'+v.beutensystem+'</div>'+
+        '<div style="font-size:.75rem;margin-bottom:.5rem">'+sl+'</div>'+
+        '<div style="background:#FFF8EE;padding:.5rem;border-radius:.5rem;font-size:.75rem">🍯 '+(v.honigertrag||0).toFixed(1)+' kg</div></div>';
+    });
+
+    html += '</div>';
+    if (!sVoelker.length) html += '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;text-align:center;padding:1.5rem;color:#7A6652">Noch keine Völker an diesem Standort</div>';
+    html += '</div>';
+
+    document.getElementById('app').innerHTML = html;
+}
+
+function quickAddVolk(standortId) {
+    var sVoelker = voelker.filter(function(v){return v.standortId === standortId;});
+    var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + (sVoelker.length + 1), beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
+    voelker.push(nv);
+    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
+    render();
+    toast('✓ Volk hinzugefügt', 'success');
+}
+
+function quickRemoveVolk(standortId) {
+    var sVoelker = voelker.filter(function(v){return v.standortId === standortId;});
+    if (!sVoelker.length) return;
+    var last = sVoelker[sVoelker.length - 1];
+    if (!confirm('Volk "'+last.name+'" löschen?')) return;
+    voelker = voelker.filter(function(v){return v.id !== last.id;});
+    db.del('voelker', last.id);
+    render();
+    toast('🗑️ Volk entfernt', 'info');
+}
+
+function showDetails(id) {
+    selectedStandortId = id;
+    render();
+}
+
+// ============================================
+// MINI-MAPS
+// ============================================
+function initMiniMaps() {
+    setTimeout(function(){
+        standorte.forEach(function(s){
+            if (s.lat && s.lng) {
+                var el = document.getElementById('minimap_'+s.id);
+                if (!el || el._mapDone) return;
+                el._mapDone = true;
+                try {
+                    var map = L.map(el, {
+                        zoomControl:false, dragging:false, scrollWheelZoom:false,
+                        doubleClickZoom:false, touchZoom:false, attributionControl:false
+                    }).setView([s.lat, s.lng], 14);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(map);
+                    L.marker([s.lat, s.lng]).addTo(map);
+                    setTimeout(function(){ map.invalidateSize(); }, 300);
+                } catch(e) { console.log('Minimap Error:', e); }
+            }
+        });
+    }, 150);
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+</body>
+</html>

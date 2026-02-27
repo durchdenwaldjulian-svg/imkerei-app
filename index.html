@@ -36,10 +36,7 @@
         /* Tracht Items */
         /* .tracht-item → tracht.html */
         
-        /* Völker Grid */
-        .volk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
-        .volk-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;cursor:pointer;transition:all .2s}
-        .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+        /* Völker-Grid CSS → standorte.html */
         
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:64px}
@@ -47,7 +44,7 @@
             .footer{display:none}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
             .option-grid{grid-template-columns:repeat(3,1fr)}
-            .volk-grid{grid-template-columns:1fr}
+            /* .volk-grid → standorte.html */
             .mobile-nav{display:flex}
             .mobile-menu-overlay{display:none}
             .mobile-menu-overlay.active{display:flex}
@@ -104,6 +101,7 @@
 
         /* === PACKLISTE MODULE STYLES === */
         /* Packliste-CSS → packliste.html */
+        
         /* === TRACHTKALENDER MODULE STYLES === */
         /* Tracht-Timeline CSS → tracht.html */
         .ausgeblendet-chip:hover{opacity:1;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
@@ -248,88 +246,9 @@
     </div>
 </div>
 
-<!-- Standort Modal -->
-<div id="standortModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="standortModalTitle">📍 Neuer Standort</h2>
-            <button class="close-btn" onclick="app.closeModal('standortModal')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Name des Standorts *</label>
-                <input type="text" id="standortName" class="input" placeholder="z.B. Heimstand Garten">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Anzahl Völker</label>
-                <div class="counter">
-                    <button class="counter-btn" onclick="app.changeVoelkerCount(-1)">−</button>
-                    <div class="counter-value" id="standortVoelkerCount">2</div>
-                    <button class="counter-btn" onclick="app.changeVoelkerCount(1)">+</button>
-                </div>
-                <div class="info-box">Die Völker werden automatisch erstellt</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Notizen (optional)</label>
-                <textarea id="standortNotizen" class="input" placeholder="z.B. Südseite, geschützter Bereich"></textarea>
-            </div>
-            <div class="form-group">
-                <label class="form-label">📍 Position auf Karte wählen</label>
-                <div id="standortMapPicker" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;position:relative;z-index:1"></div>
-                <input type="hidden" id="standortLat" value="">
-                <input type="hidden" id="standortLng" value="">
-                <div id="standortKoordStatus" style="font-size:.8rem;color:#7A6652"></div>
-                <div class="info-box">💡 Klicke auf die Karte um den Standort zu setzen. Du kannst zoomen und die Karte verschieben.</div>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="app.saveStandort()">Standort speichern</button>
-        </div>
-    </div>
-</div>
+<!-- Standort-Modal → standorte.html -->
 
-<!-- Volk Modal -->
-<div id="volkModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="volkModalTitle">🐝 Volk Details</h2>
-            <button class="close-btn" onclick="app.closeModal('volkModal')">✕</button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Name des Volkes *</label>
-                <input type="text" id="volkName" class="input" placeholder="z.B. Volk 1">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Beutensystem</label>
-                <select id="volkBeute" class="input">
-                    <option value="Dadant">Dadant</option>
-                    <option value="Zander">Zander</option>
-                    <option value="Deutsch Normal">Deutsch Normal</option>
-                    <option value="Langstroth">Langstroth</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <div class="option-grid" style="grid-template-columns:repeat(2,1fr)">
-                    <button class="option-btn selected" onclick="app.setVolkStatus('ok')">✅ Gut</button>
-                    <button class="option-btn" onclick="app.setVolkStatus('schwach')">⚠️ Schwach</button>
-                    <button class="option-btn" onclick="app.setVolkStatus('weisellos')">👑 Weisellos</button>
-                    <button class="option-btn" onclick="app.setVolkStatus('problem')">❌ Problem</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Notizen</label>
-                <textarea id="volkNotizen" class="input" placeholder="Besonderheiten..."></textarea>
-            </div>
-            <div class="form-group">
-                <label class="form-label">🍯 Honigernte</label>
-                <div id="volkHonigInfo" style="padding:.5rem .75rem;background:#FFF8EE;border-radius:.5rem;font-size:.9rem;color:#7A6652">Lade...</div>
-                <div style="font-size:.75rem;color:#94a3b8;margin-top:.25rem">Erträge werden über <a href="ernte.html" style="color:#F5A623">🍯 Honigernte</a> erfasst</div>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="app.saveVolk()">Volk speichern</button>
-            <button class="btn btn-danger btn-block" style="margin-top:.5rem" onclick="app.deleteVolk()">🗑️ Volk löschen</button>
-        </div>
-    </div>
-</div>
+<!-- Volk-Modal → standorte.html -->
 
 <!-- Aufgabe Modal -->
 <div id="aufgabeModal" class="modal">
@@ -1241,298 +1160,40 @@ const app={
     },
     
     // === COUNTER ===
-    changeVoelkerCount(delta){
-        this.voelkerCount = Math.max(0, this.voelkerCount + delta);
-        document.getElementById('standortVoelkerCount').textContent = this.voelkerCount;
-    },
-    
-    // === STANDORTE ===
-    openStandortModal(id){
-        if(id){
-            const s = this.data.standorte.find(function(x){return x.id === id;});
-            if(s){
-                this.editStandortId = id;
-                document.getElementById('standortModalTitle').textContent = '📍 Standort bearbeiten';
-                document.getElementById('standortName').value = s.name;
-                const voelkerAnzahl = this.data.voelker.filter(function(v){return v.standortId === id;}).length;
-                this.voelkerCount = voelkerAnzahl;
-                document.getElementById('standortVoelkerCount').textContent = voelkerAnzahl;
-                document.getElementById('standortNotizen').value = s.notizen || '';
-                document.getElementById('standortLat').value = s.lat || '';
-                document.getElementById('standortLng').value = s.lng || '';
-                this._standortEditLat = s.lat || null;
-                this._standortEditLng = s.lng || null;
-            }
-        }else{
-            this.editStandortId = null;
-            this.voelkerCount = 2;
-            document.getElementById('standortModalTitle').textContent = '📍 Neuer Standort';
-            document.getElementById('standortVoelkerCount').textContent = '2';
-            document.getElementById('standortLat').value = '';
-            document.getElementById('standortLng').value = '';
-            document.getElementById('standortKoordStatus').innerHTML = '';
-            this._standortEditLat = null;
-            this._standortEditLng = null;
-        }
-        this.openModal('standortModal');
-        // Karte initialisieren nach kurzer Verzögerung (Modal muss sichtbar sein)
-        setTimeout(function(){ app.initMapPicker('standort'); }, 300);
-    },
-    
+    // === STANDORTE & VÖLKER → standorte.html ===
+    changeVoelkerCount(){},
+    openStandortModal(){ window.location.href='standorte.html'; },
     initMapPicker(type){
-        var containerId = type === 'standort' ? 'standortMapPicker' : 'trachtMapPicker';
-        var latId = type === 'standort' ? 'standortLat' : 'trachtLatE';
-        var lngId = type === 'standort' ? 'standortLng' : 'trachtLngE';
-        var statusId = type === 'standort' ? 'standortKoordStatus' : 'koordinatenStatus';
-        
-        var container = document.getElementById(containerId);
+        if (type === 'standort') return;
+        var container = document.getElementById('trachtMapPicker');
         if (!container) return;
-        
-        // Alte Map-Instanz entfernen
-        if (container._mapInstance) {
-            container._mapInstance.remove();
-            container._mapInstance = null;
-        }
+        if (container._mapInstance) { container._mapInstance.remove(); container._mapInstance = null; }
         container.innerHTML = '';
-        
-        // Startposition: gespeicherte Koordinaten oder Deutschland-Mitte
-        var startLat = parseFloat(document.getElementById(latId).value) || 49.0;
-        var startLng = parseFloat(document.getElementById(lngId).value) || 10.0;
-        var startZoom = document.getElementById(latId).value ? 14 : 6;
-        
-        var map = L.map(container, {zoomControl: true}).setView([startLat, startLng], startZoom);
+        var startLat = parseFloat(document.getElementById('trachtLatE').value) || 49.0;
+        var startLng = parseFloat(document.getElementById('trachtLngE').value) || 10.0;
+        var startZoom = document.getElementById('trachtLatE').value ? 14 : 6;
+        var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
         container._mapInstance = map;
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OSM',
-            maxZoom: 19
-        }).addTo(map);
-        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:19}).addTo(map);
         var marker = null;
-        
-        // Wenn schon Koordinaten da sind, Marker setzen
-        if (document.getElementById(latId).value) {
-            marker = L.marker([startLat, startLng]).addTo(map);
-            document.getElementById(statusId).innerHTML = '<span style="color:#10b981">✅ Position gesetzt: '+startLat.toFixed(4)+', '+startLng.toFixed(4)+'</span>';
-        }
-        
-        // Klick auf Karte setzt Marker
+        if (document.getElementById('trachtLatE').value) { marker = L.marker([startLat, startLng]).addTo(map); }
         map.on('click', function(e){
-            var lat = e.latlng.lat;
-            var lng = e.latlng.lng;
-            document.getElementById(latId).value = lat;
-            document.getElementById(lngId).value = lng;
-            document.getElementById(statusId).innerHTML = '<span style="color:#10b981">✅ Position gesetzt: '+lat.toFixed(4)+', '+lng.toFixed(4)+'</span>';
+            document.getElementById('trachtLatE').value = e.latlng.lat;
+            document.getElementById('trachtLngE').value = e.latlng.lng;
+            document.getElementById('koordinatenStatus').innerHTML = '<span style="color:#10b981">✅ '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4)+'</span>';
             if (marker) map.removeLayer(marker);
-            marker = L.marker([lat, lng]).addTo(map);
+            marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
         });
-        
-        // Karte mehrfach invalidieren damit sie korrekt rendert
         setTimeout(function(){ map.invalidateSize(); }, 100);
         setTimeout(function(){ map.invalidateSize(); }, 500);
-        setTimeout(function(){ map.invalidateSize(); }, 1000);
     },
-    
-    parseStandortKoord(){
-        // Not needed anymore - map picker handles it
-    },
-    
-    saveStandort(){
-        const name = document.getElementById('standortName').value.trim();
-        const voelkerAnzahl = this.voelkerCount;
-        const notizen = document.getElementById('standortNotizen').value.trim();
-        const mapsLink = '';
-        const lat = parseFloat(document.getElementById('standortLat').value) || null;
-        const lng = parseFloat(document.getElementById('standortLng').value) || null;
-        
-        console.log('=== saveStandort ===');
-        console.log('editStandortId:', this.editStandortId);
-        console.log('Name:', name, '| Lat:', lat, '| Lng:', lng);
-        
-        if(!name){
-            alert('Bitte Namen eingeben!');
-            return;
-        }
-        
-        if(this.editStandortId){
-            const s = this.data.standorte.find(function(x){return x.id === app.editStandortId;});
-            if(s){
-                s.name = name;
-                s.notizen = notizen;
-                s.mapsLink = mapsLink;
-                s.lat = lat;
-                s.lng = lng;
-                
-                const aktuelleVoelker = this.data.voelker.filter(function(v){return v.standortId === app.editStandortId;});
-                const diff = voelkerAnzahl - aktuelleVoelker.length;
-                
-                if(diff > 0){
-                    for(let i = 0; i < diff; i++){
-                        this.data.voelker.push({
-                            id: 'v' + this.uid(),
-                            standortId: this.editStandortId,
-                            name: 'Volk ' + (aktuelleVoelker.length + i + 1),
-                            beutensystem: 'Dadant',
-                            status: 'ok',
-                            notizen: '',
-                            honigertrag: 0,
-                            created: Date.now()
-                        });
-                    }
-                }else if(diff < 0){
-                    const zuLoeschen = aktuelleVoelker.slice(diff);
-                    zuLoeschen.forEach(function(v){
-                        app.data.voelker = app.data.voelker.filter(function(x){return x.id !== v.id;});
-                    });
-                }
-            }
-        }else{
-            const standortId = 's' + this.uid();
-            this.data.standorte.push({
-                id: standortId,
-                name: name,
-                notizen: notizen,
-                mapsLink: mapsLink,
-                lat: lat,
-                lng: lng,
-                created: Date.now()
-            });
-            
-            for(let i = 1; i <= voelkerAnzahl; i++){
-                this.data.voelker.push({
-                    id: 'v' + this.uid(),
-                    standortId: standortId,
-                    name: 'Volk ' + i,
-                    beutensystem: 'Dadant',
-                    status: 'ok',
-                    notizen: '',
-                    honigertrag: 0,
-                    created: Date.now()
-                });
-            }
-        }
-        
-        // Save to Supabase BEFORE closeModal (closeModal resets editStandortId!)
-        if(this.editStandortId){
-            var s = this.data.standorte.find(function(x){return x.id === app.editStandortId;});
-            if(s) {
-                var updateData = {name:s.name, notizen:s.notizen, maps_link:s.mapsLink, lat:s.lat, lng:s.lng};
-                console.log('Standort Update:', s.id, JSON.stringify(updateData));
-                db.update('standorte', updateData, s.id).then(function(r){
-                    if(r && r.error) {
-                        alert('❌ FEHLER: ' + JSON.stringify(r.error));
-                    } else {
-                        console.log('✅ Standort Update OK');
-                    }
-                });
-            }
-            // Save all voelker for this standort
-            this.data.voelker.filter(function(v){return v.standortId===app.editStandortId;}).forEach(function(v){
-                db.upsert('voelker', {id:v.id, user_id:currentUser.id, standort_id:v.standortId, name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen, honigertrag:v.honigertrag, created_at:v.created});
-            });
-        } else {
-            var newS = this.data.standorte[this.data.standorte.length-1];
-            db.upsert('standorte', {id:newS.id, user_id:currentUser.id, name:newS.name, notizen:newS.notizen, maps_link:newS.mapsLink, lat:newS.lat, lng:newS.lng, created_at:newS.created});
-            this.data.voelker.filter(function(v){return v.standortId===newS.id;}).forEach(function(v){
-                db.upsert('voelker', {id:v.id, user_id:currentUser.id, standort_id:v.standortId, name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen||'', honigertrag:v.honigertrag||0, created_at:v.created});
-            });
-        }
-        
-        this.closeModal('standortModal');
-        this.render();
-    },
-    
-    delStandort(id){
-        if(!confirm('Standort und alle Völker wirklich löschen?')) return;
-        autoBackup.create('Standort gelöscht: ' + (this.data.standorte.find(function(s){return s.id===id;})||{}).name);
-        
-        this.data.standorte = this.data.standorte.filter(function(s){return s.id !== id;});
-        this.data.voelker = this.data.voelker.filter(function(v){return v.standortId !== id;});
-        db.del('standorte', id);
-        db.delWhere('voelker', 'standort_id', id);
-        this.render();
-    },
-    
-    // === VÖLKER ===
-    openVolkModal(id){
-        const v = this.data.voelker.find(function(x){return x.id === id;});
-        if(!v) return;
-        
-        this.editVolkId = id;
-        this.selectedVolkStatus = v.status || 'ok';
-        document.getElementById('volkModalTitle').textContent = '🐝 ' + v.name;
-        document.getElementById('volkName').value = v.name;
-        document.getElementById('volkBeute').value = v.beutensystem || 'Dadant';
-        document.getElementById('volkNotizen').value = v.notizen || '';
-        
-        // Honig-Info aus ernten-Tabelle laden
-        document.getElementById('volkHonigInfo').textContent = 'Lade...';
-        sb.from('ernten').select('menge').eq('user_id', currentUser.id).eq('volk_id', id).then(function(res){
-            var total = (res.data||[]).reduce(function(s,r){return s+parseFloat(r.menge||0);},0);
-            document.getElementById('volkHonigInfo').innerHTML = '<strong style="color:#F5A623;font-size:1.1rem">'+total.toFixed(1)+' kg</strong> <span style="font-size:.8rem">('+((res.data||[]).length)+' Ernten)</span>';
-        });
-        
-        // Status buttons markieren
-        document.querySelectorAll('#volkModal .option-btn').forEach(function(btn){
-            btn.classList.remove('selected');
-        });
-        
-        this.openModal('volkModal');
-        
-        // Status button nach kurzer Verzögerung markieren
-        setTimeout(function(){
-            const statusMap = {
-                'ok': 0,
-                'schwach': 1,
-                'weisellos': 2,
-                'problem': 3
-            };
-            const btns = document.querySelectorAll('#volkModal .option-btn');
-            const idx = statusMap[v.status] || 0;
-            if(btns[idx]) btns[idx].classList.add('selected');
-        }, 50);
-    },
-    
-    setVolkStatus(status){
-        this.selectedVolkStatus = status;
-        document.querySelectorAll('#volkModal .option-btn').forEach(function(btn){
-            btn.classList.remove('selected');
-        });
-        event.target.classList.add('selected');
-    },
-    
-    saveVolk(){
-        if(!this.editVolkId) return;
-        
-        const v = this.data.voelker.find(function(x){return x.id === app.editVolkId;});
-        if(!v) return;
-        
-        v.name = document.getElementById('volkName').value.trim();
-        v.beutensystem = document.getElementById('volkBeute').value;
-        v.status = this.selectedVolkStatus;
-        v.notizen = document.getElementById('volkNotizen').value.trim();
-        
-        db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen}, v.id);
-        this.closeModal('volkModal');
-        this.render();
-    },
-    
-    deleteVolk(){
-        if(!this.editVolkId) return;
-        if(!confirm('Volk wirklich löschen?')) return;
-        autoBackup.create('Volk gelöscht: ' + (this.data.voelker.find(function(v){return v.id===app.editVolkId;})||{}).name);
-        
-        var delId = app.editVolkId;
-        this.data.voelker = this.data.voelker.filter(function(v){return v.id !== delId;});
-        db.del('voelker', delId);
-        this.closeModal('volkModal');
-        this.render();
-    },
-    
-    showStandortDetails(id){
-        this.selectedStandortId = id;
-        this.render();
-    },
+    saveStandort(){},
+    delStandort(){},
+    openVolkModal(){ window.location.href='standorte.html'; },
+    setVolkStatus(){},
+    saveVolk(){},
+    deleteVolk(){},
+    showStandortDetails(){ window.location.href='standorte.html'; },
     
     // === AUFGABEN ===
     selectAufgabeTyp(typ){
@@ -1859,31 +1520,8 @@ const app={
         }
     },
     
-    initMiniMaps(){
-        var self = this;
-        setTimeout(function(){
-            self.data.standorte.forEach(function(s){
-                if (s.lat && s.lng) {
-                    var el = document.getElementById('minimap_'+s.id);
-                    if (!el || el._mapDone) return;
-                    el._mapDone = true;
-                    try {
-                        var map = L.map(el, {
-                            zoomControl: false,
-                            dragging: false,
-                            scrollWheelZoom: false,
-                            doubleClickZoom: false,
-                            touchZoom: false,
-                            attributionControl: false
-                        }).setView([s.lat, s.lng], 14);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(map);
-                        L.marker([s.lat, s.lng]).addTo(map);
-                        setTimeout(function(){ map.invalidateSize(); }, 300);
-                    } catch(e) { console.log('Minimap Error:', e); }
-                }
-            });
-        }, 150);
-    },
+    initMiniMaps(){},
+
     
     // Fortsetzung folgt in Teil 2...
     
@@ -2159,142 +1797,12 @@ const app={
     },
     
     rStandorte(){
-        const self = this;
-        this.selectedStandortId = null;
-        
-        var html = '<div class="container">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
-        '<h1>📍 Standorte</h1>'+
-        '<button class="btn btn-primary btn-sm" onclick="app.openStandortModal()">+ Neuer Standort</button>'+
-        '</div>'+
-        this.data.standorte.map(function(s){
-            const voelker = self.data.voelker.filter(function(v){return v.standortId === s.id;});
-            return '<div class="card" style="cursor:pointer;transition:all .2s" onclick="app.showStandortDetails(\''+s.id+'\')">'+
-            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">'+
-            '<div style="flex:1">'+
-            '<h3>'+s.name+'</h3>'+
-            (s.notizen ? '<div style="font-size:.85rem;color:#7A6652;margin-top:.25rem">'+s.notizen+'</div>' : '')+
-            '</div>'+
-            '<div style="display:flex;gap:.5rem">'+
-            '<button class="btn btn-primary btn-xs" onclick="event.stopPropagation();app.openStandortModal(\''+s.id+'\')">✏️</button>'+
-            '<button class="btn btn-danger btn-xs" onclick="event.stopPropagation();app.delStandort(\''+s.id+'\')">🗑️</button>'+
-            '</div>'+
-            '</div>'+
-            (s.lat && s.lng ? '<div id="minimap_'+s.id+'" style="height:150px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;overflow:hidden" onclick="event.stopPropagation()"></div>' : '')+
-            (s.lat && s.lng ? wetterMod.renderMini(s.id) : '')+
-            '<div style="background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem">'+
-            '<div style="font-weight:600;margin-bottom:.5rem">🐝 '+voelker.length+' Völker - Klicken für Details</div>'+
-            '</div>'+
-            '</div>';
-        }).join('')+
-        (!this.data.standorte.length ? 
-            '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">'+
-            '<div style="font-size:3rem;margin-bottom:1rem">📍</div>'+
-            '<h3>Noch keine Standorte</h3>'+
-            '<p style="margin:.5rem 0 1.5rem">Erstelle deinen ersten Standort und füge Völker hinzu!</p>'+
-            '<button class="btn btn-primary" onclick="app.openStandortModal()">Ersten Standort erstellen</button>'+
-            '</div>' 
-            : ''
-        )+
-        '</div>';
-        
-        // Mini-Maps nach dem Rendern initialisieren
-        setTimeout(function(){
-            self.data.standorte.forEach(function(s){
-                if (s.lat && s.lng) {
-                    var el = document.getElementById('minimap_'+s.id);
-                    if (!el) return;
-                    try {
-                        var map = L.map(el, {
-                            zoomControl: false,
-                            dragging: false,
-                            scrollWheelZoom: false,
-                            doubleClickZoom: false,
-                            touchZoom: false,
-                            attributionControl: false
-                        }).setView([s.lat, s.lng], 14);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(map);
-                        L.marker([s.lat, s.lng]).addTo(map);
-                        setTimeout(function(){ map.invalidateSize(); }, 200);
-                    } catch(e) { console.log('Minimap Error:', e); }
-                }
-            });
-        }, 100);
-        
-        return html;
+        window.location.href = 'standorte.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
-    
     rStandortDetails(){
-        const self = this;
-        const s = this.data.standorte.find(function(x){return x.id === self.selectedStandortId;});
-        if(!s){
-            this.selectedStandortId = null;
-            return this.rStandorte();
-        }
-        
-        const voelker = this.data.voelker.filter(function(v){return v.standortId === s.id;});
-        
-        const statusColors = {
-            'ok': '#10b981',
-            'schwach': '#f59e0b',
-            'weisellos': '#8b5cf6',
-            'problem': '#ef4444'
-        };
-        
-        const statusLabels = {
-            'ok': '✅ Gut',
-            'schwach': '⚠️ Schwach',
-            'weisellos': '👑 Weisellos',
-            'problem': '❌ Problem'
-        };
-        
-        return '<div class="container">'+
-        '<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">'+
-        '<button class="btn btn-sm" onclick="app.selectedStandortId=null;app.render()">← Zurück</button>'+
-        '<h1 style="margin:0">'+s.name+'</h1>'+
-        '</div>'+
-        
-        '<div class="card">'+
-        '<div style="display:flex;justify-content:space-between;align-items:start">'+
-        '<div>'+
-        (s.notizen ? '<p style="color:#7A6652;margin-bottom:.5rem">'+s.notizen+'</p>' : '')+
-        (s.mapsLink ? '<a href="'+s.mapsLink+'" target="_blank" style="font-size:.85rem;color:#3b82f6">📍 In Maps öffnen</a>' : '')+
-        '</div>'+
-        '<div style="display:flex;gap:.5rem">'+
-        '<button class="btn btn-primary btn-xs" onclick="app.openStandortModal(\''+s.id+'\')">✏️ Bearbeiten</button>'+
-        '</div>'+
-        '</div>'+
-        '</div>'+
-        
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">'+
-        '<h2 style="margin:0">🐝 Völker ('+voelker.length+')</h2>'+
-        '<div style="display:flex;gap:.5rem">'+
-        '<button class="btn btn-danger btn-xs" onclick="if(app.voelkerCount>0){app.voelkerCount='+voelker.length+'-1;app.openStandortModal(\''+s.id+'\');app.saveStandort();}">− Volk</button>'+
-        '<button class="btn btn-success btn-xs" onclick="app.voelkerCount='+(voelker.length+1)+';app.openStandortModal(\''+s.id+'\');app.saveStandort();">+ Volk</button>'+
-        '</div>'+
-        '</div>'+
-        
-        '<div class="volk-grid">'+
-        voelker.map(function(v){
-            const statusColor = statusColors[v.status] || statusColors.ok;
-            const statusLabel = statusLabels[v.status] || statusLabels.ok;
-            
-            return '<div class="volk-card" onclick="app.openVolkModal(\''+v.id+'\')">'+
-            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
-            '<h3 style="margin:0;font-size:.95rem">'+v.name+'</h3>'+
-            '<div style="width:12px;height:12px;border-radius:50%;background:'+statusColor+'"></div>'+
-            '</div>'+
-            '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.25rem">'+v.beutensystem+'</div>'+
-            '<div style="font-size:.75rem;margin-bottom:.5rem">'+statusLabel+'</div>'+
-            '<div style="background:#FFF8EE;padding:.5rem;border-radius:.5rem;font-size:.75rem">'+
-            '🍯 '+(v.honigertrag||0).toFixed(1)+' kg'+
-            '</div>'+
-            '</div>';
-        }).join('')+
-        '</div>'+
-        
-        (!voelker.length ? '<div class="card" style="text-align:center;color:#7A6652">Noch keine Völker an diesem Standort</div>' : '')+
-        '</div>';
+        window.location.href = 'standorte.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
     
     rAufgaben(){
@@ -2623,7 +2131,6 @@ const app={
         window.location.href = 'packliste.html';
         return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
-    
     
     /* rTrachtkalender → tracht.html */
 
@@ -2974,48 +2481,21 @@ const packlisteMod = {
     schnellCounter: {},
     init() { this.items = []; },
     async erstelleNeueItems() {
-        var PACKLISTE_ITEMS = {
-            'Schutzkleidung': ['Imkeranzug / Imkerjacke','Imkerhandschuhe','Imkerhut mit Schleier','Feste Schuhe / Stiefel'],
-            'Werkzeuge': ['Stockmeißel','Smoker (Raucher)','Abkehrbesen','Wabenzange','Entdeckelungsgabel','Stockkarte & Stift','Messer / Entdeckelungsmesser'],
-            'Rauchmaterial': ['Holzspäne / Holzpellets','Heu / Stroh','Karton / Eierkarton','Anzünder','Feuerzeug / Streichhölzer'],
-            'Futter': ['Futterteig (Apifonda)','Zuckerwasser','Futtertaschen','Futterzarge'],
-            'Behandlung': ['Ameisensäure','Oxalsäure','Puderzucker (für Diagnose)','Diagnosebrett / Windel','Schutzhandschuhe für Säure','Dosierer / Verdampfer'],
-            'Material': ['Rähmchen','Mittelwände','Absperrgitter','Fluglochkeil','Mäusegitter','Draht zum Einlöten'],
-            'Ernte': ['Honigschleuder','Entdeckelungsgeschirr','Sieb (doppelt)','Honigeimer / Hobbock','Honigrefraktometer','Gläser & Deckel','Etiketten'],
-            'Beuten & Zargen': ['Boden / Bodenbrett','Brutraum(zarge)','Honigraum(zarge)','Absperrgitter','Innendeckel','Außendeckel / Blechdeckel'],
-            'Sonstiges': ['Erste-Hilfe-Set','Wasser / Getränk','Transportbox / Kiste','Müllsack','Desinfektionsmittel','Handy / Kamera']
-        };
+        var PACK = {'Schutzkleidung':['Imkeranzug / Imkerjacke','Imkerhandschuhe','Imkerhut mit Schleier','Feste Schuhe / Stiefel'],'Werkzeuge':['Stockmeißel','Smoker (Raucher)','Abkehrbesen','Wabenzange','Entdeckelungsgabel','Stockkarte & Stift','Messer / Entdeckelungsmesser'],'Rauchmaterial':['Holzspäne / Holzpellets','Heu / Stroh','Karton / Eierkarton','Anzünder','Feuerzeug / Streichhölzer'],'Futter':['Futterteig (Apifonda)','Zuckerwasser','Futtertaschen','Futterzarge'],'Behandlung':['Ameisensäure','Oxalsäure','Puderzucker (für Diagnose)','Diagnosebrett / Windel','Schutzhandschuhe für Säure','Dosierer / Verdampfer'],'Material':['Rähmchen','Mittelwände','Absperrgitter','Fluglochkeil','Mäusegitter','Draht zum Einlöten'],'Ernte':['Honigschleuder','Entdeckelungsgeschirr','Sieb (doppelt)','Honigeimer / Hobbock','Honigrefraktometer','Gläser & Deckel','Etiketten'],'Beuten & Zargen':['Boden / Bodenbrett','Brutraum(zarge)','Honigraum(zarge)','Absperrgitter','Innendeckel','Außendeckel / Blechdeckel'],'Sonstiges':['Erste-Hilfe-Set','Wasser / Getränk','Transportbox / Kiste','Müllsack','Desinfektionsmittel','Handy / Kamera']};
         this.items = [];
-        Object.entries(PACKLISTE_ITEMS).forEach(function(entry) {
-            var kategorie = entry[0]; var items = entry[1];
-            items.forEach(function(name) {
-                packlisteMod.items.push({
-                    id: 'pack_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    kategorie: kategorie, name: name, checked: false, istSchnell: false
-                });
-            });
-        });
+        Object.entries(PACK).forEach(function(e){ var k=e[0]; e[1].forEach(function(n){ packlisteMod.items.push({id:'pack_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),kategorie:k,name:n,checked:false,istSchnell:false}); }); });
         this.speichern();
     },
     speichern() {
         if (!currentUser) return;
-        var rows = this.items.map(function(item){
-            return { id: item.id, user_id: currentUser.id, kategorie: item.kategorie, name: item.name, checked: item.checked || false, menge: item.menge || 1, ist_schnell: item.istSchnell || false, schnell_typ: item.schnellTyp || null };
-        });
+        var rows = this.items.map(function(i){ return {id:i.id,user_id:currentUser.id,kategorie:i.kategorie,name:i.name,checked:i.checked||false,menge:i.menge||1,ist_schnell:i.istSchnell||false,schnell_typ:i.schnellTyp||null}; });
         if (rows.length > 0) sb.from('packliste').upsert(rows);
     },
     toggle(id) {
-        var item = this.items.find(function(i){return i.id === id;});
-        if (item) {
-            item.checked = !item.checked;
-            sb.from('packliste').upsert({ id: item.id, user_id: currentUser.id, kategorie: item.kategorie, name: item.name, checked: item.checked, menge: item.menge || 1, ist_schnell: item.istSchnell || false, schnell_typ: item.schnellTyp || null });
-            app.render();
-        }
+        var item = this.items.find(function(i){return i.id===id;});
+        if (item) { item.checked=!item.checked; sb.from('packliste').upsert({id:item.id,user_id:currentUser.id,kategorie:item.kategorie,name:item.name,checked:item.checked,menge:item.menge||1,ist_schnell:item.istSchnell||false,schnell_typ:item.schnellTyp||null}); app.render(); }
     },
-    getStatistik() {
-        var abgehakt = this.items.filter(function(i){return i.checked;}).length;
-        return { abgehakt: abgehakt, offen: this.items.length - abgehakt, gesamt: this.items.length };
-    }
+    getStatistik() { var a=this.items.filter(function(i){return i.checked;}).length; return {abgehakt:a,offen:this.items.length-a,gesamt:this.items.length}; }
 };
 
 // ============================================
