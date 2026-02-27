@@ -26,7 +26,7 @@
         .volk-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;cursor:pointer;transition:all .2s}
         .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
 
-        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:100;overflow-y:auto;padding:1rem}
+        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:1000;overflow-y:auto;padding:1rem}
         .modal.active{display:flex;align-items:center;justify-content:center}
         .modal-content{background:#FFFBF0;border-radius:1rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:auto}
         .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
@@ -114,7 +114,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">📍 Position auf Karte wählen</label>
-                <div id="standortMapPicker" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;position:relative;z-index:1"></div>
+                <div id="standortMapPicker" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;position:relative;z-index:1001"></div>
                 <input type="hidden" id="standortLat" value="">
                 <input type="hidden" id="standortLng" value="">
                 <div id="standortKoordStatus" style="font-size:.8rem;color:#7A6652"></div>
