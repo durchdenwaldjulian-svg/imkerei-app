@@ -14,9 +14,9 @@ body{font-family:'Outfit',sans-serif;background:#FFFBF0;min-height:100vh;padding
 .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
 .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
 .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-.nav-item-link{display:block;padding:.625rem 1rem;text-align:left;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-.nav-item-link:hover{background:rgba(245,166,35,0.06)}
-.nav-item-link.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+.nav-item{display:block;padding:.625rem 1rem;text-align:left;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;cursor:pointer;border:none;background:none}
+.nav-item:hover{background:rgba(245,166,35,0.06)}
+.nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
 .container{max-width:700px;margin:0 auto;padding:1rem}
 .card{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;padding:1.25rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .card h3{font-family:'DM Serif Display',serif;font-size:1.1rem;margin-bottom:.75rem;color:#1C1410}
@@ -74,8 +74,8 @@ label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom
     body{padding-left:0;padding-bottom:90px}
     .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
     .nav-brand,.nav-section{display:none}
-    .nav-item-link{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-    .nav-item-link.active{border-left:none;border-bottom-color:#F5A623}
+    .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+    .nav-item.active{border-left:none;border-bottom-color:#F5A623}
 }
 </style>
 </head>
@@ -83,6 +83,7 @@ label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom
 
 <nav class="nav" id="mainNav"></nav>
 <script src="nav.js"></script>
+
 
 <div class="container">
     <div class="tab-bar" id="mainTabs">
