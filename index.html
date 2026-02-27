@@ -272,6 +272,10 @@
                 <label class="form-label">Fälligkeit</label>
                 <input type="date" id="aufgabeDatum" class="input">
             </div>
+            <div class="form-group">
+                <label class="form-label">Uhrzeit (optional – z.B. für Kundentermine)</label>
+                <input type="time" id="aufgabeUhrzeit" class="input" value="">
+            </div>
             <div class="form-group" id="aufgabeIntervallWrap" style="display:none">
                 <label class="form-label">🔁 Wiederholung</label>
                 <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem">
@@ -356,6 +360,7 @@
 <!-- Behandlung-Modal → behandlung.html -->
 
 <nav class="nav" id="mainNav"></nav>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="nav.js"></script>
 
 <!-- MOBILE NAV BAR (generiert von nav.js) -->
@@ -368,6 +373,7 @@
 <script>
 // Hash früh speichern bevor Supabase Auth ihn entfernt
 var _startPageHash = window.location.hash ? window.location.hash.replace('#','') : null;
+console.log('🐝 INDEX VERSION: 27-Feb-2026 Session13 Packliste-Fix');
 
 // ============================================
 // AUTH FUNCTIONS (index.html specific)
@@ -1177,6 +1183,13 @@ const app={
                 
                 document.getElementById('aufgabeModalTitle').textContent = '✓ Aufgabe bearbeiten';
                 document.getElementById('aufgabeDatum').value = new Date(a.faelligkeit).toISOString().split('T')[0];
+                // Uhrzeit vorausfüllen wenn gesetzt (nicht 00:00)
+                var editDate = new Date(a.faelligkeit);
+                if (editDate.getHours() !== 0 || editDate.getMinutes() !== 0) {
+                    document.getElementById('aufgabeUhrzeit').value = ('0'+editDate.getHours()).slice(-2)+':'+('0'+editDate.getMinutes()).slice(-2);
+                } else {
+                    document.getElementById('aufgabeUhrzeit').value = '';
+                }
                 document.getElementById('aufgabeDauer').value = a.dauer;
                 
                 const notizParts = a.notiz.split(' - ');
@@ -1223,6 +1236,7 @@ const app={
             this.selectedIntervall = 0;
             document.getElementById('aufgabeModalTitle').textContent = '✓ Neue Aufgabe';
             document.getElementById('aufgabeStandort').value = '';
+            document.getElementById('aufgabeUhrzeit').value = '';
         }
         this.openModal('aufgabeModal');
     },
@@ -1234,11 +1248,20 @@ const app={
         }
         
         const datum = document.getElementById('aufgabeDatum').value;
+        const uhrzeit = document.getElementById('aufgabeUhrzeit').value;
         const dauer = parseInt(document.getElementById('aufgabeDauer').value);
         const notiz = document.getElementById('aufgabeNotiz').value;
         const standortId = document.getElementById('aufgabeStandort').value || null;
         var intervallTage = this.selectedIntervall;
         if (intervallTage === -1) intervallTage = parseInt(document.getElementById('aufgabeIntervallTage').value) || 0;
+        
+        // Timestamp mit Uhrzeit berechnen
+        var faelligTs;
+        if (uhrzeit) {
+            faelligTs = new Date(datum + 'T' + uhrzeit).getTime();
+        } else {
+            faelligTs = new Date(datum).getTime();
+        }
         
         // Standortname in Notiz aufnehmen
         var standortName = '';
@@ -1253,7 +1276,7 @@ const app={
             if(a){
                 a.typ = this.selectedAufgabeTyp;
                 a.notiz = TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
-                a.faelligkeit = new Date(datum).getTime();
+                a.faelligkeit = faelligTs;
                 a.dauer = dauer;
                 a.prio = this.selectedPrio;
                 a.standortId = standortId;
@@ -1265,7 +1288,7 @@ const app={
                 id: 'a' + this.uid(),
                 typ: this.selectedAufgabeTyp,
                 notiz: TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
-                faelligkeit: new Date(datum).getTime(),
+                faelligkeit: faelligTs,
                 dauer: dauer,
                 prio: this.selectedPrio,
                 erledigt: false,
@@ -1318,6 +1341,17 @@ const app={
             db.update('aufgaben', {erledigt: null}, a.id);
             this.render();
         }
+    },
+    
+    doneBehandlungTermin(behandlungId, terminTs){
+        var b = behandlungMod.behandlungen.find(function(x){return x.id === behandlungId;});
+        if (!b) return;
+        b.termine = (b.termine||[]).filter(function(t){ return t !== terminTs; });
+        sb.from('behandlungen').update({termine: b.termine}).eq('id', b.id).then(function(res){
+            if(res.error) console.error('Behandlung-Termin Fehler:', res.error);
+        });
+        this.toast('✅ Behandlungstermin erledigt!', 'success');
+        this.render();
     },
     
     // === ZUCHTPLAN === (jetzt in zuchtplan.html)
@@ -1519,7 +1553,12 @@ const app={
                 emoji = '✓';
                 titel = a.notiz;
                 var pc = a.prio === 'high' ? 'badge-red' : (a.prio === 'medium' ? 'badge-yellow' : 'badge-green');
-                sub = '⏱️ '+a.dauer+' Min · <span class="badge '+pc+'" style="font-size:.65rem">'+a.prio.toUpperCase()+'</span>';
+                var uhrzeitStr = '';
+                var aDate = new Date(a.faelligkeit);
+                if (aDate.getHours() !== 0 || aDate.getMinutes() !== 0) {
+                    uhrzeitStr = ' · 🕐 '+('0'+aDate.getHours()).slice(-2)+':'+('0'+aDate.getMinutes()).slice(-2);
+                }
+                sub = '⏱️ '+a.dauer+' Min'+uhrzeitStr+' · <span class="badge '+pc+'" style="font-size:.65rem">'+a.prio.toUpperCase()+'</span>';
                 aktionen = '<button class="btn btn-blue btn-xs" onclick="app.openAufgabeModal(\''+a.id+'\')">✏️</button>'+
                     '<button class="btn btn-success btn-xs" onclick="app.doneA(\''+a.id+'\')">✓</button>';
             } else if (e.typ === 'behandlung') {
@@ -1529,6 +1568,7 @@ const app={
                 titel = b.methodeName;
                 sub = b.voelkerLabel;
                 if (b.menge) sub += ' · '+b.menge;
+                aktionen = '<button class="btn btn-success btn-xs" onclick="app.doneBehandlungTermin(\''+b.id+'\','+e.ts+')">✓</button>';
             } else if (e.typ === 'zucht') {
                 emoji = e.data.emoji;
                 titel = e.data.step + ': ' + e.data.plan.name;
