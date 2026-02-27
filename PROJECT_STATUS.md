@@ -1,5 +1,5 @@
 # Imkerei Planer – Projektstatus
-**Stand: 26. Februar 2026, 19:00 Uhr (Session 8)**
+**Stand: 27. Februar 2026, ~21:30 Uhr (Session 13)**
 
 ---
 
@@ -15,6 +15,78 @@ Web-App für Imker zur Verwaltung von Bienenständen, Völkern, Durchsichten, Tr
 - **Backend:** Supabase (Auth + Datenbank)
 - **Supabase Projekt:** reyswuedptkyfdkmdpft.supabase.co
 - **Domain-Anbieter:** IONOS (bienenplan.de + bienenplan.com)
+
+---
+
+## Architektur (aktuell nach Refactoring)
+
+### Prinzip: Single Source of Truth
+- **nav.js** = zentrale Navigation für ALLE Seiten (Desktop-Sidebar + Mobile)
+- Menüänderungen nur in nav.js → wirkt überall
+- Jede eigenständige Seite: eigene Auth, eigenes Supabase-Loading, eigener Render-Loop
+- index.html = Hauptseite mit internen Hash-Pages (Heute, Aufgaben, Kosten, Einstellungen)
+
+### Dateien & Struktur
+
+| Datei | Funktion | Zeilen ca. | nav.js |
+|---|---|---|---|
+| `index.html` | Hauptapp (Heute, Aufgaben, Kosten, Einstellungen, Wetter, Backup, Export) | ~2616 | ✅ |
+| `standorte.html` | Standort- & Völker-Verwaltung (Leaflet-Karten, CRUD) | ~570 | ✅ |
+| `behandlung.html` | Behandlungen (CRUD, Methoden, Termine, Intervalle) | ~704 | ✅ |
+| `tracht.html` | Trachtkalender (40 Trachttypen, Timeline, Teilen) | ~566 | ✅ |
+| `packliste.html` | Packliste (Schnell-Buttons, Mengen, Drucken) | ~381 | ✅ |
+| `zuchtplan.html` | Königinnenzucht (Sammelbrut, Umlarven, Zusetzen) | ~572 | ✅ |
+| `bewertung.html` | Standort-Bewertung (collapsible Standorte) | ~622 | ✅ |
+| `ernte.html` | Ernteverwaltung | ~537 | ✅ |
+| `assistent.html` | KI-Assistent | ~685 | ✅ |
+| `bestandsbuch.html` | PDF-Export Bestandsbuch (jsPDF) | ~870 | ✅ |
+| `forum.html` | Community-Forum (Preview-Modus, 3 Views) | ~689 | ✅ |
+| `trachtkarte.html` | Öffentliche Trachtkarte (Leaflet, kein Login) | ~395 | ❌ braucht keine |
+| `imkermeister.html` | Admin-Seite / Gamification | ~915 | ❌ Admin-Seite |
+| `landing.html` | Öffentliche Startseite | ~1215 | ❌ braucht keine |
+| `config.js` | Supabase-Client, DB Helper | ~103 | – |
+| `nav.js` | Zentrale Navigation (Desktop + Mobile) | ~257 | – |
+| `shared-styles.css` | Gemeinsame Styles | ~270 | – |
+| `sw.js` | Service Worker (PWA Phase 1) | – | – |
+| `manifest.json` | PWA-Manifest | ~29 | – |
+| `impressum.html` | Impressum (§ 5 DDG) | ~104 | ❌ braucht keine |
+| `datenschutz.html` | Datenschutzerklärung (Art. 13 DSGVO) | ~199 | ❌ braucht keine |
+| `agb.html` | AGB (11 Paragraphen) | ~151 | ❌ braucht keine |
+| `CNAME` | GitHub Pages Custom Domain | 1 | – |
+
+---
+
+## Refactoring-Historie (Sessions 9-13, 27.02.2026)
+
+### Was gemacht wurde
+Die index.html wurde von **4527 auf 2616 Zeilen** reduziert (-42%) durch Auslagerung von 4 Modulen in eigenständige Seiten:
+
+| Modul | Zeilen entfernt | Neue Datei |
+|---|---|---|
+| Behandlungen | ~515 | behandlung.html (704 Z.) |
+| Tracht | ~498 | tracht.html (566 Z.) |
+| Packliste | ~250 | packliste.html (381 Z.) |
+| Standorte & Völker | ~533 | standorte.html (570 Z.) |
+| Nav → nav.js | ~125 | (in nav.js integriert) |
+
+### Mini-Helfer in index.html
+Für jedes ausgelagerte Modul bleibt ein Mini-Stub in index.html, damit die Heute-Seite, Export und Backup weiterhin funktionieren:
+- `behandlungMod` – Daten für Heute-Timeline
+- `trachtkalenderMod` – Daten für Heute-Statistik
+- `packlisteMod` – Daten + toggle() für Heute-Packlisten-Widget
+- `app.data.standorte` / `app.data.voelker` – Daten für Heute/Export/Wetter
+
+### nav.js Umstellung
+Alle Seiten nutzen jetzt die zentrale nav.js (Single Source of Truth):
+- Desktop-Sidebar wird dynamisch generiert
+- Mobile Bottom-Bar + Fullscreen-Menu werden dynamisch generiert
+- Hash-Links für index.html-interne Seiten werden automatisch abgefangen
+- `navSetActive()` Hilfsfunktion für externe Active-State-Steuerung
+
+### Bugfixes während Refactoring
+- `closeModal()` crashte auf gelöschte Modal-Elemente → getElementById-Aufrufe entfernt
+- Standorte: Leaflet-Karten überlagerten Bearbeitungs-Modal → z-index:10000 + Leaflet-Container-Reset beim Modal-Öffnen
+- assistent.html: Hardcodierte Nav hatte falschen CSS-Klassennamen → auf nav.js umgestellt
 
 ---
 
@@ -47,32 +119,7 @@ Web-App für Imker zur Verwaltung von Bienenständen, Völkern, Durchsichten, Tr
 
 ---
 
-## Dateien & Struktur
-
-| Datei | Funktion | Zeilen ca. |
-|---|---|---|
-| `index.html` | Hauptapp (Heute, Standorte, Völker, Durchsichten, Trachtkalender, Wetter, Backup) | ~4790 |
-| `config.js` | Supabase-Client, DB Helper (upsert/insert/update/del/delWhere), Auth | ~103 |
-| `shared-styles.css` | Gemeinsame Styles für alle Seiten | ~270 |
-| `landing.html` | Öffentliche Startseite (nicht eingeloggt) | ~38k |
-| `imkermeister.html` | Gamification / Fortschrittssystem | ~38k |
-| `bewertung.html` | Standort-Bewertung (Sidebar, collapsible Standorte) | ~644 |
-| `ernte.html` | Ernteverwaltung (Sidebar) | ~559 |
-| `assistent.html` | KI-Assistent (Sidebar) | ~706 |
-| `bestandsbuch.html` | PDF-Export Bestandsbuch (jsPDF) + Jahresfilter-Persistenz | ~742 |
-| `trachtkarte.html` | Öffentliche Trachtkarte (Leaflet, shared Trachten) | ~394 |
-| `zuchtplan.html` | Königinnenzucht – eigenständige Seite, Supabase-Speicherung | ~neu |
-| `forum.html` | Community-Forum mit Preview-Modus, 3 Views | ~neu |
-| `impressum.html` | § 5 DDG – Julian Durchdenwald, Imkerei Durchdenwald | ~neu |
-| `datenschutz.html` | Art. 13 DSGVO – Supabase, GitHub Pages, Open-Meteo etc. | ~neu |
-| `agb.html` | 11 Paragraphen – Leistung, Registrierung, Haftung etc. | ~neu |
-| `manifest.json` | PWA-Manifest (Phase 1 – nur installierbar, kein Service Worker) | ~29 |
-| `icon192.png` | PWA-Icon 192x192 (Honigwaben-Design mit Biene) | – |
-| `icon512.png` | PWA-Icon 512x512 | – |
-
----
-
-## Rechtliches (DSGVO/DDG – eingerichtet 26.02.2026)
+## Rechtliches (DSGVO/DDG)
 
 ### Impressum (impressum.html)
 - Julian Durchdenwald, Imkerei Durchdenwald
@@ -88,71 +135,6 @@ Web-App für Imker zur Verwaltung von Bienenständen, Völkern, Durchsichten, Tr
 
 ### AGB (agb.html)
 - 11 Paragraphen
-
-### Integration
-- Sidebar: Abschnitt "Rechtliches" in allen Seiten
-- Mobile: Links im Overlay-Menü
-- Landing-Page: Footer-Links
-
----
-
-## Forum (Basis erstellt, Vollausbau ausstehend)
-
-### SQL-Tabellen (forum-setup.sql)
-- forum_kategorien, forum_beitraege, forum_antworten, forum_likes
-- RLS-Policies, 5 Kategorien, Trigger für antworten_count
-
-### Features (Basis)
-- 3 Views: Kategorien-Übersicht, Thread-Liste, Thread-Ansicht
-- Preview-Modus mit Demo-Daten
-- Sidebar-Navigation, Mobile-optimiert
-
-### Geplante Features (Vollausbau)
-- Suche, Bearbeiten/Löschen, Bilder hochladen
-- Moderation, User-Profile, Benachrichtigungen
-- Zitat-Funktion, Pagination
-
----
-
-## Zuchtplan (Bug behoben 26.02.2026)
-
-### Problem & Lösung
-- **Bug:** Zuchtpläne in localStorage statt Supabase → Daten nach Reload weg
-- **Fix:** Neue eigenständige zuchtplan.html mit direkter Supabase-Speicherung
-- **SQL:** `ALTER TABLE zuchtplaene ADD COLUMN IF NOT EXISTS erledigt_schritte jsonb DEFAULT '[]'`
-
-### Heute-Seite Integration
-- Zeigt alle 3 Schritte: 📦 Sammelbrut, 🔬 Umlarven, 👑 Zusetzen
-- Abhak-Buttons speichern in Supabase
-- 📋-Button verlinkt zu zuchtplan.html
-
----
-
-## Was am 26.02.2026 passiert ist (8 Sessions)
-
-### Session 1: Refactoring & Tracht-Fixes
-### Session 2: PWA, Wetter-Picker, Sidebar
-### Session 3: Kompletter Rebuild nach PWA-Crash
-### Session 4: Tracht-Standort Fix
-### Session 5: PWA Phase 1, Mobile Nav, Bugfixes
-
-### Session 6: Forum-Planung
-- Forum basis-Version erstellt (forum.html + forum-setup.sql)
-- Navigation in allen Seiten aktualisiert
-
-### Session 7: Zuchtplan-Bug + Rechtssicherheit
-- Zuchtplan localStorage→Supabase Migration
-- zuchtplan.html als eigenständige Seite
-- Impressum, Datenschutz, AGB erstellt
-- Sidebar "Rechtliches" in allen Seiten
-
-### Session 8: Domain-Setup
-- bienenplan.de + bienenplan.com bei IONOS gekauft
-- DNS A-Records + CNAME für GitHub Pages eingerichtet
-- GitHub Pages Custom Domain + HTTPS aktiviert
-- Supabase Auth URLs aktualisiert
-- bienenplan.com → bienenplan.de Weiterleitung
-- **App live unter https://bienenplan.de** ✅
 
 ---
 
@@ -171,48 +153,21 @@ Web-App für Imker zur Verwaltung von Bienenständen, Völkern, Durchsichten, Tr
 
 ### 4. RLS-Policies mit WITH CHECK versehen
 ```sql
--- Empfohlen für alle Tabellen (Packliste + Profiles schon gemacht):
+-- Empfohlen für alle Tabellen:
 DROP POLICY IF EXISTS "Users can update own standorte" ON standorte;
 CREATE POLICY "Users can update own standorte" ON standorte FOR UPDATE 
 USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own voelker" ON voelker;
-CREATE POLICY "Users can update own voelker" ON voelker FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own aufgaben" ON aufgaben;
-CREATE POLICY "Users can update own aufgaben" ON aufgaben FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own trachten" ON trachten;
-CREATE POLICY "Users can update own trachten" ON trachten FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own behandlungen" ON behandlungen;
-CREATE POLICY "Users can update own behandlungen" ON behandlungen FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own kosten" ON kosten;
-CREATE POLICY "Users can update own kosten" ON kosten FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Users can update own zuchtplaene" ON zuchtplaene;
-CREATE POLICY "Users can update own zuchtplaene" ON zuchtplaene FOR UPDATE 
-USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- (analog für voelker, aufgaben, trachten, behandlungen, kosten, zuchtplaene)
 ```
 
 ### 5. Monetarisierung (besprochen, nicht umgesetzt)
 - Freemium-Abo: Starter kostenlos, Pro 4,99€, Meister 12,99€
 - Stripe als Zahlungsanbieter
 
-### 6. Zentrale nav.js (optional)
-- Würde Sidebar-Änderungen vereinfachen (aktuell in jeder HTML-Datei kopiert)
-- Größeres Refactoring, kein Muss
-
-### 7. USt-IdNr. im Impressum eintragen
+### 6. USt-IdNr. im Impressum eintragen
 - Falls vorhanden in impressum.html ergänzen
 
-### 8. Landing-Page URLs aktualisieren
+### 7. Landing-Page URLs aktualisieren
 - Links in landing.html auf bienenplan.de umstellen (statt github.io)
 
 ---
@@ -223,11 +178,11 @@ USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 - **Tabellen:** standorte, voelker, durchsichten, trachten, profiles, ernte, packliste, behandlungen, kosten, zuchtplaene, trachten_shared, forum_kategorien, forum_beitraege, forum_antworten, forum_likes
 - **db Helper** in `config.js`: `db.upsert()`, `db.insert()`, `db.update()`, `db.del()`, `db.delWhere()`
 - **Öffentlicher Client** (`createPublicClient`) für trachtkarte.html
-- **Wetter:** Open-Meteo API (kostenlos)
-- **Hash-Navigation:** `_startPageHash` Variable
+- **Wetter:** Open-Meteo API (kostenlos, 14-Tage-Vorhersage, Bienen-Flugwetter)
+- **Hash-Navigation:** `_startPageHash` Variable in index.html
 - **Bestandsbuch PDF:** jsPDF, `alleStandortePDF()`
-- **Mobile Nav:** Bottom-Bar + Overlay-Menü (unter 768px)
-- **PWA:** Nur Phase 1 (manifest.json, kein Service Worker)
+- **Mobile Nav:** nav.js generiert Bottom-Bar + Overlay-Menü (unter 768px)
+- **PWA:** Nur Phase 1 (manifest.json, installierbar, kein Offline)
 
 ---
 
@@ -239,6 +194,9 @@ USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 4. **VOR dem Programmieren Plan vorstellen** – Genehmigung einholen
 5. **KEINE bestehende Logik ändern** ohne Bestätigung
 6. **Transcripts als Source of Truth** – `/mnt/project/` kann veraltet sein
+7. **Immer wie Profis arbeiten** – Single Source of Truth, keine Duplizierung, saubere Architektur
+8. **imkermeister.html ist die Admin-Seite** – braucht keine nav.js
+9. **trachtkarte.html ist reine Vollbild-Karte** – braucht keine nav.js
 
 ---
 
@@ -251,3 +209,8 @@ USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 6. Session 6 – Forum-Planung
 7. Session 7 – Zuchtplan-Bug + Rechtssicherheit (Impressum, Datenschutz, AGB)
 8. Session 8 – Domain-Setup (bienenplan.de + bienenplan.com)
+9. Session 9 – nav.js erstellt, Sidebar-Links konvertiert
+10. Session 10 – index.html Analyse (4527 Zeilen, 8 interne Seiten)
+11. Session 11 – Behandlung ausgelagert (behandlung.html, -515 Zeilen)
+12. Session 12 – Tracht ausgelagert (tracht.html, -498 Zeilen), assistent.html Nav-Fix
+13. Session 13 – Packliste + Standorte ausgelagert, index.html + zuchtplan.html auf nav.js, PROJECT_STATUS.md aktualisiert
