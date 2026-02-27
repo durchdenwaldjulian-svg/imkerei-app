@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💉 Behandlungen – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        /* === BEHANDLUNG-SPECIFIC STYLES === */
+        body{padding-left:220px;padding-bottom:2rem}
+        .container{max-width:900px;margin:0 auto;padding:1rem}
+
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        /* === BEHANDLUNG CARDS === */
+        .behandlung-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;border-left:4px solid;transition:all .2s}
+        .behandlung-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(28,20,16,0.08)}
+        .behandlung-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem}
+        .behandlung-title{font-size:1.1rem;font-weight:bold;color:#1C1410}
+        .behandlung-info{font-size:.85rem;color:#7A6652;line-height:1.6;margin-top:.5rem}
+        .termine-liste{margin-top:1rem;padding-top:1rem;border-top:1px solid #E8DFD4}
+        .termin-item{padding:.5rem;background:#FFF8EE;border-radius:.5rem;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center;font-size:.85rem}
+        .termin-datum{font-weight:600;color:#1C1410}
+
+        /* === METHODEN GRID === */
+        .methoden-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin:.75rem 0}
+        .methode-btn{padding:.875rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;transition:all .2s;text-align:center;font-size:.85rem;font-weight:500}
+        .methode-btn:hover{border-color:#F5A623;background:#FFF8EE;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+        .methode-btn.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
+        .methode-btn .emoji{display:block;font-size:1.75rem;margin-bottom:.5rem}
+        .schnell-menge-btn{background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;padding:.2rem .5rem;font-size:.75rem;color:#7A6652;cursor:pointer;font-weight:600;transition:all .15s}
+        .schnell-menge-btn:hover{background:#F5A623;color:white;border-color:#F5A623}
+
+        /* === BADGES === */
+        .badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.72rem;font-weight:600}
+        .badge-today,.badge-active{background:#FFF3CD;color:#92400E}
+        .badge-upcoming{background:#E8F5EC;color:#2D8A4E}
+        .badge-completed{background:#F5EDE3;color:#7A6652}
+        .badge-overdue{background:#FEE2E2;color:#DC2626}
+        .badge-repeat{background:#EEF2FF;color:#5B21B6}
+
+        /* === COUNTER === */
+        .counter{display:flex;align-items:center;gap:.5rem}
+        .counter-btn{width:36px;height:36px;border-radius:50%;border:2px solid #E8DFD4;background:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .counter-btn:hover{border-color:#F5A623;background:#FFF8EE}
+        .counter-value{font-size:1.25rem;font-weight:bold;min-width:30px;text-align:center}
+
+        /* === TOAST === */
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast.show{display:block}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        /* === LOADING === */
+        .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
+        .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .methoden-grid{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.5rem}
+            .methode-btn{padding:.5rem;font-size:.75rem}
+            .methode-btn .emoji{font-size:1.25rem;margin-bottom:.25rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<script src="nav.js"></script>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color:#7A6652;font-size:.85rem">Behandlungen laden...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- App Container -->
+<div id="app"></div>
+
+<!-- ============================================ -->
+<!-- BEHANDLUNG MODAL -->
+<!-- ============================================ -->
+<div id="behandlungModal" class="modal modal-center" style="display:none;position:fixed;inset:0;background:rgba(28,20,16,0.5);z-index:100;align-items:center;justify-content:center">
+    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto;background:#fff;padding:0;position:relative">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4;position:sticky;top:0;background:#fff;z-index:5">
+            <h2 id="modalTitle" style="margin:0;font-size:1.1rem">💉 Neue Behandlung</h2>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:0;line-height:1">✕</button>
+        </div>
+        <div class="modal-body" style="padding:1.25rem">
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Völker</label>
+                <div style="display:flex;flex-direction:column;gap:.5rem">
+                    <label style="display:flex;align-items:center;gap:.5rem;padding:.75rem;border:2px solid #E8DFD4;border-radius:.5rem;cursor:pointer">
+                        <input type="radio" name="volkAuswahl" value="alle" onchange="updateVolkAuswahl('alle')" style="width:1.25rem;height:1.25rem">
+                        <span style="font-weight:500">🐝 Alle Völker</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:.5rem;padding:.75rem;border:2px solid #E8DFD4;border-radius:.5rem;cursor:pointer">
+                        <input type="radio" name="volkAuswahl" value="einzeln" onchange="updateVolkAuswahl('einzeln')" style="width:1.25rem;height:1.25rem" checked>
+                        <span style="font-weight:500">🐝 Einzelnes Volk</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:.5rem;padding:.75rem;border:2px solid #E8DFD4;border-radius:.5rem;cursor:pointer">
+                        <input type="radio" name="volkAuswahl" value="standort" onchange="updateVolkAuswahl('standort')" style="width:1.25rem;height:1.25rem">
+                        <span style="font-weight:500">📍 Ganzer Standort</span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" id="standortGruppe" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Standort auswählen</label>
+                <select id="behandlungStandort" class="input" onchange="updateStandortInfo()" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem"><option value="">-- Bitte wählen --</option></select>
+                <div id="standortVolkInfo" style="margin-top:.5rem;font-size:.85rem;color:#7A6652"></div>
+            </div>
+            <div class="form-group" id="einzelVolkGruppe" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Volk auswählen</label>
+                <select id="behandlungVolk" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem"><option value="">-- Bitte wählen --</option></select>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Behandlungsmethode *</label>
+                <div class="methoden-grid" id="methodenGrid"></div>
+            </div>
+            <div class="form-group" id="andereMethodeGruppe" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Andere Methode</label>
+                <input type="text" id="andereMethode" class="input" placeholder="z.B. Drohnenbrutentnahme" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Behandlungsdatum *</label>
+                <input type="date" id="behandlungDatum" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Wiederholung</label>
+                <select id="behandlungIntervall" class="input" onchange="updateWiederholung()" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+                    <option value="keine">Keine Wiederholung</option>
+                    <option value="woechentlich">Wöchentlich</option>
+                    <option value="2wochen">Alle 2 Wochen</option>
+                    <option value="3wochen">Alle 3 Wochen</option>
+                    <option value="monatlich">Monatlich</option>
+                </select>
+            </div>
+            <div class="form-group" id="anzahlGruppe" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Anzahl Wiederholungen</label>
+                <div class="counter">
+                    <button class="counter-btn" onclick="changeAnzahl(-1)">−</button>
+                    <div class="counter-value" id="anzahlWiederholungen">3</div>
+                    <button class="counter-btn" onclick="changeAnzahl(1)">+</button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Notizen</label>
+                <textarea id="behandlungNotizen" class="input" placeholder="Dosierung, Temperatur..." style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem;min-height:60px;resize:vertical"></textarea>
+            </div>
+            <div style="border-top:2px solid #E8DFD4;margin:1rem 0 .75rem;position:relative"><span style="position:absolute;top:-10px;left:12px;background:white;padding:0 .5rem;font-size:.75rem;font-weight:700;color:#D4930D">📋 BESTANDSBUCH</span></div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Verabreichte Menge *</label>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                    <input type="number" id="behandlungMengeWert" class="input" placeholder="Menge" style="flex:1;min-width:0;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem" step="0.5" min="0">
+                    <select id="behandlungMengeEinheit" class="input" style="width:auto;min-width:80px;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+                        <option value="ml">ml</option>
+                        <option value="ml/Volk">ml / Volk</option>
+                        <option value="ml/Wabengasse">ml / Wabengasse</option>
+                        <option value="g">g</option>
+                        <option value="g/Volk">g / Volk</option>
+                        <option value="Streifen">Streifen</option>
+                        <option value="Streifen/Volk">Streifen / Volk</option>
+                        <option value="Schale">Schale</option>
+                        <option value="Plättchen">Plättchen</option>
+                    </select>
+                </div>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.35rem">
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(3)">3</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(5)">5</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(10)">10</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(15)">15</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(20)">20</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(25)">25</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(30)">30</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(40)">40</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setMenge(50)">50</button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Verdunster / Art der Verabreichung *</label>
+                <select id="behandlungVerabreichung" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+                    <option value="">-- Bitte wählen --</option>
+                    <optgroup label="🧪 Langzeitverdunster (Ameisensäure)">
+                        <option value="Nassenheider Verdunster professional">Nassenheider professional</option>
+                        <option value="Nassenheider Verdunster horizontal">Nassenheider horizontal</option>
+                        <option value="Liebig Dispenser">Liebig Dispenser</option>
+                        <option value="FAM Dispenser">FAM Dispenser</option>
+                        <option value="Apidea Verdunster">Apidea Verdunster</option>
+                        <option value="Schwammtuch-Methode">Schwammtuch</option>
+                    </optgroup>
+                    <optgroup label="💧 Oxalsäure">
+                        <option value="Träufeln (Spritze/Kanüle)">Träufeln (Spritze)</option>
+                        <option value="Sprühen/Besprühen">Sprühen</option>
+                        <option value="Verdampfer Varrox">Verdampfer Varrox</option>
+                        <option value="Verdampfer Oxalika Pro">Verdampfer Oxalika Pro</option>
+                        <option value="Verdampfer Sublimox">Verdampfer Sublimox</option>
+                    </optgroup>
+                    <optgroup label="📋 Streifen / Fertigprodukte">
+                        <option value="VarroMed (Tropflösung)">VarroMed (Tropflösung)</option>
+                        <option value="Oxuvar 5.7% (Sprühlösung)">Oxuvar 5.7%</option>
+                        <option value="MAQS Streifen">MAQS Streifen</option>
+                        <option value="Formicpro Streifen">Formicpro Streifen</option>
+                    </optgroup>
+                    <optgroup label="🌿 Thymol">
+                        <option value="Apiguard (Gelschale)">Apiguard Gelschale</option>
+                        <option value="Thymovar (Plättchen)">Thymovar Plättchen</option>
+                        <option value="ApiLife VAR (Plättchen)">ApiLife VAR</option>
+                    </optgroup>
+                    <optgroup label="🥛 Milchsäure">
+                        <option value="Sprühen (Sprühflasche 15%)">Sprühen 15%</option>
+                    </optgroup>
+                    <optgroup label="🍯 Biotechnisch">
+                        <option value="Totale Brutentnahme">Totale Brutentnahme</option>
+                        <option value="Drohnenbrutschneiden">Drohnenbrutschneiden</option>
+                        <option value="Bannwabenverfahren">Bannwabenverfahren</option>
+                    </optgroup>
+                    <optgroup label="✏️ Sonstiges">
+                        <option value="andere_verabreichung">Andere (in Notizen angeben)</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Lieferant / Bezugsquelle</label>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.35rem">
+                    <button type="button" class="schnell-menge-btn" onclick="setLieferant('Apotheke')">🏥 Apotheke</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setLieferant('Imkereibedarf online')">🛒 Online-Shop</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setLieferant('Imkerverein')">🐝 Verein</button>
+                    <button type="button" class="schnell-menge-btn" onclick="setLieferant('Tierarzt')">🩺 Tierarzt</button>
+                </div>
+                <input type="text" id="behandlungLieferant" class="input" placeholder="Name und Ort des Lieferanten" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Wartezeit bis Honigentnahme</label>
+                <select id="behandlungWartezeit" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+                    <option value="">-- Bitte wählen --</option>
+                    <option value="Keine (brutfreie Winterbehandlung)">Keine (Winterbehandlung)</option>
+                    <option value="2 Wochen nach letzter Behandlung">2 Wochen</option>
+                    <option value="4 Wochen nach letzter Behandlung">4 Wochen</option>
+                    <option value="6 Wochen nach letzter Behandlung">6 Wochen</option>
+                    <option value="Nicht vor nächster Honigernte im Frühjahr">Nicht vor Frühjahr</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Behandelnde Person</label>
+                <input type="text" id="behandlungBehandler" class="input" placeholder="Dein Name" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+            </div>
+            <div style="font-size:.72rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin-bottom:1rem">⚖️ Pflichtangaben für das Bestandsbuch gem. EU VO 2019/6 – Belege 5 Jahre aufbewahren.</div>
+            <button class="btn btn-primary" onclick="saveBehandlung()" style="width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:600;cursor:pointer">Behandlung speichern</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ============================================
+// BEHANDLUNGEN - EIGENSTÄNDIGE SEITE
+// ============================================
+
+const METHODEN = {
+    'ameisensaeure60':{name:'Ameisensäure 60%',emoji:'🧪',farbe:'#ef4444'},
+    'ameisensaeure85':{name:'Ameisensäure 85%',emoji:'🧪',farbe:'#dc2626'},
+    'oxalsaeure':{name:'Oxalsäure',emoji:'💧',farbe:'#3b82f6'},
+    'oxalstreifen':{name:'Oxalsäure-Streifen',emoji:'📋',farbe:'#60a5fa'},
+    'milchsaeure':{name:'Milchsäure',emoji:'🥛',farbe:'#f59e0b'},
+    'thymol':{name:'Thymol',emoji:'🌿',farbe:'#10b981'},
+    'brutentnahme':{name:'Totale Brutentnahme',emoji:'🍯',farbe:'#8b5cf6'},
+    'andere':{name:'Andere Methode',emoji:'✏️',farbe:'#7A6652'}
+};
+
+var standorte = [];
+var voelker = [];
+var behandlungen = [];
+var selectedMethode = null;
+var anzahl = 3;
+var volkAuswahlTyp = 'einzeln';
+var editId = null;
+var _archivOffen = false;
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+    currentUser = session.user;
+
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id),
+        sb.from('behandlungen').select('*').eq('user_id', currentUser.id)
+    ]);
+
+    standorte = (results[0].data || []).map(function(r) {
+        return { id: r.id, name: r.name };
+    });
+    voelker = (results[1].data || []).map(function(r) {
+        return { id: r.id, standortId: r.standort_id, name: r.name, status: r.status };
+    });
+    behandlungen = (results[2].data || []).map(function(r) {
+        return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
+    });
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    render();
+}
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    var jetzt = Date.now();
+    var aktive = [];
+    var abgeschlossen = [];
+
+    behandlungen.forEach(function(beh) {
+        var zukunft = (beh.termine||[]).filter(function(t){return t>=jetzt;});
+        if (zukunft.length > 0) { aktive.push(beh); } else { abgeschlossen.push(beh); }
+    });
+
+    aktive.sort(function(a,b){
+        var aNext = (a.termine||[]).filter(function(t){return t>=jetzt;})[0] || a.datum;
+        var bNext = (b.termine||[]).filter(function(t){return t>=jetzt;})[0] || b.datum;
+        return aNext - bNext;
+    });
+    abgeschlossen.sort(function(a,b){return b.datum - a.datum;});
+
+    var html = '<div class="container">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+    '<h1 style="margin:0">💉 Behandlungen</h1>'+
+    '<button onclick="openModal()" style="padding:.5rem 1rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.85rem">+ Neue Behandlung</button>'+
+    '</div>';
+
+    if (!behandlungen.length) {
+        html += '<div style="text-align:center;padding:3rem;color:#7A6652;background:#fff;border:2px solid #E8DFD4;border-radius:.75rem"><div style="font-size:3rem;margin-bottom:1rem">💉</div><h3>Noch keine Behandlungen</h3><p style="margin-top:.5rem">Erfasse deine erste Behandlung!</p><button onclick="openModal()" style="margin-top:1rem;padding:.6rem 1.5rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer">Erste Behandlung erfassen</button></div>';
+        document.getElementById('app').innerHTML = html + '</div>';
+        return;
+    }
+
+    // Statistik
+    html += '<div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:120px;text-align:center;padding:.75rem;background:#E8F5EC;border-radius:.5rem;border:2px solid #C6E7CE"><div style="font-size:1.3rem;font-weight:bold;color:#2D8A4E">'+aktive.length+'</div><div style="font-size:.75rem;color:#2D8A4E;font-weight:600">Aktiv</div></div>'+
+        '<div style="flex:1;min-width:120px;text-align:center;padding:.75rem;background:#F5EDE3;border-radius:.5rem;border:2px solid #E8DFD4"><div style="font-size:1.3rem;font-weight:bold;color:#7A6652">'+abgeschlossen.length+'</div><div style="font-size:.75rem;color:#7A6652;font-weight:600">Abgeschlossen</div></div>'+
+        '<div style="flex:1;min-width:120px;text-align:center;padding:.75rem;background:#FFF8EE;border-radius:.5rem;border:2px solid #F0D9A0"><div style="font-size:1.3rem;font-weight:bold;color:#D4930D">'+behandlungen.length+'</div><div style="font-size:.75rem;color:#D4930D;font-weight:600">Gesamt</div></div>'+
+    '</div>';
+
+    // Aktive
+    if (aktive.length > 0) {
+        html += '<h2 style="font-size:1rem;color:#2D8A4E;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem">🟢 Aktive Behandlungen ('+aktive.length+')</h2>';
+        aktive.forEach(function(beh) { html += renderCard(beh, jetzt, false); });
+    } else {
+        html += '<div style="text-align:center;padding:1.5rem;color:#7A6652;background:#E8F5EC;border:2px solid #C6E7CE;border-radius:.75rem"><div style="font-size:1.5rem;margin-bottom:.5rem">✅</div><strong>Keine aktiven Behandlungen</strong><p style="font-size:.85rem;margin-top:.25rem">Alle Behandlungen sind abgeschlossen.</p></div>';
+    }
+
+    // Abgeschlossene
+    if (abgeschlossen.length > 0) {
+        html += '<div style="margin-top:1.5rem">'+
+            '<div onclick="toggleArchiv()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#F5EDE3;border:2px solid #E8DFD4;border-radius:.5rem;user-select:none">'+
+            '<span style="font-weight:600;font-size:.9rem;color:#7A6652">📁 Abgeschlossene Behandlungen ('+abgeschlossen.length+')</span>'+
+            '<span id="archivPfeil" style="font-size:1.1rem;color:#7A6652;transition:transform .2s">'+(_archivOffen?'▼':'▶')+'</span>'+
+            '</div>';
+        html += '<div id="archivBehandlungen" style="'+(_archivOffen?'':'display:none;')+'margin-top:.5rem">';
+        abgeschlossen.forEach(function(beh) { html += renderCard(beh, jetzt, true); });
+        html += '</div></div>';
+    }
+
+    document.getElementById('app').innerHTML = html + '</div>';
+}
+
+function renderCard(beh, jetzt, isAbgeschlossen) {
+    var methode = METHODEN[beh.methode];
+    var farbe = methode ? methode.farbe : '#7A6652';
+    var zukunft = (beh.termine||[]).filter(function(t){return t>=jetzt;});
+    var naechster = zukunft.length>0 ? getTerminStatus(zukunft[0]) : null;
+
+    var termineHtml = '';
+    if (beh.termine && beh.termine.length > 1) {
+        termineHtml = '<div class="termine-liste"><strong style="font-size:.85rem;color:#7A6652">🔄 Termine ('+beh.termine.length+'x):</strong>';
+        beh.termine.forEach(function(termin, idx) {
+            var status = getTerminStatus(termin);
+            termineHtml += '<div class="termin-item"><span class="termin-datum">'+(idx+1)+'. '+formatDatum(termin)+'</span><span class="badge badge-'+status.status+'" style="margin:0">'+status.label+'</span></div>';
+        });
+        termineHtml += '</div>';
+    }
+
+    var opacity = isAbgeschlossen ? 'opacity:.85;' : '';
+
+    return '<div class="behandlung-card" style="border-color:'+farbe+';'+opacity+'"><div class="behandlung-header"><div>'+
+        '<div class="behandlung-title">'+(methode?methode.emoji:'💉')+' '+beh.methodeName+'</div>'+
+        '<div style="margin-top:.5rem"><span class="badge badge-repeat">'+(beh.intervallLabel||'Einmalig')+'</span>'+
+        (naechster ? '<span class="badge badge-'+naechster.status+'" style="margin-left:.3rem">'+naechster.label+'</span>' : '<span class="badge badge-completed" style="margin-left:.3rem">Abgeschlossen</span>')+
+        '</div></div><div style="display:flex;gap:.35rem"><button onclick="editBehandlung(\''+beh.id+'\')" style="padding:.3rem .6rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.8rem">✏️</button><button onclick="deleteBehandlung(\''+beh.id+'\')" style="padding:.3rem .6rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.8rem">🗑️</button></div></div>'+
+        '<div class="behandlung-info">🐝 <strong>Völker:</strong> '+beh.voelkerLabel+'<br>📅 <strong>Erste Behandlung:</strong> '+formatDatum(beh.datum)+
+        (beh.menge?'<br>💊 <strong>Menge:</strong> '+beh.menge:'')+
+        (beh.verabreichung?'<br>🔧 <strong>Verdunster:</strong> '+beh.verabreichung:'')+
+        (beh.lieferant?'<br>🏪 <strong>Lieferant:</strong> '+beh.lieferant:'')+
+        (beh.wartezeit?'<br>⏳ <strong>Wartezeit:</strong> '+beh.wartezeit:'')+
+        (beh.behandler?'<br>👤 <strong>Behandler:</strong> '+beh.behandler:'')+
+        (beh.notizen?'<br>💭 '+beh.notizen:'')+
+        '</div>'+
+        termineHtml+'</div>';
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function formatDatum(ts) { return new Date(ts).toLocaleDateString('de-DE'); }
+
+function getTerminStatus(termin) {
+    var diff = termin - Date.now();
+    var tage = Math.ceil(diff/(1000*60*60*24));
+    if (tage < 0) return {status:'completed',label:'Erledigt'};
+    if (tage === 0) return {status:'active',label:'Heute!'};
+    if (tage === 1) return {status:'upcoming',label:'Morgen'};
+    return {status:'upcoming',label:'In '+tage+' Tagen'};
+}
+
+function toggleArchiv() {
+    _archivOffen = !_archivOffen;
+    var el = document.getElementById('archivBehandlungen');
+    var pfeil = document.getElementById('archivPfeil');
+    if (el) el.style.display = _archivOffen ? 'block' : 'none';
+    if (pfeil) pfeil.textContent = _archivOffen ? '▼' : '▶';
+}
+
+function toast(msg, type) {
+    type = type || 'success';
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + type + ' show';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+// ============================================
+// MODAL
+// ============================================
+function openModal() {
+    renderMethodenGrid();
+    renderVolkSelect();
+    document.getElementById('behandlungDatum').value = new Date().toISOString().split('T')[0];
+    document.getElementById('behandlungModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('behandlungModal').style.display = 'none';
+    selectedMethode = null; anzahl = 3; volkAuswahlTyp = 'einzeln'; editId = null;
+    document.getElementById('behandlungIntervall').value = 'keine';
+    document.getElementById('behandlungNotizen').value = '';
+    document.getElementById('behandlungMengeWert').value = '';
+    document.getElementById('behandlungMengeEinheit').value = 'ml';
+    document.getElementById('behandlungVerabreichung').value = '';
+    document.getElementById('behandlungLieferant').value = '';
+    document.getElementById('behandlungWartezeit').value = '';
+    document.getElementById('behandlungBehandler').value = '';
+    document.getElementById('anzahlGruppe').style.display = 'none';
+    document.getElementById('andereMethodeGruppe').style.display = 'none';
+    document.querySelectorAll('#methodenGrid .methode-btn').forEach(function(b){b.classList.remove('selected');});
+    document.getElementById('modalTitle').textContent = '💉 Neue Behandlung';
+    // Radio reset
+    document.querySelectorAll('input[name="volkAuswahl"]').forEach(function(r){ r.checked = r.value === 'einzeln'; });
+    document.getElementById('einzelVolkGruppe').style.display = 'block';
+    document.getElementById('standortGruppe').style.display = 'none';
+}
+
+function renderMethodenGrid() {
+    var grid = document.getElementById('methodenGrid');
+    var html = '';
+    Object.entries(METHODEN).forEach(function(entry) {
+        html += '<button class="methode-btn" onclick="selectMethode(\''+entry[0]+'\', this)"><div class="emoji">'+entry[1].emoji+'</div>'+entry[1].name+'</button>';
+    });
+    grid.innerHTML = html;
+}
+
+function renderVolkSelect() {
+    var select = document.getElementById('behandlungVolk');
+    var html = '<option value="">-- Bitte wählen --</option>';
+    var nachStandort = {};
+    voelker.forEach(function(v) { if (!nachStandort[v.standortId]) nachStandort[v.standortId] = []; nachStandort[v.standortId].push(v); });
+    Object.entries(nachStandort).forEach(function(entry) {
+        var standort = standorte.find(function(s){return s.id === entry[0];});
+        html += '<optgroup label="📍 '+(standort?standort.name:'Unbekannt')+'">';
+        entry[1].forEach(function(v) { html += '<option value="'+v.id+'">🐝 '+v.name+'</option>'; });
+        html += '</optgroup>';
+    });
+    select.innerHTML = html;
+}
+
+function selectMethode(m, btn) {
+    selectedMethode = m;
+    document.querySelectorAll('#methodenGrid .methode-btn').forEach(function(b){b.classList.remove('selected');});
+    btn.classList.add('selected');
+    document.getElementById('andereMethodeGruppe').style.display = m === 'andere' ? 'block' : 'none';
+}
+
+function updateVolkAuswahl(typ) {
+    volkAuswahlTyp = typ;
+    document.getElementById('einzelVolkGruppe').style.display = typ === 'einzeln' ? 'block' : 'none';
+    document.getElementById('standortGruppe').style.display = typ === 'standort' ? 'block' : 'none';
+    if (typ === 'standort') {
+        var select = document.getElementById('behandlungStandort');
+        select.innerHTML = '<option value="">-- Bitte wählen --</option>';
+        standorte.forEach(function(s) {
+            var count = voelker.filter(function(v){return v.standortId===s.id;}).length;
+            select.innerHTML += '<option value="'+s.id+'">📍 '+s.name+' ('+count+' Völker)</option>';
+        });
+    }
+}
+
+function updateStandortInfo() {
+    var sid = document.getElementById('behandlungStandort').value;
+    var info = document.getElementById('standortVolkInfo');
+    if (!sid) { info.innerHTML = ''; return; }
+    var sv = voelker.filter(function(v){return v.standortId===sid;});
+    if (sv.length === 0) { info.innerHTML = '⚠️ Keine Völker an diesem Standort'; return; }
+    info.innerHTML = '✓ <strong>'+sv.length+' Völker</strong> werden behandelt: ' + sv.map(function(v){return v.name;}).join(', ');
+}
+
+function updateWiederholung() {
+    var v = document.getElementById('behandlungIntervall').value;
+    document.getElementById('anzahlGruppe').style.display = v !== 'keine' ? 'block' : 'none';
+}
+
+function changeAnzahl(d) { anzahl = Math.max(1, Math.min(10, anzahl + d)); document.getElementById('anzahlWiederholungen').textContent = anzahl; }
+function setMenge(val) { document.getElementById('behandlungMengeWert').value = val; }
+function setLieferant(val) { document.getElementById('behandlungLieferant').value = val; }
+
+// ============================================
+// EDIT
+// ============================================
+function editBehandlung(id) {
+    var beh = behandlungen.find(function(b) { return b.id === id; });
+    if (!beh) return;
+    editId = id;
+    openModal();
+
+    selectedMethode = beh.methode;
+    var btns = document.querySelectorAll('#methodenGrid .methode-btn');
+    var methoden = Object.keys(METHODEN);
+    btns.forEach(function(btn, idx) { if (methoden[idx] === beh.methode) btn.classList.add('selected'); });
+    if (beh.methode === 'andere') {
+        document.getElementById('andereMethodeGruppe').style.display = 'block';
+        document.getElementById('andereMethode').value = beh.methodeName;
+    }
+
+    var d = new Date(beh.datum);
+    document.getElementById('behandlungDatum').value = d.toISOString().split('T')[0];
+    document.getElementById('behandlungIntervall').value = beh.intervall || 'keine';
+    if (beh.termine && beh.termine.length > 1) {
+        anzahl = beh.termine.length;
+        document.getElementById('anzahlGruppe').style.display = 'block';
+        document.getElementById('anzahlWiederholungen').textContent = anzahl;
+    }
+    document.getElementById('behandlungNotizen').value = beh.notizen || '';
+
+    if (beh.menge) {
+        var parts = beh.menge.match(/^([\d.]+)\s*(.*)$/);
+        if (parts) {
+            document.getElementById('behandlungMengeWert').value = parts[1];
+            var einheitSel = document.getElementById('behandlungMengeEinheit');
+            for (var i = 0; i < einheitSel.options.length; i++) {
+                if (einheitSel.options[i].value === parts[2].trim()) { einheitSel.selectedIndex = i; break; }
+            }
+        } else {
+            document.getElementById('behandlungMengeWert').value = beh.menge;
+        }
+    }
+    document.getElementById('behandlungVerabreichung').value = beh.verabreichung || '';
+    document.getElementById('behandlungLieferant').value = beh.lieferant || '';
+    document.getElementById('behandlungWartezeit').value = beh.wartezeit || '';
+    document.getElementById('behandlungBehandler').value = beh.behandler || '';
+    document.getElementById('modalTitle').textContent = '✏️ Behandlung bearbeiten';
+}
+
+// ============================================
+// SAVE
+// ============================================
+async function saveBehandlung() {
+    var datum = document.getElementById('behandlungDatum').value;
+    var intervall = document.getElementById('behandlungIntervall').value;
+    var notizen = document.getElementById('behandlungNotizen').value.trim();
+    var mengeWert = document.getElementById('behandlungMengeWert').value.trim();
+    var mengeEinheit = document.getElementById('behandlungMengeEinheit').value;
+    var menge = mengeWert ? (mengeWert + ' ' + mengeEinheit) : '';
+    var verabreichung = document.getElementById('behandlungVerabreichung').value;
+    if (verabreichung === 'andere_verabreichung') verabreichung = '';
+    var lieferant = document.getElementById('behandlungLieferant').value.trim();
+    var wartezeit = document.getElementById('behandlungWartezeit').value;
+    var behandler = document.getElementById('behandlungBehandler').value.trim();
+
+    if (!selectedMethode || !datum) { alert('Bitte Methode und Datum!'); return; }
+
+    var voelkerIds = []; var voelkerLabel = ''; var standortId = null;
+    if (volkAuswahlTyp === 'alle') {
+        voelkerIds = voelker.map(function(v){return v.id;});
+        voelkerLabel = 'Alle Völker ('+voelkerIds.length+')';
+    } else if (volkAuswahlTyp === 'standort') {
+        var sid = document.getElementById('behandlungStandort').value;
+        if(!sid){alert('Bitte Standort wählen!');return;}
+        standortId = sid;
+        var sv = voelker.filter(function(v){return v.standortId===sid;});
+        if(sv.length===0){alert('Keine Völker an diesem Standort!');return;}
+        voelkerIds = sv.map(function(v){return v.id;});
+        var sn = standorte.find(function(s){return s.id===sid;});
+        voelkerLabel = '📍 '+(sn?sn.name:'Standort')+' ('+sv.length+' Völker)';
+    } else {
+        var vid = document.getElementById('behandlungVolk').value;
+        if(!vid){alert('Bitte Volk wählen!');return;}
+        voelkerIds = [vid];
+        var volk = voelker.find(function(v){return v.id===vid;});
+        voelkerLabel = volk?volk.name:'Unbekannt';
+        if(volk) standortId = volk.standortId;
+    }
+
+    var methodeName = METHODEN[selectedMethode].name;
+    if (selectedMethode==='andere') { var am = document.getElementById('andereMethode').value.trim(); if(am) methodeName = am; }
+
+    var dTs = new Date(datum).getTime();
+    var termine = [dTs];
+    if (intervall !== 'keine') {
+        var tage = {woechentlich:7,'2wochen':14,'3wochen':21,monatlich:30}[intervall] || 7;
+        for (var i=1;i<anzahl;i++) { var nd = new Date(datum); nd.setDate(nd.getDate()+tage*i); termine.push(nd.getTime()); }
+    }
+    var labels = {keine:'Einmalig',woechentlich:'Wöchentlich','2wochen':'Alle 2 Wochen','3wochen':'Alle 3 Wochen',monatlich:'Monatlich'};
+
+    var dbData = {
+        user_id: currentUser.id,
+        voelker_ids: voelkerIds,
+        voelker_label: voelkerLabel,
+        methode: selectedMethode,
+        methode_name: methodeName,
+        datum: dTs,
+        intervall: intervall,
+        intervall_label: labels[intervall]||intervall,
+        termine: termine,
+        notizen: notizen,
+        standort_id: standortId,
+        menge: menge,
+        verabreichung: verabreichung,
+        lieferant: lieferant,
+        wartezeit: wartezeit,
+        behandler: behandler
+    };
+
+    if (editId) {
+        await db.update('behandlungen', dbData, editId);
+    } else {
+        var newId = crypto.randomUUID ? crypto.randomUUID() : 'beh_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        dbData.id = newId;
+        await db.insert('behandlungen', dbData);
+    }
+
+    // Reload
+    var res = await sb.from('behandlungen').select('*').eq('user_id', currentUser.id);
+    behandlungen = (res.data || []).map(function(r) {
+        return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
+    });
+
+    var msg = editId ? '✓ Behandlung aktualisiert!' : '✓ Behandlung erfasst!';
+    closeModal();
+    render();
+    toast(msg, 'success');
+}
+
+// ============================================
+// DELETE
+// ============================================
+async function deleteBehandlung(id) {
+    if (!confirm('Behandlung wirklich löschen?')) return;
+    await db.del('behandlungen', id);
+    var res = await sb.from('behandlungen').select('*').eq('user_id', currentUser.id);
+    behandlungen = (res.data || []).map(function(r) {
+        return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
+    });
+    render();
+    toast('🗑️ Behandlung gelöscht', 'success');
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+
+</body>
+</html>

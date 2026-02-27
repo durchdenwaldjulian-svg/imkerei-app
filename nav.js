@@ -16,7 +16,7 @@
         ]},
         { title: 'Völker', items: [
             { href: 'zuchtplan.html', icon: '👑', label: 'Königinnenzucht' },
-            { href: 'index.html#behandlung', icon: '💉', label: 'Behandlungen' },
+            { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
             { href: 'bewertung.html', icon: '⭐', label: 'Völker-Bewertung' },
             { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
             { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
@@ -104,7 +104,7 @@
             ]},
             { title: 'Völker', items: [
                 { href: 'zuchtplan.html', icon: '👑', label: 'Zucht' },
-                { page: 'behandlung', icon: '💉', label: 'Behandlung' },
+                { href: 'behandlung.html', icon: '💉', label: 'Behandlung' },
                 { href: 'bewertung.html', icon: '⭐', label: 'Bewertung' }
             ]},
             { title: 'Tools', items: [
