@@ -355,97 +355,14 @@
 <!-- Behandlung Modal -->
 <!-- Behandlung-Modal → behandlung.html -->
 
-<nav class="nav">
-    <div class="nav-brand">
-        <div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>
-        <div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>
-        <div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>
-    </div>
-    <div class="nav-section">Übersicht</div>
-    <a href="index.html#heute" class="nav-item active">📅 Heute</a>
-    <a href="index.html#standorte" class="nav-item">📍 Standorte</a>
-    <a href="index.html#aufgaben" class="nav-item">📝 Aufgaben</a>
-    <div class="nav-section">Völker</div>
-    <a href="zuchtplan.html" class="nav-item">👑 Königinnenzucht</a>
-    <a href="index.html#behandlung" class="nav-item">💉 Behandlungen</a>
-    <a href="bewertung.html" class="nav-item">⭐ Völker-Bewertung</a>
-    <a href="assistent.html" class="nav-item">🤖 Assistent</a>
-    <a href="bestandsbuch.html" class="nav-item">📋 Bestandsbuch</a>
-    <div class="nav-section">Ernte & Planung</div>
-    <a href="ernte.html" class="nav-item">🍯 Honigernte</a>
-    <a href="index.html#tracht" class="nav-item">🌸 Tracht</a>
-    <a href="index.html#packliste" class="nav-item">📦 Packliste</a>
-    <div class="nav-section">Community</div>
-    <a href="forum.html" class="nav-item">💬 Forum</a>
-    <div class="nav-section">Verwaltung</div>
-    <a href="index.html#kosten" class="nav-item">💰 Kosten</a>
-    <div style="flex:1"></div>
-    <div class="nav-section">Rechtliches</div>
-    <a href="impressum.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Impressum</a>
-    <a href="datenschutz.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">Datenschutz</a>
-    <a href="agb.html" class="nav-item" style="text-decoration:none;font-size:.75rem;padding:.4rem 1rem;color:#A69580">AGB</a>
-    <a href="index.html#einstellungen" class="nav-item">⚙️ Einstellungen</a>
-    <button class="nav-item" style="color:#ef4444" onclick="doLogout()">🚪 Abmelden</button>
-</nav>
+<nav class="nav" id="mainNav"></nav>
+<script src="nav.js"></script>
 
-<!-- MOBILE NAV BAR -->
-<div class="mobile-nav" id="mobileNav">
-    <button class="mobile-nav-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>
-    <button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>
-    <button class="mobile-nav-btn" data-mpage="standorte"><span class="mn-icon">📍</span>Standorte</button>
-    <button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>
-    <button class="mobile-nav-btn" data-mpage="tracht"><span class="mn-icon">🌸</span>Tracht</button>
-    <button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>
-</div>
+<!-- MOBILE NAV BAR (generiert von nav.js) -->
+<div class="mobile-nav" id="mobileNavBar"></div>
 
-<!-- MOBILE FULLSCREEN MENU -->
-<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()">
-    <div class="mobile-menu-box">
-        <div class="mobile-menu-header">
-            <h2>🐝 Navigation</h2>
-            <button class="mobile-menu-close" onclick="mobileMenuClose()">✕</button>
-        </div>
-        <div class="mobile-menu-section">Übersicht</div>
-        <div class="mobile-menu-grid">
-            <button class="mobile-menu-item" data-mmpage="heute"><span class="mm-icon">📅</span>Heute</button>
-            <button class="mobile-menu-item" data-mmpage="standorte"><span class="mm-icon">📍</span>Standorte</button>
-            <button class="mobile-menu-item" data-mmpage="aufgaben"><span class="mm-icon">📝</span>Aufgaben</button>
-        </div>
-        <div class="mobile-menu-section">Völker</div>
-        <div class="mobile-menu-grid">
-            <a href="zuchtplan.html" class="mobile-menu-item"><span class="mm-icon">👑</span>Zucht</a>
-            <button class="mobile-menu-item" data-mmpage="behandlung"><span class="mm-icon">💉</span>Behandlung</button>
-            <a href="bewertung.html" class="mobile-menu-item"><span class="mm-icon">⭐</span>Bewertung</a>
-        </div>
-        <div class="mobile-menu-section">Tools</div>
-        <div class="mobile-menu-grid">
-            <a href="assistent.html" class="mobile-menu-item"><span class="mm-icon">🤖</span>Assistent</a>
-            <a href="bestandsbuch.html" class="mobile-menu-item"><span class="mm-icon">📋</span>Bestandsbuch</a>
-            <a href="ernte.html" class="mobile-menu-item"><span class="mm-icon">🍯</span>Ernte</a>
-        </div>
-        <div class="mobile-menu-section">Ernte & Planung</div>
-        <div class="mobile-menu-grid">
-            <button class="mobile-menu-item" data-mmpage="tracht"><span class="mm-icon">🌸</span>Tracht</button>
-            <button class="mobile-menu-item" data-mmpage="packliste"><span class="mm-icon">📦</span>Packliste</button>
-            <button class="mobile-menu-item" data-mmpage="kosten"><span class="mm-icon">💰</span>Kosten</button>
-        </div>
-        <div class="mobile-menu-section">Community</div>
-        <div class="mobile-menu-grid">
-            <a href="forum.html" class="mobile-menu-item"><span class="mm-icon">💬</span>Forum</a>
-        </div>
-        <div class="mobile-menu-section">Verwaltung</div>
-        <div class="mobile-menu-grid">
-            <button class="mobile-menu-item" data-mmpage="einstellungen"><span class="mm-icon">⚙️</span>Einstellungen</button>
-            <button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();doLogout()"><span class="mm-icon">🚪</span>Abmelden</button>
-        </div>
-        <div class="mobile-menu-section">Rechtliches</div>
-        <div class="mobile-menu-grid">
-            <a href="impressum.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">📄</span>Impressum</a>
-            <a href="datenschutz.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">🔒</span>Datenschutz</a>
-            <a href="agb.html" class="mobile-menu-item" style="font-size:.7rem"><span class="mm-icon">📋</span>AGB</a>
-        </div>
-    </div>
-</div>
+<!-- MOBILE FULLSCREEN MENU (generiert von nav.js) -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 
 <script src="config.js"></script>
 <script>
@@ -2652,49 +2569,7 @@ document.addEventListener('click', function(e){
 });
 
 // === MOBILE MENU ===
-function mobileMenuOpen(){
-    var overlay = document.getElementById('mobileMenuOverlay');
-    overlay.classList.add('active');
-    // Aktive Seite markieren
-    document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn){
-        btn.classList.toggle('mm-active', btn.dataset.mmpage === app.page);
-    });
-}
-function mobileMenuClose(){
-    document.getElementById('mobileMenuOverlay').classList.remove('active');
-}
-// Mobile Menu: interne Seiten navigieren
-document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-        var page = btn.dataset.mmpage;
-        // Desktop nav sync
-        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
-        var deskLink = document.querySelector('.nav .nav-item[href="index.html#'+page+'"]');
-        if(deskLink) deskLink.classList.add('active');
-        app.page = page;
-        app.render();
-        mobileMenuClose();
-        updateMobileNav(page);
-    });
-});
-// Mobile bottom bar: direkte Navigation
-document.querySelectorAll('.mobile-nav-btn[data-mpage]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-        var page = btn.dataset.mpage;
-        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
-        var deskLink = document.querySelector('.nav .nav-item[href="index.html#'+page+'"]');
-        if(deskLink) deskLink.classList.add('active');
-        app.page = page;
-        app.render();
-        updateMobileNav(page);
-    });
-});
-function updateMobileNav(page){
-    var quickPages = ['heute','standorte','aufgaben','tracht','einstellungen'];
-    document.querySelectorAll('.mobile-nav-btn[data-mpage]').forEach(function(btn){
-        btn.classList.toggle('active', btn.dataset.mpage === page);
-    });
-}
+// Mobile Navigation → nav.js (mobileMenuOpen, mobileMenuClose, data-mpage, data-mmpage)
 
 // === SWIPE NAVIGATION (Mobile) ===
 (function(){
