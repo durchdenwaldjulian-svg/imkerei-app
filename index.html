@@ -1143,20 +1143,11 @@ const app={
         }else if(id === 'standortModal'){
             this.editStandortId = null;
             this.voelkerCount = 2;
-            document.getElementById('standortName').value = '';
-            document.getElementById('standortVoelkerCount').textContent = '2';
-            document.getElementById('standortNotizen').value = '';
         }else if(id === 'volkModal'){
             this.editVolkId = null;
             this.selectedVolkStatus = 'ok';
-            document.getElementById('volkName').value = '';
-            document.getElementById('volkNotizen').value = '';
-            document.getElementById('volkHonig').value = '';
-        }else if(id === 'trachtModal'){
-            document.getElementById('trachtStandort').value = '';
-            document.getElementById('trachtErtrag').value = '';
-            document.getElementById('trachtNotizen').value = '';
         }
+        // Standort/Volk/Tracht Modals → eigene Seiten
     },
     
     // === COUNTER ===
