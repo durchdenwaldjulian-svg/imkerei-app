@@ -204,6 +204,8 @@
 
     // === MOBILE MENU: Open/Close (global verfügbar) ===
     window.navMobileMenuOpen = function() {
+        // Leaflet-Karten z-index runtersetzen (überlagern sonst das Menü)
+        document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex = '0'; });
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.add('active');
         if (typeof app !== 'undefined') {
@@ -215,6 +217,8 @@
     window.navMobileMenuClose = function() {
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.remove('active');
+        // Leaflet-Karten z-index wiederherstellen
+        document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex = ''; });
     };
 
     if (typeof window.mobileMenuOpen === 'undefined') window.mobileMenuOpen = window.navMobileMenuOpen;
