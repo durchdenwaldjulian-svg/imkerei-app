@@ -39,7 +39,7 @@
         /* Völker-Grid CSS → standorte.html */
         
         @media(max-width:768px){
-            body{padding-left:0;padding-bottom:64px}
+            body{padding-left:0;padding-bottom:68px}
             .nav{display:none}
             .footer{display:none}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
@@ -55,18 +55,21 @@
             display:none;
             position:fixed;left:0;right:0;bottom:0;z-index:200;
             background:#FFFBF0;border-top:2px solid rgba(245,166,35,0.12);
-            flex-direction:row;align-items:stretch;height:62px;
-            box-shadow:0 -2px 8px rgba(28,20,16,0.06);
+            flex-direction:row;align-items:stretch;height:68px;
+            box-shadow:0 -4px 16px rgba(28,20,16,0.08);
         }
         .mobile-nav-btn{
             flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
             border:none;background:none;cursor:pointer;color:#7A6652;
-            font-size:.65rem;font-weight:500;gap:2px;padding:.25rem 0;
+            font-size:.7rem;font-weight:500;gap:3px;padding:.35rem 0;
             border-top:3px solid transparent;transition:all .15s;
         }
-        .mobile-nav-btn .mn-icon{font-size:1.3rem;line-height:1}
+        .mobile-nav-btn .mn-icon{font-size:1.4rem;line-height:1}
         .mobile-nav-btn.active{color:#92400E;font-weight:700;border-top-color:#F5A623;background:#FFF8EE}
         .mobile-nav-btn:active{background:rgba(245,166,35,0.1)}
+        .mobile-nav-btn.menu-btn{background:#F5A623;color:#fff;border-radius:.75rem;margin:.5rem .4rem;border-top:none;font-weight:700}
+        .mobile-nav-btn.menu-btn:active{background:#D4930D}
+        .mobile-nav-btn.menu-btn .mn-icon{font-size:1.6rem}
 
         /* === MOBILE FULLSCREEN MENU === */
         .mobile-menu-overlay{
@@ -309,6 +312,10 @@
                     <button class="priority-btn selected medium" onclick="app.setPrio('medium')">🟡 Mittel</button>
                     <button class="priority-btn" onclick="app.setPrio('high')">🔴 Hoch</button>
                 </div>
+            </div>
+            <div class="form-group" id="aufgabeCustomNameWrap" style="display:none">
+                <label class="form-label">Name der Aufgabe</label>
+                <input type="text" id="aufgabeCustomName" class="input" placeholder="z.B. Kunde Müller anrufen, Honig abfüllen...">
             </div>
             <div class="form-group">
                 <label class="form-label">Notiz (optional)</label>
@@ -822,7 +829,7 @@ const autoBackup = {
 // CONSTANTS
 // ============================================
 const TT={
-    futter:'🍯 Futter',durchsicht:'🔍 Durchsicht',varroabehandlung:'💉 Varroa',honigraum:'📦 Honigraum',absperrgitter:'⊞ Gitter',schwarmkontrolle:'👀 Schwarm',ableger:'🐝 Ableger',koenigin:'👑 Königin',mittelwaende:'▭ Mittelwand',waben:'◫ Waben',raehmchen:'🪵 Rähmchen',standort:'🚗 Standort',honigschleudern:'🍯 Schleudern',wachs:'🕯️ Wachs',equipmentwartung:'🔧 Wartung',beuten:'🏠 Beuten',varroa:'🔬 Varroa',gemülldiagnose:'🔍 Gemüll',winterfutter:'❄️ Winter',fluglochkeil:'🚪 Flugloch',maeusegitter:'🐭 Mäuse',custom:'✏️ Eigene'
+    futter:'🍯 Futter',durchsicht:'🔍 Durchsicht',varroabehandlung:'💉 Varroa',honigraum:'📦 Honigraum',absperrgitter:'⊞ Gitter',schwarmkontrolle:'👀 Schwarm',ableger:'🐝 Ableger',koenigin:'👑 Königin',mittelwaende:'▭ Mittelwand',waben:'◫ Waben',raehmchen:'🪵 Rähmchen',standort:'🚗 Standort',honigschleudern:'🍯 Schleudern',wachs:'🕯️ Wachs',equipmentwartung:'🔧 Wartung',beuten:'🏠 Beuten',varroa:'🔬 Varroa',gemülldiagnose:'🔍 Gemüll',winterfutter:'❄️ Winter',fluglochkeil:'🚪 Flugloch',maeusegitter:'🐭 Mäuse',custom:'📌 Aufgabe'
 };
 const KK=['Futter','Behandlung','Material','Werkzeug','Fahrtkosten','Verpackung','Energie','Versicherung','Fortbildung','Sonstiges'];
 const KOSTEN_VORLAGEN={
@@ -1132,8 +1139,11 @@ const app={
         }
         
         if(typ === 'custom'){
-            const name = prompt('Name der Aufgabe:');
-            if(name) document.getElementById('aufgabeNotiz').value = name;
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'block';
+            document.getElementById('aufgabeCustomName').focus();
+        } else {
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'none';
+            document.getElementById('aufgabeCustomName').value = '';
         }
     },
     
@@ -1237,6 +1247,8 @@ const app={
             document.getElementById('aufgabeModalTitle').textContent = '✓ Neue Aufgabe';
             document.getElementById('aufgabeStandort').value = '';
             document.getElementById('aufgabeUhrzeit').value = '';
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'none';
+            document.getElementById('aufgabeCustomName').value = '';
         }
         this.openModal('aufgabeModal');
     },
@@ -1251,6 +1263,7 @@ const app={
         const uhrzeit = document.getElementById('aufgabeUhrzeit').value;
         const dauer = parseInt(document.getElementById('aufgabeDauer').value);
         const notiz = document.getElementById('aufgabeNotiz').value;
+        const customName = document.getElementById('aufgabeCustomName').value;
         const standortId = document.getElementById('aufgabeStandort').value || null;
         var intervallTage = this.selectedIntervall;
         if (intervallTage === -1) intervallTage = parseInt(document.getElementById('aufgabeIntervallTage').value) || 0;
@@ -1275,7 +1288,7 @@ const app={
             const a = this.data.aufgaben.find(function(x){return x.id === app.editAufgabeId;});
             if(a){
                 a.typ = this.selectedAufgabeTyp;
-                a.notiz = (this.selectedAufgabeTyp === 'custom' && notiz) ? notiz + standortName + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
+                a.notiz = (this.selectedAufgabeTyp === 'custom' && customName) ? customName + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
                 a.faelligkeit = faelligTs;
                 a.dauer = dauer;
                 a.prio = this.selectedPrio;
@@ -1287,7 +1300,7 @@ const app={
             const aufgabe = {
                 id: 'a' + this.uid(),
                 typ: this.selectedAufgabeTyp,
-                notiz: (this.selectedAufgabeTyp === 'custom' && notiz) ? notiz + standortName + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
+                notiz: (this.selectedAufgabeTyp === 'custom' && customName) ? customName + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
                 faelligkeit: faelligTs,
                 dauer: dauer,
                 prio: this.selectedPrio,

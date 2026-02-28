@@ -85,12 +85,23 @@
     // === MOBILE BOTTOM BAR ===
     function buildMobileBar() {
         var h = '';
-        h += '<button class="mobile-nav-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-        h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>';
-        h += '<button class="mobile-nav-btn" data-mpage="standorte"><span class="mn-icon">📍</span>Standorte</button>';
-        h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>';
-        h += '<button class="mobile-nav-btn" data-mpage="tracht"><span class="mn-icon">🌸</span>Tracht</button>';
-        h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>';
+        var isIndex = (currentFile === 'index.html');
+        
+        if (isIndex) {
+            // Auf index.html: Buttons die app.page steuern
+            h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>';
+            h += '<a href="standorte.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Standorte</a>';
+            h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
+            h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>';
+            h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>';
+        } else {
+            // Auf eigenständigen Seiten: alles als Links
+            h += '<a href="index.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>Heute</a>';
+            h += '<a href="standorte.html" class="mobile-nav-btn'+(currentFile==='standorte.html'?' active':'')+'"><span class="mn-icon">📍</span>Standorte</a>';
+            h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
+            h += '<a href="index.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span>Aufgaben</a>';
+            h += '<a href="index.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</span>Mehr</a>';
+        }
         return h;
     }
 
