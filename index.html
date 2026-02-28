@@ -369,6 +369,7 @@
 <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 
 <script src="config.js"></script>
+<script src="presence.js" defer></script>
 <script>
 // Hash früh speichern bevor Supabase Auth ihn entfernt
 var _startPageHash = window.location.hash ? window.location.hash.replace('#','') : null;
@@ -1274,7 +1275,7 @@ const app={
             const a = this.data.aufgaben.find(function(x){return x.id === app.editAufgabeId;});
             if(a){
                 a.typ = this.selectedAufgabeTyp;
-                a.notiz = TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
+                a.notiz = (this.selectedAufgabeTyp === 'custom' && notiz) ? notiz + standortName + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
                 a.faelligkeit = faelligTs;
                 a.dauer = dauer;
                 a.prio = this.selectedPrio;
@@ -1286,7 +1287,7 @@ const app={
             const aufgabe = {
                 id: 'a' + this.uid(),
                 typ: this.selectedAufgabeTyp,
-                notiz: TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
+                notiz: (this.selectedAufgabeTyp === 'custom' && notiz) ? notiz + standortName + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
                 faelligkeit: faelligTs,
                 dauer: dauer,
                 prio: this.selectedPrio,

@@ -882,16 +882,17 @@ function renderOnlineUsers() {
     
     var html = '';
     users.forEach(function(u) {
-        var onlineSince = u.online_at ? timeAgo(u.online_at) : '–';
-        var page = u.page || 'Unbekannt';
+        var onlineSince = u.online_seit ? timeAgo(u.online_seit) : (u.online_at ? timeAgo(u.online_at) : '–');
+        var page = u.seite || u.page || 'Unbekannt';
         // Clean page name
         page = page.replace('🐝 ', '').replace('Imkerei Tagesplaner – ', '').replace('Imkerei Tagesplaner', 'Hauptseite');
+        var userName = u.name || u.email || 'Unbekannt';
         
         html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;border-bottom:1px solid #f3f4f6">'+
             '<div style="display:flex;align-items:center;gap:.75rem">'+
                 '<div style="width:10px;height:10px;background:#22c55e;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite"></div>'+
                 '<div>'+
-                    '<strong style="font-size:.9rem">'+(u.email||'Unbekannt')+'</strong>'+
+                    '<strong style="font-size:.9rem">'+userName+'</strong>'+
                     '<div style="font-size:.75rem;color:#6b7280">📄 '+page+'</div>'+
                 '</div>'+
             '</div>'+
