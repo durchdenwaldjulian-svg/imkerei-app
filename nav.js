@@ -204,8 +204,10 @@
 
     // === MOBILE MENU: Open/Close (global verfügbar) ===
     window.navMobileMenuOpen = function() {
-        // Leaflet-Karten z-index runtersetzen (überlagern sonst das Menü)
-        document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex = '0'; });
+        // Alles unter dem Overlay unsichtbar machen (Leaflet z-index Problem)
+        document.querySelectorAll('.leaflet-container').forEach(function(el){ 
+            el.style.visibility = 'hidden'; 
+        });
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.add('active');
         if (typeof app !== 'undefined') {
@@ -217,8 +219,10 @@
     window.navMobileMenuClose = function() {
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.remove('active');
-        // Leaflet-Karten z-index wiederherstellen
-        document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex = ''; });
+        // Leaflet-Karten wieder sichtbar
+        document.querySelectorAll('.leaflet-container').forEach(function(el){ 
+            el.style.visibility = 'visible'; 
+        });
     };
 
     if (typeof window.mobileMenuOpen === 'undefined') window.mobileMenuOpen = window.navMobileMenuOpen;
