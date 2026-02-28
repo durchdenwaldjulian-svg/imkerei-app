@@ -367,13 +367,11 @@
 <!-- Behandlung-Modal → behandlung.html -->
 
 <nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 <script src="nav.js"></script>
 
-<!-- MOBILE NAV BAR (generiert von nav.js) -->
-<div class="mobile-nav" id="mobileNavBar"></div>
 
-<!-- MOBILE FULLSCREEN MENU (generiert von nav.js) -->
-<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 
 <script src="config.js"></script>
 <script src="presence.js" defer></script>
