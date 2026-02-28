@@ -571,6 +571,21 @@ function initMiniMaps() {
 // START
 // ============================================
 init();
+
+// Leaflet-Karten bei Seitenverlassen verstecken (Mobile Back/Forward Cache)
+window.addEventListener('pagehide', function() {
+    document.querySelectorAll('.leaflet-container').forEach(function(el){ 
+        el.style.visibility = 'hidden'; 
+    });
+});
+window.addEventListener('pageshow', function(e) {
+    if (e.persisted) {
+        // Seite kam aus dem Cache zurück - Karten wieder zeigen
+        document.querySelectorAll('.leaflet-container').forEach(function(el){ 
+            el.style.visibility = 'visible'; 
+        });
+    }
+});
 </script>
 </body>
 </html>

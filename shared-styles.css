@@ -175,4 +175,8 @@ textarea.input{min-height:100px;resize:vertical}
     .nav{display:none!important}
     .footer{display:none!important}
     .mobile-nav{display:flex!important}
+    /* Leaflet z-index auf Mobile begrenzen */
+    .leaflet-pane{z-index:1!important}
+    .leaflet-top,.leaflet-bottom{z-index:2!important}
+    .leaflet-container{z-index:1!important}
 }
