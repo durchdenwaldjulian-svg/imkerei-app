@@ -67,6 +67,16 @@
             height:420px;border-radius:.75rem;border:2px solid #E8DFD4;
             margin-bottom:1rem;overflow:hidden;position:relative;
         }
+        /* Leaflet z-index begrenzen damit Modal darüber liegt */
+        .map-container .leaflet-pane{z-index:1!important}
+        .map-container .leaflet-top,.map-container .leaflet-bottom{z-index:2!important}
+        .map-container .leaflet-container{z-index:1!important}
+        /* Modal-Karte: Leaflet dort ebenfalls bändigen */
+        .modal .leaflet-pane{z-index:1!important}
+        .modal .leaflet-top,.modal .leaflet-bottom{z-index:2!important}
+        #modalMap{position:relative;z-index:1}
+        /* Modal über allem */
+        .modal{z-index:10000!important}
         .map-legend{
             display:flex;gap:.75rem;flex-wrap:wrap;padding:.5rem .75rem;
             background:#FFF8EE;border:1px solid #E8DFD4;border-radius:.5rem;
@@ -185,7 +195,7 @@
         .pending-card .pending-actions{display:flex;gap:.35rem}
 
         /* Toast */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;font-size:.85rem;z-index:10001;display:none;animation:fadeIn .3s;max-width:90%;text-align:center;box-shadow:0 4px 12px rgba(28,20,16,0.25)}
         .toast.show{display:block}
         .toast.success{background:#065f46}
         .toast.error{background:#991b1b}
@@ -1033,6 +1043,9 @@ function removeMember(userId) {
 // MELDUNG MODAL
 // ============================================
 function openMeldungModal() {
+    // Hintergrund-Karte verstecken (Leaflet z-index Problem)
+    document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.visibility = 'hidden'; });
+    
     document.getElementById('meldungModal').classList.add('active');
     document.getElementById('meldungModalTitle').textContent = '🌸 Vereins-Tracht melden';
 
@@ -1041,6 +1054,8 @@ function openMeldungModal() {
 
     setTimeout(function() {
         if (modalMap) { modalMap.remove(); modalMap = null; }
+        var mapContainer = document.getElementById('modalMap');
+        mapContainer.style.visibility = 'visible';
         modalMap = L.map('modalMap').setView([49.0069, 8.4037], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OSM', maxZoom: 18
@@ -1060,6 +1075,9 @@ function closeMeldungModal() {
     document.getElementById('meldungModal').classList.remove('active');
     if (modalMap) { modalMap.remove(); modalMap = null; }
     modalMarker = null;
+    
+    // Hintergrund-Karte wieder sichtbar
+    document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.visibility = 'visible'; });
     // Reset form
     document.getElementById('mTyp').value = '';
     document.getElementById('mStandort').value = '';
