@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏘️ Vereins-Trachten – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+        .container{max-width:960px;margin:0 auto;padding:1rem}
+
+        /* NAV */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+
+        /* === VEREINS HEADER === */
+        .verein-hero{
+            background:linear-gradient(135deg, #1C1410 0%, #3D2E1F 50%, #5C4033 100%);
+            border-radius:1rem;
+            padding:1.75rem;
+            margin-bottom:1.25rem;
+            position:relative;
+            overflow:hidden;
+            color:#fff;
+        }
+        .verein-hero::before{
+            content:'';position:absolute;top:-60%;right:-20%;width:300px;height:300px;
+            background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);
+            pointer-events:none;
+        }
+        .verein-hero::after{
+            content:'';position:absolute;bottom:-40%;left:-10%;width:250px;height:250px;
+            background:radial-gradient(circle,rgba(245,166,35,0.08) 0%,transparent 70%);
+            pointer-events:none;
+        }
+        .verein-hero-inner{position:relative;z-index:1}
+        .verein-name{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:.25rem}
+        .verein-meta{font-size:.8rem;color:rgba(255,255,255,.65);display:flex;gap:1.25rem;flex-wrap:wrap;margin-top:.5rem}
+        .verein-meta span{display:flex;align-items:center;gap:.3rem}
+        .verein-code-box{
+            display:inline-flex;align-items:center;gap:.5rem;
+            background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.3);
+            border-radius:.5rem;padding:.4rem .75rem;margin-top:.75rem;
+            font-size:.8rem;color:#F5A623;cursor:pointer;transition:all .2s;
+        }
+        .verein-code-box:hover{background:rgba(245,166,35,0.25)}
+        .verein-code-box .code{font-family:monospace;font-weight:700;font-size:.9rem;letter-spacing:.1em}
+
+        /* === TABS === */
+        .vtab-bar{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1.25rem}
+        .vtab-btn{flex:1;padding:.625rem .5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.35rem}
+        .vtab-btn.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+        .vtab-btn:hover:not(.active){background:rgba(245,166,35,0.08)}
+        .vtab-content{display:none}
+        .vtab-content.active{display:block}
+
+        /* === KARTE === */
+        .map-container{
+            height:420px;border-radius:.75rem;border:2px solid #E8DFD4;
+            margin-bottom:1rem;overflow:hidden;position:relative;
+        }
+        .map-legend{
+            display:flex;gap:.75rem;flex-wrap:wrap;padding:.5rem .75rem;
+            background:#FFF8EE;border:1px solid #E8DFD4;border-radius:.5rem;
+            font-size:.75rem;color:#7A6652;margin-bottom:1rem;
+        }
+        .map-legend-item{display:flex;align-items:center;gap:.3rem}
+        .legend-dot{width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+
+        /* === TRACHT-MELDUNGEN LISTE === */
+        .meldung-card{
+            background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;
+            padding:1rem;margin-bottom:.75rem;transition:all .2s;
+            display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:start;
+        }
+        .meldung-card:hover{border-color:rgba(245,166,35,0.4);box-shadow:0 2px 8px rgba(245,166,35,0.1);transform:translateY(-1px)}
+        .meldung-emoji{font-size:2rem;line-height:1;padding-top:.1rem}
+        .meldung-info h3{font-size:.95rem;font-weight:600;margin-bottom:.25rem;color:#1C1410}
+        .meldung-info .meldung-detail{font-size:.8rem;color:#7A6652;margin-bottom:.2rem}
+        .meldung-info .meldung-detail strong{color:#3D2E1F}
+        .meldung-actions{display:flex;flex-direction:column;gap:.25rem;align-items:flex-end}
+        .meldung-author{
+            display:inline-flex;align-items:center;gap:.3rem;
+            font-size:.72rem;font-weight:500;color:#7A6652;
+            background:#f5f0eb;padding:.2rem .5rem;border-radius:999px;
+        }
+        .meldung-author .dot{width:6px;height:6px;border-radius:50%;background:#10b981}
+        .meldung-time{font-size:.7rem;color:#A69580;margin-top:.15rem}
+
+        /* === MITGLIEDER === */
+        .member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem}
+        .member-card{
+            background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;
+            padding:1rem;display:flex;align-items:center;gap:.75rem;transition:all .2s;
+        }
+        .member-card:hover{border-color:rgba(245,166,35,0.3);transform:translateY(-1px)}
+        .member-avatar{
+            width:44px;height:44px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.3rem;font-weight:700;color:#fff;flex-shrink:0;
+        }
+        .member-info{flex:1;min-width:0}
+        .member-name{font-weight:600;font-size:.9rem;color:#1C1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .member-role{font-size:.72rem;color:#7A6652}
+        .member-stats{font-size:.7rem;color:#A69580;margin-top:.15rem}
+        .role-admin{background:linear-gradient(135deg,#F5A623,#D4930D)}
+        .role-member{background:linear-gradient(135deg,#10b981,#059669)}
+        .role-new{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+
+        /* === STATS ROW === */
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem}
+        .stat-card{
+            background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;
+            padding:.875rem;text-align:center;transition:all .2s;
+        }
+        .stat-card:hover{border-color:rgba(245,166,35,0.3);transform:translateY(-1px)}
+        .stat-value{font-size:1.5rem;font-weight:700;color:#1C1410}
+        .stat-label{font-size:.72rem;color:#7A6652;margin-top:.15rem}
+
+        /* === MELDUNG MODAL === */
+        .rating-stars{display:flex;gap:.25rem;margin-top:.25rem}
+        .rating-star{font-size:1.5rem;cursor:pointer;transition:transform .1s;opacity:.3}
+        .rating-star.active{opacity:1}
+        .rating-star:hover{transform:scale(1.2)}
+
+        /* === KOMMENTAR-BEREICH === */
+        .comment-section{border-top:1px solid #E8DFD4;padding-top:.75rem;margin-top:.75rem}
+        .comment-item{display:flex;gap:.5rem;padding:.5rem 0;font-size:.8rem}
+        .comment-item .comment-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;flex-shrink:0}
+        .comment-item .comment-text{flex:1}
+        .comment-item .comment-author{font-weight:600;color:#1C1410}
+        .comment-item .comment-time{font-size:.7rem;color:#A69580}
+        .comment-input-row{display:flex;gap:.5rem;margin-top:.5rem}
+        .comment-input-row input{flex:1}
+
+        /* === FILTER BAR === */
+        .filter-bar{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+        .filter-chip{
+            padding:.35rem .75rem;border:2px solid #E8DFD4;border-radius:999px;
+            font-size:.78rem;font-weight:500;cursor:pointer;background:#fff;
+            color:#7A6652;transition:all .15s;
+        }
+        .filter-chip:hover{border-color:#F5A623;color:#1C1410}
+        .filter-chip.active{background:#F5A623;border-color:#F5A623;color:#1C1410;font-weight:600}
+
+        /* === EMPTY STATE === */
+        .empty-state{text-align:center;padding:3rem 1rem;color:#7A6652}
+        .empty-state .empty-icon{font-size:3.5rem;margin-bottom:.75rem;opacity:.6}
+        .empty-state h3{color:#1C1410;margin-bottom:.5rem}
+
+        /* Toast */
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast.show{display:block}
+        .toast.success{background:#065f46}
+        .toast.error{background:#991b1b}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        /* === RESPONSIVE === */
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{display:none}
+            .stats-row{grid-template-columns:repeat(2,1fr)}
+            .member-grid{grid-template-columns:1fr}
+            .map-container{height:300px}
+            .verein-hero{padding:1.25rem;border-radius:.75rem}
+            .verein-name{font-size:1.3rem}
+            .meldung-card{grid-template-columns:auto 1fr;gap:.5rem}
+            .meldung-actions{flex-direction:row;margin-top:.5rem;grid-column:1/-1}
+            .vtab-btn{font-size:.75rem;padding:.5rem .3rem}
+            .filter-bar{gap:.35rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+
+    <!-- === VEREINS-HEADER === -->
+    <div class="verein-hero">
+        <div class="verein-hero-inner">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
+                <span style="font-size:2rem">🏘️</span>
+                <div>
+                    <div class="verein-name" id="vereinName">Imkerverein Karlsruhe e.V.</div>
+                    <div style="font-size:.8rem;color:rgba(255,255,255,.5)">Gegründet 1923 · Vereins-ID #IV-KA-001</div>
+                </div>
+            </div>
+            <div class="verein-meta">
+                <span>👥 <strong id="memberCount">12</strong> Mitglieder</span>
+                <span>🌸 <strong id="meldungCount">24</strong> Trachtmeldungen</span>
+                <span>📍 <strong>Raum Karlsruhe</strong></span>
+                <span>🐝 <strong>87</strong> Völker gesamt</span>
+            </div>
+            <div class="verein-code-box" onclick="copyCode()" title="Klicken zum Kopieren">
+                🔑 Einladungscode: <span class="code" id="inviteCode">IVK-2026-BIENE</span>
+                <span style="font-size:.7rem;opacity:.7">📋 kopieren</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- === STATS === -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value" style="color:#F5A623">24</div>
+            <div class="stat-label">Meldungen gesamt</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#10b981">7</div>
+            <div class="stat-label">Aktive Trachten</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#3b82f6">12</div>
+            <div class="stat-label">Mitglieder</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:#8b5cf6">5</div>
+            <div class="stat-label">Standorte</div>
+        </div>
+    </div>
+
+    <!-- === TABS === -->
+    <div class="vtab-bar">
+        <button class="vtab-btn active" onclick="switchTab('karte')">🗺️ Karte</button>
+        <button class="vtab-btn" onclick="switchTab('meldungen')">📋 Meldungen</button>
+        <button class="vtab-btn" onclick="switchTab('mitglieder')">👥 Mitglieder</button>
+        <button class="vtab-btn" onclick="switchTab('einstellungen')">⚙️ Verein</button>
+    </div>
+
+    <!-- ==================== TAB: KARTE ==================== -->
+    <div class="vtab-content active" id="tab-karte">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+            <h2 style="margin:0;font-size:1.15rem">📍 Vereins-Trachtkarte</h2>
+            <button class="btn btn-primary btn-sm" onclick="openMeldungModal()">+ Tracht melden</button>
+        </div>
+
+        <div class="map-legend">
+            <div class="map-legend-item"><div class="legend-dot" style="background:#F5A623"></div> Raps</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:#10b981"></div> Linde</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Obstblüte</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Phacelia</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:#ef4444"></div> Heide</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:#06b6d4"></div> Waldtracht</div>
+        </div>
+
+        <div class="map-container" id="vereinMap"></div>
+
+        <div class="info-box" style="margin-top:.5rem">
+            🔒 Diese Karte ist nur für Vereinsmitglieder sichtbar. Geteilte Trachten erscheinen nicht auf der öffentlichen Trachtkarte.
+        </div>
+    </div>
+
+    <!-- ==================== TAB: MELDUNGEN ==================== -->
+    <div class="vtab-content" id="tab-meldungen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+            <h2 style="margin:0;font-size:1.15rem">📋 Trachtmeldungen</h2>
+            <button class="btn btn-primary btn-sm" onclick="openMeldungModal()">+ Tracht melden</button>
+        </div>
+
+        <div class="filter-bar">
+            <span style="font-size:.8rem;color:#7A6652;font-weight:500">Filter:</span>
+            <button class="filter-chip active" onclick="filterMeldungen('alle',this)">Alle</button>
+            <button class="filter-chip" onclick="filterMeldungen('aktiv',this)">🟢 Aktiv</button>
+            <button class="filter-chip" onclick="filterMeldungen('Raps',this)">🌾 Raps</button>
+            <button class="filter-chip" onclick="filterMeldungen('Linde',this)">🍃 Linde</button>
+            <button class="filter-chip" onclick="filterMeldungen('Obstblüte',this)">🌸 Obst</button>
+            <button class="filter-chip" onclick="filterMeldungen('Wald',this)">🌲 Wald</button>
+        </div>
+
+        <div id="meldungenListe"></div>
+    </div>
+
+    <!-- ==================== TAB: MITGLIEDER ==================== -->
+    <div class="vtab-content" id="tab-mitglieder">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h2 style="margin:0;font-size:1.15rem">👥 Vereinsmitglieder</h2>
+            <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="showInvite()">🔑 Einladen</button>
+        </div>
+        <div class="member-grid" id="mitgliederGrid"></div>
+    </div>
+
+    <!-- ==================== TAB: EINSTELLUNGEN ==================== -->
+    <div class="vtab-content" id="tab-einstellungen">
+        <h2 style="font-size:1.15rem">⚙️ Vereins-Einstellungen</h2>
+        
+        <div class="card" style="margin-bottom:1rem">
+            <h3>🏘️ Vereinsdaten</h3>
+            <div class="form-group">
+                <label class="form-label">Vereinsname</label>
+                <input type="text" class="input" value="Imkerverein Karlsruhe e.V." id="editVereinName">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Region / Ort</label>
+                <input type="text" class="input" value="Raum Karlsruhe" id="editVereinRegion">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Beschreibung</label>
+                <textarea class="input" id="editVereinBeschreibung" rows="3">Imkerverein Karlsruhe – seit 1923 aktiv für Bienen und Natur. Wir fördern Wissensaustausch und nachhaltige Imkerei in der Region.</textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="toast('✅ Einstellungen gespeichert!','success')">Speichern</button>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+            <h3>🔑 Einladungscode</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Teile diesen Code mit Imkern, die dem Verein beitreten möchten.</p>
+            <div style="display:flex;gap:.5rem;align-items:center">
+                <input type="text" class="input" value="IVK-2026-BIENE" readonly style="font-family:monospace;font-weight:700;letter-spacing:.1em;flex:1" id="codeInput">
+                <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="copyCode()">📋 Kopieren</button>
+                <button class="btn btn-sm btn-primary" onclick="regenerateCode()">🔄 Neu</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+            <h3>🔔 Benachrichtigungen</h3>
+            <label style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;cursor:pointer">
+                <input type="checkbox" checked style="width:1.25rem;height:1.25rem">
+                <span style="font-size:.85rem">Benachrichtigung bei neuer Trachtmeldung</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;cursor:pointer">
+                <input type="checkbox" checked style="width:1.25rem;height:1.25rem">
+                <span style="font-size:.85rem">Benachrichtigung wenn neues Mitglied beitritt</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;cursor:pointer">
+                <input type="checkbox" style="width:1.25rem;height:1.25rem">
+                <span style="font-size:.85rem">Wöchentliche Zusammenfassung per E-Mail</span>
+            </label>
+        </div>
+
+        <div class="card" style="border-color:#fee2e2">
+            <h3 style="color:#ef4444">⚠️ Gefahrenzone</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Achtung: Diese Aktionen können nicht rückgängig gemacht werden.</p>
+            <button class="btn btn-sm btn-danger" onclick="alert('Demo – Funktion kommt mit Supabase-Anbindung')">Verein verlassen</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ==================== MELDUNG MODAL ==================== -->
+<div id="meldungModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:560px;height:auto;max-height:92vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2 id="meldungModalTitle">🌸 Vereins-Tracht melden</h2>
+            <button class="close-btn" onclick="closeMeldungModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Tracht-Typ *</label>
+                <select id="mTyp" class="input">
+                    <option value="">-- Bitte wählen --</option>
+                    <optgroup label="Frühjahr"><option value="Haselnuss">🌰 Haselnuss</option><option value="Weide">🌿 Weide</option><option value="Kirsche">🍒 Kirsche</option><option value="Löwenzahn">🌼 Löwenzahn</option><option value="Raps">🌾 Raps</option><option value="Obstblüte">🌸 Obstblüte</option></optgroup>
+                    <optgroup label="Sommer"><option value="Akazie">🌳 Akazie</option><option value="Linde">🍃 Linde</option><option value="Phacelia">💜 Phacelia</option><option value="Sonnenblume">🌻 Sonnenblume</option></optgroup>
+                    <optgroup label="Waldtracht"><option value="Fichte">🌲 Fichte (Honigtau)</option><option value="Tanne">🌲 Tanne (Honigtau)</option></optgroup>
+                    <optgroup label="Herbst"><option value="Heide">🌸 Heide</option><option value="Efeu">🌿 Efeu</option></optgroup>
+                    <option value="Andere">🌺 Andere</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Standort / Gebiet *</label>
+                <input type="text" id="mStandort" class="input" placeholder="z.B. Rapsfeld bei Durlach">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Blühbeginn *</label>
+                <input type="date" id="mBeginn" class="input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Blühende (optional)</label>
+                <input type="date" id="mEnde" class="input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Intensität</label>
+                <div style="display:flex;gap:.5rem">
+                    <button class="option-btn" onclick="setIntensity(1,this)" style="flex:1">🟡 Schwach</button>
+                    <button class="option-btn" onclick="setIntensity(2,this)" style="flex:1">🟠 Mittel</button>
+                    <button class="option-btn selected" onclick="setIntensity(3,this)" style="flex:1">🔴 Stark</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">📍 Position auf Karte</label>
+                <div id="modalMap" style="height:220px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem"></div>
+                <input type="hidden" id="mLat" value="">
+                <input type="hidden" id="mLng" value="">
+                <div id="mKoordStatus" style="font-size:.8rem;color:#7A6652"></div>
+                <div class="info-box">💡 Klicke auf die Karte um die Position zu setzen.</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen</label>
+                <textarea id="mNotizen" class="input" placeholder="Blühzustand, geschätzter Nektar, Beobachtungen..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="saveMeldung()">🌸 Tracht für Verein melden</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DETAIL MODAL ==================== -->
+<div id="detailModal" class="modal">
+    <div class="modal-content" style="max-width:520px">
+        <div class="modal-header">
+            <h2 id="detailTitle">🌸 Details</h2>
+            <button class="close-btn" onclick="closeDetailModal()">✕</button>
+        </div>
+        <div class="modal-body" id="detailBody"></div>
+    </div>
+</div>
+
+<!-- ==================== BEITRITT MODAL ==================== -->
+<div id="beitrittModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:420px;height:auto;border-radius:1rem;margin:auto">
+        <div class="modal-header">
+            <h2>🔑 Verein beitreten</h2>
+            <button class="close-btn" onclick="closeBeitrittModal()">✕</button>
+        </div>
+        <div class="modal-body" style="text-align:center">
+            <div style="font-size:3rem;margin-bottom:.75rem">🏘️</div>
+            <p style="font-size:.9rem;color:#7A6652;margin-bottom:1rem">Gib den Einladungscode deines Vereins ein, um beizutreten.</p>
+            <div class="form-group">
+                <input type="text" id="beitrittCode" class="input" placeholder="z.B. IVK-2026-BIENE" style="text-align:center;font-family:monospace;font-weight:700;font-size:1.1rem;letter-spacing:.15em">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="joinVerein()">Beitreten</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// ============================================
+// DEMO-DATEN (kein Login nötig)
+// ============================================
+
+const DEMO_MEMBERS = [
+    { id: 'u1', name: 'Thomas Müller', email: 'thomas@imker-ka.de', role: 'admin', voelker: 18, meldungen: 8, beitritt: '2023-03-15', avatar: 'TM', color: 'role-admin' },
+    { id: 'u2', name: 'Sandra Fischer', email: 'sandra@fischer-imkerei.de', role: 'admin', voelker: 12, meldungen: 6, beitritt: '2023-03-15', avatar: 'SF', color: 'role-admin' },
+    { id: 'u3', name: 'Klaus Weber', email: 'k.weber@web.de', role: 'mitglied', voelker: 8, meldungen: 4, beitritt: '2023-06-20', avatar: 'KW', color: 'role-member' },
+    { id: 'u4', name: 'Maria Schneider', email: 'maria.s@gmx.de', role: 'mitglied', voelker: 5, meldungen: 2, beitritt: '2023-09-01', avatar: 'MS', color: 'role-member' },
+    { id: 'u5', name: 'Hans Becker', email: 'hans.becker@t-online.de', role: 'mitglied', voelker: 15, meldungen: 3, beitritt: '2024-01-10', avatar: 'HB', color: 'role-member' },
+    { id: 'u6', name: 'Lisa Wagner', email: 'lisa.w@outlook.de', role: 'mitglied', voelker: 6, meldungen: 1, beitritt: '2024-03-22', avatar: 'LW', color: 'role-member' },
+    { id: 'u7', name: 'Peter Braun', email: 'p.braun@email.de', role: 'mitglied', voelker: 10, meldungen: 0, beitritt: '2024-05-15', avatar: 'PB', color: 'role-member' },
+    { id: 'u8', name: 'Anna Klein', email: 'anna.klein@web.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2024-08-01', avatar: 'AK', color: 'role-member' },
+    { id: 'u9', name: 'Markus Hoffmann', email: 'markus.h@gmx.de', role: 'mitglied', voelker: 4, meldungen: 0, beitritt: '2024-11-10', avatar: 'MH', color: 'role-member' },
+    { id: 'u10', name: 'Eva Schmidt', email: 'eva.s@mail.de', role: 'mitglied', voelker: 2, meldungen: 0, beitritt: '2025-01-05', avatar: 'ES', color: 'role-member' },
+    { id: 'u11', name: 'Jürgen Wolf', email: 'j.wolf@live.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2025-06-18', avatar: 'JW', color: 'role-member' },
+    { id: 'u12', name: 'Katharina Lehmann', email: 'k.lehmann@posteo.de', role: 'neu', voelker: 1, meldungen: 0, beitritt: '2026-02-20', avatar: 'KL', color: 'role-new' },
+];
+
+const TRACHT_EMOJIS = {
+    'Raps': '🌾', 'Obstblüte': '🌸', 'Linde': '🍃', 'Phacelia': '💜', 'Sonnenblume': '🌻',
+    'Fichte': '🌲', 'Tanne': '🌲', 'Heide': '🌸', 'Kirsche': '🍒', 'Löwenzahn': '🌼',
+    'Haselnuss': '🌰', 'Weide': '🌿', 'Akazie': '🌳', 'Efeu': '🌿', 'Andere': '🌺'
+};
+
+const TRACHT_COLORS = {
+    'Raps': '#F5A623', 'Obstblüte': '#ec4899', 'Linde': '#10b981', 'Phacelia': '#8b5cf6',
+    'Sonnenblume': '#eab308', 'Fichte': '#06b6d4', 'Tanne': '#0d9488', 'Heide': '#ef4444',
+    'Kirsche': '#f43f5e', 'Löwenzahn': '#f59e0b', 'Haselnuss': '#a16207', 'Weide': '#22c55e',
+    'Akazie': '#65a30d', 'Efeu': '#15803d', 'Andere': '#6b7280'
+};
+
+// Karlsruhe-Region Koordinaten
+const DEMO_MELDUNGEN = [
+    { id: 'm1', typ: 'Raps', standort: 'Rapsfeld Durlach-Aue', beginn: '2026-04-08', ende: '2026-05-15', lat: 49.0069, lng: 8.4737, intensity: 3, notizen: 'Großes Feld, ca. 5 ha. Sehr guter Nektarfluss bei warmem Wetter.', user: 'u1', created: '2026-02-28T14:30:00', kommentare: [
+        { user: 'u3', text: 'Bestätige – war gestern vor Ort, erste Knospen sichtbar!', time: '2026-02-28T16:10:00' },
+        { user: 'u2', text: 'Super! Werde meine Völker dort aufstellen.', time: '2026-02-28T17:00:00' }
+    ]},
+    { id: 'm2', typ: 'Obstblüte', standort: 'Streuobstwiese Grötzingen', beginn: '2026-04-01', ende: '2026-04-25', lat: 49.0012, lng: 8.5142, intensity: 2, notizen: 'Gemischte Obstbäume: Apfel, Birne, Kirsche. Mittlere Blüte.', user: 'u2', created: '2026-02-27T09:15:00', kommentare: [
+        { user: 'u4', text: 'Kirschbäume blühen schon etwas!', time: '2026-02-27T11:30:00' }
+    ]},
+    { id: 'm3', typ: 'Linde', standort: 'Schlossgarten Karlsruhe', beginn: '2026-06-15', ende: '2026-07-10', lat: 49.0135, lng: 8.4046, intensity: 3, notizen: 'Allee mit ca. 50 großen Linden. Hervorragende Trachtquelle jedes Jahr.', user: 'u3', created: '2026-02-25T11:00:00', kommentare: [] },
+    { id: 'm4', typ: 'Raps', standort: 'Acker bei Weingarten', beginn: '2026-04-12', ende: '2026-05-20', lat: 48.9521, lng: 8.5264, intensity: 3, notizen: 'Neues Rapsfeld dieses Jahr, ca. 8 ha.', user: 'u5', created: '2026-02-24T16:45:00', kommentare: [] },
+    { id: 'm5', typ: 'Phacelia', standort: 'Grünstreifen B10 Hagsfeld', beginn: '2026-06-01', ende: '2026-07-15', lat: 49.0231, lng: 8.4452, intensity: 2, notizen: 'Blühstreifen ca. 200m lang. Gut für Pollen.', user: 'u1', created: '2026-02-23T08:20:00', kommentare: [] },
+    { id: 'm6', typ: 'Löwenzahn', standort: 'Wiese am Turmberg', beginn: '2026-03-20', ende: '2026-04-30', lat: 48.9972, lng: 8.4844, intensity: 2, notizen: 'Frühe Löwenzahnblüte, gute Pollenquelle.', user: 'u4', created: '2026-02-22T13:10:00', kommentare: [] },
+    { id: 'm7', typ: 'Kirsche', standort: 'Altes Land Stupferich', beginn: '2026-04-05', ende: '2026-04-20', lat: 48.9736, lng: 8.4912, intensity: 2, notizen: 'Kirschallee, ca. 30 Bäume. Kurze aber intensive Blüte.', user: 'u2', created: '2026-02-20T10:00:00', kommentare: [] },
+    { id: 'm8', typ: 'Fichte', standort: 'Schwarzwald Rand bei Ettlingen', beginn: '2026-06-20', ende: '2026-08-10', lat: 48.9364, lng: 8.4012, intensity: 3, notizen: 'Fichtenbestand mit regelmäßigem Honigtau. Letztes Jahr sehr guter Ertrag.', user: 'u3', created: '2026-02-19T15:30:00', kommentare: [
+        { user: 'u5', text: 'Letzte Saison hatte ich dort 25kg pro Volk!', time: '2026-02-19T17:00:00' },
+        { user: 'u1', text: 'Wahnsinn! Hoffen wir auf ähnliche Bedingungen.', time: '2026-02-19T18:15:00' }
+    ]},
+    { id: 'm9', typ: 'Haselnuss', standort: 'Hecke am Baggersee', beginn: '2026-02-15', ende: '2026-03-15', lat: 49.0301, lng: 8.3856, intensity: 1, notizen: 'Erste Pollenquelle im Jahr. Schwache Tracht aber wichtig für Brutentwicklung.', user: 'u6', created: '2026-02-18T09:45:00', kommentare: [] },
+    { id: 'm10', typ: 'Linde', standort: 'Lindenallee Mühlburg', beginn: '2026-06-18', ende: '2026-07-08', lat: 49.0098, lng: 8.3654, intensity: 2, notizen: 'Stadtlinden, ca. 25 Bäume. Etwas Verkehr, aber guter Honigertrag.', user: 'u5', created: '2026-02-17T14:00:00', kommentare: [] },
+];
+
+let selectedIntensity = 3;
+let currentFilter = 'alle';
+let vereinMap = null;
+let modalMap = null;
+let modalMarker = null;
+let mapMarkers = [];
+
+// ============================================
+// INIT
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    renderMeldungen();
+    renderMitglieder();
+});
+
+// ============================================
+// MAP
+// ============================================
+function initMap() {
+    vereinMap = L.map('vereinMap').setView([49.0069, 8.4037], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 18
+    }).addTo(vereinMap);
+
+    addMeldungenToMap();
+}
+
+function addMeldungenToMap() {
+    mapMarkers.forEach(function(m) { vereinMap.removeLayer(m); });
+    mapMarkers = [];
+
+    DEMO_MELDUNGEN.forEach(function(m) {
+        if (!m.lat || !m.lng) return;
+        var color = TRACHT_COLORS[m.typ] || '#6b7280';
+        var emoji = TRACHT_EMOJIS[m.typ] || '🌺';
+        var member = DEMO_MEMBERS.find(function(x) { return x.id === m.user; });
+        var memberName = member ? member.name : 'Unbekannt';
+
+        var heute = new Date();
+        var beginn = new Date(m.beginn);
+        var ende = m.ende ? new Date(m.ende) : null;
+        var isAktiv = beginn <= heute && (!ende || ende >= heute);
+        var isFuture = beginn > heute;
+        var status = isAktiv ? '🟢 Aktiv' : (isFuture ? '🔵 Geplant' : '⚪ Beendet');
+
+        var icon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="width:36px;height:36px;border-radius:50%;background:'+color+';border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer'+(isAktiv?';animation:pulse 2s infinite':'')+'">'+emoji+'</div>',
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -20]
+        });
+
+        var popup = '<div style="min-width:180px;font-family:Outfit,sans-serif">'+
+            '<div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem">'+emoji+' '+m.typ+'</div>'+
+            '<div style="font-size:.8rem;color:#7A6652;margin-bottom:.35rem">'+m.standort+'</div>'+
+            '<div style="font-size:.75rem;margin-bottom:.25rem">'+status+'</div>'+
+            '<div style="font-size:.75rem;color:#A69580">📅 '+formatDate(m.beginn)+(m.ende ? ' → '+formatDate(m.ende) : '')+'</div>'+
+            '<div style="font-size:.75rem;color:#A69580;margin-top:.25rem">👤 '+memberName+'</div>'+
+            (m.notizen ? '<div style="font-size:.75rem;color:#7A6652;margin-top:.35rem;padding-top:.35rem;border-top:1px solid #eee">'+m.notizen.substring(0,80)+(m.notizen.length>80?'…':'')+'</div>' : '')+
+            '<button onclick="openDetail(\''+m.id+'\')" style="margin-top:.5rem;background:#F5A623;color:#1C1410;border:none;padding:.3rem .75rem;border-radius:.35rem;font-size:.75rem;font-weight:600;cursor:pointer;width:100%">Details ansehen</button>'+
+            '</div>';
+
+        var marker = L.marker([m.lat, m.lng], { icon: icon }).addTo(vereinMap).bindPopup(popup);
+        mapMarkers.push(marker);
+    });
+}
+
+// ============================================
+// MELDUNGEN
+// ============================================
+function renderMeldungen(filter) {
+    filter = filter || currentFilter;
+    var liste = document.getElementById('meldungenListe');
+    var heute = new Date();
+
+    var filtered = DEMO_MELDUNGEN.filter(function(m) {
+        if (filter === 'alle') return true;
+        if (filter === 'aktiv') {
+            var b = new Date(m.beginn);
+            var e = m.ende ? new Date(m.ende) : null;
+            return b <= heute && (!e || e >= heute);
+        }
+        return m.typ.toLowerCase().indexOf(filter.toLowerCase()) > -1;
+    });
+
+    if (filtered.length === 0) {
+        liste.innerHTML = '<div class="empty-state"><div class="empty-icon">🌸</div><h3>Keine Meldungen</h3><p style="font-size:.85rem">Noch keine Trachtmeldungen für diesen Filter.</p></div>';
+        return;
+    }
+
+    var html = '';
+    filtered.forEach(function(m) {
+        var emoji = TRACHT_EMOJIS[m.typ] || '🌺';
+        var color = TRACHT_COLORS[m.typ] || '#6b7280';
+        var member = DEMO_MEMBERS.find(function(x) { return x.id === m.user; });
+        var memberName = member ? member.name : 'Unbekannt';
+
+        var beginn = new Date(m.beginn);
+        var ende = m.ende ? new Date(m.ende) : null;
+        var isAktiv = beginn <= heute && (!ende || ende >= heute);
+        var isFuture = beginn > heute;
+        var statusBadge = isAktiv
+            ? '<span class="badge badge-green">🟢 Aktiv</span>'
+            : (isFuture ? '<span class="badge badge-blue">🔵 Geplant</span>' : '<span class="badge" style="background:#f5f0eb;color:#7A6652">⚪ Beendet</span>');
+
+        var intensityDots = '';
+        for (var i = 0; i < 3; i++) {
+            intensityDots += '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(i<m.intensity?color:'#E8DFD4')+';margin-right:2px"></span>';
+        }
+
+        var commentCount = (m.kommentare || []).length;
+        var commentHint = commentCount > 0 ? '<span style="font-size:.72rem;color:#7A6652;margin-left:.5rem">💬 '+commentCount+'</span>' : '';
+
+        html += '<div class="meldung-card" onclick="openDetail(\''+m.id+'\')" style="cursor:pointer;border-left:4px solid '+color+'">';
+        html += '<div class="meldung-emoji">'+emoji+'</div>';
+        html += '<div class="meldung-info">';
+        html += '<h3>'+m.typ+' '+statusBadge+commentHint+'</h3>';
+        html += '<div class="meldung-detail">📍 <strong>'+m.standort+'</strong></div>';
+        html += '<div class="meldung-detail">📅 '+formatDate(m.beginn)+(m.ende ? ' → '+formatDate(m.ende) : ' → offen')+'</div>';
+        html += '<div class="meldung-detail">Intensität: '+intensityDots+'</div>';
+        if (m.notizen) html += '<div class="meldung-detail" style="color:#A69580;font-style:italic;margin-top:.25rem">'+m.notizen.substring(0,100)+(m.notizen.length>100?'…':'')+'</div>';
+        html += '</div>';
+        html += '<div class="meldung-actions">';
+        html += '<div class="meldung-author"><span class="dot"></span> '+memberName+'</div>';
+        html += '<div class="meldung-time">'+timeAgo(m.created)+'</div>';
+        html += '</div>';
+        html += '</div>';
+    });
+
+    liste.innerHTML = html;
+}
+
+function filterMeldungen(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (el) el.classList.add('active');
+    renderMeldungen(filter);
+}
+
+// ============================================
+// DETAIL MODAL
+// ============================================
+function openDetail(id) {
+    var m = DEMO_MELDUNGEN.find(function(x) { return x.id === id; });
+    if (!m) return;
+
+    var emoji = TRACHT_EMOJIS[m.typ] || '🌺';
+    var color = TRACHT_COLORS[m.typ] || '#6b7280';
+    var member = DEMO_MEMBERS.find(function(x) { return x.id === m.user; });
+    var memberName = member ? member.name : 'Unbekannt';
+
+    var heute = new Date();
+    var beginn = new Date(m.beginn);
+    var ende = m.ende ? new Date(m.ende) : null;
+    var isAktiv = beginn <= heute && (!ende || ende >= heute);
+    var isFuture = beginn > heute;
+    var statusText = isAktiv ? '🟢 Aktiv blühend' : (isFuture ? '🔵 Blüte erwartet' : '⚪ Blühzeit beendet');
+
+    var intensityLabel = ['', '🟡 Schwach', '🟠 Mittel', '🔴 Stark'][m.intensity] || '';
+
+    document.getElementById('detailTitle').textContent = emoji + ' ' + m.typ;
+
+    var html = '';
+    html += '<div style="background:'+color+'15;border-left:4px solid '+color+';border-radius:0 .5rem .5rem 0;padding:1rem;margin-bottom:1rem">';
+    html += '<div style="font-size:2rem;margin-bottom:.25rem">'+emoji+'</div>';
+    html += '<div style="font-weight:700;font-size:1.1rem;color:#1C1410">'+m.typ+'</div>';
+    html += '<div style="font-size:.85rem;color:#7A6652;margin-top:.25rem">'+statusText+'</div>';
+    html += '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">';
+    html += '<div class="card" style="margin:0;text-align:center"><div style="font-size:.75rem;color:#7A6652">Standort</div><div style="font-weight:600;font-size:.85rem;margin-top:.25rem">📍 '+m.standort+'</div></div>';
+    html += '<div class="card" style="margin:0;text-align:center"><div style="font-size:.75rem;color:#7A6652">Intensität</div><div style="font-weight:600;font-size:.85rem;margin-top:.25rem">'+intensityLabel+'</div></div>';
+    html += '<div class="card" style="margin:0;text-align:center"><div style="font-size:.75rem;color:#7A6652">Blühbeginn</div><div style="font-weight:600;font-size:.85rem;margin-top:.25rem">'+formatDate(m.beginn)+'</div></div>';
+    html += '<div class="card" style="margin:0;text-align:center"><div style="font-size:.75rem;color:#7A6652">Blühende</div><div style="font-weight:600;font-size:.85rem;margin-top:.25rem">'+(m.ende ? formatDate(m.ende) : '– offen –')+'</div></div>';
+    html += '</div>';
+
+    if (m.notizen) {
+        html += '<div style="padding:.75rem;background:#FFF8EE;border-radius:.5rem;margin-bottom:1rem;font-size:.85rem;color:#3D2E1F">';
+        html += '<div style="font-weight:600;font-size:.75rem;color:#7A6652;margin-bottom:.35rem">📝 Notizen</div>';
+        html += m.notizen;
+        html += '</div>';
+    }
+
+    html += '<div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#7A6652;margin-bottom:1rem">';
+    html += '<div class="member-avatar '+member.color+'" style="width:28px;height:28px;font-size:.65rem">'+member.avatar+'</div>';
+    html += '<span>Gemeldet von <strong>'+memberName+'</strong> · '+timeAgo(m.created)+'</span>';
+    html += '</div>';
+
+    // Kommentare
+    html += '<div class="comment-section">';
+    html += '<div style="font-weight:600;font-size:.85rem;margin-bottom:.5rem">💬 Kommentare ('+((m.kommentare||[]).length)+')</div>';
+
+    if (m.kommentare && m.kommentare.length > 0) {
+        m.kommentare.forEach(function(c) {
+            var cu = DEMO_MEMBERS.find(function(x) { return x.id === c.user; });
+            html += '<div class="comment-item">';
+            html += '<div class="comment-avatar '+(cu?cu.color:'role-member')+'">'+(cu?cu.avatar:'?')+'</div>';
+            html += '<div class="comment-text"><span class="comment-author">'+(cu?cu.name:'Anonym')+'</span> <span class="comment-time">· '+timeAgo(c.time)+'</span><div style="margin-top:.15rem;color:#3D2E1F">'+c.text+'</div></div>';
+            html += '</div>';
+        });
+    } else {
+        html += '<div style="font-size:.8rem;color:#A69580;padding:.5rem 0">Noch keine Kommentare.</div>';
+    }
+
+    html += '<div class="comment-input-row">';
+    html += '<input type="text" class="input" placeholder="Kommentar schreiben..." style="padding:.5rem .75rem;font-size:.8rem" id="commentInput_'+m.id+'">';
+    html += '<button class="btn btn-sm btn-primary" onclick="addComment(\''+m.id+'\')">↗️</button>';
+    html += '</div>';
+    html += '</div>';
+
+    document.getElementById('detailBody').innerHTML = html;
+    document.getElementById('detailModal').classList.add('active');
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('active');
+}
+
+function addComment(meldungId) {
+    var input = document.getElementById('commentInput_'+meldungId);
+    if (!input || !input.value.trim()) return;
+    var m = DEMO_MELDUNGEN.find(function(x) { return x.id === meldungId; });
+    if (!m) return;
+    if (!m.kommentare) m.kommentare = [];
+    m.kommentare.push({ user: 'u1', text: input.value.trim(), time: new Date().toISOString() });
+    openDetail(meldungId);
+    toast('💬 Kommentar hinzugefügt!', 'success');
+}
+
+// ============================================
+// MITGLIEDER
+// ============================================
+function renderMitglieder() {
+    var grid = document.getElementById('mitgliederGrid');
+    var html = '';
+
+    DEMO_MEMBERS.forEach(function(m) {
+        var roleLabel = m.role === 'admin' ? '👑 Admin' : (m.role === 'neu' ? '🆕 Neues Mitglied' : '🐝 Mitglied');
+        html += '<div class="member-card">';
+        html += '<div class="member-avatar '+m.color+'">'+m.avatar+'</div>';
+        html += '<div class="member-info">';
+        html += '<div class="member-name">'+m.name+'</div>';
+        html += '<div class="member-role">'+roleLabel+'</div>';
+        html += '<div class="member-stats">🐝 '+m.voelker+' Völker · 🌸 '+m.meldungen+' Meldungen</div>';
+        html += '</div>';
+        html += '</div>';
+    });
+
+    grid.innerHTML = html;
+}
+
+// ============================================
+// MELDUNG MODAL
+// ============================================
+function openMeldungModal() {
+    document.getElementById('meldungModal').classList.add('active');
+    document.getElementById('meldungModalTitle').textContent = '🌸 Vereins-Tracht melden';
+
+    // Datum-Defaults
+    document.getElementById('mBeginn').value = new Date().toISOString().split('T')[0];
+
+    setTimeout(function() {
+        if (modalMap) { modalMap.remove(); modalMap = null; }
+        modalMap = L.map('modalMap').setView([49.0069, 8.4037], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OSM', maxZoom: 18
+        }).addTo(modalMap);
+
+        modalMap.on('click', function(e) {
+            if (modalMarker) modalMap.removeLayer(modalMarker);
+            modalMarker = L.marker(e.latlng).addTo(modalMap);
+            document.getElementById('mLat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('mLng').value = e.latlng.lng.toFixed(6);
+            document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt: '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4);
+        });
+    }, 200);
+}
+
+function closeMeldungModal() {
+    document.getElementById('meldungModal').classList.remove('active');
+    if (modalMap) { modalMap.remove(); modalMap = null; }
+    modalMarker = null;
+    // Reset form
+    document.getElementById('mTyp').value = '';
+    document.getElementById('mStandort').value = '';
+    document.getElementById('mBeginn').value = '';
+    document.getElementById('mEnde').value = '';
+    document.getElementById('mNotizen').value = '';
+    document.getElementById('mLat').value = '';
+    document.getElementById('mLng').value = '';
+    document.getElementById('mKoordStatus').innerHTML = '';
+}
+
+function setIntensity(val, btn) {
+    selectedIntensity = val;
+    btn.parentElement.querySelectorAll('.option-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+}
+
+function saveMeldung() {
+    var typ = document.getElementById('mTyp').value;
+    var standort = document.getElementById('mStandort').value;
+    var beginn = document.getElementById('mBeginn').value;
+
+    if (!typ || !standort || !beginn) {
+        toast('⚠️ Bitte fülle alle Pflichtfelder aus!', 'error');
+        return;
+    }
+
+    var newMeldung = {
+        id: 'm' + (DEMO_MELDUNGEN.length + 1),
+        typ: typ,
+        standort: standort,
+        beginn: beginn,
+        ende: document.getElementById('mEnde').value || null,
+        lat: parseFloat(document.getElementById('mLat').value) || null,
+        lng: parseFloat(document.getElementById('mLng').value) || null,
+        intensity: selectedIntensity,
+        notizen: document.getElementById('mNotizen').value,
+        user: 'u1',
+        created: new Date().toISOString(),
+        kommentare: []
+    };
+
+    DEMO_MELDUNGEN.unshift(newMeldung);
+    closeMeldungModal();
+    renderMeldungen();
+    addMeldungenToMap();
+
+    // Update counts
+    document.getElementById('meldungCount').textContent = DEMO_MELDUNGEN.length;
+    document.querySelectorAll('.stat-card')[0].querySelector('.stat-value').textContent = DEMO_MELDUNGEN.length;
+
+    toast('✅ Trachtmeldung erfolgreich erstellt!', 'success');
+}
+
+// ============================================
+// VEREIN BEITRETEN
+// ============================================
+function showInvite() {
+    document.getElementById('beitrittModal').classList.add('active');
+}
+
+function closeBeitrittModal() {
+    document.getElementById('beitrittModal').classList.remove('active');
+}
+
+function joinVerein() {
+    var code = document.getElementById('beitrittCode').value.trim();
+    if (!code) {
+        toast('⚠️ Bitte gib einen Code ein!', 'error');
+        return;
+    }
+    if (code.toUpperCase() === 'IVK-2026-BIENE') {
+        toast('✅ Erfolgreich beigetreten!', 'success');
+        closeBeitrittModal();
+    } else {
+        toast('❌ Ungültiger Einladungscode!', 'error');
+    }
+}
+
+// ============================================
+// UTILS
+// ============================================
+function copyCode() {
+    var code = document.getElementById('inviteCode').textContent;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(code).then(function() {
+            toast('📋 Code kopiert: ' + code, 'success');
+        });
+    } else {
+        // Fallback
+        var tmp = document.createElement('textarea');
+        tmp.value = code;
+        document.body.appendChild(tmp);
+        tmp.select();
+        document.execCommand('copy');
+        document.body.removeChild(tmp);
+        toast('📋 Code kopiert: ' + code, 'success');
+    }
+}
+
+function regenerateCode() {
+    if (!confirm('Neuen Code generieren? Der alte Code wird ungültig.')) return;
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    var code = 'IVK-';
+    for (var i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+    code += '-' + new Date().getFullYear();
+    document.getElementById('inviteCode').textContent = code;
+    document.getElementById('codeInput').value = code;
+    toast('🔑 Neuer Code generiert: ' + code, 'success');
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.vtab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.vtab-content').forEach(function(c) { c.classList.remove('active'); });
+    event.target.classList.add('active');
+    document.getElementById('tab-'+tab).classList.add('active');
+
+    if (tab === 'karte' && vereinMap) {
+        setTimeout(function() { vereinMap.invalidateSize(); }, 100);
+    }
+}
+
+function formatDate(str) {
+    if (!str) return '–';
+    var d = new Date(str);
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function timeAgo(str) {
+    var now = new Date();
+    var d = new Date(str);
+    var diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'gerade eben';
+    if (diff < 3600) return Math.floor(diff/60) + ' Min.';
+    if (diff < 86400) return Math.floor(diff/3600) + ' Std.';
+    var days = Math.floor(diff/86400);
+    if (days < 30) return days + ' Tag' + (days>1?'e':'');
+    return formatDate(str);
+}
+
+function toast(msg, type) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + (type || '');
+    setTimeout(function() { el.className = 'toast'; }, 2500);
+}
+</script>
+
+</body>
+</html>

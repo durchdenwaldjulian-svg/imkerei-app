@@ -27,7 +27,8 @@
             { href: 'packliste.html', icon: '📦', label: 'Packliste' }
         ]},
         { title: 'Community', items: [
-            { href: 'forum.html', icon: '💬', label: 'Forum' }
+            { href: 'forum.html', icon: '💬', label: 'Forum' },
+            { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' }
         ]},
         { title: 'Verwaltung', items: [
             { href: 'index.html#kosten', icon: '💰', label: 'Kosten' }
@@ -129,7 +130,8 @@
                 { page: 'kosten', icon: '💰', label: 'Kosten' }
             ]},
             { title: 'Community', items: [
-                { href: 'forum.html', icon: '💬', label: 'Forum' }
+                { href: 'forum.html', icon: '💬', label: 'Forum' },
+                { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' }
             ]},
             { title: 'Verwaltung', items: [
                 { page: 'einstellungen', icon: '⚙️', label: 'Einstellungen' },
