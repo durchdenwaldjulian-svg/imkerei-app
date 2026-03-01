@@ -15,6 +15,11 @@
 
         /* NAV */
         .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
 
         /* === VEREINS HEADER === */
         .verein-hero{
@@ -151,6 +156,34 @@
         .empty-state .empty-icon{font-size:3.5rem;margin-bottom:.75rem;opacity:.6}
         .empty-state h3{color:#1C1410;margin-bottom:.5rem}
 
+        /* === ROLLEN-VERWALTUNG === */
+        .role-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.7rem;font-weight:600}
+        .role-badge.vorsitz{background:#FEF3C7;color:#92400E;border:1px solid #F5A623}
+        .role-badge.admin-role{background:#DBEAFE;color:#1E40AF;border:1px solid #93C5FD}
+        .role-badge.mitglied-role{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
+        .role-badge.gast-role{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB}
+        
+        .member-admin-card{
+            background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;
+            padding:1rem;margin-bottom:.75rem;transition:all .2s;
+            display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center;
+        }
+        .member-admin-card:hover{border-color:rgba(245,166,35,0.3)}
+        .member-admin-actions{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center}
+        .member-admin-actions select{padding:.3rem .5rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.75rem;font-family:inherit;background:#fff;cursor:pointer}
+        .member-admin-actions select:focus{border-color:#F5A623;outline:none}
+        
+        .permission-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border:2px solid #E8DFD4;border-radius:.75rem;overflow:hidden;margin:1rem 0;font-size:.75rem}
+        .perm-header{background:#1C1410;color:#fff;padding:.6rem .5rem;font-weight:600;text-align:center}
+        .perm-row-label{background:#FFF8EE;padding:.5rem;font-weight:600;color:#3D2E1F;border-bottom:1px solid #E8DFD4}
+        .perm-cell{padding:.5rem;text-align:center;border-bottom:1px solid #E8DFD4;border-left:1px solid #E8DFD4}
+        .perm-yes{color:#10b981;font-weight:700}
+        .perm-no{color:#D1D5DB}
+        
+        .pending-card{background:#FFF8EE;border:2px solid #F5A623;border-radius:.75rem;padding:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem}
+        .pending-card .pending-info{flex:1}
+        .pending-card .pending-actions{display:flex;gap:.35rem}
+
         /* Toast */
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
         .toast.show{display:block}
@@ -161,7 +194,10 @@
         /* === RESPONSIVE === */
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
-            .nav{display:none}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
             .stats-row{grid-template-columns:repeat(2,1fr)}
             .member-grid{grid-template-columns:1fr}
             .map-container{height:300px}
@@ -283,9 +319,38 @@
     <div class="vtab-content" id="tab-mitglieder">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
             <h2 style="margin:0;font-size:1.15rem">👥 Vereinsmitglieder</h2>
-            <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="showInvite()">🔑 Einladen</button>
+            <div style="display:flex;gap:.5rem">
+                <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="toggleMemberView()">
+                    <span id="memberViewIcon">📋</span> <span id="memberViewLabel">Verwaltung</span>
+                </button>
+                <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="showInvite()">🔑 Einladen</button>
+            </div>
         </div>
-        <div class="member-grid" id="mitgliederGrid"></div>
+        
+        <!-- Normale Ansicht -->
+        <div id="memberNormalView">
+            <div class="member-grid" id="mitgliederGrid"></div>
+        </div>
+        
+        <!-- Admin-Verwaltungsansicht -->
+        <div id="memberAdminView" style="display:none">
+            <div class="warn-box" style="margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+                <span style="font-size:1.1rem">🔑</span>
+                <span>Du bist als <strong>Vereinsvorsitzender</strong> angemeldet. Hier kannst du Mitglieder verwalten und Rollen zuweisen.</span>
+            </div>
+            
+            <!-- Filter -->
+            <div class="filter-bar" style="margin-bottom:1rem">
+                <span style="font-size:.8rem;color:#7A6652;font-weight:500">Rolle:</span>
+                <button class="filter-chip active" onclick="filterMembers('alle',this)">Alle</button>
+                <button class="filter-chip" onclick="filterMembers('vorsitzender',this)">🔑 Vorsitzende</button>
+                <button class="filter-chip" onclick="filterMembers('admin',this)">👑 Admins</button>
+                <button class="filter-chip" onclick="filterMembers('mitglied',this)">🐝 Mitglieder</button>
+                <button class="filter-chip" onclick="filterMembers('gast',this)">🆕 Gäste</button>
+            </div>
+            
+            <div id="memberAdminList"></div>
+        </div>
     </div>
 
     <!-- ==================== TAB: EINSTELLUNGEN ==================== -->
@@ -309,9 +374,79 @@
             <button class="btn btn-primary btn-sm" onclick="toast('✅ Einstellungen gespeichert!','success')">Speichern</button>
         </div>
 
+        <!-- RECHTE-MATRIX -->
+        <div class="card" style="margin-bottom:1rem">
+            <h3>🛡️ Rollen & Berechtigungen</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Übersicht der Rechte pro Rolle in deinem Verein.</p>
+            
+            <div class="permission-grid">
+                <div class="perm-header">Berechtigung</div>
+                <div class="perm-header">🔑 Vorsitzender</div>
+                <div class="perm-header">👑 Admin</div>
+                <div class="perm-header">🐝 Mitglied</div>
+                
+                <div class="perm-row-label">Trachten melden</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                
+                <div class="perm-row-label">Kommentare schreiben</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                
+                <div class="perm-row-label">Vereins-Karte sehen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                
+                <div class="perm-row-label">Meldungen anderer löschen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Kommentare moderieren</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Mitglieder einladen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Rollen ändern</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Mitglieder entfernen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Einladungscode ändern</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Vereinsdaten bearbeiten</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                
+                <div class="perm-row-label">Verein löschen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+            </div>
+            
+            <div class="info-box">ℹ️ Neue Mitglieder mit gültigem Einladungscode werden sofort als <strong>Mitglied</strong> freigeschaltet. Der Vorsitzende kann jederzeit Rollen hochstufen.</div>
+        </div>
+
         <div class="card" style="margin-bottom:1rem">
             <h3>🔑 Einladungscode</h3>
-            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Teile diesen Code mit Imkern, die dem Verein beitreten möchten.</p>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Teile diesen Code mit Imkern, die dem Verein beitreten möchten. Wer den Code hat, ist sofort Mitglied.</p>
             <div style="display:flex;gap:.5rem;align-items:center">
                 <input type="text" class="input" value="IVK-2026-BIENE" readonly style="font-family:monospace;font-weight:700;letter-spacing:.1em;flex:1" id="codeInput">
                 <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="copyCode()">📋 Kopieren</button>
@@ -337,8 +472,11 @@
 
         <div class="card" style="border-color:#fee2e2">
             <h3 style="color:#ef4444">⚠️ Gefahrenzone</h3>
-            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Achtung: Diese Aktionen können nicht rückgängig gemacht werden.</p>
-            <button class="btn btn-sm btn-danger" onclick="alert('Demo – Funktion kommt mit Supabase-Anbindung')">Verein verlassen</button>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Nur für den Vereinsvorsitzenden. Diese Aktionen können nicht rückgängig gemacht werden.</p>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button class="btn btn-sm" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="alert('Demo – Funktion kommt mit Supabase-Anbindung')">🚪 Verein verlassen</button>
+                <button class="btn btn-sm btn-danger" onclick="alert('Demo – Nur der Vorsitzende kann den Verein auflösen')">🗑️ Verein auflösen</button>
+            </div>
         </div>
     </div>
 
@@ -436,18 +574,18 @@
 // ============================================
 
 const DEMO_MEMBERS = [
-    { id: 'u1', name: 'Thomas Müller', email: 'thomas@imker-ka.de', role: 'admin', voelker: 18, meldungen: 8, beitritt: '2023-03-15', avatar: 'TM', color: 'role-admin' },
-    { id: 'u2', name: 'Sandra Fischer', email: 'sandra@fischer-imkerei.de', role: 'admin', voelker: 12, meldungen: 6, beitritt: '2023-03-15', avatar: 'SF', color: 'role-admin' },
-    { id: 'u3', name: 'Klaus Weber', email: 'k.weber@web.de', role: 'mitglied', voelker: 8, meldungen: 4, beitritt: '2023-06-20', avatar: 'KW', color: 'role-member' },
-    { id: 'u4', name: 'Maria Schneider', email: 'maria.s@gmx.de', role: 'mitglied', voelker: 5, meldungen: 2, beitritt: '2023-09-01', avatar: 'MS', color: 'role-member' },
-    { id: 'u5', name: 'Hans Becker', email: 'hans.becker@t-online.de', role: 'mitglied', voelker: 15, meldungen: 3, beitritt: '2024-01-10', avatar: 'HB', color: 'role-member' },
-    { id: 'u6', name: 'Lisa Wagner', email: 'lisa.w@outlook.de', role: 'mitglied', voelker: 6, meldungen: 1, beitritt: '2024-03-22', avatar: 'LW', color: 'role-member' },
-    { id: 'u7', name: 'Peter Braun', email: 'p.braun@email.de', role: 'mitglied', voelker: 10, meldungen: 0, beitritt: '2024-05-15', avatar: 'PB', color: 'role-member' },
-    { id: 'u8', name: 'Anna Klein', email: 'anna.klein@web.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2024-08-01', avatar: 'AK', color: 'role-member' },
-    { id: 'u9', name: 'Markus Hoffmann', email: 'markus.h@gmx.de', role: 'mitglied', voelker: 4, meldungen: 0, beitritt: '2024-11-10', avatar: 'MH', color: 'role-member' },
-    { id: 'u10', name: 'Eva Schmidt', email: 'eva.s@mail.de', role: 'mitglied', voelker: 2, meldungen: 0, beitritt: '2025-01-05', avatar: 'ES', color: 'role-member' },
-    { id: 'u11', name: 'Jürgen Wolf', email: 'j.wolf@live.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2025-06-18', avatar: 'JW', color: 'role-member' },
-    { id: 'u12', name: 'Katharina Lehmann', email: 'k.lehmann@posteo.de', role: 'neu', voelker: 1, meldungen: 0, beitritt: '2026-02-20', avatar: 'KL', color: 'role-new' },
+    { id: 'u1', name: 'Thomas Müller', email: 'thomas@imker-ka.de', role: 'vorsitzender', voelker: 18, meldungen: 8, beitritt: '2023-03-15', avatar: 'TM', color: 'role-admin', lastActive: '2026-03-01T10:30:00' },
+    { id: 'u2', name: 'Sandra Fischer', email: 'sandra@fischer-imkerei.de', role: 'admin', voelker: 12, meldungen: 6, beitritt: '2023-03-15', avatar: 'SF', color: 'role-admin', lastActive: '2026-03-01T09:15:00' },
+    { id: 'u3', name: 'Klaus Weber', email: 'k.weber@web.de', role: 'admin', voelker: 8, meldungen: 4, beitritt: '2023-06-20', avatar: 'KW', color: 'role-member', lastActive: '2026-02-28T16:00:00' },
+    { id: 'u4', name: 'Maria Schneider', email: 'maria.s@gmx.de', role: 'mitglied', voelker: 5, meldungen: 2, beitritt: '2023-09-01', avatar: 'MS', color: 'role-member', lastActive: '2026-02-27T14:20:00' },
+    { id: 'u5', name: 'Hans Becker', email: 'hans.becker@t-online.de', role: 'mitglied', voelker: 15, meldungen: 3, beitritt: '2024-01-10', avatar: 'HB', color: 'role-member', lastActive: '2026-03-01T08:00:00' },
+    { id: 'u6', name: 'Lisa Wagner', email: 'lisa.w@outlook.de', role: 'mitglied', voelker: 6, meldungen: 1, beitritt: '2024-03-22', avatar: 'LW', color: 'role-member', lastActive: '2026-02-25T11:00:00' },
+    { id: 'u7', name: 'Peter Braun', email: 'p.braun@email.de', role: 'mitglied', voelker: 10, meldungen: 0, beitritt: '2024-05-15', avatar: 'PB', color: 'role-member', lastActive: '2026-02-20T09:30:00' },
+    { id: 'u8', name: 'Anna Klein', email: 'anna.klein@web.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2024-08-01', avatar: 'AK', color: 'role-member', lastActive: '2026-02-18T15:45:00' },
+    { id: 'u9', name: 'Markus Hoffmann', email: 'markus.h@gmx.de', role: 'mitglied', voelker: 4, meldungen: 0, beitritt: '2024-11-10', avatar: 'MH', color: 'role-member', lastActive: '2026-02-10T12:00:00' },
+    { id: 'u10', name: 'Eva Schmidt', email: 'eva.s@mail.de', role: 'mitglied', voelker: 2, meldungen: 0, beitritt: '2025-01-05', avatar: 'ES', color: 'role-new', lastActive: '2026-01-15T10:00:00' },
+    { id: 'u11', name: 'Jürgen Wolf', email: 'j.wolf@live.de', role: 'mitglied', voelker: 3, meldungen: 0, beitritt: '2025-06-18', avatar: 'JW', color: 'role-new', lastActive: '2026-02-01T08:00:00' },
+    { id: 'u12', name: 'Katharina Lehmann', email: 'k.lehmann@posteo.de', role: 'gast', voelker: 1, meldungen: 0, beitritt: '2026-02-20', avatar: 'KL', color: 'role-new', lastActive: '2026-02-28T17:30:00' },
 ];
 
 const TRACHT_EMOJIS = {
@@ -672,8 +810,9 @@ function openDetail(id) {
     }
 
     html += '<div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:#7A6652;margin-bottom:1rem">';
-    html += '<div class="member-avatar '+member.color+'" style="width:28px;height:28px;font-size:.65rem">'+member.avatar+'</div>';
-    html += '<span>Gemeldet von <strong>'+memberName+'</strong> · '+timeAgo(m.created)+'</span>';
+    var memberRole = ROLES[member.role] || ROLES.mitglied;
+    html += '<div class="member-avatar '+memberRole.avatarClass+'" style="width:28px;height:28px;font-size:.65rem">'+member.avatar+'</div>';
+    html += '<span>Gemeldet von <strong>'+memberName+'</strong> <span class="role-badge '+memberRole.badge+'" style="font-size:.6rem">'+memberRole.label+'</span> · '+timeAgo(m.created)+'</span>';
     html += '</div>';
 
     // Kommentare
@@ -683,8 +822,9 @@ function openDetail(id) {
     if (m.kommentare && m.kommentare.length > 0) {
         m.kommentare.forEach(function(c) {
             var cu = DEMO_MEMBERS.find(function(x) { return x.id === c.user; });
+            var cr = cu ? (ROLES[cu.role]||ROLES.mitglied) : ROLES.mitglied;
             html += '<div class="comment-item">';
-            html += '<div class="comment-avatar '+(cu?cu.color:'role-member')+'">'+(cu?cu.avatar:'?')+'</div>';
+            html += '<div class="comment-avatar '+cr.avatarClass+'">'+(cu?cu.avatar:'?')+'</div>';
             html += '<div class="comment-text"><span class="comment-author">'+(cu?cu.name:'Anonym')+'</span> <span class="comment-time">· '+timeAgo(c.time)+'</span><div style="margin-top:.15rem;color:#3D2E1F">'+c.text+'</div></div>';
             html += '</div>';
         });
@@ -718,25 +858,175 @@ function addComment(meldungId) {
 }
 
 // ============================================
+// ROLLEN-SYSTEM
+// ============================================
+const ROLES = {
+    vorsitzender: { label: '🔑 Vorsitzender', badge: 'vorsitz', avatarClass: 'role-admin', sort: 0 },
+    admin:        { label: '👑 Admin / Stellvertreter', badge: 'admin-role', avatarClass: 'role-admin', sort: 1 },
+    mitglied:     { label: '🐝 Mitglied', badge: 'mitglied-role', avatarClass: 'role-member', sort: 2 },
+    gast:         { label: '🆕 Gast (neu)', badge: 'gast-role', avatarClass: 'role-new', sort: 3 },
+};
+
+// Simulierter eingeloggter User (Vorsitzender)
+const CURRENT_USER = 'u1';
+let memberViewMode = 'normal'; // 'normal' | 'admin'
+let memberFilter = 'alle';
+
+// ============================================
 // MITGLIEDER
 // ============================================
 function renderMitglieder() {
     var grid = document.getElementById('mitgliederGrid');
+    var sorted = DEMO_MEMBERS.slice().sort(function(a,b) {
+        return (ROLES[a.role]||ROLES.mitglied).sort - (ROLES[b.role]||ROLES.mitglied).sort;
+    });
     var html = '';
-
-    DEMO_MEMBERS.forEach(function(m) {
-        var roleLabel = m.role === 'admin' ? '👑 Admin' : (m.role === 'neu' ? '🆕 Neues Mitglied' : '🐝 Mitglied');
+    sorted.forEach(function(m) {
+        var r = ROLES[m.role] || ROLES.mitglied;
         html += '<div class="member-card">';
-        html += '<div class="member-avatar '+m.color+'">'+m.avatar+'</div>';
+        html += '<div class="member-avatar '+r.avatarClass+'">'+m.avatar+'</div>';
         html += '<div class="member-info">';
-        html += '<div class="member-name">'+m.name+'</div>';
-        html += '<div class="member-role">'+roleLabel+'</div>';
-        html += '<div class="member-stats">🐝 '+m.voelker+' Völker · 🌸 '+m.meldungen+' Meldungen</div>';
+        html += '<div class="member-name">'+m.name+' <span class="role-badge '+r.badge+'">'+r.label+'</span></div>';
+        html += '<div class="member-stats">🐝 '+m.voelker+' Völker · 🌸 '+m.meldungen+' Meldungen · Dabei seit '+formatDate(m.beitritt)+'</div>';
         html += '</div>';
         html += '</div>';
     });
-
     grid.innerHTML = html;
+    renderMemberAdmin();
+}
+
+function toggleMemberView() {
+    memberViewMode = memberViewMode === 'normal' ? 'admin' : 'normal';
+    document.getElementById('memberNormalView').style.display = memberViewMode === 'normal' ? 'block' : 'none';
+    document.getElementById('memberAdminView').style.display = memberViewMode === 'admin' ? 'block' : 'none';
+    document.getElementById('memberViewIcon').textContent = memberViewMode === 'normal' ? '📋' : '👥';
+    document.getElementById('memberViewLabel').textContent = memberViewMode === 'normal' ? 'Verwaltung' : 'Übersicht';
+    if (memberViewMode === 'admin') renderMemberAdmin();
+}
+
+function filterMembers(filter, el) {
+    memberFilter = filter;
+    document.querySelectorAll('#memberAdminView .filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (el) el.classList.add('active');
+    renderMemberAdmin();
+}
+
+function renderMemberAdmin() {
+    var list = document.getElementById('memberAdminList');
+    if (!list) return;
+    
+    var sorted = DEMO_MEMBERS.slice().sort(function(a,b) {
+        return (ROLES[a.role]||ROLES.mitglied).sort - (ROLES[b.role]||ROLES.mitglied).sort;
+    });
+    
+    var filtered = sorted.filter(function(m) {
+        if (memberFilter === 'alle') return true;
+        if (memberFilter === 'vorsitzender') return m.role === 'vorsitzender';
+        if (memberFilter === 'admin') return m.role === 'admin';
+        if (memberFilter === 'mitglied') return m.role === 'mitglied';
+        if (memberFilter === 'gast') return m.role === 'gast';
+        return true;
+    });
+    
+    var html = '';
+    filtered.forEach(function(m) {
+        var r = ROLES[m.role] || ROLES.mitglied;
+        var isMe = m.id === CURRENT_USER;
+        var isOnline = (new Date() - new Date(m.lastActive)) < 86400000; // 24h
+        
+        html += '<div class="member-admin-card">';
+        
+        // Avatar
+        html += '<div style="position:relative">';
+        html += '<div class="member-avatar '+r.avatarClass+'" style="width:48px;height:48px;font-size:1rem">'+m.avatar+'</div>';
+        if (isOnline) html += '<div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid #fff"></div>';
+        html += '</div>';
+        
+        // Info
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">';
+        html += '<span style="font-weight:600;font-size:.9rem;color:#1C1410">'+m.name+'</span>';
+        if (isMe) html += '<span style="font-size:.65rem;background:#F5A623;color:#1C1410;padding:.1rem .4rem;border-radius:999px;font-weight:700">DU</span>';
+        html += '<span class="role-badge '+r.badge+'">'+r.label+'</span>';
+        html += '</div>';
+        html += '<div style="font-size:.78rem;color:#7A6652;margin-top:.2rem">'+m.email+'</div>';
+        html += '<div style="font-size:.72rem;color:#A69580;margin-top:.15rem">';
+        html += '🐝 '+m.voelker+' Völker · 🌸 '+m.meldungen+' Meldungen · Beitritt: '+formatDate(m.beitritt);
+        html += ' · Zuletzt aktiv: '+timeAgo(m.lastActive);
+        html += '</div>';
+        html += '</div>';
+        
+        // Aktionen (nur für Vorsitzenden, und nicht für sich selbst)
+        html += '<div class="member-admin-actions">';
+        if (!isMe) {
+            // Rollen-Dropdown
+            html += '<select onchange="changeRole(\''+m.id+'\',this.value)" title="Rolle ändern">';
+            html += '<option value="vorsitzender"'+(m.role==='vorsitzender'?' selected':'')+'>🔑 Vorsitzender</option>';
+            html += '<option value="admin"'+(m.role==='admin'?' selected':'')+'>👑 Admin</option>';
+            html += '<option value="mitglied"'+(m.role==='mitglied'?' selected':'')+'>🐝 Mitglied</option>';
+            html += '<option value="gast"'+(m.role==='gast'?' selected':'')+'>🆕 Gast</option>';
+            html += '</select>';
+            // Entfernen
+            html += '<button class="btn btn-xs" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="removeMember(\''+m.id+'\')" title="Mitglied entfernen">✕</button>';
+        } else {
+            html += '<span style="font-size:.72rem;color:#A69580;font-style:italic">Dein Account</span>';
+        }
+        html += '</div>';
+        
+        html += '</div>';
+    });
+    
+    // Statistik am Ende
+    var counts = { vorsitzender: 0, admin: 0, mitglied: 0, gast: 0 };
+    DEMO_MEMBERS.forEach(function(m) { counts[m.role] = (counts[m.role]||0) + 1; });
+    html += '<div style="padding:.75rem;background:#f5f0eb;border-radius:.5rem;font-size:.78rem;color:#7A6652;margin-top:.5rem;display:flex;gap:1rem;flex-wrap:wrap">';
+    html += '<span>🔑 '+counts.vorsitzender+' Vorsitzende</span>';
+    html += '<span>👑 '+counts.admin+' Admins</span>';
+    html += '<span>🐝 '+counts.mitglied+' Mitglieder</span>';
+    html += '<span>🆕 '+counts.gast+' Gäste</span>';
+    html += '<span style="margin-left:auto">Gesamt: <strong>'+DEMO_MEMBERS.length+'</strong></span>';
+    html += '</div>';
+    
+    list.innerHTML = html;
+}
+
+function changeRole(userId, newRole) {
+    var m = DEMO_MEMBERS.find(function(x) { return x.id === userId; });
+    if (!m) return;
+    
+    var oldRole = m.role;
+    if (newRole === 'vorsitzender') {
+        if (!confirm('Achtung: '+m.name+' wird zum Vorsitzenden. Du behältst deine Rolle. Fortfahren?')) {
+            renderMemberAdmin(); // Reset dropdown
+            return;
+        }
+    }
+    
+    m.role = newRole;
+    var r = ROLES[newRole] || ROLES.mitglied;
+    m.color = r.avatarClass;
+    
+    renderMitglieder();
+    toast('✅ '+m.name+' ist jetzt: '+r.label, 'success');
+}
+
+function removeMember(userId) {
+    var m = DEMO_MEMBERS.find(function(x) { return x.id === userId; });
+    if (!m) return;
+    if (m.role === 'vorsitzender') {
+        toast('❌ Der Vorsitzende kann nicht entfernt werden!', 'error');
+        return;
+    }
+    if (!confirm('Wirklich '+m.name+' aus dem Verein entfernen?')) return;
+    
+    var idx = DEMO_MEMBERS.findIndex(function(x) { return x.id === userId; });
+    if (idx > -1) DEMO_MEMBERS.splice(idx, 1);
+    
+    document.getElementById('memberCount').textContent = DEMO_MEMBERS.length;
+    document.querySelectorAll('.stat-card')[2].querySelector('.stat-value').textContent = DEMO_MEMBERS.length;
+    
+    renderMitglieder();
+    toast('✅ '+m.name+' wurde entfernt.', 'success');
 }
 
 // ============================================
