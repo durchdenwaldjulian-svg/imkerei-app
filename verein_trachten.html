@@ -195,10 +195,8 @@
         .pending-card .pending-actions{display:flex;gap:.35rem}
 
         /* Toast */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;font-size:.85rem;z-index:10001;display:none;animation:fadeIn .3s;max-width:90%;text-align:center;box-shadow:0 4px 12px rgba(28,20,16,0.25)}
-        .toast.show{display:block}
-        .toast.success{background:#065f46}
-        .toast.error{background:#991b1b}
+        /* Toast: wird von shared-styles.css gesteuert, z-index erhöht für Modal */
+        .toast{z-index:10001!important}
         @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
         /* === RESPONSIVE === */
@@ -1221,8 +1219,12 @@ function timeAgo(str) {
 function toast(msg, type) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'toast show ' + (type || '');
-    setTimeout(function() { el.className = 'toast'; }, 2500);
+    el.className = 'toast' + (type ? ' ' + type : '');
+    // Kleiner Delay damit transition greift
+    requestAnimationFrame(function() {
+        el.classList.add('show');
+    });
+    setTimeout(function() { el.classList.remove('show'); }, 2500);
 }
 </script>
 
