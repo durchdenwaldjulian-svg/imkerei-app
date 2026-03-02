@@ -368,12 +368,10 @@ function render() {
         html += '<div class="timeline-item"><div class="timeline-dot ' + sammelDotClass + '"></div>';
         html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
         html += '<div><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div>';
-        if (!isPreview) {
-            if (sammelDone) {
-                html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Erledigt am ' + formatDatum(plan.sammelbrut_done) + ' – Klick zum Rückgängig">✅</button>';
-            } else {
-                html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Als erledigt markieren">☐</button>';
-            }
+        if (sammelDone) {
+            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Erledigt am ' + formatDatum(plan.sammelbrut_done) + ' – Klick zum Rückgängig">✅</button>';
+        } else {
+            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Als erledigt markieren">☐</button>';
         }
         html += '</div>';
         if (sammelDone) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.sammelbrut_done) + '</div>';
@@ -385,12 +383,10 @@ function render() {
         html += '<div class="timeline-item"><div class="timeline-dot ' + umlarvenDotClass + '"></div>';
         html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
         html += '<div><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div></div>';
-        if (!isPreview) {
-            if (umlarvenDone) {
-                html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Erledigt am ' + formatDatum(plan.umlarven_done) + ' – Klick zum Rückgängig">✅</button>';
-            } else {
-                html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Als erledigt markieren">☐</button>';
-            }
+        if (umlarvenDone) {
+            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Erledigt am ' + formatDatum(plan.umlarven_done) + ' – Klick zum Rückgängig">✅</button>';
+        } else {
+            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Als erledigt markieren">☐</button>';
         }
         html += '</div>';
         if (umlarvenDone) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.umlarven_done) + '</div>';
@@ -403,12 +399,10 @@ function render() {
         html += '<div class="timeline-item"><div class="timeline-dot ' + zusetzenDotClass + '"></div>';
         html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
         html += '<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div></div>';
-        if (!isPreview) {
-            if (zusetzenDone) {
-                html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Erledigt am ' + formatDatum(plan.zusetzen_done) + ' – Klick zum Rückgängig">✅</button>';
-            } else {
-                html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Als erledigt markieren">☐</button>';
-            }
+        if (zusetzenDone) {
+            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Erledigt am ' + formatDatum(plan.zusetzen_done) + ' – Klick zum Rückgängig">✅</button>';
+        } else {
+            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Als erledigt markieren">☐</button>';
         }
         html += '</div>';
         if (zusetzenDone) html += '<div class="timeline-note" style="color:#10b981">✅ Zuchtplan abgeschlossen am ' + formatDatum(plan.zusetzen_done) + '</div>';
@@ -572,8 +566,6 @@ async function deleteZucht(id) {
 // TOGGLE STEP (Abhaken / Rückgängig)
 // ============================================
 async function toggleStep(planId, field) {
-    if (isPreview) { showToast('Bitte einloggen', 'error'); return; }
-
     var plan = plaene.find(function(p) { return p.id === planId; });
     if (!plan) return;
 
@@ -581,24 +573,26 @@ async function toggleStep(planId, field) {
     var newValue = plan[field] ? null : Date.now();
     plan[field] = newValue;
 
-    // In Supabase speichern
-    var updateData = {};
-    updateData[field] = newValue;
-    try {
-        var res = await sb.from('zuchtplaene').update(updateData).eq('id', planId);
-        if (res.error) {
-            console.error('[Zucht] Toggle Fehler:', res.error);
-            showToast('Fehler: ' + res.error.message, 'error');
-            // Rollback
-            plan[field] = newValue ? null : Date.now();
+    // In Supabase speichern (nur wenn eingeloggt)
+    if (!isPreview) {
+        var updateData = {};
+        updateData[field] = newValue;
+        try {
+            var res = await sb.from('zuchtplaene').update(updateData).eq('id', planId);
+            if (res.error) {
+                console.error('[Zucht] Toggle Fehler:', res.error);
+                showToast('Fehler: ' + res.error.message, 'error');
+                plan[field] = newValue ? null : Date.now();
+                return;
+            }
+        } catch(e) {
+            console.error('[Zucht] Toggle Exception:', e);
+            showToast('Fehler: ' + e.message, 'error');
             return;
         }
-        showToast(newValue ? '✅ Schritt erledigt!' : '↩️ Rückgängig gemacht', newValue ? 'success' : '');
-    } catch(e) {
-        console.error('[Zucht] Toggle Exception:', e);
-        showToast('Fehler: ' + e.message, 'error');
     }
 
+    showToast(newValue ? '✅ Schritt erledigt!' : '↩️ Rückgängig gemacht', newValue ? 'success' : '');
     render();
 }
 
