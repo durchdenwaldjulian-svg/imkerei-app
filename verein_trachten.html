@@ -1050,26 +1050,40 @@ function openMeldungModal() {
             document.getElementById('mLng').value = e.latlng.lng.toFixed(6);
             document.getElementById('mKoordStatus').innerHTML = '⏳ Adresse wird ermittelt...';
             
-            // Reverse Geocoding: Ortsnamen automatisch eintragen
-            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng + '&zoom=14&addressdetails=1')
+            // Standort-Feld direkt mit Koordinaten füllen als Fallback
+            var standortInput = document.getElementById('mStandort');
+            if (!standortInput.value.trim()) {
+                standortInput.value = 'Standort ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+            }
+            
+            // Reverse Geocoding für schöneren Ortsnamen
+            var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng + '&zoom=14&addressdetails=1&accept-language=de';
+            fetch(url, { headers: { 'User-Agent': 'bienenplan.de' } })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                var addr = data.address || {};
+                if (!data || !data.address) throw new Error('no data');
+                var addr = data.address;
                 var parts = [];
-                if (addr.village || addr.town || addr.city) parts.push(addr.village || addr.town || addr.city);
-                if (addr.suburb) parts.push(addr.suburb);
-                if (addr.county) parts.push(addr.county);
-                var ortName = parts.join(', ') || data.display_name || '';
-                
-                var standortInput = document.getElementById('mStandort');
-                if (standortInput && !standortInput.value.trim()) {
-                    // Nur ausfüllen wenn Feld noch leer ist
-                    standortInput.value = ortName;
+                // Ortsteil / Stadtteil
+                if (addr.suburb || addr.quarter || addr.neighbourhood) {
+                    parts.push(addr.suburb || addr.quarter || addr.neighbourhood);
                 }
-                document.getElementById('mKoordStatus').innerHTML = '✅ Position: ' + ortName + ' (' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4) + ')';
+                // Stadt / Gemeinde
+                if (addr.city || addr.town || addr.village || addr.municipality) {
+                    parts.push(addr.city || addr.town || addr.village || addr.municipality);
+                }
+                var ortName = parts.length > 0 ? parts.join(', ') : (data.display_name || '').split(',').slice(0, 2).join(',');
+                
+                if (ortName) {
+                    standortInput.value = ortName;
+                    document.getElementById('mKoordStatus').innerHTML = '✅ ' + ortName;
+                } else {
+                    document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt';
+                }
             })
-            .catch(function() {
-                document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt: ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+            .catch(function(err) {
+                console.log('Geocoding nicht verfügbar:', err);
+                document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt (' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4) + ')';
             });
         });
     }, 250);
