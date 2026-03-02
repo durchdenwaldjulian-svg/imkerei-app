@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#F5A623">
-<meta name="description" content="BienenPlan – Die kostenlose Web-App für Imker. Völker verwalten, Behandlungen planen, Trachten kartieren. Für Hobby- und Profi-Imker.">
+<meta name="description" content="BienenPlan – Die Web-App für Imker. Völker verwalten, Behandlungen planen, Trachten kartieren, Königinnen züchten. Kostenlos starten.">
 <link rel="manifest" href="manifest.json">
 <title>BienenPlan – Deine Imkerei. Digital organisiert.</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -72,7 +72,7 @@ img{max-width:100%;display:block}
 
 /* Hero Visual – App Mockup */
 .hero-visual{position:relative;animation:up .7s ease .15s both}
-.mockup{background:var(--white);border-radius:20px;box-shadow:0 24px 64px rgba(28,20,16,.1),0 0 0 1px rgba(245,166,35,.08);overflow:hidden;transform:rotate(1deg)}
+.mockup{background:var(--white);border-radius:20px;box-shadow:0 24px 64px rgba(28,20,16,.1),0 0 0 1px rgba(245,166,35,.08);overflow:hidden}
 .mockup-bar{background:linear-gradient(135deg,var(--bark),var(--bark-warm));padding:14px 18px;display:flex;align-items:center;gap:8px}
 .mockup-dots{display:flex;gap:6px}
 .mockup-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}
@@ -244,9 +244,9 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 <section class="hero">
   <div class="hero-wrap">
     <div class="hero-text">
-      <div class="pill"><i></i> 100 % kostenlos</div>
+      <div class="pill"><i></i> Kostenlos starten – jederzeit upgraden</div>
       <h1>Deine Imkerei.<br><em>Digital organisiert.</em></h1>
-      <p>Völker verwalten, Behandlungen planen, Trachten kartieren, Ernten dokumentieren und Königinnen züchten – alles in einer App. Kostenlos.</p>
+      <p>Völker verwalten, Behandlungen planen, Trachten kartieren, Ernten dokumentieren und Königinnen züchten – alles in einer Web-App. Starte kostenlos.</p>
       <div class="hero-btns">
         <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🍯</a>
         <a href="#features" class="btn-ghost">Features ansehen</a>
@@ -425,7 +425,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
           <li>Datenexport & Backup</li>
           <li>E-Mail-Erinnerungen</li>
         </ul>
-        <a href="app.html#register" class="btn-plan filled">Jetzt upgraden →</a>
+        <a href="app.html#register" class="btn-plan filled">Pro starten →</a>
       </div>
       
       <!-- MEISTER -->
@@ -462,24 +462,28 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
     <h2 class="section-title rv">Häufige Fragen</h2>
     <div class="faq-list">
       <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Ist das wirklich komplett kostenlos?<span class="arr">+</span></div>
-        <div class="faq-a">Ja! BienenPlan ist und bleibt kostenlos – alle Features, keine Limits, kein Abo. Das Projekt wird aus Leidenschaft für die Imkerei betrieben.</div>
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Ist der Starter-Plan wirklich dauerhaft kostenlos?<span class="arr">+</span></div>
+        <div class="faq-a">Ja! Der Starter-Plan ist und bleibt kostenlos – ohne Zeitlimit. Du kannst ihn so lange nutzen, wie du möchtest. Wenn du mehr Völker oder erweiterte Features brauchst, kannst du jederzeit upgraden.</div>
       </div>
       <div class="faq-item rv">
         <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Muss ich etwas installieren?<span class="arr">+</span></div>
-        <div class="faq-a">Nein. BienenPlan läuft komplett im Browser – auf Handy, Tablet und PC. Du kannst es aber auch als Web-App auf deinem Homescreen speichern.</div>
+        <div class="faq-a">Nein. BienenPlan läuft komplett im Browser – auf Handy, Tablet und PC. Du kannst es aber auch als Web-App auf deinem Homescreen speichern, dann fühlt es sich an wie eine echte App.</div>
+      </div>
+      <div class="faq-item rv">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich jederzeit kündigen?<span class="arr">+</span></div>
+        <div class="faq-a">Absolut. Keine Vertragsbindung, keine Kündigungsfrist. Du kannst jederzeit kündigen und dein Account wechselt zum kostenlosen Starter-Plan. Deine Daten bleiben erhalten.</div>
       </div>
       <div class="faq-item rv">
         <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Sind meine Daten sicher?<span class="arr">+</span></div>
-        <div class="faq-a">Deine Daten werden verschlüsselt auf europäischen Servern gespeichert. Nur du hast Zugriff auf deine Imkerei-Daten. Wir verkaufen keine Daten.</div>
+        <div class="faq-a">Deine Daten werden verschlüsselt auf europäischen Servern gespeichert (DSGVO-konform). Nur du hast Zugriff auf deine Imkerei-Daten. Wir verkaufen keine Daten an Dritte.</div>
       </div>
       <div class="faq-item rv">
         <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Wie funktioniert die Trachtkarte?<span class="arr">+</span></div>
-        <div class="faq-a">Du erfasst Trachten mit GPS-Position. Wenn du "Teilen" aktivierst, erscheint sie auf der öffentlichen Karte und hilft anderen Imkern in deiner Region. Die Karte ist auch ohne Account einsehbar.</div>
+        <div class="faq-a">Du erfasst Trachten mit GPS-Position. Wenn du „Teilen" aktivierst, erscheint sie auf der öffentlichen Karte und hilft anderen Imkern in deiner Region. Die Karte ist auch ohne Account einsehbar.</div>
       </div>
       <div class="faq-item rv">
         <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich meine Daten exportieren?<span class="arr">+</span></div>
-        <div class="faq-a">Ja. Du kannst ein Bestandsbuch als PDF generieren und ein komplettes Backup deiner Daten als JSON erstellen und wiederherstellen.</div>
+        <div class="faq-a">Ja. Du kannst ein veterinäramt-konformes Bestandsbuch als PDF generieren und ein komplettes Backup deiner Daten erstellen und wiederherstellen.</div>
       </div>
     </div>
   </div>
@@ -500,7 +504,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
     <div class="footer-top">
       <div class="footer-brand">
         <div class="logo"><span>🐝</span> BienenPlan</div>
-        <p>Die kostenlose Web-App für moderne Imker. Gebaut mit Liebe zu Bienen und Technologie.</p>
+        <p>Die Web-App für moderne Imker. Gebaut mit Liebe zu Bienen und Technologie.</p>
       </div>
       <div class="footer-col">
         <h4>Produkt</h4>
