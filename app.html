@@ -378,7 +378,6 @@
 <script>
 // Hash früh speichern bevor Supabase Auth ihn entfernt
 var _startPageHash = window.location.hash ? window.location.hash.replace('#','') : null;
-console.log('🐝 INDEX VERSION: 27-Feb-2026 Session13 Packliste-Fix');
 
 // ============================================
 // AUTH FUNCTIONS (app.html specific)
@@ -575,7 +574,6 @@ async function startApp() {
     trachtkalenderMod.trachten = (results[5].data || []).map(function(r) {
         return { id: r.id, typ: r.typ, standort: r.standort, beginn: r.beginn, ende: r.ende, ertrag: parseFloat(r.ertrag)||0, notizen: r.notizen, lat: r.lat||null, lng: r.lng||null, shared: r.shared||false, created: r.created_at };
     });
-    console.log('🌸 Trachten geladen:', trachtkalenderMod.trachten.length, trachtkalenderMod.trachten.map(function(t){return t.id+' ('+t.typ+')';}).join(', '));
     if (results[5].error) console.error('❌ Trachten Lade-Fehler:', results[5].error);
     behandlungMod.behandlungen = (results[6].data || []).map(function(r) {
         return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
@@ -584,8 +582,6 @@ async function startApp() {
         return { id: r.id, kategorie: r.kategorie, name: r.name, checked: r.checked, menge: r.menge, istSchnell: r.ist_schnell, schnellTyp: r.schnell_typ };
     });
     trachtkalenderMod.ausgeblendete = (results[8].data || []).map(function(r) { return r.tracht_name; });
-    console.log('📋 Geladene ausgeblendete Trachten:', trachtkalenderMod.ausgeblendete.length);
-    console.log('📋 Geladene ausgeblendete Trachten:', trachtkalenderMod.ausgeblendete.length);
     
     // If packliste is empty for new user, create defaults
     if (packlisteMod.items.length === 0) {
@@ -618,7 +614,6 @@ async function startApp() {
             var meineIds = trachtkalenderMod.trachten.map(function(t){ return t.id; });
             var verwaiste = sharedIds.filter(function(sid){ return meineIds.indexOf(sid) === -1; });
             if (verwaiste.length > 0) {
-                console.log('🧹 Räume '+verwaiste.length+' verwaiste geteilte Trachten auf:', verwaiste);
                 for (var i=0; i<verwaiste.length; i++) {
                     await sb.from('trachten_shared').delete().eq('id', verwaiste[i]);
                 }
@@ -662,7 +657,6 @@ const autoBackup = {
             backups.unshift(backup);
             if (backups.length > 10) backups = backups.slice(0, 10);
             localStorage.setItem('imkerei_backups', JSON.stringify(backups));
-            console.log('✅ Auto-Backup erstellt:', grund);
             return true;
         } catch(e) {
             console.error('Backup Fehler:', e);
@@ -869,16 +863,10 @@ const app={
         if (currentUser) {
             var uid = currentUser.id;
             var state = JSON.parse(JSON.stringify(this.uiState));
-            console.log('[toggleUI] ➡️ Update profiles SET ui_state =', state, 'WHERE id =', uid);
             sb.from('profiles').update({ui_state: state}).eq('id', uid).select()
-                .then(function(res){ 
-                    console.log('[toggleUI] ⬅️ Response data:', res.data, 'error:', res.error, 'count:', res.count, 'status:', res.status);
+                .then(function(res){
                     if(res.error) console.error('[toggleUI] ❌ Fehler:', res.error.message);
-                    else if(!res.data || res.data.length === 0) console.warn('[toggleUI] ⚠️ Kein Datensatz aktualisiert! Falsche ID oder RLS blockiert.');
-                    else console.log('[toggleUI] ✅ Gespeichert:', res.data[0].ui_state);
                 });
-        } else {
-            console.warn('[toggleUI] ⚠️ currentUser ist null!');
         }
         this.render();
     },
@@ -1729,7 +1717,7 @@ const app={
             '<div style="'+(app.uiState.packliste?'':'display:none;')+'margin-top:.75rem">'+
             detailHtml+
             '<div style="margin-top:.5rem;text-align:center">'+
-            '<button class="btn btn-blue btn-sm" style="font-size:.8rem;padding:.375rem .75rem" onclick="app.navigate(\'packliste\')">📋 Volle Packliste</button>'+
+            '<button class="btn btn-blue btn-sm" style="font-size:.8rem;padding:.375rem .75rem" onclick="window.location.href=\'packliste.html\'">📋 Volle Packliste</button>'+
             '</div>'+
             '</div>'+
             '</div>';
@@ -1833,7 +1821,7 @@ const app={
     rErnte(){
         const self = this;
         const gesamtErtrag = this.data.voelker.reduce(function(s,v){return s + (v.honigertrag || 0);}, 0);
-        const trachtErtrag = this.data.trachten ? this.data.trachten.reduce(function(s,t){return s + (t.ertrag || 0);}, 0) : 0;
+        const trachtErtrag = trachtkalenderMod.trachten ? trachtkalenderMod.trachten.reduce(function(s,t){return s + (t.ertrag || 0);}, 0) : 0;
         
         // Group voelker by standort
         var standortMap = {};
@@ -2115,7 +2103,7 @@ const app={
         '<div class="card">'+
         '<h3>📋 Daten als JSON exportieren</h3>'+
         '<p style="font-size:.9rem;color:#7A6652;margin:.75rem 0">Exportiere alle deine Imkerei-Daten als JSON-Datei zur Sicherung.</p>'+
-        '<button class="btn btn-primary btn-block" onclick="(function(){var d=JSON.stringify(app.data,null,2);var b=new Blob([d],{type:\'application/json\'});var a=document.createElement(\'a\');a.href=URL.createObjectURL(b);a.download=\'imkerei_backup_\'+new Date().toISOString().split(\'T\')[0]+\'.json\';a.click();app.toast(\'✓ Export erfolgreich!\',\'success\');})()">📥 Daten exportieren (JSON)</button>'+
+        '<button class="btn btn-primary btn-block" onclick="(function(){var d=JSON.stringify({standorte:app.data.standorte,voelker:app.data.voelker,aufgaben:app.data.aufgaben,kosten:app.data.kosten,profil:app.data.profil,trachten:trachtkalenderMod.trachten||[],behandlungen:behandlungMod.behandlungen||[],zuchtplaene:zuchtplanMod.plaene||[],packliste:packlisteMod.items||[]},null,2);var b=new Blob([d],{type:\'application/json\'});var a=document.createElement(\'a\');a.href=URL.createObjectURL(b);a.download=\'imkerei_backup_\'+new Date().toISOString().split(\'T\')[0]+\'.json\';a.click();app.toast(\'✓ Export erfolgreich!\',\'success\');})()">📥 Daten exportieren (JSON)</button>'+
         '</div>'+
         '<div class="card">'+
         '<h3>📊 Statistik-Übersicht</h3>'+
@@ -2459,7 +2447,6 @@ const packlisteMod = {
             var row = {id:item.id, user_id:currentUser.id, kategorie:item.kategorie, name:item.name, checked:item.checked, menge:item.menge||1, ist_schnell:item.istSchnell||false, schnell_typ:item.schnellTyp||null};
             sb.from('packliste').upsert(row).select().then(function(res){
                 if(res.error) console.error('Packliste Toggle Fehler:', res.error);
-                else console.log('Packliste Toggle OK:', item.name, '→', item.checked);
             });
             app.render();
         }
@@ -2578,19 +2565,12 @@ behandlungMod.init();
         try {
             // setSession oder getSession verarbeitet den Hash automatisch
             var sessionResult = await sb.auth.getSession();
-            console.log('Recovery Session:', sessionResult);
         } catch(e) {
-            console.log('Recovery getSession:', e);
+            console.warn('Recovery getSession:', e);
         }
         
         // Kurz warten damit Supabase den Token verarbeiten kann
         await new Promise(function(r){ setTimeout(r, 500); });
-        
-        // Nochmal Session prüfen
-        var checkSession = await sb.auth.getSession();
-        if (checkSession.data.session) {
-            console.log('Recovery Session OK');
-        }
         
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('authScreen').style.display = 'block';
@@ -2675,7 +2655,6 @@ document.addEventListener('click', function(e){
     var el = e.target.closest('[data-toggle-ui]');
     if (el) {
         var key = el.getAttribute('data-toggle-ui');
-        console.log('[EVENT] Klick auf data-toggle-ui:', key);
         app.toggleUI(key);
     }
 });

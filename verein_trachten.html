@@ -657,7 +657,6 @@ async function init() {
         if (!session) {
             // Preview-Modus mit Demo-Daten
             isPreview = true;
-            console.log('🔓 Preview-Modus – Demo-Daten');
             loadDemoData();
             return;
         }
@@ -699,13 +698,12 @@ async function init() {
         var profileMap = {};
         
         if (userIds.length > 0) {
-            for (var i = 0; i < userIds.length; i++) {
-                var { data: profData } = await sb.from('profiles')
-                    .select('id, email, name')
-                    .eq('id', userIds[i])
-                    .maybeSingle();
-                if (profData) profileMap[userIds[i]] = { email: profData.email, name: profData.name };
-            }
+            var { data: allProfiles } = await sb.from('profiles')
+                .select('id, email, name')
+                .in('id', userIds);
+            (allProfiles || []).forEach(function(p) {
+                profileMap[p.id] = { email: p.email, name: p.name };
+            });
         }
 
         mitglieder = (mitgliederData || []).map(function(m) {
@@ -1094,7 +1092,7 @@ function openMeldungModal() {
                 }
             })
             .catch(function(err) {
-                console.log('Geocoding nicht verfügbar:', err);
+                console.warn('Geocoding nicht verfügbar:', err);
                 document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt (' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4) + ')';
             });
         });
@@ -1259,7 +1257,7 @@ function showDetail(id) {
     html += '<button class="btn btn-primary btn-sm" onclick="addComment(\'' + m.id + '\')">Senden</button>';
     html += '</div>';
 
-    document.getElementById('detailContent').innerHTML = html;
+    document.getElementById('detailBody').innerHTML = html;
     document.getElementById('detailModal').classList.add('active');
 }
 

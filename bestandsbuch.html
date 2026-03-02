@@ -292,8 +292,6 @@ async function loadData() {
     if (bhRes.error) console.error('[Bestandsbuch] Behandlungen Error:', bhRes.error);
     if (prRes.error) console.error('[Bestandsbuch] Profile Error:', prRes.error);
     
-    console.log('[Bestandsbuch] Raw behandlungen response:', bhRes);
-    
     standorte = (stRes.data || []).map(r => ({ id:r.id, name:r.name, notizen:r.notizen, lat:r.lat, lng:r.lng }));
     voelker = (vkRes.data || []).map(r => ({ id:r.id, standortId:r.standort_id, name:r.name, status:r.status }));
     behandlungen = (bhRes.data || []).map(r => ({
@@ -306,8 +304,6 @@ async function loadData() {
         behandler:r.behandler||'', created:r.created_at
     }));
     profile = prRes.data || null;
-    console.log('[Bestandsbuch] Geladen:', standorte.length, 'Standorte,', voelker.length, 'Völker,', behandlungen.length, 'Behandlungen');
-    if (behandlungen.length > 0) console.log('[Bestandsbuch] Erste Behandlung:', JSON.stringify(behandlungen[0]));
 }
 
 // ============================================

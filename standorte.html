@@ -561,7 +561,7 @@ function initMiniMaps() {
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(map);
                     L.marker([s.lat, s.lng]).addTo(map);
                     setTimeout(function(){ map.invalidateSize(); }, 300);
-                } catch(e) { console.log('Minimap Error:', e); }
+                } catch(e) { console.warn('Minimap Error:', e); }
             }
         });
     }, 150);

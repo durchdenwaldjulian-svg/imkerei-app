@@ -174,7 +174,6 @@ async function erstelleVollBackup(grund) {
         backups.unshift(backup);
         if (backups.length > 10) backups = backups.slice(0, 10);
         localStorage.setItem('imkerei_backups', JSON.stringify(backups));
-        console.log('✅ Vollständiges Backup erstellt:', grund);
         return true;
     } catch(e) {
         console.error('❌ Backup Fehler:', e);
@@ -223,9 +222,8 @@ window.deleteAllMyTrachten = deleteAllMyTrachten;
         var sess = await authSb.auth.getSession();
         if (sess.data.session) {
             loggedInUserId = sess.data.session.user.id;
-            console.log('✅ Eingeloggt als:', loggedInUserId);
         }
-    } catch(e) { console.log('Nicht eingeloggt'); }
+    } catch(e) { /* not logged in */ }
     // Jetzt erst Trachten laden (loggedInUserId ist gesetzt)
     loadTrachten();
 })();
@@ -329,7 +327,10 @@ function applyFilters() {
     
     var filtered = allTrachten.filter(function(t) {
         if (typ && t.typ !== typ) return false;
-        if (jahr && t.jahr != jahr) return false;
+        if (jahr) {
+            var tJahr = t.jahr || (t.beginn ? t.beginn.substring(0, 4) : null);
+            if (tJahr != jahr) return false;
+        }
         if (status && getStatus(t).key !== status) return false;
         return true;
     });
@@ -347,8 +348,8 @@ function buildFilters(trachten) {
         typSelect.appendChild(opt);
     });
     
-    // Jahr filter
-    var jahre = [...new Set(trachten.map(function(t){return t.jahr;}))].sort().reverse();
+    // Jahr filter (aus beginn-Datum extrahieren falls jahr nicht gesetzt)
+    var jahre = [...new Set(trachten.map(function(t){return t.jahr || (t.beginn ? t.beginn.substring(0, 4) : null);}).filter(Boolean))].sort().reverse();
     var jahrSelect = document.getElementById('filterJahr');
     jahre.forEach(function(j) {
         var opt = document.createElement('option');

@@ -6,15 +6,15 @@
 // ============================================
 
 (function(){
-    // Warte bis Supabase und Auth geladen sind
-    function initPresence() {
-        if (typeof sb === 'undefined' || typeof currentUser === 'undefined') {
-            setTimeout(initPresence, 500);
-            return;
-        }
-        // Warte bis currentUser gesetzt ist (Auth abgeschlossen)
-        if (!currentUser) {
-            setTimeout(initPresence, 1000);
+    var retryCount = 0;
+    var maxRetries = 10;
+
+    function startPresence() {
+        if (typeof sb === 'undefined' || typeof currentUser === 'undefined' || !currentUser) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+                setTimeout(startPresence, 1000);
+            }
             return;
         }
 
@@ -35,7 +35,8 @@
                 'assistent.html': 'Assistent',
                 'bestandsbuch.html': 'Bestandsbuch',
                 'forum.html': 'Forum',
-                'trachtkarte.html': 'Trachtkarte'
+                'trachtkarte.html': 'Trachtkarte',
+                'verein_trachten.html': 'Vereins-Trachten'
             };
             var seitenLabel = seitenNamen[seite] || seite;
 
@@ -57,8 +58,12 @@
                 userName = currentUser.email.split('@')[0];
             }
 
-            var presenceChannel = sb.channel('online-users');
-            
+            // Globalen presenceChannel aus config.js nutzen falls vorhanden, sonst neuen erstellen
+            if (typeof presenceChannel !== 'undefined' && presenceChannel) {
+                presenceChannel.untrack();
+            }
+            presenceChannel = sb.channel('online-users');
+
             presenceChannel.subscribe(function(status) {
                 if (status === 'SUBSCRIBED') {
                     presenceChannel.track({
@@ -72,12 +77,12 @@
 
             // Bei Seitenwechsel (Hash-Change) aktualisieren
             window.addEventListener('hashchange', function() {
-                var hash = window.location.hash.replace('#','');
+                var h = window.location.hash.replace('#','');
                 var hashNamen = {
                     'heute': 'Heute', 'aufgaben': 'Aufgaben', 'kosten': 'Kosten',
                     'einstellungen': 'Einstellungen', 'wetter': 'Wetter'
                 };
-                var neueSeite = hashNamen[hash] || seitenLabel;
+                var neueSeite = hashNamen[h] || seitenLabel;
                 presenceChannel.track({
                     user_id: currentUser.id,
                     name: userName,
@@ -90,13 +95,11 @@
             window.addEventListener('beforeunload', function() {
                 presenceChannel.untrack();
             });
-
-            console.log('🟢 Presence aktiv: ' + userName + ' auf ' + seitenLabel);
         } catch(e) {
             console.warn('Presence-Fehler:', e);
         }
     }
 
     // Start nach kurzer Verzögerung (Auth muss erst laden)
-    setTimeout(initPresence, 2000);
+    setTimeout(startPresence, 2000);
 })();

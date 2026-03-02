@@ -186,17 +186,12 @@ const DEMO_PLAENE = [
 // INIT
 // ============================================
 async function init() {
-    console.log('[Zucht] Init startet...');
     try {
-        console.log('[Zucht] Prüfe Auth...');
         var user = await checkAuth({preview: true});
-        console.log('[Zucht] Auth Result:', user);
         if (!user) {
-            console.log('[Zucht] Kein User → Preview-Modus');
             isPreview = true;
             plaene = DEMO_PLAENE;
         } else {
-            console.log('[Zucht] User gefunden:', user.id);
             await loadFromSupabase();
         }
     } catch(e) {
@@ -207,14 +202,11 @@ async function init() {
 
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    console.log('[Zucht] Render mit', plaene.length, 'Plänen');
     render();
 }
 
 async function loadFromSupabase() {
-    console.log('[Zucht] Lade aus Supabase für User:', currentUser.id);
     var res = await sb.from('zuchtplaene').select('*').eq('user_id', currentUser.id);
-    console.log('[Zucht] SELECT Result:', res);
     if (res.error) {
         console.error('[Zucht] ❌ SELECT Fehler:', res.error);
         showToast('Ladefehler: ' + res.error.message, 'error');
@@ -232,7 +224,6 @@ async function loadFromSupabase() {
             created: new Date(r.created_at).getTime()
         };
     });
-    console.log('[Zucht] Geladene Pläne:', plaene.length);
 }
 
 // ============================================
@@ -453,9 +444,6 @@ async function saveZucht() {
     var uTs = new Date(document.getElementById('zuchtUmlarven').value).getTime();
     var zTs = new Date(document.getElementById('zuchtZusetzen').value).getTime();
 
-    console.log('[Zucht] User ID:', currentUser.id);
-    console.log('[Zucht] Speichere:', {name, sammelbrut: sTs, umlarven: uTs, zusetzen: zTs, tageUmlarven, tageZusetzen});
-
     var dbData = {
         user_id: currentUser.id,
         name: name,
@@ -470,9 +458,7 @@ async function saveZucht() {
 
     try {
         if (editId) {
-            console.log('[Zucht] UPDATE id:', editId);
             var res = await sb.from('zuchtplaene').update(dbData).eq('id', editId);
-            console.log('[Zucht] UPDATE Result:', res);
             if (res.error) { 
                 console.error('[Zucht] ❌ UPDATE Fehler:', res.error); 
                 showToast('Fehler: ' + res.error.message, 'error'); 
@@ -481,9 +467,7 @@ async function saveZucht() {
             showToast('✅ Zuchtplan aktualisiert!', 'success');
         } else {
             dbData.id = crypto.randomUUID ? crypto.randomUUID() : 'zucht_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            console.log('[Zucht] INSERT mit id:', dbData.id);
             var res = await sb.from('zuchtplaene').insert(dbData);
-            console.log('[Zucht] INSERT Result:', res);
             if (res.error) { 
                 console.error('[Zucht] ❌ INSERT Fehler:', res.error); 
                 showToast('Fehler: ' + res.error.message, 'error'); 
@@ -493,9 +477,7 @@ async function saveZucht() {
         }
 
         // Reload aus Supabase
-        console.log('[Zucht] Lade Pläne neu aus Supabase...');
         await loadFromSupabase();
-        console.log('[Zucht] Pläne nach Reload:', plaene.length, plaene);
         closeModal();
         render();
     } catch(e) {

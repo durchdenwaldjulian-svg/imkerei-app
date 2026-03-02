@@ -27,10 +27,8 @@ const EXTERNAL_CACHE = [
 
 // Install: Cache App-Shell
 self.addEventListener('install', event => {
-  console.log('[SW] Installing Imkerei Planer v1...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching App-Shell');
       // Cache local files
       return cache.addAll(APP_SHELL).catch(err => {
         console.warn('[SW] Some app-shell files failed to cache:', err);
@@ -43,13 +41,11 @@ self.addEventListener('install', event => {
 
 // Activate: Alte Caches löschen
 self.addEventListener('activate', event => {
-  console.log('[SW] Activating...');
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
         keys.filter(key => key !== CACHE_NAME)
             .map(key => {
-              console.log('[SW] Deleting old cache:', key);
               return caches.delete(key);
             })
       );

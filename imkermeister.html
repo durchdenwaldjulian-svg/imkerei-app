@@ -578,14 +578,6 @@ async function loadAdmin() {
         knownIds.push(uid);
     });
     
-    console.log('=== IMKERMEISTER DEBUG ===');
-    console.log('Profiles geladen:', profiles.length, profiles.map(function(p){return {id:p.id, user_id:p.user_id, email:p.email};}));
-    console.log('allUsers:', allUsers.length, allUsers.map(function(u){return {id:u.id, email:u.email, voelker:u.voelker};}));
-    console.log('Völker user_ids:', [...new Set(allVoelkerRaw.map(function(v){return v.user_id;}))]);
-    console.log('Standorte user_ids:', [...new Set(allStandorteRaw.map(function(s){return s.user_id;}))]);
-    console.log('Behandlungen user_ids:', [...new Set(allBehandlungenRaw.map(function(b){return b.user_id;}))]);
-    console.log('========================');
-    
     allData = {
         totalStandorte: allStandorteRaw.length,
         totalVoelker: allVoelkerRaw.length,
@@ -1028,20 +1020,16 @@ function startPresenceListener() {
     onlineChannel = realtimeClient.channel('online-users');
     
     onlineChannel.on('presence', { event: 'sync' }, function() {
-        console.log('[Imkermeister Presence] Sync event!', onlineChannel.presenceState());
         renderOnlineUsers();
     });
-    
+
     onlineChannel.on('presence', { event: 'join' }, function(key, newPresences) {
-        console.log('[Imkermeister Presence] Join:', key, newPresences);
     });
-    
+
     onlineChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
-        console.log('[Imkermeister Presence] Leave:', key, leftPresences);
     });
-    
+
     onlineChannel.subscribe(function(status) {
-        console.log('[Imkermeister Presence] Subscribe status:', status);
     });
 }
 

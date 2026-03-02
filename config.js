@@ -64,7 +64,7 @@ async function checkAuth(opts) {
     
     if (opts.preview) {
         // Preview-Modus: kein Redirect, null zurückgeben
-        console.log('🔓 Preview-Modus – Demo-Daten werden geladen');
+        // Preview-Modus
         return null;
     }
     
@@ -83,14 +83,7 @@ function showToast(msg, typ, dauer) {
     if (!el) return;
     el.textContent = msg;
     el.className = 'toast show' + (typ ? ' ' + typ : '');
-    
-    // Für externe Seiten mit anderem Toast-System
-    if (el.style.display !== undefined && !el.classList.contains('show')) {
-        el.style.display = 'block';
-        setTimeout(function(){ el.style.display = 'none'; }, dauer);
-    } else {
-        setTimeout(function(){ el.classList.remove('show'); }, dauer);
-    }
+    setTimeout(function(){ el.classList.remove('show'); }, dauer);
 }
 
 // ============================================
@@ -111,19 +104,15 @@ var presenceChannel = null;
 
 function initPresence(user) {
     if (!user || presenceChannel) return;
-    console.log('[Presence] Starte für:', user.email);
     var pageName = document.title || location.pathname.split('/').pop() || 'Unbekannt';
     presenceChannel = sb.channel('online-users', { config: { presence: { key: user.id } } });
     presenceChannel.subscribe(function(status) {
-        console.log('[Presence] Subscribe status:', status);
         if (status === 'SUBSCRIBED') {
             presenceChannel.track({
                 user_id: user.id,
                 email: user.email,
                 page: pageName,
                 online_at: new Date().toISOString()
-            }).then(function(res) {
-                console.log('[Presence] Track result:', res);
             });
         }
     });
