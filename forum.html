@@ -445,6 +445,9 @@ function renderThread() {
     html += '<div class="post-actions">';
     html += '<button class="post-action" onclick="likePost(\'' + b.id + '\')">❤️ ' + (b.likes || 0) + '</button>';
     html += '<span class="post-action">💬 ' + (b.antworten_count || 0) + ' Antworten</span>';
+    if (!isPreview && currentUser && b.user_id === currentUser.id) {
+        html += '<button class="post-action" style="color:#ef4444;margin-left:auto" onclick="deleteBeitrag(\'' + b.id + '\')">🗑️ Löschen</button>';
+    }
     html += '</div>';
     html += '</div>';
 
@@ -464,6 +467,9 @@ function renderThread() {
             html += '<div class="post-inhalt">' + esc(a.inhalt) + '</div>';
             html += '<div class="post-actions">';
             html += '<button class="post-action" onclick="likeAntwort(\'' + a.id + '\')">❤️ ' + (a.likes || 0) + '</button>';
+            if (!isPreview && currentUser && a.user_id === currentUser.id) {
+                html += '<button class="post-action" style="color:#ef4444;margin-left:auto" onclick="deleteAntwort(\'' + a.id + '\',\'' + b.id + '\')">🗑️ Löschen</button>';
+            }
             html += '</div>';
             html += '</div>';
         });
@@ -613,6 +619,53 @@ async function submitReply(beitragId) {
     } else {
         showToast('Fehler: ' + res.error.message, 'error');
     }
+}
+
+// ============================================
+// LÖSCHEN
+// ============================================
+async function deleteBeitrag(id) {
+    if (isPreview) return;
+    if (!confirm('Diesen Beitrag und alle Antworten wirklich löschen?')) return;
+
+    // Erst Likes der Antworten löschen
+    var antw = antworten.filter(function(a) { return a.beitrag_id === id; });
+    for (var i = 0; i < antw.length; i++) {
+        await sb.from('forum_likes').delete().eq('antwort_id', antw[i].id);
+    }
+    // Antworten löschen
+    await sb.from('forum_antworten').delete().eq('beitrag_id', id);
+    // Likes des Beitrags löschen
+    await sb.from('forum_likes').delete().eq('beitrag_id', id);
+    // Beitrag löschen
+    var res = await sb.from('forum_beitraege').delete().eq('id', id);
+
+    if (res.error) {
+        showToast('Fehler: ' + res.error.message, 'error');
+        return;
+    }
+
+    showToast('Beitrag gelöscht ✅', 'success');
+    await loadFromSupabase();
+    goToKategorien();
+}
+
+async function deleteAntwort(id, beitragId) {
+    if (isPreview) return;
+    if (!confirm('Diese Antwort wirklich löschen?')) return;
+
+    // Likes der Antwort löschen
+    await sb.from('forum_likes').delete().eq('antwort_id', id);
+    // Antwort löschen
+    var res = await sb.from('forum_antworten').delete().eq('id', id);
+
+    if (res.error) {
+        showToast('Fehler: ' + res.error.message, 'error');
+        return;
+    }
+
+    showToast('Antwort gelöscht ✅', 'success');
+    openThread(beitragId);
 }
 
 // ============================================
