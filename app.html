@@ -470,7 +470,9 @@ async function doRegister() {
 async function doForgotPassword() {
     var email = document.getElementById('forgotEmail').value.trim();
     if (!email) { showAuthError('Bitte E-Mail eingeben'); return; }
-    var result = await sb.auth.resetPasswordForEmail(email);
+    var result = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/app.html'
+    });
     if (result.error) { showAuthError(result.error.message); return; }
     showAuthError(''); 
     document.getElementById('authError').style.display = 'block';
@@ -2541,10 +2543,37 @@ behandlungMod.init();
 // ============================================
 (async function() {
     // Check if this is a password recovery link
+    // Supabase v2 kann Token als Hash (#type=recovery) oder als Query-Parameter (?code=...) schicken
     var hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
-        // Supabase wird den Token automatisch verarbeiten
-        // onAuthStateChange feuert PASSWORD_RECOVERY
+    var params = new URLSearchParams(window.location.search);
+    var hashParams = new URLSearchParams(hash.replace('#', ''));
+    
+    var isRecoveryHash = hash && hash.includes('type=recovery');
+    var isRecoveryCode = params.get('code') && (params.get('type') === 'recovery' || hashParams.get('type') === 'recovery');
+    var hasCode = params.get('code');
+    
+    // PKCE Flow: Code gegen Session tauschen
+    if (hasCode) {
+        try {
+            var exchangeResult = await sb.auth.exchangeCodeForSession(params.get('code'));
+            if (exchangeResult.error) {
+                console.error('Code Exchange Fehler:', exchangeResult.error);
+            } else {
+                // Prüfe ob es ein Recovery war
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'block';
+                document.querySelector('.nav').style.display = 'none';
+                document.querySelector('.footer').style.display = 'none';
+                showAuthTab('reset');
+                // URL aufräumen
+                window.history.replaceState(null, '', window.location.pathname);
+                return;
+            }
+        } catch(e) { console.error('Code Exchange Error:', e); }
+    }
+    
+    if (isRecoveryHash) {
+        // Hash-basierter Recovery Flow
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('authScreen').style.display = 'block';
         document.querySelector('.nav').style.display = 'none';
