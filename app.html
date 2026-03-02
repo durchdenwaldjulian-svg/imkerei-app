@@ -2574,11 +2574,31 @@ behandlungMod.init();
     
     if (isRecoveryHash) {
         // Hash-basierter Recovery Flow
+        // Supabase muss den Token aus dem Hash verarbeiten und eine Session erstellen
+        try {
+            // setSession oder getSession verarbeitet den Hash automatisch
+            var sessionResult = await sb.auth.getSession();
+            console.log('Recovery Session:', sessionResult);
+        } catch(e) {
+            console.log('Recovery getSession:', e);
+        }
+        
+        // Kurz warten damit Supabase den Token verarbeiten kann
+        await new Promise(function(r){ setTimeout(r, 500); });
+        
+        // Nochmal Session prüfen
+        var checkSession = await sb.auth.getSession();
+        if (checkSession.data.session) {
+            console.log('Recovery Session OK');
+        }
+        
         document.getElementById('loadingOverlay').style.display = 'none';
         document.getElementById('authScreen').style.display = 'block';
         document.querySelector('.nav').style.display = 'none';
         document.querySelector('.footer').style.display = 'none';
         showAuthTab('reset');
+        // URL aufräumen (Token aus Hash entfernen)
+        window.history.replaceState(null, '', window.location.pathname);
         return;
     }
     
