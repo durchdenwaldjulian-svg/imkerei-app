@@ -132,7 +132,7 @@ img{max-width:100%;display:block}
 
 /* === PRICING === */
 .pricing{position:relative;z-index:1;padding:100px 32px}
-.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;align-items:start}
+.price-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:1200px;margin:0 auto;align-items:start}
 .price-card{background:var(--white);border-radius:20px;padding:36px 28px;border:1px solid rgba(245,166,35,.08);box-shadow:0 2px 8px rgba(28,20,16,.04);text-align:center;position:relative;transition:all .25s}
 .price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,20,16,.08)}
 .price-card.popular{border:2px solid var(--honey);box-shadow:0 8px 32px rgba(245,166,35,.15);transform:scale(1.03);z-index:2}
@@ -159,6 +159,19 @@ img{max-width:100%;display:block}
 .guarantee span{font-size:1.8rem;flex-shrink:0}
 .guarantee p{font-size:.85rem;color:var(--forest);line-height:1.5}
 .guarantee strong{color:var(--bark)}
+.plan-hint{font-size:.78rem;color:var(--text-soft);font-style:italic;margin-top:12px;line-height:1.5}
+
+/* === HIGHLIGHT ALT (Vereins-Block) === */
+.highlight-alt{position:relative;z-index:1;padding:80px 32px;background:linear-gradient(135deg,var(--bark-warm) 0%,var(--bark-mid) 100%);overflow:hidden}
+.highlight-alt::before{content:'';position:absolute;top:-30%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(245,166,35,.06),transparent 70%);border-radius:50%}
+.highlight-alt .hl-wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.highlight-alt .hl-text .tag{background:rgba(245,166,35,.15);color:var(--honey)}
+.highlight-alt .hl-text h2{color:var(--white);font-size:clamp(1.8rem,3.5vw,2.5rem);margin-bottom:16px;font-weight:900}
+.highlight-alt .hl-text p{color:rgba(255,255,255,.6);font-size:1rem;line-height:1.7;margin-bottom:28px}
+.verein-visual{position:relative}
+.verein-mock{background:rgba(255,255,255,.05);border-radius:16px;padding:28px;border:1px solid rgba(245,166,35,.1);display:flex;flex-direction:column;gap:14px}
+.verein-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);padding:12px 16px;border-radius:10px;color:rgba(255,255,255,.7);font-size:.88rem}
+.verein-item b{color:var(--honey)}
 
 /* === FAQ === */
 .faq{position:relative;z-index:1;padding:80px 32px 100px}
@@ -206,6 +219,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   .price-grid{grid-template-columns:1fr;max-width:400px}
   .price-card.popular{transform:none}
   .price-card.popular:hover{transform:translateY(-4px)}
+  .highlight-alt .hl-wrap{grid-template-columns:1fr;gap:40px}
   .free-feats{grid-template-columns:1fr}
   .footer-top{grid-template-columns:1fr 1fr;gap:28px}
   .footer-bottom{flex-direction:column;text-align:center}
@@ -213,6 +227,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 }
 @media(min-width:901px) and (max-width:1100px){
   .feat-grid{grid-template-columns:repeat(2,1fr)}
+  .price-grid{grid-template-columns:repeat(2,1fr)}
 }
 </style>
 </head>
@@ -224,6 +239,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 <nav class="topnav" id="topnav">
   <a href="#" class="logo"><span>🐝</span> BienenPlan</a>
   <div class="nav-links">
+    <a href="demo.html">Demo</a>
     <a href="#features">Features</a>
     <a href="#trachtkarte">Trachtkarte</a>
     <a href="#pricing">Preise</a>
@@ -232,6 +248,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   </div>
   <button class="menu-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.textContent==='☰'?'✕':'☰'" aria-label="Menü">☰</button>
   <div class="nav-links" style="display:none" id="mobileNav">
+    <a href="demo.html" onclick="closeMobile()">Demo</a>
     <a href="#features" onclick="closeMobile()">Features</a>
     <a href="#trachtkarte" onclick="closeMobile()">Trachtkarte</a>
     <a href="#pricing" onclick="closeMobile()">Preise</a>
@@ -249,7 +266,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
       <p>Völker verwalten, Behandlungen planen, Trachten kartieren, Ernten dokumentieren und Königinnen züchten – alles in einer Web-App. Starte kostenlos.</p>
       <div class="hero-btns">
         <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🍯</a>
-        <a href="#features" class="btn-ghost">Features ansehen</a>
+        <a href="demo.html" class="btn-ghost">Demo ansehen →</a>
       </div>
     </div>
     <div class="hero-visual">
@@ -335,7 +352,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
       <div class="feat-card rv">
         <div class="feat-emoji">📅</div>
         <h3>Heute-Dashboard</h3>
-        <p>Alle fälligen Aufgaben, Behandlungstermine und Zuchtschritte auf einen Blick. Wetter-Vorschau für deine Standorte inklusive.</p>
+        <p>Alle fälligen Aufgaben, Behandlungstermine und Zuchtschritte auf einen Blick. 14-Tage Wettervorhersage, Bewertungssystem und Wetter-Vorschau für deine Standorte inklusive.</p>
       </div>
       <div class="feat-card rv">
         <div class="feat-emoji">📑</div>
@@ -346,6 +363,21 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <div class="feat-emoji">☁️</div>
         <h3>Cloud & Backup</h3>
         <p>Daten sicher in der Cloud gespeichert. Automatische Backups. Von überall zugreifen – Handy, Tablet oder PC.</p>
+      </div>
+      <div class="feat-card rv">
+        <div class="feat-emoji">🏘️</div>
+        <h3>Imkerverein</h3>
+        <p>Verein gründen, Mitglieder einladen per Code, gemeinsame Trachtkarte, Meldungen & Kommentare – alles zentral verwaltet.</p>
+      </div>
+      <div class="feat-card rv">
+        <div class="feat-emoji">🤖</div>
+        <h3>KI-Assistent</h3>
+        <p>Stresstest, Futterrechner, Diagnose-Hilfe – dein KI-gestützter Imkerei-Berater für schnelle Antworten und fundierte Entscheidungen.</p>
+      </div>
+      <div class="feat-card rv">
+        <div class="feat-emoji">💬</div>
+        <h3>Community-Forum</h3>
+        <p>Fragen stellen, Wissen teilen, Erfahrungsaustausch mit anderen Imkern – direkt in der App vernetzt.</p>
       </div>
     </div>
   </div>
@@ -380,6 +412,35 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   </div>
 </section>
 
+<!-- VEREINS-TRACHTEN HIGHLIGHT -->
+<section class="highlight-alt" id="verein">
+  <div class="hl-wrap">
+    <div class="hl-text rv">
+      <div class="tag">Vereins-Feature</div>
+      <h2>Gemeinsam stärker – Imkervereine</h2>
+      <p>Gründe deinen Verein digital, teile Einladungscodes und pflegt gemeinsam eure Trachtkarte. So profitiert die ganze Region.</p>
+      <ul class="hl-list">
+        <li>Einladungscodes für neue Mitglieder</li>
+        <li>Rollen-Management (Admin, Mitglied)</li>
+        <li>Gemeinsame Meldungen & Kommentare</li>
+        <li>Geteilte Vereins-Trachtkarte</li>
+        <li>Zentrale Vereinsverwaltung</li>
+      </ul>
+      <a href="verein_trachten.html" class="btn-primary">Verein gründen →</a>
+    </div>
+    <div class="verein-visual rv">
+      <div class="verein-mock">
+        <div class="verein-item">🏘️ <b>Imkerverein Karlsruhe</b> – 24 Mitglieder</div>
+        <div class="verein-item">📨 <b>Einladungscode:</b> KARLS-2026</div>
+        <div class="verein-item">🗺️ <b>Vereins-Trachtkarte</b> – 38 Einträge</div>
+        <div class="verein-item">💬 <b>3 neue Meldungen</b> diese Woche</div>
+        <div class="verein-item">👥 <b>Rollen:</b> 2 Admins, 22 Mitglieder</div>
+        <div style="margin-top:8px;color:rgba(255,255,255,.35);font-size:.8rem;font-style:italic">Gemeinsam imkern – digital vernetzt</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PRICING -->
 <section class="pricing" id="pricing">
   <div class="section-inner" style="text-align:center">
@@ -402,7 +463,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
           <li>Aufgaben & Packliste</li>
           <li>Behandlungsplaner</li>
           <li>Trachtkarte (lesen)</li>
-          <li>Wetter-Vorschau</li>
+          <li>14-Tage Wetter</li>
         </ul>
         <a href="app.html#register" class="btn-plan outline">Kostenlos starten</a>
       </div>
@@ -421,9 +482,10 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
           <li>Königinnenzucht-Planer</li>
           <li>Ernte- & Kostenanalyse</li>
           <li>Trachten teilen auf Karte</li>
-          <li>Bestandsbuch PDF-Export</li>
+          <li>KI-Assistent</li>
+          <li>Bewertungssystem</li>
+          <li>Community-Forum</li>
           <li>Datenexport & Backup</li>
-          <li>E-Mail-Erinnerungen</li>
         </ul>
         <a href="app.html#register" class="btn-plan filled">Pro starten →</a>
       </div>
@@ -438,13 +500,32 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <div class="plan-divider"></div>
         <ul class="plan-feats">
           <li>Alles aus Imker Pro</li>
-          <li>Multi-User (Team-Zugang)</li>
+          <li>Bestandsbuch PDF-Export</li>
           <li>Admin-Dashboard</li>
           <li>Prioritäts-Support</li>
           <li>Veterinäramt-Berichte</li>
-          <li>API-Zugang</li>
         </ul>
-        <a href="mailto:info@imkershop-durchdenwald.de" class="btn-plan outline">Kontakt aufnehmen</a>
+        <a href="app.html#register" class="btn-plan outline">Meister werden →</a>
+      </div>
+
+      <!-- VEREIN -->
+      <div class="price-card rv">
+        <div class="plan-emoji">🏘️</div>
+        <div class="plan-name">Verein</div>
+        <div class="plan-desc">Für Imkervereine – gemeinsam digital imkern</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">29,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">oder €299/Jahr (2 Monate gratis!)</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Alles aus Imkermeister</li>
+          <li>10 Mitglieder-Codes inklusive</li>
+          <li>Vereins-Trachtkarte</li>
+          <li>Gemeinsame Meldungen & Kommentare</li>
+          <li>Rollen-Management</li>
+          <li>Weitere Codes: 1,99 €/Stk.</li>
+        </ul>
+        <a href="mailto:info@imkershop-durchdenwald.de" class="btn-plan filled">Verein starten →</a>
+        <p class="plan-hint">Größerer Verein? <a href="mailto:info@imkershop-durchdenwald.de" style="color:var(--honey-deep);text-decoration:underline">Kontakt für Staffelpreise</a></p>
       </div>
     </div>
     
@@ -485,6 +566,14 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich meine Daten exportieren?<span class="arr">+</span></div>
         <div class="faq-a">Ja. Du kannst ein veterinäramt-konformes Bestandsbuch als PDF generieren und ein komplettes Backup deiner Daten erstellen und wiederherstellen.</div>
       </div>
+      <div class="faq-item rv">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was ist der Vereins-Tarif?<span class="arr">+</span></div>
+        <div class="faq-a">Der Vereins-Tarif richtet sich an Imkervereine. Er enthält 10 Mitglieder-Einladungscodes, eine gemeinsame Vereins-Trachtkarte, Meldungen & Kommentare und Rollen-Management (Admin/Mitglied). Weitere Codes können für 1,99 € pro Stück hinzugebucht werden. Für größere Vereine bieten wir Staffelpreise an – kontaktiere uns einfach.</div>
+      </div>
+      <div class="faq-item rv">
+        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was kann der KI-Assistent?<span class="arr">+</span></div>
+        <div class="faq-a">Der KI-Assistent ist dein digitaler Imkerei-Berater. Er bietet einen Stresstest für deine Völker, einen Futterrechner für die Einfütterung und Diagnose-Hilfe bei Krankheiten. Verfügbar ab dem Imker-Pro-Tarif.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -508,6 +597,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
       </div>
       <div class="footer-col">
         <h4>Produkt</h4>
+        <a href="demo.html">Live-Demo</a>
         <a href="#features">Features</a>
         <a href="#trachtkarte">Trachtkarte</a>
         <a href="#faq">FAQ</a>
@@ -517,6 +607,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
       <div class="footer-col">
         <h4>Community</h4>
         <a href="trachtkarte.html">Trachtkarte ansehen</a>
+        <a href="verein_trachten.html">Vereins-Trachten</a>
         <a href="forum.html">Forum</a>
       </div>
       <div class="footer-col">

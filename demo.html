@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F5A623">
+<title>BienenPlan – Interaktive Demo</title>
+<meta name="description" content="BienenPlan Demo – Alle Features durchklicken ohne Registrierung. Interaktiver Showroom mit realistischen Beispieldaten.">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --honey: #F5A623;
+  --honey-deep: #D4891C;
+  --honey-glow: #FFD980;
+  --cream: #FFFBF0;
+  --cream-dark: #FFF3D6;
+  --bark: #1C1410;
+  --bark-warm: #2D1F14;
+  --bark-mid: #3D2E1F;
+  --text: #4A3728;
+  --text-soft: #8B7355;
+  --forest: #3D7C47;
+  --forest-light: #E8F5E9;
+  --sky: #4A90D9;
+  --white: #fff;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;color:var(--text);background:var(--cream);min-height:100vh;padding-left:220px;padding-top:48px}
+h1,h2,h3,.serif{font-family:'Fraunces',serif}
+a{color:inherit;text-decoration:none}
+
+/* === DEMO BANNER === */
+.demo-banner{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--bark);color:var(--white);display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 20px;font-size:.88rem;font-weight:500}
+.demo-banner span{opacity:.8}
+.demo-banner a{background:var(--honey);color:var(--bark);padding:6px 18px;border-radius:100px;font-weight:700;font-size:.82rem;transition:all .2s;white-space:nowrap}
+.demo-banner a:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px)}
+
+/* === SIDEBAR === */
+.sidebar{position:fixed;left:0;top:48px;bottom:0;width:220px;background:var(--cream);border-right:2px solid rgba(245,166,35,.12);display:flex;flex-direction:column;z-index:100;overflow-y:auto}
+.sidebar-brand{padding:1.1rem 1rem;border-bottom:2px solid rgba(245,166,35,.12);display:flex;align-items:center;gap:8px;font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:var(--bark)}
+.sidebar-brand em{font-style:normal;font-size:.7rem;font-weight:600;font-family:'Outfit',sans-serif;background:var(--honey);color:var(--bark);padding:2px 8px;border-radius:100px;margin-left:4px}
+.sidebar-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:.6rem 1rem;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-align:left;font-family:inherit}
+.sidebar-item:hover{background:rgba(245,166,35,.06)}
+.sidebar-item.active{color:#92400E;font-weight:600;border-left-color:var(--honey);background:#FFF8EE}
+.sidebar-item .si-emoji{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.sidebar-cta{margin-top:auto;padding:1rem;border-top:2px solid rgba(245,166,35,.12)}
+.sidebar-cta a{display:block;background:var(--honey);color:var(--bark);padding:12px;border-radius:.75rem;font-weight:700;font-size:.88rem;text-align:center;transition:all .2s}
+.sidebar-cta a:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px)}
+
+/* === CONTENT === */
+.content{padding:1.25rem;max-width:860px;margin:0 auto}
+.screen{display:none}
+.screen.active{display:block}
+
+/* === SHARED CARD STYLES === */
+.card{background:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(28,20,16,.06);border:1px solid rgba(245,166,35,.08)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.card-title{font-size:1rem;font-weight:700;color:var(--bark);display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:600}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-yellow{background:var(--cream-dark);color:#92400e}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-red{background:#fee2e2;color:#991b1b}
+.badge-purple{background:#f3e8ff;color:#6b21a8}
+
+/* === PAGE HEADER === */
+.page-header{margin-bottom:1.25rem}
+.page-header h1{font-size:1.6rem;font-weight:900;color:var(--bark);margin-bottom:.35rem}
+.page-header p{font-size:.9rem;color:var(--text-soft)}
+
+/* === STATS ROW === */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem}
+.stat-card{background:var(--white);border-radius:.75rem;padding:1rem;text-align:center;border:1px solid rgba(245,166,35,.08);box-shadow:0 1px 3px rgba(28,20,16,.06)}
+.stat-card .stat-emoji{font-size:1.5rem;margin-bottom:.35rem}
+.stat-card .stat-val{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;color:var(--bark)}
+.stat-card .stat-label{font-size:.75rem;color:var(--text-soft);margin-top:2px}
+
+/* === TASK LIST === */
+.task-item{display:flex;align-items:center;gap:12px;padding:.75rem;border-bottom:1px solid rgba(245,166,35,.06)}
+.task-item:last-child{border-bottom:none}
+.task-check{width:22px;height:22px;border:2px solid #d1d5db;border-radius:6px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:.75rem;color:transparent}
+.task-check:hover{border-color:var(--honey)}
+.task-check.done{background:var(--forest);border-color:var(--forest);color:var(--white)}
+.task-info{flex:1}
+.task-info .task-name{font-weight:600;font-size:.88rem;color:var(--bark)}
+.task-info .task-meta{font-size:.75rem;color:var(--text-soft);margin-top:2px}
+.task-priority{font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:100px}
+.task-priority.high{background:#fee2e2;color:#991b1b}
+.task-priority.medium{background:var(--cream-dark);color:#92400e}
+.task-priority.low{background:#d1fae5;color:#065f46}
+
+/* === WEATHER ROW === */
+.weather-row{display:flex;gap:.5rem;overflow-x:auto;padding:.5rem 0}
+.weather-day{flex-shrink:0;text-align:center;padding:.5rem;border-radius:.5rem;background:var(--cream);min-width:60px;font-size:.75rem}
+.weather-day .wd-icon{font-size:1.2rem;margin:.25rem 0}
+.weather-day .wd-temp{font-weight:600;color:var(--bark)}
+.weather-day .wd-name{color:var(--text-soft);font-size:.68rem}
+
+/* === SECTION COLLAPSIBLE === */
+.section-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:.5rem 0;user-select:none}
+.section-toggle h2{font-size:1.1rem;font-weight:700;color:var(--bark);display:flex;align-items:center;gap:8px}
+.section-toggle .arrow{transition:transform .2s;color:var(--text-soft);font-size:1.2rem}
+.section-toggle.collapsed .arrow{transform:rotate(-90deg)}
+.section-content{overflow:hidden;transition:max-height .3s ease}
+.section-content.collapsed{max-height:0!important}
+
+/* === STANDORTE === */
+.standort-card{background:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:1rem;border:1px solid rgba(245,166,35,.08);box-shadow:0 1px 3px rgba(28,20,16,.06)}
+.standort-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.standort-name{font-weight:700;font-size:1rem;color:var(--bark);display:flex;align-items:center;gap:8px}
+.voelker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem}
+.volk-tile{background:var(--cream);border-radius:.5rem;padding:.6rem;text-align:center;border:1px solid rgba(245,166,35,.08);font-size:.8rem;cursor:pointer;transition:all .15s}
+.volk-tile:hover{border-color:var(--honey);transform:translateY(-1px)}
+.volk-tile .vt-emoji{font-size:1.2rem}
+.volk-tile .vt-name{font-weight:600;color:var(--bark);font-size:.78rem;margin-top:2px}
+.volk-tile .vt-status{font-size:.68rem;color:var(--text-soft)}
+
+/* === MAP MOCK === */
+.map-mock{background:linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 40%,#a5d6a7 70%,#81c784 100%);border-radius:.75rem;height:200px;position:relative;overflow:hidden;margin-bottom:1rem;border:1px solid rgba(61,124,71,.15)}
+.map-mock::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(255,255,255,.15) 40px,rgba(255,255,255,.15) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(255,255,255,.15) 40px,rgba(255,255,255,.15) 41px)}
+.map-marker{position:absolute;font-size:1.5rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));cursor:pointer;transition:transform .15s}
+.map-marker:hover{transform:scale(1.2)}
+.map-label{position:absolute;background:var(--white);padding:3px 8px;border-radius:6px;font-size:.7rem;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap}
+
+/* === BEHANDLUNG === */
+.behandlung-card{background:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;border:1px solid rgba(245,166,35,.08);box-shadow:0 1px 3px rgba(28,20,16,.06)}
+.behandlung-header{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.behandlung-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.behandlung-title{font-weight:700;color:var(--bark)}
+.behandlung-sub{font-size:.78rem;color:var(--text-soft)}
+.behandlung-steps{list-style:none}
+.behandlung-steps li{display:flex;align-items:center;gap:8px;padding:.4rem 0;font-size:.85rem;color:var(--text);border-bottom:1px solid rgba(245,166,35,.04)}
+.behandlung-steps li:last-child{border-bottom:none}
+.step-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid #d1d5db}
+.step-dot.done{background:var(--forest);border-color:var(--forest)}
+.step-dot.active{background:var(--honey);border-color:var(--honey);box-shadow:0 0 0 3px rgba(245,166,35,.2)}
+
+/* === ZUCHT TIMELINE === */
+.zucht-card{background:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:1rem;border:1px solid rgba(245,166,35,.08);box-shadow:0 1px 3px rgba(28,20,16,.06)}
+.zucht-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.zucht-title{font-weight:700;color:var(--bark);display:flex;align-items:center;gap:8px}
+.timeline{display:flex;align-items:center;gap:0;padding:.5rem 0;overflow-x:auto}
+.tl-step{display:flex;flex-direction:column;align-items:center;min-width:80px;position:relative}
+.tl-dot{width:14px;height:14px;border-radius:50%;border:3px solid #d1d5db;background:var(--white);z-index:1}
+.tl-dot.done{background:var(--forest);border-color:var(--forest)}
+.tl-dot.active{background:var(--honey);border-color:var(--honey);box-shadow:0 0 0 4px rgba(245,166,35,.2)}
+.tl-dot.planned{background:var(--white);border-color:#d1d5db}
+.tl-label{font-size:.68rem;color:var(--text-soft);margin-top:6px;text-align:center;max-width:80px}
+.tl-date{font-size:.62rem;color:#A69580;margin-top:2px}
+.tl-line{flex:1;height:2px;background:#d1d5db;min-width:20px;margin-top:-7px;align-self:center}
+.tl-line.done{background:var(--forest)}
+
+/* === TRACHT GANTT === */
+.gantt-chart{overflow-x:auto;margin-bottom:1rem}
+.gantt-table{width:100%;border-collapse:collapse;min-width:600px}
+.gantt-table th{font-size:.65rem;color:var(--text-soft);font-weight:600;padding:6px 4px;text-align:center;border-bottom:1px solid rgba(245,166,35,.08);min-width:44px}
+.gantt-table th:first-child{text-align:left;min-width:120px}
+.gantt-table td{padding:4px;position:relative;height:32px;border-bottom:1px solid rgba(245,166,35,.04)}
+.gantt-table td:first-child{font-size:.82rem;font-weight:600;color:var(--bark);white-space:nowrap}
+.gantt-bar{position:absolute;top:6px;bottom:6px;border-radius:4px;opacity:.85}
+
+/* === ERNTE CHART === */
+.chart-container{background:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:1rem;border:1px solid rgba(245,166,35,.08)}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:180px;padding:0 .5rem;border-bottom:1px solid rgba(245,166,35,.1)}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.bar-col .bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,var(--honey),var(--honey-glow));margin-top:auto;transition:height .5s;min-height:2px}
+.bar-col .bar-label{font-size:.68rem;color:var(--text-soft);padding-top:4px}
+.bar-col .bar-value{font-size:.7rem;font-weight:700;color:var(--bark)}
+
+/* === KOSTEN === */
+.kosten-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem}
+.kosten-item{display:flex;align-items:center;gap:10px;background:var(--white);border-radius:.75rem;padding:.75rem;border:1px solid rgba(245,166,35,.08)}
+.kosten-item .ki-emoji{font-size:1.3rem}
+.kosten-item .ki-label{font-size:.78rem;color:var(--text-soft)}
+.kosten-item .ki-val{font-family:'Fraunces',serif;font-weight:700;color:var(--bark);font-size:1rem}
+
+/* === PACKLISTE === */
+.pack-category{margin-bottom:1rem}
+.pack-cat-title{font-weight:700;font-size:.92rem;color:var(--bark);display:flex;align-items:center;gap:8px;margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid rgba(245,166,35,.08)}
+.pack-item{display:flex;align-items:center;gap:10px;padding:.5rem 0;font-size:.88rem;cursor:pointer;user-select:none;transition:opacity .15s}
+.pack-item.checked{opacity:.5;text-decoration:line-through}
+.pack-check{width:20px;height:20px;border:2px solid #d1d5db;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:.7rem;color:transparent}
+.pack-check.checked{background:var(--forest);border-color:var(--forest);color:var(--white)}
+
+/* === BEWERTUNG === */
+.sterne-row{display:flex;gap:4px;margin:.5rem 0}
+.stern{font-size:1.5rem;cursor:pointer;transition:transform .15s;opacity:.3}
+.stern.active{opacity:1}
+.stern:hover{transform:scale(1.15)}
+.radar-wrap{display:flex;justify-content:center;padding:1rem 0}
+
+/* === KI ASSISTENT === */
+.tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:1rem}
+.tool-card{background:var(--white);border-radius:.75rem;padding:1.25rem;border:1px solid rgba(245,166,35,.08);box-shadow:0 1px 3px rgba(28,20,16,.06);cursor:pointer;transition:all .2s;text-align:center}
+.tool-card:hover{border-color:var(--honey);transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,166,35,.12)}
+.tool-card .tc-emoji{font-size:2rem;margin-bottom:.5rem}
+.tool-card .tc-name{font-weight:700;color:var(--bark);font-size:.92rem;margin-bottom:.25rem}
+.tool-card .tc-desc{font-size:.78rem;color:var(--text-soft);line-height:1.4}
+.ki-result{background:var(--cream-dark);border-radius:.75rem;padding:1rem;border:1px solid rgba(245,166,35,.15);margin-bottom:1rem}
+.ki-result h3{font-size:.92rem;font-weight:700;color:var(--bark);margin-bottom:.5rem;display:flex;align-items:center;gap:8px}
+.ki-result p{font-size:.85rem;color:var(--text);line-height:1.6}
+.ki-result ul{list-style:none;margin-top:.5rem}
+.ki-result ul li{font-size:.85rem;color:var(--text);padding:.25rem 0;display:flex;align-items:center;gap:6px}
+.ki-result ul li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--honey);flex-shrink:0}
+
+/* === CTA CARD (bottom of each screen) === */
+.cta-card{background:linear-gradient(135deg,var(--bark) 0%,var(--bark-warm) 100%);border-radius:1rem;padding:1.5rem;text-align:center;margin-top:1.5rem}
+.cta-card h3{color:var(--white);font-size:1.1rem;font-weight:900;margin-bottom:.5rem}
+.cta-card p{color:rgba(255,255,255,.6);font-size:.85rem;margin-bottom:1rem}
+.cta-card a{display:inline-block;background:var(--honey);color:var(--bark);padding:12px 28px;border-radius:100px;font-weight:700;font-size:.9rem;transition:all .2s}
+.cta-card a:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px)}
+
+/* === TOAST === */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-120%);background:var(--bark);color:var(--white);padding:.75rem 1.5rem;border-radius:.75rem;font-size:.85rem;font-weight:600;box-shadow:0 4px 12px rgba(28,20,16,.18);z-index:9999;transition:transform .3s ease;max-width:90%;text-align:center;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* === DEMO ACTION BUTTON === */
+.demo-btn{display:inline-flex;align-items:center;gap:6px;padding:.6rem 1rem;border:none;border-radius:.5rem;font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s;font-family:inherit}
+.demo-btn:hover{transform:translateY(-1px)}
+.demo-btn-primary{background:var(--honey);color:var(--bark)}
+.demo-btn-outline{background:transparent;border:2px solid rgba(245,166,35,.2);color:var(--text)}
+
+/* === MOBILE NAV === */
+.mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:200;background:var(--cream);border-top:2px solid rgba(245,166,35,.12);flex-direction:row;align-items:stretch;height:68px;box-shadow:0 -4px 16px rgba(28,20,16,.08)}
+.mobile-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;color:#7A6652;font-size:.68rem;font-weight:500;gap:2px;padding:.35rem 0;border-top:3px solid transparent;transition:all .15s;font-family:inherit}
+.mobile-nav-btn .mn-icon{font-size:1.3rem;line-height:1}
+.mobile-nav-btn.active{color:#92400E;font-weight:700;border-top-color:var(--honey);background:#FFF8EE}
+.mobile-nav-btn:active{background:rgba(245,166,35,.1)}
+.mobile-nav-btn.menu-center{background:var(--honey);color:var(--bark);border-radius:.75rem;margin:.5rem .3rem;border-top:none;font-weight:700}
+.mobile-nav-btn.menu-center:active{background:var(--honey-deep)}
+
+/* === MOBILE MENU OVERLAY === */
+.mobile-menu-overlay{display:none;position:fixed;inset:0;z-index:10000;background:rgba(28,20,16,.5);align-items:center;justify-content:center}
+.mobile-menu-overlay.active{display:flex}
+.mobile-menu-box{background:var(--cream);border-radius:1.25rem;width:92%;max-width:400px;max-height:85vh;overflow-y:auto;padding:1.25rem;box-shadow:0 12px 40px rgba(28,20,16,.25);animation:menuSlideUp .25s ease}
+@keyframes menuSlideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+.mm-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid rgba(245,166,35,.15)}
+.mm-header h2{font-size:1.1rem;color:var(--bark);margin:0;display:flex;align-items:center;gap:.5rem}
+.mm-close{width:36px;height:36px;border:none;background:#f5f0eb;border-radius:.5rem;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7A6652;font-family:inherit}
+.mm-section{font-size:.68rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem}
+.mm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.mm-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.7rem .5rem;border:2px solid #E8DFD4;border-radius:.75rem;background:var(--white);cursor:pointer;color:var(--bark);font-size:.75rem;font-weight:500;gap:.25rem;transition:all .15s;min-height:68px;border:none;font-family:inherit}
+.mm-item:active,.mm-item.active{border-color:var(--honey);background:#FFF8EE;font-weight:700;color:#92400E}
+.mm-item .mm-icon{font-size:1.4rem}
+
+/* === RESPONSIVE === */
+@media(max-width:768px){
+  body{padding-left:0;padding-bottom:68px;padding-top:48px}
+  .sidebar{display:none}
+  .mobile-nav{display:flex}
+  .content{padding:1rem}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .tool-grid{grid-template-columns:1fr}
+  .voelker-grid{grid-template-columns:repeat(3,1fr)}
+  .kosten-row{grid-template-columns:1fr 1fr}
+}
+@media(min-width:769px){
+  .mobile-nav{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- DEMO BANNER -->
+<div class="demo-banner">
+  <span>Du siehst die Demo-Ansicht mit Beispieldaten</span>
+  <a href="app.html#register">Kostenlos registrieren &rarr;</a>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <span>🐝</span> BienenPlan <em>DEMO</em>
+  </div>
+  <div class="sidebar-section">Übersicht</div>
+  <button class="sidebar-item active" data-screen="heute" onclick="showScreen('heute')">
+    <span class="si-emoji">📅</span> Heute
+  </button>
+  <button class="sidebar-item" data-screen="standorte" onclick="showScreen('standorte')">
+    <span class="si-emoji">📍</span> Standorte
+  </button>
+  <div class="sidebar-section">Völker</div>
+  <button class="sidebar-item" data-screen="koenigin" onclick="showScreen('koenigin')">
+    <span class="si-emoji">👑</span> Königinnenzucht
+  </button>
+  <button class="sidebar-item" data-screen="behandlung" onclick="showScreen('behandlung')">
+    <span class="si-emoji">💉</span> Behandlungen
+  </button>
+  <button class="sidebar-item" data-screen="bewertung" onclick="showScreen('bewertung')">
+    <span class="si-emoji">⭐</span> Bewertung
+  </button>
+  <button class="sidebar-item" data-screen="assistent" onclick="showScreen('assistent')">
+    <span class="si-emoji">🤖</span> Assistent
+  </button>
+  <div class="sidebar-section">Ernte & Planung</div>
+  <button class="sidebar-item" data-screen="ernte" onclick="showScreen('ernte')">
+    <span class="si-emoji">🍯</span> Honigernte
+  </button>
+  <button class="sidebar-item" data-screen="tracht" onclick="showScreen('tracht')">
+    <span class="si-emoji">🌸</span> Tracht
+  </button>
+  <button class="sidebar-item" data-screen="packliste" onclick="showScreen('packliste')">
+    <span class="si-emoji">📦</span> Packliste
+  </button>
+  <div class="sidebar-cta">
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</nav>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav">
+  <button class="mobile-nav-btn active" data-screen="heute" onclick="showScreen('heute')">
+    <span class="mn-icon">📅</span>Heute
+  </button>
+  <button class="mobile-nav-btn" data-screen="standorte" onclick="showScreen('standorte')">
+    <span class="mn-icon">📍</span>Standorte
+  </button>
+  <button class="mobile-nav-btn menu-center" onclick="toggleMobileMenu()">
+    <span class="mn-icon">☰</span>Menü
+  </button>
+  <button class="mobile-nav-btn" data-screen="tracht" onclick="showScreen('tracht')">
+    <span class="mn-icon">🌸</span>Tracht
+  </button>
+  <button class="mobile-nav-btn" onclick="toggleMobileMenu()">
+    <span class="mn-icon">⋯</span>Mehr
+  </button>
+</nav>
+
+<!-- MOBILE FULLSCREEN MENU -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)closeMobileMenu()">
+  <div class="mobile-menu-box">
+    <div class="mm-header">
+      <h2>🐝 BienenPlan Demo</h2>
+      <button class="mm-close" onclick="closeMobileMenu()">✕</button>
+    </div>
+    <div class="mm-section">Übersicht</div>
+    <div class="mm-grid">
+      <button class="mm-item" onclick="showScreen('heute');closeMobileMenu()"><span class="mm-icon">📅</span>Heute</button>
+      <button class="mm-item" onclick="showScreen('standorte');closeMobileMenu()"><span class="mm-icon">📍</span>Standorte</button>
+      <button class="mm-item" onclick="showScreen('ernte');closeMobileMenu()"><span class="mm-icon">🍯</span>Ernte</button>
+    </div>
+    <div class="mm-section">Völker</div>
+    <div class="mm-grid">
+      <button class="mm-item" onclick="showScreen('koenigin');closeMobileMenu()"><span class="mm-icon">👑</span>Zucht</button>
+      <button class="mm-item" onclick="showScreen('behandlung');closeMobileMenu()"><span class="mm-icon">💉</span>Behandlung</button>
+      <button class="mm-item" onclick="showScreen('bewertung');closeMobileMenu()"><span class="mm-icon">⭐</span>Bewertung</button>
+    </div>
+    <div class="mm-section">Planung & KI</div>
+    <div class="mm-grid">
+      <button class="mm-item" onclick="showScreen('tracht');closeMobileMenu()"><span class="mm-icon">🌸</span>Tracht</button>
+      <button class="mm-item" onclick="showScreen('packliste');closeMobileMenu()"><span class="mm-icon">📦</span>Packliste</button>
+      <button class="mm-item" onclick="showScreen('assistent');closeMobileMenu()"><span class="mm-icon">🤖</span>Assistent</button>
+    </div>
+    <div style="margin-top:1.25rem">
+      <a href="app.html#register" style="display:block;background:var(--honey);color:var(--bark);padding:12px;border-radius:.75rem;font-weight:700;font-size:.9rem;text-align:center">Kostenlos registrieren &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===================== CONTENT ===================== -->
+<main class="content">
+
+<!-- ===== 1. HEUTE ===== -->
+<section class="screen active" id="screen-heute">
+  <div class="page-header">
+    <h1>📅 Heute</h1>
+    <p>Dein Imkerei-Dashboard – Montag, 2. März 2026</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-emoji">🐝</div><div class="stat-val">12</div><div class="stat-label">Völker aktiv</div></div>
+    <div class="stat-card"><div class="stat-emoji">📍</div><div class="stat-val">3</div><div class="stat-label">Standorte</div></div>
+    <div class="stat-card"><div class="stat-emoji">🍯</div><div class="stat-val">38,5 kg</div><div class="stat-label">Ernte 2025</div></div>
+    <div class="stat-card"><div class="stat-emoji">👑</div><div class="stat-val">2</div><div class="stat-label">Zuchtserien</div></div>
+  </div>
+
+  <div class="card">
+    <div class="section-toggle" onclick="toggleSection(this)">
+      <h2>📋 Heutige Aufgaben</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="task-item">
+        <div class="task-check" onclick="this.classList.toggle('done')">✓</div>
+        <div class="task-info"><div class="task-name">Futterkontrolle Standort Waldlichtung</div><div class="task-meta">Fällig heute &middot; Standort Waldlichtung</div></div>
+        <span class="task-priority high">Hoch</span>
+      </div>
+      <div class="task-item">
+        <div class="task-check" onclick="this.classList.toggle('done')">✓</div>
+        <div class="task-info"><div class="task-name">Oxalsäure-Behandlung Volk 3</div><div class="task-meta">Fällig heute &middot; Standort Garten</div></div>
+        <span class="task-priority high">Hoch</span>
+      </div>
+      <div class="task-item">
+        <div class="task-check done" onclick="this.classList.toggle('done')">✓</div>
+        <div class="task-info"><div class="task-name">Mäusegitter kontrollieren</div><div class="task-meta">Erledigt &middot; Standort Obstwiese</div></div>
+        <span class="task-priority low">Niedrig</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-bottom:.75rem">
+    <button class="demo-btn demo-btn-primary" onclick="showToast('Registriere dich kostenlos, um Aufgaben zu erstellen!')">+ Neue Aufgabe</button>
+  </div>
+
+  <div class="card">
+    <div class="section-toggle" onclick="toggleSection(this)">
+      <h2>🌤️ 14-Tage Wetter – Karlsruhe</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="weather-row">
+        <div class="weather-day"><div class="wd-name">Mo</div><div class="wd-icon">☀️</div><div class="wd-temp">9°</div></div>
+        <div class="weather-day"><div class="wd-name">Di</div><div class="wd-icon">⛅</div><div class="wd-temp">11°</div></div>
+        <div class="weather-day"><div class="wd-name">Mi</div><div class="wd-icon">🌧️</div><div class="wd-temp">8°</div></div>
+        <div class="weather-day"><div class="wd-name">Do</div><div class="wd-icon">⛅</div><div class="wd-temp">10°</div></div>
+        <div class="weather-day"><div class="wd-name">Fr</div><div class="wd-icon">☀️</div><div class="wd-temp">13°</div></div>
+        <div class="weather-day"><div class="wd-name">Sa</div><div class="wd-icon">☀️</div><div class="wd-temp">14°</div></div>
+        <div class="weather-day"><div class="wd-name">So</div><div class="wd-icon">⛅</div><div class="wd-temp">12°</div></div>
+        <div class="weather-day"><div class="wd-name">Mo</div><div class="wd-icon">🌧️</div><div class="wd-temp">7°</div></div>
+        <div class="weather-day"><div class="wd-name">Di</div><div class="wd-icon">🌧️</div><div class="wd-temp">6°</div></div>
+        <div class="weather-day"><div class="wd-name">Mi</div><div class="wd-icon">⛅</div><div class="wd-temp">9°</div></div>
+        <div class="weather-day"><div class="wd-name">Do</div><div class="wd-icon">☀️</div><div class="wd-temp">11°</div></div>
+        <div class="weather-day"><div class="wd-name">Fr</div><div class="wd-icon">☀️</div><div class="wd-temp">13°</div></div>
+        <div class="weather-day"><div class="wd-name">Sa</div><div class="wd-icon">⛅</div><div class="wd-temp">10°</div></div>
+        <div class="weather-day"><div class="wd-name">So</div><div class="wd-icon">🌤️</div><div class="wd-temp">12°</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-toggle" onclick="toggleSection(this)">
+      <h2>💉 Nächste Behandlungen</h2>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="task-item">
+        <div style="font-size:1.2rem;width:28px;text-align:center">💉</div>
+        <div class="task-info"><div class="task-name">Oxalsäure – Volk 3, 7, 11</div><div class="task-meta">Heute &middot; Träufelbehandlung</div></div>
+        <span class="badge badge-red">Heute</span>
+      </div>
+      <div class="task-item">
+        <div style="font-size:1.2rem;width:28px;text-align:center">💉</div>
+        <div class="task-info"><div class="task-name">Ameisensäure – Volk 5</div><div class="task-meta">In 4 Tagen &middot; Langzeitverdunster</div></div>
+        <span class="badge badge-yellow">Bald</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Gefällt dir was du siehst?</h3>
+    <p>Starte kostenlos und verwalte deine eigene Imkerei digital.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 2. STANDORTE ===== -->
+<section class="screen" id="screen-standorte">
+  <div class="page-header">
+    <h1>📍 Standorte</h1>
+    <p>3 Standorte &middot; 12 Völker</p>
+  </div>
+
+  <div class="map-mock">
+    <div class="map-marker" style="top:30%;left:25%">📍</div>
+    <div class="map-label" style="top:22%;left:30%">Waldlichtung (5)</div>
+    <div class="map-marker" style="top:55%;left:55%">📍</div>
+    <div class="map-label" style="top:47%;left:60%">Garten (4)</div>
+    <div class="map-marker" style="top:70%;left:35%">📍</div>
+    <div class="map-label" style="top:62%;left:40%">Obstwiese (3)</div>
+  </div>
+
+  <div class="standort-card">
+    <div class="standort-header">
+      <div class="standort-name">🌲 Waldlichtung</div>
+      <span class="badge badge-green">5 Völker</span>
+    </div>
+    <div class="voelker-grid">
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 1</div><div class="vt-status">Stark</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 2</div><div class="vt-status">Stark</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 3</div><div class="vt-status">Mittel</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">👑</div><div class="vt-name">Volk 4</div><div class="vt-status">Zucht</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 5</div><div class="vt-status">Stark</div></div>
+    </div>
+  </div>
+
+  <div class="standort-card">
+    <div class="standort-header">
+      <div class="standort-name">🏡 Garten</div>
+      <span class="badge badge-green">4 Völker</span>
+    </div>
+    <div class="voelker-grid">
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 6</div><div class="vt-status">Stark</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 7</div><div class="vt-status">Stark</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 8</div><div class="vt-status">Mittel</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 9</div><div class="vt-status">Schwach</div></div>
+    </div>
+  </div>
+
+  <div class="standort-card">
+    <div class="standort-header">
+      <div class="standort-name">🍎 Obstwiese</div>
+      <span class="badge badge-green">3 Völker</span>
+    </div>
+    <div class="voelker-grid">
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 10</div><div class="vt-status">Stark</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">👑</div><div class="vt-name">Volk 11</div><div class="vt-status">Zucht</div></div>
+      <div class="volk-tile" onclick="showToast('Registriere dich, um Völker zu verwalten!')"><div class="vt-emoji">🐝</div><div class="vt-name">Volk 12</div><div class="vt-status">Stark</div></div>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-bottom:.75rem">
+    <button class="demo-btn demo-btn-primary" onclick="showToast('Registriere dich kostenlos, um Standorte zu erstellen!')">+ Neuer Standort</button>
+  </div>
+
+  <div class="cta-card">
+    <h3>Deine eigenen Standorte verwalten?</h3>
+    <p>Mit GPS-Karte, Völker-Zuordnung und mehr.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 3. BEHANDLUNGEN ===== -->
+<section class="screen" id="screen-behandlung">
+  <div class="page-header">
+    <h1>💉 Behandlungen</h1>
+    <p>Varroa-Behandlungspläne für deine Völker</p>
+  </div>
+
+  <div class="behandlung-card">
+    <div class="behandlung-header">
+      <div class="behandlung-icon" style="background:#fef3c7">🧪</div>
+      <div>
+        <div class="behandlung-title">Ameisensäure – Langzeitverdunster</div>
+        <div class="behandlung-sub">Volk 5, 6 &middot; Standort Garten &middot; Gestartet 20.02.</div>
+      </div>
+      <span class="badge badge-yellow">Läuft</span>
+    </div>
+    <ul class="behandlung-steps">
+      <li><span class="step-dot done"></span> Diagnosegitter einlegen (20.02.)</li>
+      <li><span class="step-dot done"></span> Varroabefall zählen (23.02.)</li>
+      <li><span class="step-dot done"></span> Langzeitverdunster einsetzen (25.02.)</li>
+      <li><span class="step-dot active"></span> Verdunster entfernen (08.03.)</li>
+      <li><span class="step-dot"></span> Nachkontrolle (15.03.)</li>
+    </ul>
+  </div>
+
+  <div class="behandlung-card">
+    <div class="behandlung-header">
+      <div class="behandlung-icon" style="background:#dbeafe">💧</div>
+      <div>
+        <div class="behandlung-title">Oxalsäure – Träufelbehandlung</div>
+        <div class="behandlung-sub">Volk 3, 7, 11 &middot; Heute fällig</div>
+      </div>
+      <span class="badge badge-red">Heute</span>
+    </div>
+    <ul class="behandlung-steps">
+      <li><span class="step-dot done"></span> Brutfreiheit prüfen (28.02.)</li>
+      <li><span class="step-dot active"></span> Oxalsäure träufeln (02.03.)</li>
+      <li><span class="step-dot"></span> Nachkontrolle nach 7 Tagen (09.03.)</li>
+    </ul>
+  </div>
+
+  <div class="behandlung-card">
+    <div class="behandlung-header">
+      <div class="behandlung-icon" style="background:#f3e8ff">🌿</div>
+      <div>
+        <div class="behandlung-title">Thymol – Apiguard</div>
+        <div class="behandlung-sub">Volk 1, 2, 10 &middot; Geplant für August</div>
+      </div>
+      <span class="badge badge-blue">Geplant</span>
+    </div>
+    <ul class="behandlung-steps">
+      <li><span class="step-dot"></span> Honigernte abschließen</li>
+      <li><span class="step-dot"></span> 1. Schale einlegen (August)</li>
+      <li><span class="step-dot"></span> 2. Schale einlegen (nach 2 Wochen)</li>
+      <li><span class="step-dot"></span> Schale entfernen (nach 4 Wochen)</li>
+      <li><span class="step-dot"></span> Nachkontrolle</li>
+    </ul>
+  </div>
+
+  <div style="text-align:right;margin-bottom:.75rem">
+    <button class="demo-btn demo-btn-primary" onclick="showToast('Registriere dich kostenlos, um Behandlungen zu planen!')">+ Neue Behandlung</button>
+  </div>
+
+  <div class="cta-card">
+    <h3>Behandlungen automatisch planen?</h3>
+    <p>Termine, Schritte und Erinnerungen – alles automatisch.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 4. KÖNIGINNENZUCHT ===== -->
+<section class="screen" id="screen-koenigin">
+  <div class="page-header">
+    <h1>👑 Königinnenzucht</h1>
+    <p>2 aktive Zuchtserien mit Timeline-Planung</p>
+  </div>
+
+  <div class="zucht-card">
+    <div class="zucht-header">
+      <div class="zucht-title">👑 Zuchtserie 2026-A (Buckfast)</div>
+      <span class="badge badge-yellow">Aktiv</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-soft);margin-bottom:.75rem">Zuchtmutter: Volk 4 (Waldlichtung) &middot; Gestartet: 15.02.2026</p>
+    <div class="timeline">
+      <div class="tl-step"><div class="tl-dot done"></div><div class="tl-label">Sammelbrut</div><div class="tl-date">15.02.</div></div>
+      <div class="tl-line done"></div>
+      <div class="tl-step"><div class="tl-dot done"></div><div class="tl-label">Starter</div><div class="tl-date">18.02.</div></div>
+      <div class="tl-line done"></div>
+      <div class="tl-step"><div class="tl-dot done"></div><div class="tl-label">Umlarven</div><div class="tl-date">19.02.</div></div>
+      <div class="tl-line done"></div>
+      <div class="tl-step"><div class="tl-dot active"></div><div class="tl-label">Verschult</div><div class="tl-date">25.02.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Schlupf</div><div class="tl-date">04.03.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Begattung</div><div class="tl-date">14.03.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Eilage</div><div class="tl-date">24.03.</div></div>
+    </div>
+  </div>
+
+  <div class="zucht-card">
+    <div class="zucht-header">
+      <div class="zucht-title">👑 Zuchtserie 2026-B (Carnica)</div>
+      <span class="badge badge-blue">Geplant</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-soft);margin-bottom:.75rem">Zuchtmutter: Volk 11 (Obstwiese) &middot; Start: 01.04.2026</p>
+    <div class="timeline">
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Sammelbrut</div><div class="tl-date">01.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Starter</div><div class="tl-date">04.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Umlarven</div><div class="tl-date">05.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Verschult</div><div class="tl-date">11.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Schlupf</div><div class="tl-date">20.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Begattung</div><div class="tl-date">30.04.</div></div>
+      <div class="tl-line"></div>
+      <div class="tl-step"><div class="tl-dot planned"></div><div class="tl-label">Eilage</div><div class="tl-date">10.05.</div></div>
+    </div>
+  </div>
+
+  <div style="text-align:right;margin-bottom:.75rem">
+    <button class="demo-btn demo-btn-primary" onclick="showToast('Registriere dich kostenlos, um Zuchtserien zu planen!')">+ Neue Zuchtserie</button>
+  </div>
+
+  <div class="cta-card">
+    <h3>Eigene Königinnen züchten?</h3>
+    <p>Timeline-Planung mit automatischer Datumsberechnung.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 5. TRACHT ===== -->
+<section class="screen" id="screen-tracht">
+  <div class="page-header">
+    <h1>🌸 Tracht</h1>
+    <p>Blühzeiten als Gantt-Chart – 6 Trachtpflanzen</p>
+  </div>
+
+  <div class="card" style="overflow-x:auto">
+    <div class="gantt-chart">
+      <table class="gantt-table">
+        <thead>
+          <tr>
+            <th>Pflanze</th>
+            <th>Jan</th><th>Feb</th><th>Mär</th><th>Apr</th><th>Mai</th><th>Jun</th>
+            <th>Jul</th><th>Aug</th><th>Sep</th><th>Okt</th><th>Nov</th><th>Dez</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🌿 Weide</td>
+            <td></td><td></td>
+            <td colspan="2" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#a5d6a7"></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td>🍒 Obstblüte</td>
+            <td></td><td></td><td></td>
+            <td colspan="2" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#f48fb1"></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td>🌼 Löwenzahn</td>
+            <td></td><td></td><td></td>
+            <td colspan="2" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#fff176"></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td>🌾 Raps</td>
+            <td></td><td></td><td></td><td></td>
+            <td colspan="2" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#ffe082"></div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td>🌳 Linde</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td colspan="2" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#c5e1a5"></div></td>
+            <td></td><td></td><td></td><td></td><td></td>
+          </tr>
+          <tr>
+            <td>🌲 Honigtau</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td colspan="3" style="position:relative"><div class="gantt-bar" style="left:0;right:0;background:#a1887f"></div></td>
+            <td></td><td></td><td></td><td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="stats-row" style="margin-top:1rem">
+    <div class="stat-card"><div class="stat-emoji">🌿</div><div class="stat-val">Weide</div><div class="stat-label">Mär–Apr &middot; Aktiv</div></div>
+    <div class="stat-card"><div class="stat-emoji">🍒</div><div class="stat-val">Obstblüte</div><div class="stat-label">Apr–Mai &middot; Bald</div></div>
+    <div class="stat-card"><div class="stat-emoji">🌼</div><div class="stat-val">Löwenzahn</div><div class="stat-label">Apr–Mai &middot; Bald</div></div>
+    <div class="stat-card"><div class="stat-emoji">🌾</div><div class="stat-val">Raps</div><div class="stat-label">Mai–Jun &middot; Geplant</div></div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Trachten auf der Karte teilen?</h3>
+    <p>Profitiere vom Wissen anderer Imker in deiner Region.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 6. ERNTE & KOSTEN ===== -->
+<section class="screen" id="screen-ernte">
+  <div class="page-header">
+    <h1>🍯 Ernte & Kosten</h1>
+    <p>Honigernte 2025 &middot; Kosten-Zusammenfassung</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-emoji">🍯</div><div class="stat-val">38,5 kg</div><div class="stat-label">Gesamternte</div></div>
+    <div class="stat-card"><div class="stat-emoji">📊</div><div class="stat-val">3,2 kg</div><div class="stat-label">Schnitt/Volk</div></div>
+    <div class="stat-card"><div class="stat-emoji">💰</div><div class="stat-val">462 €</div><div class="stat-label">Gesamtkosten</div></div>
+    <div class="stat-card"><div class="stat-emoji">📈</div><div class="stat-val">12 €/kg</div><div class="stat-label">Verkaufspreis</div></div>
+  </div>
+
+  <div class="chart-container">
+    <h3 style="font-size:.95rem;color:var(--bark);margin-bottom:1rem;display:flex;align-items:center;gap:8px">🍯 Ernte pro Volk (kg)</h3>
+    <div class="bar-chart">
+      <div class="bar-col"><div class="bar-value">4.2</div><div class="bar" style="height:56%"></div><div class="bar-label">V1</div></div>
+      <div class="bar-col"><div class="bar-value">3.8</div><div class="bar" style="height:51%"></div><div class="bar-label">V2</div></div>
+      <div class="bar-col"><div class="bar-value">2.1</div><div class="bar" style="height:28%"></div><div class="bar-label">V3</div></div>
+      <div class="bar-col"><div class="bar-value">5.0</div><div class="bar" style="height:67%"></div><div class="bar-label">V4</div></div>
+      <div class="bar-col"><div class="bar-value">3.5</div><div class="bar" style="height:47%"></div><div class="bar-label">V5</div></div>
+      <div class="bar-col"><div class="bar-value">4.8</div><div class="bar" style="height:64%"></div><div class="bar-label">V6</div></div>
+      <div class="bar-col"><div class="bar-value">2.9</div><div class="bar" style="height:39%"></div><div class="bar-label">V7</div></div>
+      <div class="bar-col"><div class="bar-value">3.2</div><div class="bar" style="height:43%"></div><div class="bar-label">V8</div></div>
+      <div class="bar-col"><div class="bar-value">1.5</div><div class="bar" style="height:20%"></div><div class="bar-label">V9</div></div>
+      <div class="bar-col"><div class="bar-value">3.0</div><div class="bar" style="height:40%"></div><div class="bar-label">V10</div></div>
+      <div class="bar-col"><div class="bar-value">2.5</div><div class="bar" style="height:33%"></div><div class="bar-label">V11</div></div>
+      <div class="bar-col"><div class="bar-value">2.0</div><div class="bar" style="height:27%"></div><div class="bar-label">V12</div></div>
+    </div>
+  </div>
+
+  <h2 style="font-size:1.1rem;color:var(--bark);margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:8px">💰 Kosten-Zusammenfassung 2025</h2>
+  <div class="kosten-row">
+    <div class="kosten-item"><div class="ki-emoji">💉</div><div><div class="ki-label">Behandlungen</div><div class="ki-val">89 €</div></div></div>
+    <div class="kosten-item"><div class="ki-emoji">🍯</div><div><div class="ki-label">Gläser & Etiketten</div><div class="ki-val">124 €</div></div></div>
+    <div class="kosten-item"><div class="ki-emoji">🐝</div><div><div class="ki-label">Futter</div><div class="ki-val">156 €</div></div></div>
+    <div class="kosten-item"><div class="ki-emoji">🔧</div><div><div class="ki-label">Werkzeug</div><div class="ki-val">93 €</div></div></div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Deine Ernte dokumentieren?</h3>
+    <p>Honigmengen, Kosten und Statistiken pro Volk erfassen.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 7. PACKLISTE ===== -->
+<section class="screen" id="screen-packliste">
+  <div class="page-header">
+    <h1>📦 Packliste</h1>
+    <p>Checklisten für den Bienenstand</p>
+  </div>
+
+  <div class="card">
+    <div class="pack-category">
+      <div class="pack-cat-title">🧤 Schutzausrüstung</div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Imkeranzug / Jacke</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Handschuhe</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Schleier / Hut</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Stiefel</span></div>
+    </div>
+
+    <div class="pack-category">
+      <div class="pack-cat-title">🔧 Werkzeug</div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Smoker + Brennmaterial</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Stockmeißel</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Bienenbesen</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Abkehrbesen</span></div>
+    </div>
+
+    <div class="pack-category">
+      <div class="pack-cat-title">📋 Dokumentation</div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Stockkarten / Handy</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Stift / Marker</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Waage</span></div>
+    </div>
+
+    <div class="pack-category">
+      <div class="pack-cat-title">💉 Behandlung</div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Ameisensäure 60%</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Verdunster / Schwammtuch</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Handschuhe (säurefest)</span></div>
+      <div class="pack-item" onclick="togglePack(this)"><div class="pack-check">✓</div><span>Diagnosegitter</span></div>
+    </div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Eigene Packlisten erstellen?</h3>
+    <p>Smarte Checklisten, die du immer wieder verwenden kannst.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 8. BEWERTUNG ===== -->
+<section class="screen" id="screen-bewertung">
+  <div class="page-header">
+    <h1>⭐ Bewertung</h1>
+    <p>Völker-Bewertung mit Radar-Chart – Volk 4 (Waldlichtung)</p>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;color:var(--bark);margin-bottom:.75rem">Gesamt-Bewertung</h3>
+    <div class="sterne-row">
+      <span class="stern active">★</span>
+      <span class="stern active">★</span>
+      <span class="stern active">★</span>
+      <span class="stern active">★</span>
+      <span class="stern">★</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-soft);margin-top:.35rem">4 von 5 Sternen – Sehr gutes Volk</p>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;color:var(--bark);margin-bottom:.5rem">Eigenschaften-Radar</h3>
+    <div class="radar-wrap">
+      <svg viewBox="0 0 300 300" width="280" height="280" style="max-width:100%">
+        <!-- Background hexagon rings -->
+        <polygon points="150,30 255,90 255,210 150,270 45,210 45,90" fill="none" stroke="#E8DFD4" stroke-width="1"/>
+        <polygon points="150,60 225,105 225,195 150,240 75,195 75,105" fill="none" stroke="#E8DFD4" stroke-width="1"/>
+        <polygon points="150,90 195,120 195,180 150,210 105,180 105,120" fill="none" stroke="#E8DFD4" stroke-width="1"/>
+        <!-- Axis lines -->
+        <line x1="150" y1="30" x2="150" y2="270" stroke="#E8DFD4" stroke-width="0.5"/>
+        <line x1="45" y1="90" x2="255" y2="210" stroke="#E8DFD4" stroke-width="0.5"/>
+        <line x1="255" y1="90" x2="45" y2="210" stroke="#E8DFD4" stroke-width="0.5"/>
+        <!-- Data polygon -->
+        <polygon points="150,48 237,99 228,204 150,252 69,186 81,96" fill="rgba(245,166,35,0.2)" stroke="#F5A623" stroke-width="2.5"/>
+        <!-- Data dots -->
+        <circle cx="150" cy="48" r="5" fill="#F5A623"/>
+        <circle cx="237" cy="99" r="5" fill="#F5A623"/>
+        <circle cx="228" cy="204" r="5" fill="#F5A623"/>
+        <circle cx="150" cy="252" r="5" fill="#F5A623"/>
+        <circle cx="69" cy="186" r="5" fill="#F5A623"/>
+        <circle cx="81" cy="96" r="5" fill="#F5A623"/>
+        <!-- Labels -->
+        <text x="150" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Sanftmut</text>
+        <text x="270" y="93" text-anchor="start" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Wabensitz</text>
+        <text x="270" y="215" text-anchor="start" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Honigertrag</text>
+        <text x="150" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Schwarmtrieb</text>
+        <text x="28" y="215" text-anchor="end" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Winterfest</text>
+        <text x="28" y="93" text-anchor="end" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Volksstärke</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1rem;color:var(--bark);margin-bottom:.5rem">Einzelbewertungen</h3>
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Sanftmut</span><span style="color:var(--honey);font-weight:700">★★★★★</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Wabensitz</span><span style="color:var(--honey);font-weight:700">★★★★☆</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Honigertrag</span><span style="color:var(--honey);font-weight:700">★★★★☆</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Schwarmtrieb</span><span style="color:var(--honey);font-weight:700">★★☆☆☆</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Winterfestigkeit</span><span style="color:var(--honey);font-weight:700">★★★☆☆</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Volksstärke</span><span style="color:var(--honey);font-weight:700">★★★★☆</span></div>
+    </div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Deine Völker bewerten?</h3>
+    <p>Radar-Chart, Sterne-Bewertung und Vergleiche.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 9. KI-ASSISTENT ===== -->
+<section class="screen" id="screen-assistent">
+  <div class="page-header">
+    <h1>🤖 KI-Assistent</h1>
+    <p>Dein digitaler Imkerei-Berater</p>
+  </div>
+
+  <div class="tool-grid">
+    <div class="tool-card" onclick="showToast('Registriere dich, um den KI-Assistenten zu nutzen!')">
+      <div class="tc-emoji">🔍</div>
+      <div class="tc-name">Diagnose-Hilfe</div>
+      <div class="tc-desc">Symptome beschreiben und mögliche Ursachen erfahren</div>
+    </div>
+    <div class="tool-card" onclick="showToast('Registriere dich, um den KI-Assistenten zu nutzen!')">
+      <div class="tc-emoji">🧪</div>
+      <div class="tc-name">Stresstest</div>
+      <div class="tc-desc">Wie gut ist dein Volk auf den Winter vorbereitet?</div>
+    </div>
+    <div class="tool-card" onclick="showToast('Registriere dich, um den KI-Assistenten zu nutzen!')">
+      <div class="tc-emoji">🧮</div>
+      <div class="tc-name">Futterrechner</div>
+      <div class="tc-desc">Wieviel Futter braucht dein Volk zur Einfütterung?</div>
+    </div>
+    <div class="tool-card" onclick="showToast('Registriere dich, um den KI-Assistenten zu nutzen!')">
+      <div class="tc-emoji">📆</div>
+      <div class="tc-name">Saison-Tipps</div>
+      <div class="tc-desc">Was steht diesen Monat in der Imkerei an?</div>
+    </div>
+  </div>
+
+  <div class="ki-result">
+    <h3>📆 Beispiel: Saison-Tipps für März</h3>
+    <p>Basierend auf deinem Standort Karlsruhe und 12 Völkern:</p>
+    <ul>
+      <li>Futterkontrolle durchführen – Völker können jetzt verhungern</li>
+      <li>Erste Durchsicht bei >12°C planen (Brutentwicklung prüfen)</li>
+      <li>Mäusegitter entfernen wenn Flugloch aktiv genutzt wird</li>
+      <li>Weidenblüte beobachten – erste Trachtquelle des Jahres</li>
+      <li>Varroabefall prüfen: Gemülldiagnose nach Restbehandlung</li>
+      <li>Material für Saison vorbereiten: Rähmchen drahten & Mittelwände einlöten</li>
+    </ul>
+  </div>
+
+  <div class="ki-result">
+    <h3>🧮 Beispiel: Futterrechner-Ergebnis</h3>
+    <p>Volk 9 (Garten) – Einwinterung September:</p>
+    <ul>
+      <li>Geschätztes Gewicht: 18 kg (Ziel: 25 kg)</li>
+      <li>Fehlende Futtermenge: ~7 kg</li>
+      <li>Empfehlung: 10 Liter Zuckerlösung 3:2</li>
+      <li>Fütterungszeitraum: 2-3 Gaben über 10 Tage</li>
+    </ul>
+  </div>
+
+  <div class="cta-card">
+    <h3>KI-Assistent freischalten?</h3>
+    <p>Diagnose, Stresstest, Futterrechner und Saison-Tipps.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+// Screen switching
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  var el = document.getElementById('screen-' + id);
+  if (el) el.classList.add('active');
+
+  // Update sidebar
+  document.querySelectorAll('.sidebar-item').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-screen') === id);
+  });
+
+  // Update mobile nav
+  document.querySelectorAll('.mobile-nav-btn[data-screen]').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-screen') === id);
+  });
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+}
+
+// Section toggle
+function toggleSection(el) {
+  el.classList.toggle('collapsed');
+  var content = el.nextElementSibling;
+  if (content) content.classList.toggle('collapsed');
+}
+
+// Toast
+var toastTimer;
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// Packliste toggle
+function togglePack(el) {
+  el.classList.toggle('checked');
+  var check = el.querySelector('.pack-check');
+  if (check) check.classList.toggle('checked');
+}
+
+// Mobile menu
+function toggleMobileMenu() {
+  document.getElementById('mobileMenuOverlay').classList.toggle('active');
+}
+function closeMobileMenu() {
+  document.getElementById('mobileMenuOverlay').classList.remove('active');
+}
+</script>
+</body>
+</html>
