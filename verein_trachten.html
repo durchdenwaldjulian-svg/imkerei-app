@@ -696,12 +696,18 @@ async function init() {
 
         // Profil-Daten laden
         var userIds = (mitgliederData || []).map(function(m) { return m.user_id; });
-        var { data: profiles } = await sb.from('profiles')
-            .select('user_id, email, name')
-            .in('user_id', userIds);
-
         var profileMap = {};
-        (profiles || []).forEach(function(p) { profileMap[p.user_id] = p; });
+        
+        if (userIds.length > 0) {
+            // Einzeln laden falls .in() Probleme macht
+            for (var i = 0; i < userIds.length; i++) {
+                var { data: profData } = await sb.from('profiles')
+                    .select('user_id, email, name')
+                    .eq('user_id', userIds[i])
+                    .maybeSingle();
+                if (profData) profileMap[profData.user_id] = profData;
+            }
+        }
 
         mitglieder = (mitgliederData || []).map(function(m) {
             var p = profileMap[m.user_id] || {};
