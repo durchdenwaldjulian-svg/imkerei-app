@@ -46,7 +46,7 @@ const db = {
 
 // ============================================
 // AUTH HELPER für externe Seiten
-// Gibt session.user zurück oder redirected zu index.html
+// Gibt session.user zurück oder redirected zu app.html
 // Im Preview-Modus (Fehler/keine Session) wird null zurückgegeben
 // ============================================
 async function checkAuth(opts) {
@@ -69,7 +69,7 @@ async function checkAuth(opts) {
     }
     
     // Standard: Redirect zu Login
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
     return null;
 }
 

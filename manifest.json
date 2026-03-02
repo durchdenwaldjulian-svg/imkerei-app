@@ -2,7 +2,7 @@
   "name": "Imkerei Planer",
   "short_name": "Imkerei",
   "description": "Deine Imkerei-Verwaltung – Völker, Standorte, Wetter, Trachten & mehr",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#FFFBF0",
   "theme_color": "#F5A623",

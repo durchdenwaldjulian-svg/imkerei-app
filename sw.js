@@ -4,7 +4,7 @@ const CACHE_NAME = 'imkerei-planer-v1';
 // Dateien die gecacht werden sollen (App-Shell)
 const APP_SHELL = [
   './',
-  './index.html',
+  './app.html',
   './bewertung.html',
   './ernte.html',
   './assistent.html',
@@ -86,7 +86,7 @@ self.addEventListener('fetch', event => {
         .catch(() => {
           // Offline → aus Cache laden
           return caches.match(event.request).then(cached => {
-            return cached || caches.match('./index.html');
+            return cached || caches.match('./app.html');
           });
         })
     );

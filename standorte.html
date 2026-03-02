@@ -192,7 +192,7 @@ var voelkerCount = 2;
 // ============================================
 async function init() {
     var { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
+    if (!session) { window.location.href = 'app.html'; return; }
     currentUser = session.user;
 
     var results = await Promise.all([

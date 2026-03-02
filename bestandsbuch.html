@@ -265,7 +265,7 @@ const METHODEN_COLORS = {
 async function init() {
     var { data: { session } } = await sb.auth.getSession();
     if (!session) {
-        window.location.href = 'index.html';
+        window.location.href = 'app.html';
         return;
     }
     currentUser = session.user;
@@ -504,7 +504,7 @@ function renderStandorte() {
     });
 
     if (standorte.length === 0) {
-        html = '<div class="empty-state" style="padding:3rem"><div class="icon">📍</div><h3>Keine Standorte vorhanden</h3><p>Lege zuerst Standorte in der <a href="index.html" style="color:var(--honey)">Hauptapp</a> an.</p></div>';
+        html = '<div class="empty-state" style="padding:3rem"><div class="icon">📍</div><h3>Keine Standorte vorhanden</h3><p>Lege zuerst Standorte in der <a href="app.html" style="color:var(--honey)">Hauptapp</a> an.</p></div>';
     }
 
     container.innerHTML = html;

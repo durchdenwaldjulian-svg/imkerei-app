@@ -5,14 +5,14 @@
 // ============================================
 
 (function(){
-    var currentFile = window.location.pathname.split('/').pop() || 'index.html';
-    if (currentFile === '') currentFile = 'index.html';
+    var currentFile = window.location.pathname.split('/').pop() || 'app.html';
+    if (currentFile === '') currentFile = 'app.html';
 
     var sections = [
         { title: 'Übersicht', items: [
-            { href: 'index.html#heute', icon: '📅', label: 'Heute' },
+            { href: 'app.html#heute', icon: '📅', label: 'Heute' },
             { href: 'standorte.html', icon: '📍', label: 'Standorte' },
-            { href: 'index.html#aufgaben', icon: '📝', label: 'Aufgaben' }
+            { href: 'app.html#aufgaben', icon: '📝', label: 'Aufgaben' }
         ]},
         { title: 'Völker', items: [
             { href: 'zuchtplan.html', icon: '👑', label: 'Königinnenzucht' },
@@ -31,7 +31,7 @@
             { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' }
         ]},
         { title: 'Verwaltung', items: [
-            { href: 'index.html#kosten', icon: '💰', label: 'Kosten' }
+            { href: 'app.html#kosten', icon: '💰', label: 'Kosten' }
         ]}
     ];
 
@@ -43,9 +43,9 @@
 
     function isActive(href) {
         if (href.indexOf('#') > -1) {
-            var file = href.split('#')[0] || 'index.html';
+            var file = href.split('#')[0] || 'app.html';
             var hash = href.split('#')[1];
-            if (currentFile === 'index.html' && file === 'index.html') {
+            if (currentFile === 'app.html' && file === 'app.html') {
                 var pageHash = window.location.hash.replace('#','');
                 if (!pageHash && hash === 'heute') return true;
                 return pageHash === hash;
@@ -78,18 +78,18 @@
             h += '<a href="' + item.href + '" class="nav-item" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">' + item.label + '</a>';
         });
 
-        h += '<a href="index.html#einstellungen" class="nav-item' + (isActive('index.html#einstellungen') ? ' active' : '') + '">⚙️ Einstellungen</a>';
-        h += '<button class="nav-item" style="color:#ef4444" onclick="if(typeof doLogout===\'function\')doLogout();else window.location.href=\'index.html\';">🚪 Abmelden</button>';
+        h += '<a href="app.html#einstellungen" class="nav-item' + (isActive('app.html#einstellungen') ? ' active' : '') + '">⚙️ Einstellungen</a>';
+        h += '<button class="nav-item" style="color:#ef4444" onclick="if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';">🚪 Abmelden</button>';
         return h;
     }
 
     // === MOBILE BOTTOM BAR ===
     function buildMobileBar() {
         var h = '';
-        var isIndex = (currentFile === 'index.html');
+        var isIndex = (currentFile === 'app.html');
         
         if (isIndex) {
-            // Auf index.html: Buttons die app.page steuern
+            // Auf app.html: Buttons die app.page steuern
             h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>';
             h += '<a href="standorte.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Standorte</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
@@ -97,11 +97,11 @@
             h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>';
         } else {
             // Auf eigenständigen Seiten: alles als Links
-            h += '<a href="index.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>Heute</a>';
+            h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>Heute</a>';
             h += '<a href="standorte.html" class="mobile-nav-btn'+(currentFile==='standorte.html'?' active':'')+'"><span class="mn-icon">📍</span>Standorte</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-            h += '<a href="index.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span>Aufgaben</a>';
-            h += '<a href="index.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</span>Mehr</a>';
+            h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span>Aufgaben</a>';
+            h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</span>Mehr</a>';
         }
         return h;
     }
@@ -154,7 +154,7 @@
             g.items.forEach(function(item) {
                 var st = item.small ? ' style="font-size:.7rem"' : '';
                 if (item.special === 'logout') {
-                    h += '<button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();if(typeof doLogout===\'function\')doLogout();else window.location.href=\'index.html\';"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                    h += '<button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
                 } else if (item.page) {
                     h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
                 } else {
@@ -178,11 +178,11 @@
     if (mobileMenuEl) mobileMenuEl.innerHTML = buildMobileMenu();
 
     // === INDEX.HTML: Interne Hash-Links abfangen ===
-    if (currentFile === 'index.html' && navEl) {
-        navEl.querySelectorAll('a.nav-item[href^="index.html#"]').forEach(function(link) {
+    if (currentFile === 'app.html' && navEl) {
+        navEl.querySelectorAll('a.nav-item[href^="app.html#"]').forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                var page = link.getAttribute('href').replace('index.html#', '');
+                var page = link.getAttribute('href').replace('app.html#', '');
                 navEl.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
                 link.classList.add('active');
                 if (typeof app !== 'undefined') {
@@ -200,7 +200,7 @@
         var nav = document.getElementById('mainNav');
         if (!nav) return;
         nav.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
-        var link = nav.querySelector('a.nav-item[href="index.html#' + page + '"]');
+        var link = nav.querySelector('a.nav-item[href="app.html#' + page + '"]');
         if (link) link.classList.add('active');
     };
 
@@ -230,8 +230,8 @@
     if (typeof window.mobileMenuOpen === 'undefined') window.mobileMenuOpen = window.navMobileMenuOpen;
     if (typeof window.mobileMenuClose === 'undefined') window.mobileMenuClose = window.navMobileMenuClose;
 
-    // === MOBILE: Button Clicks binden (nur index.html) ===
-    if (currentFile === 'index.html') {
+    // === MOBILE: Button Clicks binden (nur app.html) ===
+    if (currentFile === 'app.html') {
         setTimeout(function() {
             document.querySelectorAll('.mobile-menu-item[data-mmpage]').forEach(function(btn) {
                 btn.addEventListener('click', function() {

@@ -62,12 +62,6 @@
         .badge-active{background:#FFF3D6;color:#92400e;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
         .badge-upcoming{background:#dbeafe;color:#1e40af;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
 
-        /* === CHECKBOX BUTTONS (Timeline) === */
-        .btn-check{width:36px;height:36px;border-radius:8px;border:2px solid #E8DFD4;background:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;color:#A69580}
-        .btn-check:hover{border-color:#F5A623;background:#FFF8EE;transform:scale(1.1)}
-        .btn-check.done{border-color:#10b981;background:#d1fae5;color:#065f46}
-        .btn-check.done:hover{border-color:#ef4444;background:#fee2e2}
-
         /* === TAGE COUNTER (Modal) === */
         .tage-counter{display:flex;align-items:center;gap:.75rem}
         .tage-counter .counter-value{font-size:1.5rem;min-width:2.5rem}
@@ -183,9 +177,9 @@ let currentFilter = 'alle'; // alle | aktiv | abgeschlossen
 // DEMO-DATEN für Preview
 // ============================================
 const DEMO_PLAENE = [
-    {id:'z1', name:'Königin 2026-1 (Buckfast)', sammelbrut: new Date('2026-03-15').getTime(), umlarven: new Date('2026-03-19').getTime(), zusetzen: new Date('2026-03-31').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done:null, umlarven_done:null, zusetzen_done:null, created: new Date('2026-02-20').getTime()},
-    {id:'z2', name:'Königin 2026-2 (Carnica)', sammelbrut: new Date('2026-04-01').getTime(), umlarven: new Date('2026-04-05').getTime(), zusetzen: new Date('2026-04-17').getTime(), notizen:'Carnica aus dem Verein. Schwarmträge Linie.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done:null, umlarven_done:null, zusetzen_done:null, created: new Date('2026-02-22').getTime()},
-    {id:'z3', name:'Standbegattung Ableger 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Bereits abgeschlossen. Königin zeichnen!', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-02-01').getTime(), umlarven_done: new Date('2026-02-05').getTime(), zusetzen_done: new Date('2026-02-17').getTime(), created: new Date('2026-01-15').getTime()}
+    {id:'z1', name:'Königin 2026-1 (Buckfast)', sammelbrut: new Date('2026-03-15').getTime(), umlarven: new Date('2026-03-19').getTime(), zusetzen: new Date('2026-03-31').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-20').getTime()},
+    {id:'z2', name:'Königin 2026-2 (Carnica)', sammelbrut: new Date('2026-04-01').getTime(), umlarven: new Date('2026-04-05').getTime(), zusetzen: new Date('2026-04-17').getTime(), notizen:'Carnica aus dem Verein. Schwarmträge Linie.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-22').getTime()},
+    {id:'z3', name:'Standbegattung Ableger 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Bereits abgeschlossen. Königin zeichnen!', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-01-15').getTime()}
 ];
 
 // ============================================
@@ -235,9 +229,6 @@ async function loadFromSupabase() {
             notizen: r.notizen,
             tageUmlarven: r.tage_umlarven || 4,
             tageZusetzen: r.tage_zusetzen || 12,
-            sammelbrut_done: r.sammelbrut_done || null,
-            umlarven_done: r.umlarven_done || null,
-            zusetzen_done: r.zusetzen_done || null,
             created: new Date(r.created_at).getTime()
         };
     });
@@ -263,8 +254,8 @@ function render() {
 
     // Stats
     var jetzt = Date.now();
-    var aktive = plaene.filter(function(p) { return !p.zusetzen_done; });
-    var abgeschlossen = plaene.filter(function(p) { return !!p.zusetzen_done; });
+    var aktive = plaene.filter(function(p) { return jetzt < p.zusetzen; });
+    var abgeschlossen = plaene.filter(function(p) { return jetzt >= p.zusetzen; });
     var naechsterTermin = null;
     aktive.forEach(function(p) {
         [p.sammelbrut, p.umlarven, p.zusetzen].forEach(function(t) {
@@ -334,13 +325,13 @@ function render() {
 
     filtered.forEach(function(plan, idx) {
         var phase = getPhase(plan);
-        var badgeClass = plan.zusetzen_done ? 'badge-completed' : (plan.sammelbrut_done ? 'badge-active' : 'badge-upcoming');
+        var badgeClass = jetzt >= plan.zusetzen ? 'badge-completed' : (jetzt >= plan.sammelbrut ? 'badge-active' : 'badge-upcoming');
 
         var naechster = null;
         var naechstesDatum = null;
-        if (!plan.sammelbrut_done) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
-        else if (!plan.umlarven_done) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
-        else if (!plan.zusetzen_done) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
+        if (jetzt < plan.sammelbrut) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
+        else if (jetzt < plan.umlarven) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
+        else if (jetzt < plan.zusetzen) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
         var verbleibend = naechstesDatum ? getTageVerbleibend(naechstesDatum) : null;
 
         html += '<div class="zucht-card anim-in" style="animation-delay:' + (idx * 0.06) + 's">';
@@ -359,53 +350,19 @@ function render() {
         }
         html += '</div>';
 
-        // Timeline mit Abhak-Funktion
+        // Timeline
         html += '<div class="timeline">';
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.sammelbrut ? 'completed' : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div></div>';
 
-        // --- Sammelbrut ---
-        var sammelDone = !!plan.sammelbrut_done;
-        var sammelDotClass = sammelDone ? 'completed' : (jetzt >= plan.sammelbrut ? 'active' : 'upcoming');
-        html += '<div class="timeline-item"><div class="timeline-dot ' + sammelDotClass + '"></div>';
-        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<div><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div>';
-        if (sammelDone) {
-            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Erledigt am ' + formatDatum(plan.sammelbrut_done) + ' – Klick zum Rückgängig">✅</button>';
-        } else {
-            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')" title="Als erledigt markieren">☐</button>';
-        }
-        html += '</div>';
-        if (sammelDone) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.sammelbrut_done) + '</div>';
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.umlarven ? (jetzt < plan.zusetzen ? 'active' : 'completed') : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div>';
+        if (jetzt >= plan.umlarven && jetzt < plan.zusetzen) html += '<div class="timeline-note">🐝 Weiselzellen wachsen...</div>';
         html += '</div></div>';
 
-        // --- Umlarven ---
-        var umlarvenDone = !!plan.umlarven_done;
-        var umlarvenDotClass = umlarvenDone ? 'completed' : (jetzt >= plan.umlarven ? 'active' : 'upcoming');
-        html += '<div class="timeline-item"><div class="timeline-dot ' + umlarvenDotClass + '"></div>';
-        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<div><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div></div>';
-        if (umlarvenDone) {
-            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Erledigt am ' + formatDatum(plan.umlarven_done) + ' – Klick zum Rückgängig">✅</button>';
-        } else {
-            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'umlarven_done\')" title="Als erledigt markieren">☐</button>';
-        }
-        html += '</div>';
-        if (umlarvenDone) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.umlarven_done) + '</div>';
-        else if (jetzt >= plan.umlarven && !umlarvenDone && jetzt < plan.zusetzen) html += '<div class="timeline-note">🐝 Weiselzellen wachsen...</div>';
-        html += '</div></div>';
-
-        // --- Zusetzen ---
-        var zusetzenDone = !!plan.zusetzen_done;
-        var zusetzenDotClass = zusetzenDone ? 'completed' : (jetzt >= plan.zusetzen ? 'active' : 'upcoming');
-        html += '<div class="timeline-item"><div class="timeline-dot ' + zusetzenDotClass + '"></div>';
-        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div></div>';
-        if (zusetzenDone) {
-            html += '<button class="btn-check done" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Erledigt am ' + formatDatum(plan.zusetzen_done) + ' – Klick zum Rückgängig">✅</button>';
-        } else {
-            html += '<button class="btn-check" onclick="event.stopPropagation();toggleStep(\'' + plan.id + '\',\'zusetzen_done\')" title="Als erledigt markieren">☐</button>';
-        }
-        html += '</div>';
-        if (zusetzenDone) html += '<div class="timeline-note" style="color:#10b981">✅ Zuchtplan abgeschlossen am ' + formatDatum(plan.zusetzen_done) + '</div>';
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.zusetzen ? 'completed' : 'upcoming') + '"></div>';
+        html += '<div class="timeline-content"><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div>';
+        if (jetzt >= plan.zusetzen) html += '<div class="timeline-note">✅ Zuchtplan abgeschlossen!</div>';
         html += '</div></div>';
         html += '</div>';
 
@@ -563,40 +520,6 @@ async function deleteZucht(id) {
 }
 
 // ============================================
-// TOGGLE STEP (Abhaken / Rückgängig)
-// ============================================
-async function toggleStep(planId, field) {
-    var plan = plaene.find(function(p) { return p.id === planId; });
-    if (!plan) return;
-
-    // Toggle: Wenn schon done → auf null setzen (rückgängig), sonst jetzt-Timestamp
-    var newValue = plan[field] ? null : Date.now();
-    plan[field] = newValue;
-
-    // In Supabase speichern (nur wenn eingeloggt)
-    if (!isPreview) {
-        var updateData = {};
-        updateData[field] = newValue;
-        try {
-            var res = await sb.from('zuchtplaene').update(updateData).eq('id', planId);
-            if (res.error) {
-                console.error('[Zucht] Toggle Fehler:', res.error);
-                showToast('Fehler: ' + res.error.message, 'error');
-                plan[field] = newValue ? null : Date.now();
-                return;
-            }
-        } catch(e) {
-            console.error('[Zucht] Toggle Exception:', e);
-            showToast('Fehler: ' + e.message, 'error');
-            return;
-        }
-    }
-
-    showToast(newValue ? '✅ Schritt erledigt!' : '↩️ Rückgängig gemacht', newValue ? 'success' : '');
-    render();
-}
-
-// ============================================
 // FILTER
 // ============================================
 function setFilter(f) {
@@ -608,12 +531,11 @@ function setFilter(f) {
 // HELPERS
 // ============================================
 function getPhase(plan) {
-    if (plan.zusetzen_done) return '✅ Abgeschlossen';
-    if (plan.umlarven_done) return '🔬 Nach Umlarven';
-    if (plan.sammelbrut_done) return '📦 Sammelbrut läuft';
     var j = Date.now();
-    if (j < plan.sammelbrut) return '📋 Geplant';
-    return '⏳ Fällig';
+    if (j >= plan.zusetzen) return '✅ Abgeschlossen';
+    if (j >= plan.umlarven) return '🔬 Nach Umlarven';
+    if (j >= plan.sammelbrut) return '📦 Sammelbrut läuft';
+    return '📋 Geplant';
 }
 
 function getTageVerbleibend(d) {

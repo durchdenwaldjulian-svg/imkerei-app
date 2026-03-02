@@ -19,12 +19,12 @@
         }
 
         try {
-            var seite = window.location.pathname.split('/').pop() || 'index.html';
-            if (seite === '') seite = 'index.html';
+            var seite = window.location.pathname.split('/').pop() || 'app.html';
+            if (seite === '') seite = 'app.html';
 
             // Seitenname hübsch formatieren
             var seitenNamen = {
-                'index.html': 'Heute',
+                'app.html': 'Heute',
                 'standorte.html': 'Standorte',
                 'behandlung.html': 'Behandlungen',
                 'tracht.html': 'Tracht',
@@ -39,8 +39,8 @@
             };
             var seitenLabel = seitenNamen[seite] || seite;
 
-            // Hash-Page für index.html berücksichtigen
-            if (seite === 'index.html' && window.location.hash) {
+            // Hash-Page für app.html berücksichtigen
+            if (seite === 'app.html' && window.location.hash) {
                 var hash = window.location.hash.replace('#','');
                 var hashNamen = {
                     'heute': 'Heute', 'aufgaben': 'Aufgaben', 'kosten': 'Kosten',

@@ -152,7 +152,7 @@
         <h1>🐝 Imkermeister – Admin</h1>
         <div style="display:flex;align-items:center;gap:1rem">
             <span style="font-size:.75rem;color:#9ca3af" id="adminEmailDisplay"></span>
-            <a href="index.html">← Zur App</a>
+            <a href="app.html">← Zur App</a>
         </div>
     </div>
     
@@ -346,7 +346,7 @@ async function checkAdminAccess() {
         if (!isAdmin) {
             statusEl.textContent = '';
             errorEl.style.display = 'block';
-            errorEl.innerHTML = '🚫 Kein Admin-Zugriff.<br><br><span style="font-size:.8rem;color:#6b7280">Eingeloggt als: ' + adminUser.email + '</span><br><br><a href="index.html" style="color:#3b82f6;font-weight:600">→ Zurück zur App</a>';
+            errorEl.innerHTML = '🚫 Kein Admin-Zugriff.<br><br><span style="font-size:.8rem;color:#6b7280">Eingeloggt als: ' + adminUser.email + '</span><br><br><a href="app.html" style="color:#3b82f6;font-weight:600">→ Zurück zur App</a>';
             return;
         }
         
@@ -361,7 +361,7 @@ async function checkAdminAccess() {
         console.error('Admin-Check Fehler:', e);
         statusEl.textContent = '';
         errorEl.style.display = 'block';
-        errorEl.innerHTML = '⚠️ Fehler: ' + e.message + '<br><br><a href="index.html" style="color:#3b82f6">→ Zurück zur App</a>';
+        errorEl.innerHTML = '⚠️ Fehler: ' + e.message + '<br><br><a href="app.html" style="color:#3b82f6">→ Zurück zur App</a>';
     }
 }
 
@@ -453,7 +453,7 @@ async function doPasswordReset() {
     
     try {
         var result = await sb.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/index.html'
+            redirectTo: window.location.origin + '/app.html'
         });
         if (result.error) {
             msgEl.innerHTML = '<span style="color:#ef4444">Fehler: ' + result.error.message + '</span>';
