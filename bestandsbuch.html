@@ -7,6 +7,8 @@
 <link rel="manifest" href="manifest.json">
 <title>📋 Bestandsbuch – Imkerei Cloud</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-styles.css">
 <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
@@ -43,13 +45,7 @@ if (!window.jspdf) {
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; min-height:100vh; padding-left:220px; }
 
-/* Sidebar Nav */
-.nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-.nav .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-.nav .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-.nav .nav-item{display:block;padding:.625rem 1rem;text-align:left;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-.nav .nav-item:hover{background:rgba(245,166,35,0.06)}
-.nav .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+/* Nav: handled by shared-styles.css */
 
 /* Loading */
 .loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:999; }
@@ -143,10 +139,6 @@ tbody tr:last-child td { border-bottom:none; }
 /* Responsive */
 @media (max-width:640px) {
     body { padding-left:0; padding-bottom:90px; }
-    .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
-    .nav .nav-brand,.nav .nav-section{display:none}
-    .nav .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-    .nav .nav-item.active{border-left:none;border-bottom-color:#F5A623}
     .header { padding:.75rem 1rem; flex-direction:column; gap:.5rem; text-align:center; }
     .main { padding:1rem; }
     .profil-grid { grid-template-columns:1fr; }
