@@ -8,7 +8,7 @@
 - **GitHub Repo:** durchdenwaldjulian-svg/imkerei-app
 - **Website:** https://durchdenwaldjulian-svg.github.io/imkerei-app/
 - **Trachtkarte:** https://durchdenwaldjulian-svg.github.io/imkerei-app/trachtkarte.html
-- **Admin:** https://durchdenwaldjulian-svg.github.io/imkerei-app/imkermeister.html (Passwort: Veronika4701)
+- **Admin:** https://bienenplan.de/imkermeister.html (Supabase Auth + admins-Tabelle)
 - **Supabase Projekt:** reyswuedptkyfdkmdpft.supabase.co
 - **Supabase Anon Key:** eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI
 

@@ -10,7 +10,7 @@ const APP_SHELL = [
   './assistent.html',
   './bestandsbuch.html',
   './trachtkarte.html',
-  './landing.html',
+  './index.html',
   './shared-styles.css',
   './config.js',
   './icon-192.png',
