@@ -130,16 +130,35 @@ img{max-width:100%;display:block}
 .map-pin{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);padding:10px 16px;border-radius:10px;color:rgba(255,255,255,.7);font-size:.85rem}
 .map-pin b{color:var(--honey)}
 
-/* === KOSTENLOS === */
-.free-section{position:relative;z-index:1;padding:100px 32px;text-align:center}
-.free-card{max-width:700px;margin:40px auto 0;background:var(--white);border-radius:20px;padding:48px;box-shadow:0 8px 32px rgba(28,20,16,.06);border:2px solid rgba(245,166,35,.12);position:relative;overflow:hidden}
-.free-card::after{content:'🐝';position:absolute;top:-10px;right:-10px;font-size:4rem;opacity:.08;transform:rotate(15deg)}
-.free-price{font-family:'Fraunces',serif;font-size:4rem;font-weight:900;color:var(--bark);line-height:1}
-.free-price span{font-size:1.2rem;font-weight:400;color:var(--text-soft)}
-.free-label{font-size:1.1rem;color:var(--honey-deep);font-weight:600;margin:12px 0 24px}
-.free-feats{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;text-align:left;margin-bottom:32px}
-.free-feats li{list-style:none;font-size:.92rem;color:var(--text);font-weight:500;display:flex;align-items:center;gap:8px}
-.free-feats li::before{content:'✓';color:var(--forest);font-weight:800;font-size:.9rem}
+/* === PRICING === */
+.pricing{position:relative;z-index:1;padding:100px 32px}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1000px;margin:0 auto;align-items:start}
+.price-card{background:var(--white);border-radius:20px;padding:36px 28px;border:1px solid rgba(245,166,35,.08);box-shadow:0 2px 8px rgba(28,20,16,.04);text-align:center;position:relative;transition:all .25s}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,20,16,.08)}
+.price-card.popular{border:2px solid var(--honey);box-shadow:0 8px 32px rgba(245,166,35,.15);transform:scale(1.03);z-index:2}
+.price-card.popular:hover{transform:scale(1.03) translateY(-4px)}
+.popular-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--honey);color:var(--bark);font-size:.75rem;font-weight:700;padding:5px 16px;border-radius:100px;white-space:nowrap}
+.plan-emoji{font-size:2.2rem;margin-bottom:12px}
+.plan-name{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--bark);margin-bottom:6px}
+.plan-desc{font-size:.85rem;color:var(--text-soft);margin-bottom:20px;line-height:1.5}
+.plan-price{display:flex;align-items:baseline;justify-content:center;gap:2px;margin-bottom:4px}
+.plan-price .currency{font-size:1.2rem;color:var(--text-soft);font-weight:600;align-self:flex-start;margin-top:8px}
+.plan-price .amount{font-family:'Fraunces',serif;font-size:3rem;font-weight:900;color:var(--bark);line-height:1}
+.plan-price .period{font-size:.9rem;color:var(--text-soft)}
+.plan-yearly{font-size:.8rem;color:var(--text-soft);margin-bottom:20px}
+.plan-divider{height:1px;background:rgba(28,20,16,.06);margin-bottom:20px}
+.plan-feats{list-style:none;text-align:left;margin-bottom:28px;display:flex;flex-direction:column;gap:10px}
+.plan-feats li{font-size:.88rem;color:var(--text);font-weight:500;display:flex;align-items:center;gap:10px}
+.plan-feats li::before{content:'✓';color:var(--forest);font-weight:800;font-size:.85rem;flex-shrink:0}
+.btn-plan{display:block;padding:13px 24px;border-radius:100px;font-weight:700;font-size:.92rem;text-align:center;transition:all .25s;cursor:pointer;text-decoration:none}
+.btn-plan.outline{background:transparent;border:2px solid rgba(28,20,16,.1);color:var(--bark)}
+.btn-plan.outline:hover{border-color:var(--honey);color:var(--honey-deep)}
+.btn-plan.filled{background:var(--honey);border:2px solid var(--honey);color:var(--bark)}
+.btn-plan.filled:hover{background:var(--honey-deep);color:var(--white);border-color:var(--honey-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
+.guarantee{display:flex;align-items:center;gap:14px;background:var(--forest-light);border:1px solid rgba(61,124,71,.12);border-radius:16px;padding:18px 24px;max-width:600px;margin:36px auto 0;text-align:left}
+.guarantee span{font-size:1.8rem;flex-shrink:0}
+.guarantee p{font-size:.85rem;color:var(--forest);line-height:1.5}
+.guarantee strong{color:var(--bark)}
 
 /* === FAQ === */
 .faq{position:relative;z-index:1;padding:80px 32px 100px}
@@ -184,6 +203,9 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   .hero-visual{max-width:420px;margin:0 auto}
   .feat-grid{grid-template-columns:1fr}
   .hl-wrap{grid-template-columns:1fr;gap:40px}
+  .price-grid{grid-template-columns:1fr;max-width:400px}
+  .price-card.popular{transform:none}
+  .price-card.popular:hover{transform:translateY(-4px)}
   .free-feats{grid-template-columns:1fr}
   .footer-top{grid-template-columns:1fr 1fr;gap:28px}
   .footer-bottom{flex-direction:column;text-align:center}
@@ -204,15 +226,17 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#trachtkarte">Trachtkarte</a>
+    <a href="#pricing">Preise</a>
     <a href="#faq">FAQ</a>
-    <a href="app.html" class="btn-cta">Kostenlos starten →</a>
+    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
   </div>
   <button class="menu-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.textContent==='☰'?'✕':'☰'" aria-label="Menü">☰</button>
   <div class="nav-links" style="display:none" id="mobileNav">
     <a href="#features" onclick="closeMobile()">Features</a>
     <a href="#trachtkarte" onclick="closeMobile()">Trachtkarte</a>
+    <a href="#pricing" onclick="closeMobile()">Preise</a>
     <a href="#faq" onclick="closeMobile()">FAQ</a>
-    <a href="app.html" class="btn-cta">Kostenlos starten →</a>
+    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
   </div>
 </nav>
 
@@ -224,7 +248,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
       <h1>Deine Imkerei.<br><em>Digital organisiert.</em></h1>
       <p>Völker verwalten, Behandlungen planen, Trachten kartieren, Ernten dokumentieren und Königinnen züchten – alles in einer App. Kostenlos.</p>
       <div class="hero-btns">
-        <a href="app.html" class="btn-primary">Jetzt starten – gratis 🍯</a>
+        <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🍯</a>
         <a href="#features" class="btn-ghost">Features ansehen</a>
       </div>
     </div>
@@ -356,28 +380,77 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   </div>
 </section>
 
-<!-- KOSTENLOS -->
-<section class="free-section" id="pricing">
-  <div class="section-inner">
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-inner" style="text-align:center">
     <div class="tag rv">Preise</div>
-    <h2 class="section-title rv">Komplett kostenlos.</h2>
-    <p class="section-sub rv" style="margin:0 auto 0">Keine versteckten Kosten. Keine Abo-Fallen. Alle Features inklusive.</p>
-    <div class="free-card rv">
-      <div class="free-price">0 € <span>/ für immer</span></div>
-      <div class="free-label">Alle Features – ohne Einschränkung</div>
-      <ul class="free-feats">
-        <li>Unbegrenzt Völker & Standorte</li>
-        <li>Behandlungsplaner</li>
-        <li>Königinnenzucht-Planer</li>
-        <li>Trachtkarte & Community</li>
-        <li>Ernte- & Kostenanalyse</li>
-        <li>Packliste & Aufgaben</li>
-        <li>Bestandsbuch PDF-Export</li>
-        <li>Cloud-Backup & Sync</li>
-        <li>Wetter-Vorschau</li>
-        <li>Heute-Dashboard</li>
-      </ul>
-      <a href="app.html" class="btn-primary" style="width:100%;justify-content:center;font-size:1.05rem">Kostenlos registrieren →</a>
+    <h2 class="section-title rv">Ein Plan für jeden Imker</h2>
+    <p class="section-sub rv" style="margin:0 auto 48px">Starte kostenlos und upgrade, wenn du bereit bist.</p>
+    
+    <div class="price-grid">
+      <!-- STARTER -->
+      <div class="price-card rv">
+        <div class="plan-emoji">🐝</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-desc">Für Einsteiger und kleine Imkereien</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">0</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">Für immer kostenlos</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Bis zu 5 Völker</li>
+          <li>1 Standort</li>
+          <li>Aufgaben & Packliste</li>
+          <li>Behandlungsplaner</li>
+          <li>Trachtkarte (lesen)</li>
+          <li>Wetter-Vorschau</li>
+        </ul>
+        <a href="app.html#register" class="btn-plan outline">Kostenlos starten</a>
+      </div>
+      
+      <!-- PRO -->
+      <div class="price-card popular rv">
+        <div class="popular-tag">Beliebteste Wahl</div>
+        <div class="plan-emoji">🍯</div>
+        <div class="plan-name">Imker Pro</div>
+        <div class="plan-desc">Für aktive Imker, die alles im Griff haben wollen</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">4,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">oder €49/Jahr (2 Monate gratis!)</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Unbegrenzt Völker & Standorte</li>
+          <li>Königinnenzucht-Planer</li>
+          <li>Ernte- & Kostenanalyse</li>
+          <li>Trachten teilen auf Karte</li>
+          <li>Bestandsbuch PDF-Export</li>
+          <li>Datenexport & Backup</li>
+          <li>E-Mail-Erinnerungen</li>
+        </ul>
+        <a href="app.html#register" class="btn-plan filled">Jetzt upgraden →</a>
+      </div>
+      
+      <!-- MEISTER -->
+      <div class="price-card rv">
+        <div class="plan-emoji">👑</div>
+        <div class="plan-name">Imkermeister</div>
+        <div class="plan-desc">Für Profis, Vereine & Erwerbsimker</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">12,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">oder €129/Jahr (1 Monat gratis!)</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Alles aus Imker Pro</li>
+          <li>Multi-User (Team-Zugang)</li>
+          <li>Admin-Dashboard</li>
+          <li>Prioritäts-Support</li>
+          <li>Veterinäramt-Berichte</li>
+          <li>API-Zugang</li>
+        </ul>
+        <a href="mailto:info@imkershop-durchdenwald.de" class="btn-plan outline">Kontakt aufnehmen</a>
+      </div>
+    </div>
+    
+    <div class="guarantee rv">
+      <span>🛡️</span>
+      <p><strong>30 Tage Geld-zurück-Garantie.</strong> Teste jeden bezahlten Plan risikofrei. Nicht zufrieden? Volle Erstattung.</p>
     </div>
   </div>
 </section>
@@ -417,7 +490,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   <div class="cta-box rv">
     <h2>Bereit für eine<br>bessere Imkerei?</h2>
     <p>Starte jetzt kostenlos – ohne Kreditkarte, ohne Haken.</p>
-    <a href="app.html" class="btn-primary">Jetzt kostenlos starten 🐝</a>
+    <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🐝</a>
   </div>
 </section>
 
@@ -434,7 +507,8 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <a href="#features">Features</a>
         <a href="#trachtkarte">Trachtkarte</a>
         <a href="#faq">FAQ</a>
-        <a href="app.html">App starten</a>
+        <a href="app.html#register">Registrieren</a>
+        <a href="app.html">Anmelden</a>
       </div>
       <div class="footer-col">
         <h4>Community</h4>

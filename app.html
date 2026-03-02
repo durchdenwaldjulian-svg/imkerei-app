@@ -2564,6 +2564,10 @@ behandlungMod.init();
         document.getElementById('authScreen').style.display = 'block';
         document.querySelector('.nav').style.display = 'none';
         document.querySelector('.footer').style.display = 'none';
+        // Wenn #register im Hash → direkt Registrieren-Tab zeigen
+        if (_startPageHash === 'register') {
+            showAuthTab('register');
+        }
     }
     
     // Listen for auth changes
