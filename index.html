@@ -568,7 +568,7 @@ async function startApp() {
         return { id: r.id, beschreibung: r.beschreibung, betrag: parseFloat(r.betrag)||0, kat: r.kat, datum: r.datum };
     });
     zuchtplanMod.plaene = (results[4].data || []).map(function(r) {
-        return { id: r.id, name: r.name, sammelbrut: r.sammelbrut, umlarven: r.umlarven, zusetzen: r.zusetzen, notizen: r.notizen, tageUmlarven: r.tage_umlarven, tageZusetzen: r.tage_zusetzen, created: r.created_at };
+        return { id: r.id, name: r.name, sammelbrut: r.sammelbrut, umlarven: r.umlarven, zusetzen: r.zusetzen, notizen: r.notizen, tageUmlarven: r.tage_umlarven, tageZusetzen: r.tage_zusetzen, sammelbrut_done: r.sammelbrut_done||null, umlarven_done: r.umlarven_done||null, zusetzen_done: r.zusetzen_done||null, created: r.created_at };
     });
     trachtkalenderMod.trachten = (results[5].data || []).map(function(r) {
         return { id: r.id, typ: r.typ, standort: r.standort, beginn: r.beginn, ende: r.ende, ertrag: parseFloat(r.ertrag)||0, notizen: r.notizen, lat: r.lat||null, lng: r.lng||null, shared: r.shared||false, created: r.created_at };
@@ -1365,6 +1365,20 @@ const app={
         this.render();
     },
     
+    doneZuchtStep(planId, doneField){
+        var plan = zuchtplanMod.plaene.find(function(x){return x.id === planId;});
+        if (!plan) return;
+        var now = Date.now();
+        plan[doneField] = now;
+        var updateData = {};
+        updateData[doneField] = now;
+        sb.from('zuchtplaene').update(updateData).eq('id', planId).then(function(res){
+            if(res.error) console.error('Zucht-Step Fehler:', res.error);
+        });
+        this.toast('✅ Zuchtschritt erledigt!', 'success');
+        this.render();
+    },
+    
     // === ZUCHTPLAN === (jetzt in zuchtplan.html)
     openZuchtModal(id){
         window.location.href = 'zuchtplan.html';
@@ -1519,10 +1533,10 @@ const app={
             });
         });
         
-        // 3. Zuchtplan-Termine
+        // 3. Zuchtplan-Termine (nur nicht-abgehakte Schritte)
         zuchtplanMod.plaene.forEach(function(p){
-            [{name:'Umlarven',ts:p.umlarven,emoji:'🔬'},{name:'Zusetzen',ts:p.zusetzen,emoji:'👑'}].forEach(function(step){
-                if (step.ts) {
+            [{name:'Umlarven',ts:p.umlarven,emoji:'🔬',doneField:'umlarven_done'},{name:'Zusetzen',ts:p.zusetzen,emoji:'👑',doneField:'zusetzen_done'}].forEach(function(step){
+                if (step.ts && !p[step.doneField]) {
                     var tage = Math.ceil((step.ts - heuteTs)/(1000*60*60*24));
                     if (tage >= -1 && tage <= 90) {
                         timeline.push({
@@ -1530,7 +1544,7 @@ const app={
                             ts: step.ts,
                             tage: tage,
                             status: tage < 0 ? 'overdue' : (tage === 0 ? 'today' : 'upcoming'),
-                            data: {plan:p, step:step.name, emoji:step.emoji}
+                            data: {plan:p, step:step.name, emoji:step.emoji, doneField:step.doneField}
                         });
                     }
                 }
@@ -1584,6 +1598,7 @@ const app={
                 emoji = e.data.emoji;
                 titel = e.data.step + ': ' + e.data.plan.name;
                 sub = '👑 Zuchtplan';
+                aktionen = '<button class="btn btn-success btn-xs" onclick="app.doneZuchtStep(\''+e.data.plan.id+'\',\''+e.data.doneField+'\')">✓</button>';
             }
             
             // Zeitlabel
@@ -2488,11 +2503,12 @@ const zuchtplanMod = {
     formatDatum(ts) { return new Date(ts).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}); },
     
     getPhase(plan) {
+        if (plan.zusetzen_done) return 'Abgeschlossen';
+        if (plan.umlarven_done) return 'Nach Umlarven';
+        if (plan.sammelbrut_done) return 'Sammelbrut läuft';
         var j = Date.now();
-        if (j >= plan.zusetzen) return 'Abgeschlossen';
-        if (j >= plan.umlarven) return 'Nach Umlarven';
-        if (j >= plan.sammelbrut) return 'Sammelbrut läuft';
-        return 'Geplant';
+        if (j < plan.sammelbrut) return 'Geplant';
+        return 'Fällig';
     },
     
     getTageVerbleibend(d) { var t = Math.ceil((d - Date.now())/(1000*60*60*24)); if (t<0) return null; if (t===0) return 'Heute!'; if (t===1) return 'Morgen'; return 'In '+t+' Tagen'; }
