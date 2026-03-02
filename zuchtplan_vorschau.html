@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👑 Königinnenzucht – VORSCHAU</title>
+    <meta name="theme-color" content="#F5A623">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Outfit',sans-serif;background:#FFFBF0;min-height:100vh;padding:1rem}
+        .container{max-width:900px;margin:0 auto;padding:1rem}
+        .card{background:#fff;border-radius:.75rem;padding:1rem;margin-bottom:.75rem;box-shadow:0 1px 3px rgba(28,20,16,0.06);border:1px solid rgba(245,166,35,0.08)}
+        .btn{padding:.875rem 1.5rem;border:none;border-radius:.75rem;font-weight:600;cursor:pointer;font-size:1rem;transition:all .15s}
+        .btn:hover{opacity:.85;transform:translateY(-1px)}
+        .btn-primary{background:#F5A623;color:#1C1410}
+        .btn-blue{background:#3b82f6;color:#fff}
+        .btn-danger{background:#ef4444;color:#fff}
+        .btn-sm{padding:.625rem 1rem;font-size:.9rem}
+        .btn-xs{padding:.4rem .75rem;font-size:.8rem}
+        .btn-block{width:100%;padding:1.1rem;font-size:1.1rem;margin-top:.75rem}
+        .input{width:100%;padding:.875rem;border:2px solid #d1d5db;border-radius:.75rem;font-size:1rem;font-family:inherit;outline:none}
+        .input:focus{border-color:#F5A623}
+        textarea.input{min-height:80px;resize:vertical}
+        .form-group{margin-bottom:1.25rem}
+        .form-label{display:block;font-size:.95rem;font-weight:600;margin-bottom:.5rem;color:#3D2E1F}
+        .info-box{background:#dbeafe;border:1px solid #93c5fd;border-radius:.5rem;padding:.625rem;font-size:.75rem;color:#1e40af;margin-top:.5rem}
+        .modal{display:none;position:fixed;inset:0;background:rgba(28,20,16,0.45);z-index:100;align-items:center;justify-content:center}
+        .modal.active{display:flex}
+        .modal-content{background:#fff;border-radius:1rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto}
+        .modal-header{padding:1.25rem;border-bottom:2px solid rgba(245,166,35,0.12);display:flex;justify-content:space-between;align-items:center;background:#FFF8EE;border-radius:1rem 1rem 0 0}
+        .modal-header h2{margin:0;font-size:1.25rem}
+        .modal-body{padding:1.5rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652}
+        .toast{position:fixed;top:1.5rem;left:50%;transform:translateX(-50%) translateY(-120%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:.75rem;font-size:.875rem;font-weight:600;z-index:9999;transition:transform .3s}
+        .toast.show{transform:translateX(-50%) translateY(0)}
+        .toast.success{background:#065f46}
+        .preview-banner{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:.75rem 1rem;border-radius:.75rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;font-size:.85rem;font-weight:500}
+        .zucht-header-banner{background:linear-gradient(135deg,#1C1410,#3D2E1F);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+        .zucht-header-banner h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.5rem}
+        .zucht-header-banner p{color:#C4A882;font-size:.9rem}
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.5rem}
+        .stat-card{background:#fff;border-radius:.75rem;padding:1rem;text-align:center;border:1px solid rgba(245,166,35,0.08)}
+        .stat-value{font-size:1.75rem;font-weight:700;color:#1C1410}
+        .stat-label{font-size:.75rem;color:#A69580;margin-top:.25rem}
+        .zucht-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;transition:all .2s}
+        .zucht-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+        .zucht-card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem}
+        .zucht-title{font-size:1.25rem;font-weight:bold;color:#1C1410}
+        .timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
+        .timeline-item{position:relative;padding-bottom:1.5rem;border-left:2px solid #E8DFD4}
+        .timeline-item:last-child{border-left:none;padding-bottom:0}
+        .timeline-dot{position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:#E8DFD4;border:2px solid #fff;box-shadow:0 0 0 2px #E8DFD4}
+        .timeline-dot.completed{background:#10b981;box-shadow:0 0 0 2px #10b981}
+        .timeline-dot.active{background:#F5A623;box-shadow:0 0 0 2px #F5A623;animation:pulse 2s infinite}
+        .timeline-content{margin-left:1rem;background:#FFF8EE;padding:.75rem;border-radius:.5rem}
+        .timeline-title{font-weight:600;font-size:.9rem;color:#1C1410}
+        .timeline-date{font-size:.8rem;color:#7A6652;margin-top:.25rem}
+        .timeline-note{font-size:.8rem;font-weight:600;margin-top:.35rem}
+        .badge-completed{background:#d1fae5;color:#065f46;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+        .badge-active{background:#FFF3D6;color:#92400e;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+        .badge-upcoming{background:#dbeafe;color:#1e40af;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+        .btn-check{width:40px;height:40px;border-radius:10px;border:2px solid #E8DFD4;background:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;color:#A69580}
+        .btn-check:hover{border-color:#F5A623;background:#FFF8EE;transform:scale(1.15)}
+        .btn-check.done{border-color:#10b981;background:#d1fae5;color:#065f46}
+        .btn-check.done:hover{border-color:#ef4444;background:#fee2e2}
+        .filter-tabs{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem}
+        .filter-tab{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;text-align:center}
+        .filter-tab.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+        .tage-counter{display:flex;align-items:center;gap:.75rem}
+        .tage-counter .counter-value{font-size:1.5rem;min-width:2.5rem;text-align:center}
+        .tage-counter .counter-label{font-size:.85rem;color:#7A6652}
+        .counter-btn{width:2.5rem;height:2.5rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:1.2rem;font-weight:bold;display:flex;align-items:center;justify-content:center}
+        .counter-btn:hover{border-color:#F5A623;background:#FFF8EE}
+        @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .anim-in{animation:cardIn .35s ease forwards}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        @media(max-width:768px){.stats-row{grid-template-columns:1fr 1fr 1fr}.stat-value{font-size:1.25rem}.zucht-header-banner{padding:1.5rem 1rem}.zucht-header-banner h1{font-size:1.35rem}}
+    </style>
+</head>
+<body>
+<div id="app" class="container"></div>
+<div id="toast" class="toast"></div>
+<div id="zuchtModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="zuchtModalTitle">👑 Neuer Zuchtplan</h2>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Königin Name/Nummer *</label><input type="text" id="zuchtName" class="input" placeholder="z.B. Königin 2025-1"></div>
+            <div class="form-group"><label class="form-label">📦 Sammelbrutableger erstellt *</label><input type="date" id="zuchtSammel" class="input" onchange="berechneAlles()"><div class="info-box">💡 Startpunkt – ab hier werden alle Termine berechnet</div></div>
+            <div class="form-group"><label class="form-label">🔬 Umlarven – Tage nach Sammelbrut</label><div class="tage-counter"><button class="counter-btn" onclick="changeTage('umlarven',-1)">−</button><div class="counter-value" id="tageUmlarvenVal">4</div><button class="counter-btn" onclick="changeTage('umlarven',1)">+</button><div class="counter-label">Tage</div></div><input type="date" id="zuchtUmlarven" class="input" style="margin-top:.5rem" disabled></div>
+            <div class="form-group"><label class="form-label">👑 Zusetzen – Tage nach Umlarven</label><div class="tage-counter"><button class="counter-btn" onclick="changeTage('zusetzen',-1)">−</button><div class="counter-value" id="tageZusetzenVal">12</div><button class="counter-btn" onclick="changeTage('zusetzen',1)">+</button><div class="counter-label">Tage</div></div><input type="date" id="zuchtZusetzen" class="input" style="margin-top:.5rem" disabled></div>
+            <div class="form-group"><label class="form-label">Notizen</label><textarea id="zuchtNotizen" class="input" placeholder="Linie, Herkunft, Zuchtziel..."></textarea></div>
+            <button class="btn btn-primary btn-block" onclick="saveZucht()">Zuchtplan speichern</button>
+        </div>
+    </div>
+</div>
+<script>
+var plaene=[
+    {id:'z1',name:'Königin 2026-1 (Buckfast)',sammelbrut:new Date('2026-03-15').getTime(),umlarven:new Date('2026-03-19').getTime(),zusetzen:new Date('2026-03-31').getTime(),notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.',tageUmlarven:4,tageZusetzen:12,sammelbrut_done:null,umlarven_done:null,zusetzen_done:null,created:new Date('2026-02-20').getTime()},
+    {id:'z2',name:'Königin 2026-2 (Carnica)',sammelbrut:new Date('2026-04-01').getTime(),umlarven:new Date('2026-04-05').getTime(),zusetzen:new Date('2026-04-17').getTime(),notizen:'Carnica aus dem Verein. Schwarmträge Linie.',tageUmlarven:4,tageZusetzen:12,sammelbrut_done:null,umlarven_done:null,zusetzen_done:null,created:new Date('2026-02-22').getTime()},
+    {id:'z3',name:'Standbegattung Ableger 3',sammelbrut:new Date('2026-02-01').getTime(),umlarven:new Date('2026-02-05').getTime(),zusetzen:new Date('2026-02-17').getTime(),notizen:'Bereits abgeschlossen.',tageUmlarven:4,tageZusetzen:12,sammelbrut_done:new Date('2026-02-01').getTime(),umlarven_done:new Date('2026-02-05').getTime(),zusetzen_done:new Date('2026-02-17').getTime(),created:new Date('2026-01-15').getTime()}
+];
+var editId=null,tageUmlarven=4,tageZusetzen=12,currentFilter='alle';
+
+function toggleStep(id,field){
+    var p=plaene.find(function(x){return x.id===id});
+    if(!p)return;
+    p[field]=p[field]?null:Date.now();
+    showToast(p[field]?'✅ Schritt erledigt!':'↩️ Rückgängig gemacht',p[field]?'success':'');
+    render();
+}
+function getPhase(p){if(p.zusetzen_done)return'✅ Abgeschlossen';if(p.umlarven_done)return'🔬 Nach Umlarven';if(p.sammelbrut_done)return'📦 Sammelbrut läuft';if(Date.now()<p.sammelbrut)return'📋 Geplant';return'⏳ Fällig'}
+function getTageVerbleibend(d){var t=Math.ceil((d-Date.now())/(864e5));if(t<0)return null;if(t===0)return'Heute!';if(t===1)return'Morgen';return'In '+t+' Tagen'}
+function formatDatum(ts){return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function showToast(m,t){var e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(function(){e.className='toast'},2500)}
+function setFilter(f){currentFilter=f;render()}
+
+function render(){
+    var a=document.getElementById('app'),h='',j=Date.now();
+    h+='<div class="preview-banner"><span>👁️</span> Vorschau – Klicke die ☐ Checkboxen um Schritte abzuhaken!</div>';
+    h+='<div class="zucht-header-banner"><h1>👑 Königinnenzucht</h1><p>Plane deine Zucht mit automatischer Datumsberechnung.</p></div>';
+    var aktiv=plaene.filter(function(p){return!p.zusetzen_done}),fertig=plaene.filter(function(p){return!!p.zusetzen_done});
+    h+='<div class="stats-row"><div class="stat-card"><div class="stat-value">'+plaene.length+'</div><div class="stat-label">Zuchtpläne</div></div><div class="stat-card"><div class="stat-value" style="color:#F5A623">'+aktiv.length+'</div><div class="stat-label">Aktiv</div></div><div class="stat-card"><div class="stat-value" style="color:#10b981">'+fertig.length+'</div><div class="stat-label">Abgeschlossen</div></div></div>';
+
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">';
+    h+='<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neuer Zuchtplan</button>';
+    h+='<div class="filter-tabs" style="margin-bottom:0">';
+    h+='<button class="filter-tab'+(currentFilter==='alle'?' active':'')+'" onclick="setFilter(\'alle\')">Alle ('+plaene.length+')</button>';
+    h+='<button class="filter-tab'+(currentFilter==='aktiv'?' active':'')+'" onclick="setFilter(\'aktiv\')">Aktiv ('+aktiv.length+')</button>';
+    h+='<button class="filter-tab'+(currentFilter==='abgeschlossen'?' active':'')+'" onclick="setFilter(\'abgeschlossen\')">Fertig ('+fertig.length+')</button>';
+    h+='</div></div>';
+
+    var fil=plaene.slice();
+    if(currentFilter==='aktiv')fil=aktiv;else if(currentFilter==='abgeschlossen')fil=fertig;
+    fil.sort(function(a,b){return b.created-a.created});
+
+    if(!fil.length){h+='<div class="card" style="text-align:center;padding:3rem;color:#7A6652"><div style="font-size:3rem;margin-bottom:1rem">👑</div><h3>Keine Pläne in dieser Ansicht</h3></div>'}
+
+    fil.forEach(function(p,idx){
+        var phase=getPhase(p);
+        var bc=p.zusetzen_done?'badge-completed':(p.sammelbrut_done?'badge-active':'badge-upcoming');
+        var nx=null,nd=null;
+        if(!p.sammelbrut_done){nx='Sammelbrut';nd=p.sammelbrut}
+        else if(!p.umlarven_done){nx='Umlarven';nd=p.umlarven}
+        else if(!p.zusetzen_done){nx='Zusetzen';nd=p.zusetzen}
+        var vb=nd?getTageVerbleibend(nd):null;
+
+        h+='<div class="zucht-card anim-in" style="animation-delay:'+(idx*0.06)+'s">';
+        h+='<div class="zucht-card-header"><div>';
+        h+='<div class="zucht-title">'+esc(p.name)+'</div>';
+        h+='<div class="'+bc+'" style="margin-top:.5rem">'+phase+'</div>';
+        if(vb)h+='<div style="margin-top:.5rem;font-size:.85rem;color:#7A6652">⏭️ <strong>'+nx+':</strong> <span style="color:#F5A623;font-weight:600">'+vb+'</span></div>';
+        h+='</div>';
+        h+='<div style="display:flex;gap:.5rem"><button class="btn btn-blue btn-xs" onclick="openModal(\''+p.id+'\')">✏️</button><button class="btn btn-danger btn-xs" onclick="deleteZucht(\''+p.id+'\')">🗑️</button></div>';
+        h+='</div>';
+
+        // TIMELINE
+        h+='<div class="timeline">';
+        // Sammelbrut
+        var sd=!!p.sammelbrut_done;
+        h+='<div class="timeline-item"><div class="timeline-dot '+(sd?'completed':(j>=p.sammelbrut?'active':'upcoming'))+'"></div>';
+        h+='<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<div><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">'+formatDatum(p.sammelbrut)+'</div></div>';
+        h+='<button class="btn-check'+(sd?' done':'')+'" onclick="toggleStep(\''+p.id+'\',\'sammelbrut_done\')">'+(sd?'✅':'☐')+'</button>';
+        h+='</div>';
+        if(sd)h+='<div class="timeline-note" style="color:#10b981">✅ Erledigt am '+formatDatum(p.sammelbrut_done)+'</div>';
+        h+='</div></div>';
+        // Umlarven
+        var ud=!!p.umlarven_done;
+        h+='<div class="timeline-item"><div class="timeline-dot '+(ud?'completed':(j>=p.umlarven?'active':'upcoming'))+'"></div>';
+        h+='<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<div><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">'+formatDatum(p.umlarven)+' <small style="color:#A69580">(+'+(p.tageUmlarven||4)+' Tage)</small></div></div>';
+        h+='<button class="btn-check'+(ud?' done':'')+'" onclick="toggleStep(\''+p.id+'\',\'umlarven_done\')">'+(ud?'✅':'☐')+'</button>';
+        h+='</div>';
+        if(ud)h+='<div class="timeline-note" style="color:#10b981">✅ Erledigt am '+formatDatum(p.umlarven_done)+'</div>';
+        else if(j>=p.umlarven&&!ud&&j<p.zusetzen)h+='<div class="timeline-note" style="color:#F5A623">🐝 Weiselzellen wachsen...</div>';
+        h+='</div></div>';
+        // Zusetzen
+        var zd=!!p.zusetzen_done;
+        h+='<div class="timeline-item"><div class="timeline-dot '+(zd?'completed':(j>=p.zusetzen?'active':'upcoming'))+'"></div>';
+        h+='<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">'+formatDatum(p.zusetzen)+' <small style="color:#A69580">(+'+(p.tageZusetzen||12)+' Tage)</small></div></div>';
+        h+='<button class="btn-check'+(zd?' done':'')+'" onclick="toggleStep(\''+p.id+'\',\'zusetzen_done\')">'+(zd?'✅':'☐')+'</button>';
+        h+='</div>';
+        if(zd)h+='<div class="timeline-note" style="color:#10b981">✅ Abgeschlossen am '+formatDatum(p.zusetzen_done)+'</div>';
+        h+='</div></div>';
+        h+='</div>';
+
+        if(p.notizen)h+='<div style="margin-top:.5rem;padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#7A6652">💭 '+esc(p.notizen)+'</div>';
+        h+='</div>';
+    });
+    a.innerHTML=h;
+}
+
+function openModal(id){
+    if(id){var p=plaene.find(function(x){return x.id===id});if(!p)return;editId=id;document.getElementById('zuchtModalTitle').textContent='✏️ Bearbeiten';document.getElementById('zuchtName').value=p.name;document.getElementById('zuchtSammel').value=new Date(p.sammelbrut).toISOString().split('T')[0];document.getElementById('zuchtNotizen').value=p.notizen||'';tageUmlarven=p.tageUmlarven||4;tageZusetzen=p.tageZusetzen||12}
+    else{editId=null;document.getElementById('zuchtModalTitle').textContent='👑 Neuer Zuchtplan';document.getElementById('zuchtName').value='';document.getElementById('zuchtSammel').value=new Date().toISOString().split('T')[0];document.getElementById('zuchtNotizen').value='';tageUmlarven=4;tageZusetzen=12}
+    document.getElementById('tageUmlarvenVal').textContent=tageUmlarven;document.getElementById('tageZusetzenVal').textContent=tageZusetzen;berechneAlles();document.getElementById('zuchtModal').classList.add('active')
+}
+function closeModal(){document.getElementById('zuchtModal').classList.remove('active');editId=null}
+function changeTage(t,d){if(t==='umlarven'){tageUmlarven=Math.max(1,tageUmlarven+d);document.getElementById('tageUmlarvenVal').textContent=tageUmlarven}else{tageZusetzen=Math.max(1,tageZusetzen+d);document.getElementById('tageZusetzenVal').textContent=tageZusetzen}berechneAlles()}
+function berechneAlles(){var s=document.getElementById('zuchtSammel').value;if(!s)return;var d=new Date(s),u=new Date(d);u.setDate(u.getDate()+tageUmlarven);document.getElementById('zuchtUmlarven').value=u.toISOString().split('T')[0];var z=new Date(u);z.setDate(z.getDate()+tageZusetzen);document.getElementById('zuchtZusetzen').value=z.toISOString().split('T')[0]}
+function saveZucht(){var n=document.getElementById('zuchtName').value.trim(),s=document.getElementById('zuchtSammel').value,no=document.getElementById('zuchtNotizen').value.trim();if(!n||!s){alert('Bitte Name und Datum!');return}var sT=new Date(s).getTime(),uT=new Date(document.getElementById('zuchtUmlarven').value).getTime(),zT=new Date(document.getElementById('zuchtZusetzen').value).getTime();if(editId){var p=plaene.find(function(x){return x.id===editId});if(p){p.name=n;p.sammelbrut=sT;p.umlarven=uT;p.zusetzen=zT;p.notizen=no;p.tageUmlarven=tageUmlarven;p.tageZusetzen=tageZusetzen}showToast('✅ Aktualisiert!','success')}else{plaene.push({id:'z'+Date.now(),name:n,sammelbrut:sT,umlarven:uT,zusetzen:zT,notizen:no,tageUmlarven:tageUmlarven,tageZusetzen:tageZusetzen,sammelbrut_done:null,umlarven_done:null,zusetzen_done:null,created:Date.now()});showToast('✅ Erstellt!','success')}closeModal();render()}
+function deleteZucht(id){if(!confirm('Wirklich löschen?'))return;plaene=plaene.filter(function(p){return p.id!==id});showToast('🗑️ Gelöscht','');render()}
+
+render();
+</script>
+</body>
+</html>
