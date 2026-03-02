@@ -356,15 +356,15 @@
 
         <div class="filter-bar">
             <span style="font-size:.8rem;color:#7A6652;font-weight:500">Filter:</span>
-            <button class="filter-chip active" onclick="filterMeldungen('alle',this)">Alle</button>
-            <button class="filter-chip" onclick="filterMeldungen('aktiv',this)">🟢 Aktiv</button>
-            <button class="filter-chip" onclick="filterMeldungen('Raps',this)">🌾 Raps</button>
-            <button class="filter-chip" onclick="filterMeldungen('Linde',this)">🍃 Linde</button>
-            <button class="filter-chip" onclick="filterMeldungen('Obstblüte',this)">🌸 Obst</button>
-            <button class="filter-chip" onclick="filterMeldungen('Wald',this)">🌲 Wald</button>
+            <button class="filter-chip active" onclick="setMeldungFilter('alle',this)">Alle</button>
+            <button class="filter-chip" onclick="setMeldungFilter('aktiv',this)">🟢 Aktiv</button>
+            <button class="filter-chip" onclick="setTypFilter('Raps',this)">🌾 Raps</button>
+            <button class="filter-chip" onclick="setTypFilter('Linde',this)">🍃 Linde</button>
+            <button class="filter-chip" onclick="setTypFilter('Obstblüte',this)">🌸 Obst</button>
+            <button class="filter-chip" onclick="setTypFilter('Fichte',this)">🌲 Wald</button>
         </div>
 
-        <div id="meldungenListe"></div>
+        <div id="meldungenList"></div>
     </div>
 
     <!-- ==================== TAB: MITGLIEDER ==================== -->
@@ -1020,6 +1020,7 @@ function renderMeldungen() {
 
 function setMeldungFilter(f, el) {
     meldungFilter = f;
+    if (f === 'alle') typFilter = 'alle';
     document.querySelectorAll('#tab-meldungen .filter-chip').forEach(function(c) { c.classList.remove('active'); });
     if (el) el.classList.add('active');
     renderMeldungen();
@@ -1027,6 +1028,9 @@ function setMeldungFilter(f, el) {
 
 function setTypFilter(f, el) {
     typFilter = f;
+    meldungFilter = 'alle';
+    document.querySelectorAll('#tab-meldungen .filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (el) el.classList.add('active');
     renderMeldungen();
 }
 
