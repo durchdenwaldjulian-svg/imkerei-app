@@ -226,7 +226,7 @@ tbody tr:last-child td { border-bottom:none; }
 </div>
 
 <!-- Toast -->
-<div class="toast" id="toast"></div>
+<div id="toast" style="display:none"></div>
 
 <!-- PDF Preview Modal -->
 <div class="modal-overlay" id="previewModal">
@@ -857,8 +857,13 @@ function alleStandortePDF() {
 function toast(msg) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(function() { el.classList.remove('show'); }, 2500);
+    el.style.display = '';
+    el.className = 'toast';
+    requestAnimationFrame(function() { el.classList.add('show'); });
+    setTimeout(function() { 
+        el.classList.remove('show'); 
+        setTimeout(function() { el.style.display = 'none'; }, 350);
+    }, 2500);
 }
 
 // Modal close on overlay
