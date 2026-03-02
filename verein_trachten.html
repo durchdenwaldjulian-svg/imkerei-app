@@ -299,19 +299,19 @@
     <!-- === STATS === -->
     <div class="stats-row">
         <div class="stat-card">
-            <div class="stat-value" style="color:#F5A623">24</div>
+            <div class="stat-value" id="statMeldungen" style="color:#F5A623">0</div>
             <div class="stat-label">Meldungen gesamt</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" style="color:#10b981">7</div>
+            <div class="stat-value" id="statAktive" style="color:#10b981">0</div>
             <div class="stat-label">Aktive Trachten</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" style="color:#3b82f6">12</div>
+            <div class="stat-value" id="statMitglieder" style="color:#3b82f6">0</div>
             <div class="stat-label">Mitglieder</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value" style="color:#8b5cf6">5</div>
+            <div class="stat-value" id="statStandorte" style="color:#8b5cf6">0</div>
             <div class="stat-label">Standorte</div>
         </div>
     </div>
@@ -895,12 +895,15 @@ function renderVerein() {
     document.getElementById('memberCount').textContent = mitglieder.length;
     document.getElementById('meldungCount').textContent = meldungen.length;
 
-    // Stats
+    // Stats dynamisch berechnen
     var aktive = meldungen.filter(function(m) { return !m.ende || new Date(m.ende) >= new Date(); }).length;
-    var statCards = document.querySelectorAll('.stat-card .stat-value');
-    if (statCards[0]) statCards[0].textContent = meldungen.length;
-    if (statCards[1]) statCards[1].textContent = aktive;
-    if (statCards[2]) statCards[2].textContent = mitglieder.length;
+    var standorte = {};
+    meldungen.forEach(function(m) { if (m.standort) standorte[m.standort] = true; });
+
+    document.getElementById('statMeldungen').textContent = meldungen.length;
+    document.getElementById('statAktive').textContent = aktive;
+    document.getElementById('statMitglieder').textContent = mitglieder.length;
+    document.getElementById('statStandorte').textContent = Object.keys(standorte).length;
 
     renderKarte();
     renderMeldungen();
