@@ -107,6 +107,11 @@ body{padding-left:220px;padding-bottom:2rem}
     </div>
 
     <div class="tools-grid">
+        <div class="tool-tile active-tool" onclick="openTool('behandlung')">
+            <div class="tool-emoji">💉</div>
+            <div class="tool-name">Behandlungs-Berater</div>
+            <div class="tool-desc">Welche Varroa-Behandlung passt zu deiner Situation?</div>
+        </div>
         <div class="tool-tile active-tool" onclick="openTool('diagnose')">
             <span class="tool-badge new">Neu</span>
             <div class="tool-emoji">🩺</div>
@@ -151,6 +156,20 @@ body{padding-left:220px;padding-bottom:2rem}
     </div>
 
     <div id="diagContent"></div>
+</div>
+
+<!-- ==================== BEHANDLUNGS-BERATER WIZARD ==================== -->
+<div id="behandlungWizard" class="wizard">
+    <button class="wizard-back" onclick="behBack()">← Zurück</button>
+    
+    <div class="step-bar" id="behStepBar">
+        <div class="step-dot current"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+    </div>
+
+    <div id="behContent"></div>
 </div>
 
 </div>
@@ -388,6 +407,8 @@ function openTool(tool) {
         selectedAnzahl = null;
         lastResults = null;
         renderDiagStep();
+    } else if (tool === 'behandlung') {
+        openBehandlung();
     }
 }
 
@@ -644,6 +665,171 @@ function toast(msg, type) {
         el.classList.remove('show');
         setTimeout(function() { el.style.display = 'none'; }, 350);
     }, 2500);
+}
+
+// ============================================
+// BEHANDLUNGS-BERATER
+// ============================================
+var behStep = 0;
+var behData = { season: '', brut: '', honig: '', befall: '' };
+
+var TREATMENTS = {
+    oxal_traeufel: { name:'Oxalsäure-Träufelbehandlung', emoji:'💧', desc:'Oxalsäure 3,5% direkt auf die Bienentraube träufeln. 5ml je besetzter Wabengasse.', when:'Brutfreie Phase (Winter, Nov–Dez)', duration:'Einmalig', temp:'< 5°C, windstill', warning:'Nur 1x pro brutfreier Phase! Honigräume müssen entfernt sein.', wirkung:'90-95% bei Brutfreiheit' },
+    oxal_verdampf: { name:'Oxalsäure-Verdampfung', emoji:'💨', desc:'Oxalsäure im Verdampfer erhitzt, als Dampf eingebracht.', when:'Brutfreie Phase (Winter)', duration:'Einmalig, 2-3 Min/Volk', temp:'0-10°C', warning:'Atemschutz (FFP3) Pflicht! Nur zugelassene Geräte.', wirkung:'95-99% bei Brutfreiheit' },
+    ameisen_lang: { name:'Ameisensäure-Langzeit (60%)', emoji:'🧪', desc:'Ameisensäure 60% über Langzeitverdunster (Nassenheider, Liebig). 10-14 Tage.', when:'Nach Honigernte (Jul–Sep)', duration:'10-14 Tage', temp:'15-25°C, nicht über 30°C!', warning:'Bei >30°C abbrechen! Kann Königinnenverluste verursachen.', wirkung:'85-95% inkl. Brut' },
+    ameisen_kurz: { name:'Ameisensäure-Kurzzeit (85%)', emoji:'⚡', desc:'Ameisensäure 85% Stoßbehandlung über Schwammtuch.', when:'Notfall bei hohem Befall', duration:'3 Tage', temp:'15-25°C', warning:'Sehr aggressiv – höheres Risiko für Königin!', wirkung:'80-90%' },
+    milch: { name:'Milchsäure-Sprühbehandlung', emoji:'🥛', desc:'Milchsäure 15% – jede besetzte Wabenseite besprühen.', when:'Brutfreie Phase, Schwärme, Ableger', duration:'Einmalig', temp:'Keine strenge Grenze', warning:'Nur bei Brutfreiheit wirksam!', wirkung:'90-95% bei Brutfreiheit' },
+    thymol: { name:'Thymol (Apiguard, Thymovar)', emoji:'🌿', desc:'Thymol-Fertigprodukt auf Oberträger. Verdunstung über Wochen.', when:'Nach Honigernte (Aug–Sep)', duration:'4-6 Wochen', temp:'15-30°C', warning:'Unter 15°C kaum Wirkung. Kann Honig geschmacklich beeinträchtigen.', wirkung:'85-95%' },
+    drohnenbrut: { name:'Drohnenbrutentnahme', emoji:'🔪', desc:'Verdeckelte Drohnenbrutwabe entnehmen und einschmelzen.', when:'Frühling/Sommer (Apr–Jul)', duration:'Alle 3 Wochen', temp:'Keine Einschränkung', warning:'Biotechnisch – reduziert nur 20-30%, reicht allein nicht!', wirkung:'20-30% Reduktion' },
+    bannwabe: { name:'Totale Brutentnahme', emoji:'🔄', desc:'Alle Brutwaben entfernen, Königin auf leere Waben. Dann Oxalsäure.', when:'Sommer (Juli), nach Honigernte', duration:'21 Tage + Behandlung', temp:'Sommertemperaturen', warning:'Schwächt Volk stark. Nur für erfahrene Imker.', wirkung:'95-99%' }
+};
+
+function openBehandlung() {
+    document.getElementById('toolOverview').style.display = 'none';
+    document.getElementById('behandlungWizard').classList.add('active');
+    behStep = 0;
+    behData = { season: '', brut: '', honig: '', befall: '' };
+    renderBehStep();
+}
+
+function behBack() {
+    if (behStep === 0) { closeBehandlung(); return; }
+    behStep--;
+    renderBehStep();
+}
+
+function closeBehandlung() {
+    document.getElementById('behandlungWizard').classList.remove('active');
+    document.getElementById('toolOverview').style.display = 'block';
+}
+
+function renderBehStep() {
+    var dots = document.querySelectorAll('#behStepBar .step-dot');
+    dots.forEach(function(d, i) {
+        d.className = 'step-dot';
+        if (i < behStep) d.classList.add('done');
+        if (i === behStep) d.classList.add('current');
+    });
+    var c = document.getElementById('behContent');
+    if (behStep === 0) renderBeh0(c);
+    else if (behStep === 1) renderBeh1(c);
+    else if (behStep === 2) renderBeh2(c);
+    else if (behStep === 3) renderBehResult(c);
+}
+
+function renderBeh0(c) {
+    var html = '<div class="card"><h3>📅 Wann möchtest du behandeln?</h3>';
+    html += '<div class="symptom-grid">';
+    [['fruehling','🌸','Frühling','März – Mai'],['sommer','☀️','Sommer','Juni – August'],['herbst','🍂','Herbst','Sept – November'],['winter','❄️','Winter','Dez – Februar']].forEach(function(s) {
+        var sel = behData.season === s[0] ? ' selected' : '';
+        html += '<button class="symptom-btn' + sel + '" onclick="behData.season=\'' + s[0] + '\';behStep=1;renderBehStep()">';
+        html += '<span class="symptom-emoji">' + s[1] + '</span><strong>' + s[2] + '</strong>';
+        html += '<div style="font-size:.75rem;color:#7A6652">' + s[3] + '</div></button>';
+    });
+    html += '</div></div>';
+    c.innerHTML = html;
+}
+
+function renderBeh1(c) {
+    var html = '<div class="card"><h3>🐝 Wie ist die Situation?</h3>';
+    
+    html += '<label style="font-weight:600;font-size:.85rem;color:#1C1410;display:block;margin-bottom:.5rem;margin-top:1rem">Brut vorhanden?</label>';
+    html += '<div class="symptom-grid">';
+    [['ja','✅','Ja, Brut da'],['nein','❌','Brutfrei']].forEach(function(o) {
+        var sel = behData.brut === o[0] ? ' selected' : '';
+        html += '<button class="symptom-btn' + sel + '" style="text-align:center" onclick="behData.brut=\'' + o[0] + '\';renderBehStep()">' + o[1] + ' ' + o[2] + '</button>';
+    });
+    html += '</div>';
+
+    html += '<label style="font-weight:600;font-size:.85rem;color:#1C1410;display:block;margin-bottom:.5rem;margin-top:1rem">Honigräume aufgesetzt?</label>';
+    html += '<div class="symptom-grid">';
+    [['ja','🍯','Ja'],['nein','📦','Nein']].forEach(function(o) {
+        var sel = behData.honig === o[0] ? ' selected' : '';
+        html += '<button class="symptom-btn' + sel + '" style="text-align:center" onclick="behData.honig=\'' + o[0] + '\';renderBehStep()">' + o[1] + ' ' + o[2] + '</button>';
+    });
+    html += '</div>';
+
+    if (behData.brut && behData.honig) {
+        html += '<button class="btn btn-primary btn-block" style="margin-top:1rem" onclick="behStep=2;renderBehStep()">Weiter →</button>';
+    }
+    html += '</div>';
+    c.innerHTML = html;
+}
+
+function renderBeh2(c) {
+    var html = '<div class="card"><h3>🔍 Varroa-Befall geschätzt?</h3>';
+    html += '<div class="symptom-grid">';
+    [['niedrig','🟢','Niedrig','< 3 Milben/Tag'],['mittel','🟡','Mittel','3–10 Milben/Tag'],['hoch','🔴','Hoch','> 10 Milben/Tag'],['unbekannt','❓','Weiß nicht','']].forEach(function(o) {
+        var sel = behData.befall === o[0] ? ' selected' : '';
+        html += '<button class="symptom-btn' + sel + '" onclick="behData.befall=\'' + o[0] + '\';behStep=3;renderBehStep()">';
+        html += '<span class="symptom-emoji">' + o[1] + '</span><strong>' + o[2] + '</strong>';
+        if (o[3]) html += '<div style="font-size:.75rem;color:#7A6652">' + o[3] + '</div>';
+        html += '</button>';
+    });
+    html += '</div></div>';
+    c.innerHTML = html;
+}
+
+function renderBehResult(c) {
+    // Empfehlungslogik
+    var empf = [];
+    var isWinter = behData.season === 'winter';
+    var isSommer = behData.season === 'sommer' || behData.season === 'herbst';
+    var brutfrei = behData.brut === 'nein';
+    var honig = behData.honig === 'ja';
+    var hoch = behData.befall === 'hoch';
+
+    if (brutfrei) {
+        empf.push({ key: 'oxal_verdampf', prio: 'empfohlen' });
+        empf.push({ key: 'oxal_traeufel', prio: 'alternative' });
+        empf.push({ key: 'milch', prio: 'alternative' });
+    } else if (honig) {
+        empf.push({ key: 'drohnenbrut', prio: 'empfohlen' });
+        empf.push({ key: 'bannwabe', prio: 'hinweis' });
+    } else if (isSommer) {
+        empf.push({ key: 'ameisen_lang', prio: 'empfohlen' });
+        if (hoch) empf.push({ key: 'ameisen_kurz', prio: 'notfall' });
+        empf.push({ key: 'thymol', prio: 'alternative' });
+        empf.push({ key: 'bannwabe', prio: 'alternative' });
+    } else {
+        empf.push({ key: 'drohnenbrut', prio: 'empfohlen' });
+        empf.push({ key: 'ameisen_lang', prio: 'hinweis' });
+    }
+
+    if (empf.length === 0) empf.push({ key: 'oxal_traeufel', prio: 'empfohlen' });
+
+    var prioColors = { empfohlen: '#065F46', alternative: '#92400E', notfall: '#991B1B', hinweis: '#1E40AF' };
+    var prioLabels = { empfohlen: '⭐ Empfohlen', alternative: '🔄 Alternative', notfall: '🚨 Notfall', hinweis: 'ℹ️ Hinweis' };
+
+    var html = '<div class="info-box">Basierend auf: ' + (behData.season === 'fruehling' ? '🌸 Frühling' : behData.season === 'sommer' ? '☀️ Sommer' : behData.season === 'herbst' ? '🍂 Herbst' : '❄️ Winter');
+    html += ' · Brut: ' + (behData.brut === 'ja' ? 'Ja' : 'Nein');
+    html += ' · Honigräume: ' + (behData.honig === 'ja' ? 'Ja' : 'Nein');
+    html += ' · Befall: ' + behData.befall + '</div>';
+
+    empf.forEach(function(e) {
+        var t = TREATMENTS[e.key];
+        if (!t) return;
+        html += '<div class="card" style="border-left:4px solid ' + (prioColors[e.prio] || '#ccc') + '">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">';
+        html += '<h3 style="margin:0">' + t.emoji + ' ' + t.name + '</h3>';
+        html += '<span style="font-size:.7rem;font-weight:700;color:' + (prioColors[e.prio] || '#666') + '">' + (prioLabels[e.prio] || '') + '</span>';
+        html += '</div>';
+        html += '<p style="font-size:.85rem;color:#3D2E1F;margin-bottom:.75rem">' + t.desc + '</p>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.8rem;color:#7A6652">';
+        html += '<div>📅 ' + t.when + '</div>';
+        html += '<div>⏱️ ' + t.duration + '</div>';
+        html += '<div>🌡️ ' + t.temp + '</div>';
+        html += '<div>📊 Wirkung: ' + t.wirkung + '</div>';
+        html += '</div>';
+        if (t.warning) html += '<div class="warning-box" style="margin-top:.75rem;margin-bottom:0">' + t.warning + '</div>';
+        html += '</div>';
+    });
+
+    html += '<div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">';
+    html += '<button class="btn btn-primary" onclick="behStep=0;behData={season:\'\',brut:\'\',honig:\'\',befall:\'\'};renderBehStep()">🔄 Neue Beratung</button>';
+    html += '<button class="btn btn-outline" onclick="closeBehandlung()">← Zur Übersicht</button>';
+    html += '</div>';
+    c.innerHTML = html;
 }
 
 // ============================================
