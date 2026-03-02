@@ -269,11 +269,14 @@
                 <div id="adminsList"></div>
                 <div style="margin-top:1.5rem;padding-top:1rem;border-top:2px solid #e5e7eb">
                     <h4 style="font-size:.9rem;margin-bottom:.75rem">Neuen Admin hinzufügen</h4>
-                    <div style="display:flex;gap:.5rem">
-                        <input type="text" id="newAdminEmail" class="search-input" placeholder="E-Mail des registrierten Nutzers" style="margin-bottom:0;flex:1">
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        <select id="newAdminSelect" class="filter-select" style="flex:1;min-width:200px;padding:.6rem">
+                            <option value="">— Nutzer auswählen —</option>
+                        </select>
                         <button class="btn btn-blue" onclick="addAdmin()" style="white-space:nowrap">+ Hinzufügen</button>
                     </div>
-                    <div style="font-size:.75rem;color:#6b7280;margin-top:.5rem">Der Nutzer muss bereits einen Account bei bienenplan.de haben.</div>
+                    <div style="font-size:.75rem;color:#6b7280;margin-top:.5rem">Nur registrierte Nutzer werden angezeigt.</div>
+                    <div id="addAdminError" style="font-size:.85rem;margin-top:.5rem"></div>
                 </div>
             </div>
         </div>
@@ -1127,60 +1130,72 @@ async function renderAdminsList() {
     }
     
     var admins = res.data || [];
+    var adminIds = admins.map(function(a) { return a.user_id; });
+    
     if (admins.length === 0) {
         listEl.innerHTML = '<div style="color:#6b7280">Keine Admins gefunden.</div>';
-        return;
+    } else {
+        var html = '<table style="width:100%;font-size:.9rem;border-collapse:collapse">';
+        html += '<thead><tr><th style="text-align:left;padding:.5rem;border-bottom:2px solid #e5e7eb;font-size:.8rem;color:#6b7280">E-Mail</th><th style="text-align:left;padding:.5rem;border-bottom:2px solid #e5e7eb;font-size:.8rem;color:#6b7280">Hinzugefügt</th><th style="padding:.5rem;border-bottom:2px solid #e5e7eb"></th></tr></thead>';
+        html += '<tbody>';
+        admins.forEach(function(a) {
+            var isSelf = adminUser && a.user_id === adminUser.id;
+            html += '<tr>';
+            html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6"><strong>' + (a.email || a.user_id.substring(0,8) + '…') + '</strong>' + (isSelf ? ' <span style="background:#d1fae5;color:#059669;padding:.1rem .4rem;border-radius:.25rem;font-size:.7rem;font-weight:600">DU</span>' : '') + '</td>';
+            html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6;font-size:.8rem;color:#6b7280">' + fd(a.created_at) + '</td>';
+            html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6;text-align:right">';
+            if (!isSelf) {
+                html += '<button class="btn btn-danger" onclick="removeAdmin(\'' + a.id + '\',\'' + (a.email||'') + '\')">Entfernen</button>';
+            } else {
+                html += '<span style="font-size:.75rem;color:#6b7280">Kann nicht entfernt werden</span>';
+            }
+            html += '</td></tr>';
+        });
+        html += '</tbody></table>';
+        listEl.innerHTML = html;
     }
     
-    var html = '<table style="width:100%;font-size:.9rem;border-collapse:collapse">';
-    html += '<thead><tr><th style="text-align:left;padding:.5rem;border-bottom:2px solid #e5e7eb;font-size:.8rem;color:#6b7280">E-Mail</th><th style="text-align:left;padding:.5rem;border-bottom:2px solid #e5e7eb;font-size:.8rem;color:#6b7280">Hinzugefügt</th><th style="padding:.5rem;border-bottom:2px solid #e5e7eb"></th></tr></thead>';
-    html += '<tbody>';
-    admins.forEach(function(a) {
-        var isSelf = adminUser && a.user_id === adminUser.id;
-        html += '<tr>';
-        html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6"><strong>' + (a.email || a.user_id.substring(0,8) + '…') + '</strong>' + (isSelf ? ' <span style="background:#d1fae5;color:#059669;padding:.1rem .4rem;border-radius:.25rem;font-size:.7rem;font-weight:600">DU</span>' : '') + '</td>';
-        html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6;font-size:.8rem;color:#6b7280">' + fd(a.created_at) + '</td>';
-        html += '<td style="padding:.5rem;border-bottom:1px solid #f3f4f6;text-align:right">';
-        if (!isSelf) {
-            html += '<button class="btn btn-danger" onclick="removeAdmin(\'' + a.id + '\',\'' + (a.email||'') + '\')">Entfernen</button>';
-        } else {
-            html += '<span style="font-size:.75rem;color:#6b7280">Kann nicht entfernt werden</span>';
-        }
-        html += '</td></tr>';
-    });
-    html += '</tbody></table>';
-    listEl.innerHTML = html;
+    // Dropdown mit Usern füllen (die noch nicht Admin sind)
+    var select = document.getElementById('newAdminSelect');
+    if (select) {
+        select.innerHTML = '<option value="">— Nutzer auswählen —</option>';
+        allUsers.forEach(function(u) {
+            if (adminIds.indexOf(u.id) === -1 && u.email && u.email !== '–') {
+                var opt = document.createElement('option');
+                opt.value = u.id + '||' + u.email;
+                opt.textContent = u.email + (u.name ? ' (' + u.name + ')' : '');
+                select.appendChild(opt);
+            }
+        });
+    }
 }
 
 async function addAdmin() {
-    var email = document.getElementById('newAdminEmail').value.trim();
-    if (!email) { alert('Bitte E-Mail eingeben!'); return; }
+    var select = document.getElementById('newAdminSelect');
+    var errorEl = document.getElementById('addAdminError');
+    var val = select.value;
     
-    // User-ID über profiles-Tabelle finden
-    var res = await sb.from('profiles').select('user_id, email').eq('email', email).limit(1);
-    if (res.error || !res.data || res.data.length === 0) {
-        alert('Kein Nutzer mit dieser E-Mail gefunden.\n\nDer Nutzer muss sich zuerst bei bienenplan.de registriert haben.');
-        return;
+    if (!val) { 
+        errorEl.innerHTML = '<span style="color:#ef4444">Bitte einen Nutzer auswählen!</span>';
+        return; 
     }
     
-    var userId = res.data[0].user_id;
+    var parts = val.split('||');
+    var userId = parts[0];
+    var email = parts[1];
     
-    // Prüfen ob schon Admin
-    var check = await sb.from('admins').select('id').eq('user_id', userId);
-    if (check.data && check.data.length > 0) {
-        alert('Dieser Nutzer ist bereits Admin!');
-        return;
-    }
+    errorEl.innerHTML = '<span style="color:#6b7280">Füge hinzu...</span>';
     
     // Eintragen
     var ins = await sb.from('admins').insert({user_id: userId, email: email});
     if (ins.error) {
-        alert('Fehler: ' + ins.error.message);
+        errorEl.innerHTML = '<span style="color:#ef4444">Fehler: ' + ins.error.message + '</span>';
         return;
     }
     
-    document.getElementById('newAdminEmail').value = '';
-    alert('✅ ' + email + ' ist jetzt Admin!');
+    select.value = '';
+    errorEl.innerHTML = '<span style="color:#059669">✅ ' + email + ' ist jetzt Admin!</span>';
+    setTimeout(function() { errorEl.innerHTML = ''; }, 3000);
     renderAdminsList();
 }
 
