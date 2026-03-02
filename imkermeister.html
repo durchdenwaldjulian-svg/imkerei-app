@@ -295,7 +295,7 @@ var allKostenRaw = [];
 var allTrachtenPrivRaw = [];
 
 // ============================================
-// AUTH: Supabase Login + Admin-Check
+// AUTH: Supabase Login + Admin-Check + Auto-Setup
 // ============================================
 async function checkAdminAccess() {
     var statusEl = document.getElementById('loginStatus');
@@ -313,17 +313,41 @@ async function checkAdminAccess() {
         adminUser = session.data.session.user;
         statusEl.textContent = 'Prüfe Admin-Berechtigung...';
         
-        // 2. Prüfe ob User in admins-Tabelle steht
-        var res = await sb.from('admins').select('*').eq('user_id', adminUser.id);
+        // 2. Alle Admins laden
+        var res = await sb.from('admins').select('*');
         
-        if (res.error || !res.data || res.data.length === 0) {
+        if (res.error) {
+            // Tabelle existiert wahrscheinlich noch nicht
+            statusEl.textContent = '';
+            errorEl.style.display = 'block';
+            errorEl.innerHTML = '🔧 <strong>Erst-Einrichtung nötig</strong><br><br>' +
+                '<span style="font-size:.85rem;color:#6b7280">Die admins-Tabelle existiert noch nicht.<br>Bitte einmal im Supabase SQL Editor ausführen:</span>' +
+                '<pre style="background:#1f2937;color:#f9fafb;padding:.75rem;border-radius:.5rem;font-size:.7rem;margin-top:.75rem;overflow-x:auto;text-align:left;white-space:pre-wrap">CREATE TABLE IF NOT EXISTS admins (\n  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n  user_id UUID NOT NULL UNIQUE,\n  email TEXT,\n  created_at TIMESTAMPTZ DEFAULT NOW()\n);</pre>' +
+                '<br><a href="#" onclick="checkAdminAccess();return false" style="color:#3b82f6;font-weight:600">🔄 Erneut prüfen</a>';
+            return;
+        }
+        
+        // 3. Tabelle existiert aber ist leer → Erst-Setup anbieten
+        if (!res.data || res.data.length === 0) {
+            statusEl.textContent = '';
+            errorEl.style.display = 'block';
+            errorEl.innerHTML = '🔧 <strong>Erst-Einrichtung</strong><br><br>' +
+                '<span style="font-size:.85rem;color:#6b7280">Noch kein Admin eingerichtet.<br>Eingeloggt als: <strong>' + adminUser.email + '</strong></span><br><br>' +
+                '<button onclick="setupFirstAdmin()" style="width:100%;padding:.75rem;background:#10b981;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:bold;cursor:pointer">✅ Mich als Admin einrichten</button>';
+            return;
+        }
+        
+        // 4. Prüfe ob DIESER User in der Admin-Liste steht
+        var isAdmin = res.data.some(function(a) { return a.user_id === adminUser.id; });
+        
+        if (!isAdmin) {
             statusEl.textContent = '';
             errorEl.style.display = 'block';
             errorEl.innerHTML = '🚫 Kein Admin-Zugriff.<br><br><span style="font-size:.8rem;color:#6b7280">Eingeloggt als: ' + adminUser.email + '</span><br><br><a href="index.html" style="color:#3b82f6;font-weight:600">→ Zurück zur App</a>';
             return;
         }
         
-        // 3. Zugang gewährt!
+        // 5. Zugang gewährt!
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContainer').style.display = 'block';
         var emailDisp = document.getElementById('adminEmailDisplay');
@@ -334,7 +358,33 @@ async function checkAdminAccess() {
         console.error('Admin-Check Fehler:', e);
         statusEl.textContent = '';
         errorEl.style.display = 'block';
-        errorEl.innerHTML = '⚠️ Fehler beim Prüfen: ' + e.message + '<br><br><a href="index.html" style="color:#3b82f6">→ Zurück zur App</a>';
+        errorEl.innerHTML = '⚠️ Fehler: ' + e.message + '<br><br><a href="index.html" style="color:#3b82f6">→ Zurück zur App</a>';
+    }
+}
+
+// ============================================
+// ERST-SETUP: Sich selbst als ersten Admin eintragen
+// ============================================
+async function setupFirstAdmin() {
+    var errorEl = document.getElementById('loginError');
+    errorEl.innerHTML = '<span style="color:#6b7280">⏳ Richte Admin ein...</span>';
+    
+    try {
+        var res = await sb.from('admins').insert({
+            user_id: adminUser.id,
+            email: adminUser.email
+        });
+        
+        if (res.error) {
+            errorEl.innerHTML = '<span style="color:#ef4444">❌ Fehler: ' + res.error.message + '</span>';
+            return;
+        }
+        
+        errorEl.innerHTML = '<span style="color:#059669">✅ Du bist jetzt Admin! Lade Seite...</span>';
+        setTimeout(function() { checkAdminAccess(); }, 1000);
+        
+    } catch(e) {
+        errorEl.innerHTML = '<span style="color:#ef4444">Fehler: ' + e.message + '</span>';
     }
 }
 
