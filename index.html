@@ -534,6 +534,15 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 </footer>
 
 <script>
+// Recovery-Link erkennen und zu app.html weiterleiten
+if (window.location.hash && window.location.hash.includes('type=recovery')) {
+    window.location.href = 'app.html' + window.location.hash;
+}
+// Auch Login-Tokens weiterleiten
+if (window.location.hash && window.location.hash.includes('access_token')) {
+    window.location.href = 'app.html' + window.location.hash;
+}
+
 // Reveal on scroll
 var rvs=document.querySelectorAll('.rv');
 var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
