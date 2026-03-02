@@ -21,7 +21,8 @@
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
 
         /* === TOAST === */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        /* Toast: shared-styles.css steuert, z-index erhöht */
+        .toast{z-index:10001!important}
 
         /* === FORUM HEADER === */
         .forum-header{background:linear-gradient(135deg,#1C1410 0%,#3D2E1F 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
@@ -731,9 +732,9 @@ function showToast(msg, typ) {
     var el = document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
-    el.style.display = 'block';
-    el.style.background = typ === 'error' ? '#991b1b' : typ === 'success' ? '#065f46' : '#1C1410';
-    setTimeout(function() { el.style.display = 'none'; }, 2500);
+    el.className = 'toast' + (typ ? ' ' + typ : '');
+    requestAnimationFrame(function() { el.classList.add('show'); });
+    setTimeout(function() { el.classList.remove('show'); }, 2500);
 }
 
 // ============================================
