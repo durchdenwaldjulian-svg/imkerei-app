@@ -121,11 +121,27 @@
     <div class="login-box">
         <h1>🐝 Imkermeister</h1>
         <div id="loginStatus" style="text-align:center;color:#6b7280">Prüfe Zugang...</div>
+        
+        <!-- Login Formular -->
+        <div id="loginFormBox" style="display:none">
+            <input type="email" id="adminEmail" placeholder="E-Mail" style="width:100%;padding:.75rem;border:2px solid #e5e7eb;border-radius:.5rem;font-size:1rem;margin-bottom:.75rem">
+            <input type="password" id="adminPassword" placeholder="Passwort" style="width:100%;padding:.75rem;border:2px solid #e5e7eb;border-radius:.5rem;font-size:1rem;margin-bottom:.75rem" onkeydown="if(event.key==='Enter')doAdminLogin()">
+            <button onclick="doAdminLogin()" style="width:100%;padding:.75rem;background:#FFC107;color:#1f2937;border:none;border-radius:.5rem;font-size:1rem;font-weight:bold;cursor:pointer">Anmelden</button>
+            <div style="text-align:center;margin-top:.75rem">
+                <a href="#" onclick="showResetForm();return false" style="font-size:.85rem;color:#3b82f6">Passwort vergessen?</a>
+            </div>
+        </div>
+        
         <div class="login-error" id="loginError"></div>
-        <div id="resetForm" style="display:none;margin-top:1rem">
+        
+        <!-- Passwort Reset -->
+        <div id="resetFormBox" style="display:none;margin-top:1rem">
             <div style="font-size:.9rem;font-weight:600;margin-bottom:.75rem">🔑 Passwort zurücksetzen</div>
             <input type="email" id="resetEmail" placeholder="Deine E-Mail-Adresse" style="width:100%;padding:.75rem;border:2px solid #e5e7eb;border-radius:.5rem;font-size:1rem;margin-bottom:.75rem">
             <button onclick="doPasswordReset()" style="width:100%;padding:.75rem;background:#3b82f6;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:bold;cursor:pointer">Reset-E-Mail senden</button>
+            <div style="text-align:center;margin-top:.75rem">
+                <a href="#" onclick="showLoginForm();return false" style="font-size:.85rem;color:#3b82f6">← Zurück zum Login</a>
+            </div>
             <div id="resetMsg" style="font-size:.85rem;text-align:center;margin-top:.5rem"></div>
         </div>
     </div>
@@ -290,8 +306,7 @@ async function checkAdminAccess() {
         var session = await sb.auth.getSession();
         if (!session.data.session) {
             statusEl.textContent = '';
-            errorEl.style.display = 'block';
-            errorEl.innerHTML = '❌ Nicht eingeloggt.<br><br><a href="index.html" style="color:#3b82f6;font-weight:600">→ Erst bei bienenplan.de einloggen</a><br><br><a href="#" onclick="showResetForm();return false" style="color:#6b7280;font-size:.85rem">Passwort vergessen?</a>';
+            document.getElementById('loginFormBox').style.display = 'block';
             return;
         }
         
@@ -304,7 +319,7 @@ async function checkAdminAccess() {
         if (res.error || !res.data || res.data.length === 0) {
             statusEl.textContent = '';
             errorEl.style.display = 'block';
-            errorEl.innerHTML = '🚫 Kein Admin-Zugriff.<br><br><span style="font-size:.8rem;color:#6b7280">Eingeloggt als: ' + adminUser.email + '</span><br><br><a href="index.html" style="color:#3b82f6;font-weight:600">→ Zurück zur App</a><br><br><a href="#" onclick="showResetForm();return false" style="color:#6b7280;font-size:.85rem">Passwort ändern?</a>';
+            errorEl.innerHTML = '🚫 Kein Admin-Zugriff.<br><br><span style="font-size:.8rem;color:#6b7280">Eingeloggt als: ' + adminUser.email + '</span><br><br><a href="index.html" style="color:#3b82f6;font-weight:600">→ Zurück zur App</a>';
             return;
         }
         
@@ -327,14 +342,53 @@ async function checkAdminAccess() {
 checkAdminAccess();
 
 // ============================================
-// PASSWORT RESET
+// LOGIN & PASSWORT RESET
 // ============================================
+async function doAdminLogin() {
+    var email = document.getElementById('adminEmail').value.trim();
+    var password = document.getElementById('adminPassword').value;
+    var errorEl = document.getElementById('loginError');
+    
+    if (!email || !password) {
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = 'Bitte E-Mail und Passwort eingeben.';
+        return;
+    }
+    
+    errorEl.style.display = 'block';
+    errorEl.innerHTML = '<span style="color:#6b7280">Anmelden...</span>';
+    
+    try {
+        var result = await sb.auth.signInWithPassword({ email: email, password: password });
+        if (result.error) {
+            errorEl.innerHTML = '<span style="color:#ef4444">❌ ' + (result.error.message === 'Invalid login credentials' ? 'E-Mail oder Passwort falsch' : result.error.message) + '</span>';
+            return;
+        }
+        
+        // Erfolgreich eingeloggt → Admin-Check starten
+        errorEl.style.display = 'none';
+        document.getElementById('loginFormBox').style.display = 'none';
+        document.getElementById('loginStatus').textContent = 'Prüfe Admin-Berechtigung...';
+        checkAdminAccess();
+        
+    } catch(e) {
+        errorEl.innerHTML = '<span style="color:#ef4444">Fehler: ' + e.message + '</span>';
+    }
+}
+
 function showResetForm() {
-    document.getElementById('resetForm').style.display = 'block';
-    // Falls eingeloggt, E-Mail vorausfüllen
+    document.getElementById('loginFormBox').style.display = 'none';
+    document.getElementById('resetFormBox').style.display = 'block';
+    document.getElementById('loginError').style.display = 'none';
     if (adminUser && adminUser.email) {
         document.getElementById('resetEmail').value = adminUser.email;
     }
+}
+
+function showLoginForm() {
+    document.getElementById('resetFormBox').style.display = 'none';
+    document.getElementById('loginFormBox').style.display = 'block';
+    document.getElementById('loginError').style.display = 'none';
 }
 
 async function doPasswordReset() {
