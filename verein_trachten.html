@@ -1048,7 +1048,29 @@ function openMeldungModal() {
             modalMarker = L.marker(e.latlng).addTo(modalMap);
             document.getElementById('mLat').value = e.latlng.lat.toFixed(6);
             document.getElementById('mLng').value = e.latlng.lng.toFixed(6);
-            document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt: ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+            document.getElementById('mKoordStatus').innerHTML = '⏳ Adresse wird ermittelt...';
+            
+            // Reverse Geocoding: Ortsnamen automatisch eintragen
+            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + e.latlng.lat + '&lon=' + e.latlng.lng + '&zoom=14&addressdetails=1')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var addr = data.address || {};
+                var parts = [];
+                if (addr.village || addr.town || addr.city) parts.push(addr.village || addr.town || addr.city);
+                if (addr.suburb) parts.push(addr.suburb);
+                if (addr.county) parts.push(addr.county);
+                var ortName = parts.join(', ') || data.display_name || '';
+                
+                var standortInput = document.getElementById('mStandort');
+                if (standortInput && !standortInput.value.trim()) {
+                    // Nur ausfüllen wenn Feld noch leer ist
+                    standortInput.value = ortName;
+                }
+                document.getElementById('mKoordStatus').innerHTML = '✅ Position: ' + ortName + ' (' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4) + ')';
+            })
+            .catch(function() {
+                document.getElementById('mKoordStatus').innerHTML = '✅ Position gesetzt: ' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+            });
         });
     }, 250);
 }
