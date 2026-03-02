@@ -513,7 +513,10 @@ async function saveTracht() {
         if (t) {
             t.typ=typ; t.standort=standort; t.beginn=beginn?new Date(beginn).getTime():null; t.ende=ende?new Date(ende).getTime():null; t.ertrag=ertrag; t.notizen=notizen; t.lat=lat; t.lng=lng; t.shared=share;
             db.update('trachten',{typ:t.typ,standort:t.standort,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,lat:lat,lng:lng,shared:share},t.id);
-            if (share && lat && lng) { sb.from('trachten_shared').upsert({id:t.id,user_id:currentUser.id,user_name:userName,typ:t.typ,standort:t.standort,lat:lat,lng:lng,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,jahr:new Date().getFullYear()}); }
+            if (share && lat && lng) { 
+                var shareRes = await sb.from('trachten_shared').upsert({id:t.id,user_id:currentUser.id,user_name:userName,typ:t.typ,standort:t.standort,lat:lat,lng:lng,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,jahr:new Date().getFullYear()}); 
+                if (shareRes.error) { console.error('Teilen-Fehler:', shareRes.error); toast('⚠️ Tracht gespeichert, aber Teilen fehlgeschlagen: ' + shareRes.error.message, 'error'); }
+            }
             else if (!share) { sb.from('trachten_shared').delete().eq('id',t.id); }
         }
         _editId = null;
@@ -523,7 +526,10 @@ async function saveTracht() {
         var res = await db.insert('trachten',{id:t.id,user_id:currentUser.id,typ:t.typ,standort:t.standort,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,lat:lat,lng:lng,shared:share,created_at:t.created});
         if (res && res.error) { toast('❌ Fehler: '+res.error.message,'error'); return; }
         trachten.push(t);
-        if (share && lat && lng) { sb.from('trachten_shared').upsert({id:t.id,user_id:currentUser.id,user_name:userName,typ:t.typ,standort:t.standort,lat:lat,lng:lng,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,jahr:new Date().getFullYear()}); }
+        if (share && lat && lng) { 
+            var shareRes = await sb.from('trachten_shared').upsert({id:t.id,user_id:currentUser.id,user_name:userName,typ:t.typ,standort:t.standort,lat:lat,lng:lng,beginn:t.beginn,ende:t.ende,ertrag:t.ertrag,notizen:t.notizen,jahr:new Date().getFullYear()}); 
+            if (shareRes.error) { console.error('Teilen-Fehler:', shareRes.error); toast('⚠️ Tracht gespeichert, aber Teilen fehlgeschlagen: ' + shareRes.error.message, 'error'); }
+        }
         closeModal(); render(); toast('✓ Tracht erfasst!','success');
     }
 }
