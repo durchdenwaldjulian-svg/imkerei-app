@@ -694,18 +694,17 @@ async function init() {
             .select('id, user_id, rolle, beigetreten_am')
             .eq('verein_id', verein.id);
 
-        // Profil-Daten laden
+        // Profil-Daten laden (profiles.id = auth user id)
         var userIds = (mitgliederData || []).map(function(m) { return m.user_id; });
         var profileMap = {};
         
         if (userIds.length > 0) {
-            // Einzeln laden falls .in() Probleme macht
             for (var i = 0; i < userIds.length; i++) {
                 var { data: profData } = await sb.from('profiles')
-                    .select('user_id, email, name')
-                    .eq('user_id', userIds[i])
+                    .select('id, email, name')
+                    .eq('id', userIds[i])
                     .maybeSingle();
-                if (profData) profileMap[profData.user_id] = profData;
+                if (profData) profileMap[userIds[i]] = { email: profData.email, name: profData.name };
             }
         }
 
