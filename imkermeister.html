@@ -169,6 +169,7 @@
             <div class="tab" onclick="showTab('ernte')">🍯 Ernte</div>
             <div class="tab" onclick="showTab('data')">📊 Übersicht</div>
             <div class="tab" onclick="showTab('admins')">🔐 Admins</div>
+            <div class="tab" onclick="showTab('vereine')">🏘️ Vereine</div>
         </div>
         
         <div id="tabOnline" style="display:none">
@@ -467,7 +468,7 @@ async function doPasswordReset() {
 
 function showTab(name) {
     document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    var tabs = ['Users','Online','Trachten','Data','Voelker','Behandlungen','Kosten','Ernte','Admins'];
+    var tabs = ['Users','Online','Trachten','Data','Voelker','Behandlungen','Kosten','Ernte','Admins','Vereine'];
     tabs.forEach(function(tn){ 
         var el = document.getElementById('tab'+tn);
         if(el) el.style.display = 'none'; 
@@ -478,6 +479,7 @@ function showTab(name) {
     
     // Admins-Tab: Liste laden
     if (name === 'admins') renderAdminsList();
+    if (name === 'vereine') loadAufloesungen();
 }
 
 function fd(d) {
@@ -1199,6 +1201,115 @@ async function removeAdmin(adminId, email) {
     alert('✅ Admin entfernt.');
     renderAdminsList();
 }
+
+// ============================================
+// VEREINS-AUFLÖSUNGSANTRÄGE
+// ============================================
+var aufloesungen = [];
+
+async function loadAufloesungen() {
+    var list = document.getElementById('aufloesungenList');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;color:#6b7280;padding:1rem">Lade...</div>';
+
+    var { data, error } = await adminSb.from('verein_aufloesungen')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        list.innerHTML = '<div style="color:#ef4444;padding:1rem">Fehler: ' + error.message + '</div>';
+        return;
+    }
+
+    aufloesungen = data || [];
+    renderAufloesungen();
+}
+
+function renderAufloesungen() {
+    var list = document.getElementById('aufloesungenList');
+    if (!list) return;
+
+    if (aufloesungen.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#6b7280;padding:2rem">✅ Keine Auflösungsanträge vorhanden.</div>';
+        return;
+    }
+
+    var html = '';
+    aufloesungen.forEach(function(a) {
+        var statusColor = a.status === 'offen' ? '#f59e0b' : (a.status === 'bestaetigt' ? '#ef4444' : '#10b981');
+        var statusLabel = a.status === 'offen' ? '⏳ Offen' : (a.status === 'bestaetigt' ? '🗑️ Bestätigt' : '✅ Abgelehnt');
+        var borderColor = a.status === 'offen' ? '#FFC107' : (a.status === 'bestaetigt' ? '#ef4444' : '#10b981');
+
+        html += '<div style="border:2px solid ' + borderColor + ';border-radius:.75rem;padding:1rem;margin-bottom:.75rem;background:#fff">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">';
+        html += '<div>';
+        html += '<div style="font-weight:700;font-size:1rem">🏘️ ' + (a.verein_name || 'Unbekannt') + '</div>';
+        html += '<div style="font-size:.8rem;color:#6b7280;margin-top:.25rem">Beantragt von: <strong>' + (a.beantragt_von_name || 'Unbekannt') + '</strong> (' + (a.beantragt_von_email || '-') + ')</div>';
+        html += '<div style="font-size:.8rem;color:#6b7280">Datum: ' + fd(a.created_at) + '</div>';
+        html += '</div>';
+        html += '<span style="padding:.25rem .75rem;border-radius:999px;font-size:.75rem;font-weight:700;color:#fff;background:' + statusColor + '">' + statusLabel + '</span>';
+        html += '</div>';
+
+        html += '<div style="background:#f9fafb;padding:.75rem;border-radius:.5rem;font-size:.85rem;color:#374151;margin-bottom:.75rem">';
+        html += '<strong>Grund:</strong> ' + (a.grund || 'Kein Grund angegeben') + '</div>';
+
+        if (a.status === 'offen') {
+            html += '<div style="display:flex;gap:.5rem">';
+            html += '<button onclick="aufloesungBestaetigen(\''+a.id+'\',\''+a.verein_id+'\',\''+a.verein_name.replace(/'/g, '')+'\');" style="padding:.5rem 1rem;background:#ef4444;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.85rem">🗑️ Auflösung bestätigen</button>';
+            html += '<button onclick="aufloesungAblehnen(\''+a.id+'\');" style="padding:.5rem 1rem;background:#10b981;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.85rem">✅ Ablehnen</button>';
+            html += '</div>';
+        }
+
+        if (a.bearbeitet_am) {
+            html += '<div style="font-size:.75rem;color:#9ca3af;margin-top:.5rem">Bearbeitet am: ' + fd(a.bearbeitet_am) + '</div>';
+        }
+
+        html += '</div>';
+    });
+    list.innerHTML = html;
+}
+
+async function aufloesungBestaetigen(antragId, vereinId, vereinName) {
+    if (!confirm('⚠️ ACHTUNG!\n\nDu bestätigst die Auflösung von "' + vereinName + '".\n\nDabei werden gelöscht:\n- Alle Mitgliedschaften\n- Alle Vereins-Trachtmeldungen\n- Der Verein selbst\n\nDas kann NICHT rückgängig gemacht werden!')) return;
+
+    if (!confirm('Bist du WIRKLICH sicher? Tippe OK um fortzufahren.')) return;
+
+    try {
+        // 1. Mitglieder löschen
+        await adminSb.from('verein_mitglieder').delete().eq('verein_id', vereinId);
+        // 2. Trachten löschen
+        await adminSb.from('verein_trachten').delete().eq('verein_id', vereinId);
+        // 3. Kommentare löschen (falls vorhanden)
+        // Kommentare hängen an trachten, die schon gelöscht sind - ggf. cascade
+        // 4. Verein löschen
+        await adminSb.from('vereine').delete().eq('id', vereinId);
+        // 5. Antrag als bestätigt markieren
+        await adminSb.from('verein_aufloesungen').update({
+            status: 'bestaetigt',
+            bearbeitet_am: new Date().toISOString(),
+            bearbeitet_von: currentAdminUser
+        }).eq('id', antragId);
+
+        alert('✅ Verein "' + vereinName + '" wurde aufgelöst.');
+        loadAufloesungen();
+    } catch(e) {
+        alert('❌ Fehler: ' + e.message);
+    }
+}
+
+async function aufloesungAblehnen(antragId) {
+    if (!confirm('Antrag ablehnen? Der Verein bleibt bestehen.')) return;
+
+    await adminSb.from('verein_aufloesungen').update({
+        status: 'abgelehnt',
+        bearbeitet_am: new Date().toISOString(),
+        bearbeitet_von: currentAdminUser
+    }).eq('id', antragId);
+
+    alert('✅ Antrag abgelehnt. Verein bleibt bestehen.');
+    loadAufloesungen();
+}
+
 </script>
 </body>
 </html>

@@ -224,6 +224,7 @@
             .filter-bar{gap:.35rem}
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -554,9 +555,21 @@
 
         <div class="card" style="border-color:#fee2e2">
             <h3 style="color:#ef4444">⚠️ Gefahrenzone</h3>
+            
             <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Möchtest du den Verein verlassen? Deine Trachtmeldungen bleiben erhalten.</p>
             <button class="btn btn-sm" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="vereinVerlassen()">🚪 Verein verlassen</button>
-            <div class="info-box" style="margin-top:.75rem">ℹ️ Der 1. Vorsitzende kann den Verein nicht verlassen – erst das Amt an jemand anderen übertragen. Einen Verein auflösen kann nur der 1. Vorsitzende.</div>
+            
+            <div id="aufloesungSection" style="display:none;margin-top:1.5rem;padding-top:1.5rem;border-top:2px solid #fee2e2">
+                <h3 style="color:#ef4444;margin-bottom:.5rem">🗑️ Verein auflösen</h3>
+                <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Dies löscht den Verein, alle Mitgliedschaften und Vereins-Trachtmeldungen unwiderruflich. Ein Administrator muss den Antrag bestätigen.</p>
+                <div class="form-group" style="margin-bottom:.75rem">
+                    <label class="form-label" style="font-size:.85rem">Grund für die Auflösung</label>
+                    <textarea id="aufloesungGrund" class="input" rows="2" placeholder="z.B. Verein wurde aufgelöst, kein Bedarf mehr..."></textarea>
+                </div>
+                <button class="btn btn-sm" style="background:#ef4444;color:#fff" onclick="vereinAufloesen()">🗑️ Auflösung beantragen</button>
+                <div id="aufloesungStatus" style="margin-top:.75rem;display:none"></div>
+            </div>
+            <div class="info-box" style="margin-top:.75rem">ℹ️ Der 1. Vorsitzende kann den Verein verlassen (das Amt wird automatisch übergeben). Nur der 1. Vorsitzende sieht die Option zum Auflösen.</div>
         </div>
     </div>
 
@@ -961,6 +974,7 @@ function renderVerein() {
     renderKarte();
     renderMeldungen();
     renderMitglieder();
+    checkAufloesungStatus();
 
     if (isPreview) {
         document.getElementById('codeInput').value = 'DEMO-CODE';
@@ -1516,13 +1530,24 @@ function showInvite() {
 async function vereinVerlassen() {
     if (isPreview) { toast('ℹ️ Demo-Modus – nicht verfügbar', 'info'); return; }
 
-    // Vorsitzender darf nicht einfach gehen
+    // Vorsitzender: Extra-Warnung + Check ob es andere Mitglieder gibt
     if (meineRolle === 'vorsitzender') {
-        toast('❌ Als 1. Vorsitzende/r kannst du den Verein nicht verlassen. Übertrage zuerst das Amt an ein anderes Mitglied.', 'error');
-        return;
-    }
+        var andereMitglieder = mitglieder.filter(function(m) { return m.user_id !== currentUser.id; });
+        if (andereMitglieder.length > 0) {
+            // Es gibt noch andere Mitglieder → Amt muss übergeben werden
+            if (!confirm('⚠️ Du bist der 1. Vorsitzende!\n\nWenn du gehst, wird das älteste Mitglied automatisch zum neuen Vorsitzenden.\n\nWirklich verlassen?')) return;
 
-    if (!confirm('Wirklich den Verein verlassen?\n\nDeine Trachtmeldungen bleiben erhalten, aber du hast keinen Zugriff mehr auf die Vereins-Karte und Mitgliederliste.')) return;
+            // Ältestes anderes Mitglied zum Vorsitzenden machen
+            var neuerVorsitz = andereMitglieder.sort(function(a,b) { return new Date(a.beitritt) - new Date(b.beitritt); })[0];
+            var { error: roleErr } = await sb.from('verein_mitglieder').update({ rolle: 'vorsitzender' }).eq('id', neuerVorsitz.id);
+            if (roleErr) { toast('❌ Fehler beim Übertragen: ' + roleErr.message, 'error'); return; }
+        } else {
+            // Letztes Mitglied → Verein wird leer
+            if (!confirm('⚠️ Du bist das letzte Mitglied!\n\nWenn du gehst, ist der Verein leer (kann später wieder beigetreten werden).\n\nWirklich verlassen?')) return;
+        }
+    } else {
+        if (!confirm('Wirklich den Verein verlassen?\n\nDeine Trachtmeldungen bleiben erhalten, aber du hast keinen Zugriff mehr auf die Vereins-Karte und Mitgliederliste.')) return;
+    }
 
     // Eigene Mitgliedschaft finden und löschen
     var meineMitgliedschaft = mitglieder.find(function(m) { return m.user_id === currentUser.id; });
@@ -1533,6 +1558,81 @@ async function vereinVerlassen() {
 
     toast('✅ Du hast den Verein verlassen.', 'success');
     setTimeout(function() { location.reload(); }, 1200);
+}
+
+// ============================================
+// VEREIN AUFLÖSEN (Antrag + Email)
+// ============================================
+async function vereinAufloesen() {
+    if (isPreview) { toast('ℹ️ Demo-Modus – nicht verfügbar', 'info'); return; }
+    if (meineRolle !== 'vorsitzender') { toast('❌ Nur der 1. Vorsitzende kann den Verein auflösen.', 'error'); return; }
+
+    var grund = document.getElementById('aufloesungGrund').value.trim();
+    if (!grund) { toast('⚠️ Bitte einen Grund angeben.', 'error'); return; }
+
+    if (!confirm('⚠️ ACHTUNG: Du beantragst die Auflösung des Vereins "' + verein.name + '".\n\nEin Administrator muss den Antrag bestätigen. Bis dahin bleibt der Verein bestehen.\n\nWirklich beantragen?')) return;
+
+    // Profil-Daten holen
+    var userName = currentUser.email;
+    var { data: profil } = await sb.from('profiles').select('name, email').eq('id', currentUser.id).maybeSingle();
+    if (profil && profil.name) userName = profil.name;
+    var userEmail = (profil && profil.email) || currentUser.email;
+
+    // Antrag in Supabase speichern
+    var { data: antrag, error } = await sb.from('verein_aufloesungen').insert({
+        verein_id: verein.id,
+        verein_name: verein.name,
+        beantragt_von: currentUser.id,
+        beantragt_von_email: userEmail,
+        beantragt_von_name: userName,
+        grund: grund,
+        status: 'offen'
+    }).select().single();
+
+    if (error) { toast('❌ Fehler: ' + error.message, 'error'); return; }
+
+    // Email an Admin senden
+    try {
+        await emailjs.send('service_rowhptg', 'template_oqn3t06', {
+            from_name: userName,
+            email: userEmail,
+            imkerei: verein.name,
+            datum: '🗑️ VEREINS-AUFLÖSUNG BEANTRAGT\n\nVerein: ' + verein.name + '\nBeantragt von: ' + userName + ' (' + userEmail + ')\nGrund: ' + grund + '\n\nBitte im Imkermeister-Bereich bestätigen oder ablehnen.'
+        });
+    } catch(emailErr) {
+        console.warn('Email konnte nicht gesendet werden:', emailErr);
+    }
+
+    // UI Update
+    var statusEl = document.getElementById('aufloesungStatus');
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = '<div class="warn-box" style="border-color:#F5A623">⏳ <strong>Auflösungsantrag gestellt!</strong> Ein Administrator wurde per E-Mail benachrichtigt. Der Verein bleibt bestehen, bis der Antrag bestätigt wird.</div>';
+    
+    toast('✅ Auflösungsantrag gesendet! Administrator wurde benachrichtigt.', 'success');
+}
+
+// Prüfe ob schon ein offener Antrag existiert
+async function checkAufloesungStatus() {
+    if (isPreview || !verein || meineRolle !== 'vorsitzender') return;
+    
+    // Auflösungs-Section nur für Vorsitzende zeigen
+    var section = document.getElementById('aufloesungSection');
+    if (section) section.style.display = 'block';
+
+    var { data: offene } = await sb.from('verein_aufloesungen')
+        .select('*')
+        .eq('verein_id', verein.id)
+        .eq('status', 'offen')
+        .limit(1)
+        .maybeSingle();
+
+    if (offene) {
+        var statusEl = document.getElementById('aufloesungStatus');
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.innerHTML = '<div class="warn-box" style="border-color:#F5A623">⏳ <strong>Auflösungsantrag läuft</strong> – beantragt am ' + formatDate(offene.created_at) + '. Warte auf Bestätigung durch Administrator.</div>';
+        }
+    }
 }
 
 // ============================================
