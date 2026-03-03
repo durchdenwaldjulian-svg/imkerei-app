@@ -68,6 +68,10 @@
         .gantt-row:last-child{border-bottom:none}
 
         .gantt-row-label{min-width:180px;max-width:180px;padding:.75rem 1rem;border-right:1px solid #f5f0eb;display:flex;flex-direction:column;justify-content:center;gap:.25rem}
+        .gantt-row-actions{min-width:70px;max-width:70px;display:flex;align-items:center;justify-content:center;gap:.35rem;border-right:1px solid #f5f0eb;padding:0 .5rem}
+        .gantt-action-btn{width:28px;height:28px;border:1px solid #E8DFD4;border-radius:6px;background:#fff;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .gantt-action-btn:hover{border-color:#F5A623;background:#FFF8EE;transform:scale(1.1)}
+        .gantt-action-btn.del:hover{border-color:#ef4444;background:#fee2e2}
         .gantt-row-name{font-weight:600;font-size:.9rem;color:#1C1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .gantt-row-phase{font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;gap:.25rem;padding:.1rem .4rem;border-radius:.25rem;width:fit-content}
         .phase-active{background:#FFF3D6;color:#92400E}
@@ -154,7 +158,9 @@
             .zucht-header-banner h1{font-size:1.35rem}
             .gantt-label-col{min-width:120px;max-width:120px;padding:.5rem .75rem}
             .gantt-row-name{font-size:.8rem}
-            .gantt-row-label{padding:.5rem .75rem}
+            .gantt-row-label{padding:.5rem .75rem;min-width:120px;max-width:120px}
+            .gantt-row-actions{min-width:56px;max-width:56px;gap:.25rem;padding:0 .25rem}
+            .gantt-action-btn{width:24px;height:24px;font-size:.65rem}
         }
 
         @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -490,6 +496,7 @@ function renderGanttHTML(filtered) {
     // Time header
     html += '<div class="gantt-time-header">';
     html += '<div class="gantt-label-col">Charge</div>';
+    if (!isPreview) html += '<div class="gantt-row-actions" style="font-size:.65rem;font-weight:700;color:#A69580;border-bottom:none"></div>';
     html += '<div class="gantt-timeline-col" style="min-width:' + totalWidth + 'px">';
     weeks.forEach(function(w) {
         html += '<div class="gantt-week' + (w.isCurrent ? ' current' : '') + '" style="width:' + weekWidth + 'px;min-width:' + weekWidth + 'px">KW ' + getKW(new Date(w.start)) + '<br><span style="font-weight:400;color:#bbb;font-size:.6rem">' + w.label + '</span></div>';
@@ -509,6 +516,14 @@ function renderGanttHTML(filtered) {
         html += '<div class="gantt-row-name" title="' + esc(plan.name) + '">' + esc(plan.name) + '</div>';
         html += '<div class="gantt-row-phase ' + phaseClass + '">' + phase + '</div>';
         html += '</div>';
+
+        // Actions (Bearbeiten / Löschen)
+        if (!isPreview) {
+            html += '<div class="gantt-row-actions">';
+            html += '<button class="gantt-action-btn" onclick="openModal(\'' + plan.id + '\')" title="Bearbeiten">✏️</button>';
+            html += '<button class="gantt-action-btn del" onclick="deleteZucht(\'' + plan.id + '\')" title="Löschen">🗑️</button>';
+            html += '</div>';
+        }
 
         // Timeline
         html += '<div class="gantt-row-timeline" style="min-width:' + totalWidth + 'px">';
