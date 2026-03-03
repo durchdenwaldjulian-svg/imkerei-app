@@ -171,9 +171,14 @@
         /* === ROLLEN-VERWALTUNG === */
         .role-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.7rem;font-weight:600}
         .role-badge.vorsitz{background:#FEF3C7;color:#92400E;border:1px solid #F5A623}
+        .role-badge.vorsitz-stv{background:#FEF3C7;color:#92400E;border:1px solid #FBBF24}
+        .role-badge.vorstand-role{background:#FEF3C7;color:#78350F;border:1px solid #FBBF24}
+        .role-badge.fach-role{background:#EDE9FE;color:#5B21B6;border:1px solid #A78BFA}
         .role-badge.admin-role{background:#DBEAFE;color:#1E40AF;border:1px solid #93C5FD}
         .role-badge.mitglied-role{background:#D1FAE5;color:#065F46;border:1px solid #6EE7B7}
         .role-badge.gast-role{background:#F3F4F6;color:#6B7280;border:1px solid #D1D5DB}
+        .role-vorstand{background:linear-gradient(135deg,#F59E0B,#D97706)}
+        .role-fach{background:linear-gradient(135deg,#8B5CF6,#6D28D9)}
         
         .member-admin-card{
             background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;
@@ -185,7 +190,7 @@
         .member-admin-actions select{padding:.3rem .5rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.75rem;font-family:inherit;background:#fff;cursor:pointer}
         .member-admin-actions select:focus{border-color:#F5A623;outline:none}
         
-        .permission-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border:2px solid #E8DFD4;border-radius:.75rem;overflow:hidden;margin:1rem 0;font-size:.75rem}
+        .permission-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr;gap:0;border:2px solid #E8DFD4;border-radius:.75rem;overflow:hidden;margin:1rem 0;font-size:.75rem}
         .perm-header{background:#1C1410;color:#fff;padding:.6rem .5rem;font-weight:600;text-align:center}
         .perm-row-label{background:#FFF8EE;padding:.5rem;font-weight:600;color:#3D2E1F;border-bottom:1px solid #E8DFD4}
         .perm-cell{padding:.5rem;text-align:center;border-bottom:1px solid #E8DFD4;border-left:1px solid #E8DFD4}
@@ -388,15 +393,16 @@
         <div id="memberAdminView" style="display:none">
             <div class="warn-box" style="margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
                 <span style="font-size:1.1rem">🔑</span>
-                <span>Du bist als <strong>Vereinsvorsitzender</strong> angemeldet. Hier kannst du Mitglieder verwalten und Rollen zuweisen.</span>
+                <span>Du bist als <strong>Vereinsvorsitzender</strong> angemeldet. Hier kannst du Mitglieder verwalten und Vereinsämter zuweisen (Kassier, Schriftführer, Zuchtobmann, etc.).</span>
             </div>
             
             <!-- Filter -->
             <div class="filter-bar" style="margin-bottom:1rem">
                 <span style="font-size:.8rem;color:#7A6652;font-weight:500">Rolle:</span>
                 <button class="filter-chip active" onclick="filterMembers('alle',this)">Alle</button>
-                <button class="filter-chip" onclick="filterMembers('vorsitzender',this)">🔑 Vorsitzende</button>
-                <button class="filter-chip" onclick="filterMembers('admin',this)">👑 Admins</button>
+                <button class="filter-chip" onclick="filterMembers('bgb',this)">🏛 Vorstand (BGB)</button>
+                <button class="filter-chip" onclick="filterMembers('fach',this)">🐝 Fachämter</button>
+                <button class="filter-chip" onclick="filterMembers('admin',this)">⚙️ Admins</button>
                 <button class="filter-chip" onclick="filterMembers('mitglied',this)">🐝 Mitglieder</button>
                 <button class="filter-chip" onclick="filterMembers('gast',this)">🆕 Gäste</button>
             </div>
@@ -431,13 +437,17 @@
             <h3>🛡️ Rollen & Berechtigungen</h3>
             <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Übersicht der Rechte pro Rolle in deinem Verein.</p>
             
-            <div class="permission-grid">
+            <div class="permission-grid" style="grid-template-columns:1.3fr 1fr 1fr 1fr 1fr 1fr">
                 <div class="perm-header">Berechtigung</div>
-                <div class="perm-header">🔑 Vorsitzender</div>
-                <div class="perm-header">👑 Admin</div>
+                <div class="perm-header">🔑 Vorsitz</div>
+                <div class="perm-header">🔑 Stellv.</div>
+                <div class="perm-header">⚙️ Admin</div>
+                <div class="perm-header">🏅 Fachamt</div>
                 <div class="perm-header">🐝 Mitglied</div>
                 
                 <div class="perm-row-label">Trachten melden</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
@@ -446,23 +456,33 @@
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
                 
                 <div class="perm-row-label">Vereins-Karte sehen</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
                 
-                <div class="perm-row-label">Meldungen anderer löschen</div>
+                <div class="perm-row-label">Meldungen löschen</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Kommentare moderieren</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Mitglieder einladen</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-no">—</div>
@@ -471,29 +491,39 @@
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Mitglieder entfernen</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Einladungscode ändern</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Vereinsdaten bearbeiten</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-yes">✅</div>
+                <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
                 
                 <div class="perm-row-label">Verein löschen</div>
                 <div class="perm-cell perm-yes">✅</div>
                 <div class="perm-cell perm-no">—</div>
                 <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
+                <div class="perm-cell perm-no">—</div>
             </div>
             
-            <div class="info-box">ℹ️ Neue Mitglieder mit gültigem Einladungscode werden sofort als <strong>Mitglied</strong> freigeschaltet. Der Vorsitzende kann jederzeit Rollen hochstufen.</div>
+            <div class="info-box">ℹ️ Neue Mitglieder mit Einladungscode werden als <strong>Mitglied</strong> eingetragen. Nur der 1. Vorsitzende kann Ämter vergeben.<br>🏛 <strong>Vorstand (§ 26 BGB)</strong>: 1./2. Vorsitzende/r, Kassierer/in, Schriftführer/in<br>🐝 <strong>Fachämter</strong>: Bienengesundheit, Zuchtwart, Honigobmann, Gerätewart, Jugendwart, Pressewart</div>
         </div>
 
         <div class="card" style="margin-bottom:1rem">
@@ -625,11 +655,28 @@
 // ============================================
 
 // Rollen-Konfiguration
+// Rollen-Gruppen für Berechtigungen
+var VORSTAND_BGB = ['vorsitzender','stellvertreter','kassier','schriftfuehrer'];
+var FACH_AEMTER = ['bienengesundheit','zuchtwart','honigobmann','geraetewart','jugendwart','pressewart'];
+var VORSTAND_ALL = VORSTAND_BGB.concat(FACH_AEMTER);
+
 const ROLES = {
-    vorsitzender: { label: '🔑 Vorsitzender', badge: 'vorsitz', avatarClass: 'role-admin', sort: 0 },
-    admin:        { label: '👑 Admin', badge: 'admin-role', avatarClass: 'role-admin', sort: 1 },
-    mitglied:     { label: '🐝 Mitglied', badge: 'mitglied-role', avatarClass: 'role-member', sort: 2 },
-    gast:         { label: '🆕 Gast', badge: 'gast-role', avatarClass: 'role-new', sort: 3 },
+    // --- Vorstand nach § 26 BGB ---
+    vorsitzender:    { label: '🔑 1. Vorsitzende/r', badge: 'vorsitz', avatarClass: 'role-admin', sort: 0, gruppe: 'bgb' },
+    stellvertreter:  { label: '🔑 2. Vorsitzende/r', badge: 'vorsitz-stv', avatarClass: 'role-admin', sort: 1, gruppe: 'bgb' },
+    kassier:         { label: '💰 Kassierer/in', badge: 'vorstand-role', avatarClass: 'role-vorstand', sort: 2, gruppe: 'bgb' },
+    schriftfuehrer:  { label: '📝 Schriftführer/in', badge: 'vorstand-role', avatarClass: 'role-vorstand', sort: 3, gruppe: 'bgb' },
+    // --- Erweiterter Vorstand / Fachämter ---
+    bienengesundheit:{ label: '🔬 Obmann Bienengesundheit', badge: 'fach-role', avatarClass: 'role-fach', sort: 4, gruppe: 'fach' },
+    zuchtwart:       { label: '👑 Zuchtwart/in', badge: 'fach-role', avatarClass: 'role-fach', sort: 5, gruppe: 'fach' },
+    honigobmann:     { label: '🍯 Honigobmann/-frau', badge: 'fach-role', avatarClass: 'role-fach', sort: 6, gruppe: 'fach' },
+    geraetewart:     { label: '🔧 Gerätewart/in', badge: 'fach-role', avatarClass: 'role-fach', sort: 7, gruppe: 'fach' },
+    jugendwart:      { label: '🧒 Jugendwart/in', badge: 'fach-role', avatarClass: 'role-fach', sort: 8, gruppe: 'fach' },
+    pressewart:      { label: '📰 Pressewart/in', badge: 'fach-role', avatarClass: 'role-fach', sort: 9, gruppe: 'fach' },
+    // --- Technisch / Sonstige ---
+    admin:           { label: '⚙️ Admin', badge: 'admin-role', avatarClass: 'role-admin', sort: 10, gruppe: 'sonstige' },
+    mitglied:        { label: '🐝 Mitglied', badge: 'mitglied-role', avatarClass: 'role-member', sort: 11, gruppe: 'sonstige' },
+    gast:            { label: '🆕 Gast', badge: 'gast-role', avatarClass: 'role-new', sort: 12, gruppe: 'sonstige' },
 };
 
 // State
@@ -788,9 +835,17 @@ function loadDemoData() {
     
     mitglieder = [
         { id: 'd1', user_id: 'u1', name: 'Thomas Müller', email: 'thomas@imker-ka.de', role: 'vorsitzender', beitritt: '2023-03-15', avatar: 'TM' },
-        { id: 'd2', user_id: 'u2', name: 'Sandra Fischer', email: 'sandra@fischer.de', role: 'admin', beitritt: '2023-03-15', avatar: 'SF' },
-        { id: 'd3', user_id: 'u3', name: 'Klaus Weber', email: 'k.weber@web.de', role: 'mitglied', beitritt: '2023-06-20', avatar: 'KW' },
-        { id: 'd4', user_id: 'u4', name: 'Maria Schneider', email: 'maria.s@gmx.de', role: 'mitglied', beitritt: '2024-01-10', avatar: 'MS' },
+        { id: 'd2', user_id: 'u2', name: 'Sandra Fischer', email: 'sandra@fischer.de', role: 'stellvertreter', beitritt: '2023-03-15', avatar: 'SF' },
+        { id: 'd3', user_id: 'u3', name: 'Klaus Weber', email: 'k.weber@web.de', role: 'kassier', beitritt: '2023-06-20', avatar: 'KW' },
+        { id: 'd4', user_id: 'u4', name: 'Maria Schneider', email: 'maria.s@gmx.de', role: 'schriftfuehrer', beitritt: '2024-01-10', avatar: 'MS' },
+        { id: 'd5', user_id: 'u5', name: 'Hans Bauer', email: 'h.bauer@gmx.de', role: 'bienengesundheit', beitritt: '2024-03-01', avatar: 'HB' },
+        { id: 'd6', user_id: 'u6', name: 'Lisa Braun', email: 'l.braun@web.de', role: 'zuchtwart', beitritt: '2024-05-15', avatar: 'LB' },
+        { id: 'd7', user_id: 'u7', name: 'Georg Hartmann', email: 'g.hartmann@gmx.de', role: 'honigobmann', beitritt: '2024-07-01', avatar: 'GH' },
+        { id: 'd8', user_id: 'u8', name: 'Petra Lang', email: 'p.lang@mail.de', role: 'geraetewart', beitritt: '2024-09-01', avatar: 'PL' },
+        { id: 'd9', user_id: 'u9', name: 'Michael Roth', email: 'm.roth@web.de', role: 'jugendwart', beitritt: '2025-01-10', avatar: 'MR' },
+        { id: 'd10', user_id: 'u10', name: 'Sabine Keller', email: 's.keller@mail.de', role: 'pressewart', beitritt: '2025-02-01', avatar: 'SK' },
+        { id: 'd11', user_id: 'u11', name: 'Peter König', email: 'p.koenig@mail.de', role: 'mitglied', beitritt: '2025-05-10', avatar: 'PK' },
+        { id: 'd12', user_id: 'u12', name: 'Anna Neumann', email: 'a.neumann@mail.de', role: 'mitglied', beitritt: '2025-09-01', avatar: 'AN' },
     ];
 
     meldungen = [
@@ -1316,6 +1371,9 @@ function renderMemberAdmin() {
 
     var filtered = sorted.filter(function(m) {
         if (memberFilter === 'alle') return true;
+        if (memberFilter === 'bgb') return VORSTAND_BGB.indexOf(m.role) > -1;
+        if (memberFilter === 'fach') return FACH_AEMTER.indexOf(m.role) > -1;
+        if (memberFilter === 'vorstand') return VORSTAND_ALL.indexOf(m.role) > -1;
         return m.role === memberFilter;
     });
 
@@ -1342,11 +1400,20 @@ function renderMemberAdmin() {
 
         html += '<div class="member-admin-actions">';
         if (!isMe && isVorsitz) {
-            html += '<select onchange="changeRole(\'' + m.id + '\',this.value)">';
-            ['vorsitzender', 'admin', 'mitglied', 'gast'].forEach(function(role) {
+            html += '<select onchange="changeRole(\'' + m.id + '\',this.value)" style="max-width:200px">';
+            html += '<optgroup label="Vorstand (§ 26 BGB)">';
+            ['vorsitzender','stellvertreter','kassier','schriftfuehrer'].forEach(function(role) {
                 html += '<option value="' + role + '"' + (m.role === role ? ' selected' : '') + '>' + ROLES[role].label + '</option>';
             });
-            html += '</select>';
+            html += '</optgroup><optgroup label="Fachämter">';
+            ['bienengesundheit','zuchtwart','honigobmann','geraetewart','jugendwart','pressewart'].forEach(function(role) {
+                html += '<option value="' + role + '"' + (m.role === role ? ' selected' : '') + '>' + ROLES[role].label + '</option>';
+            });
+            html += '</optgroup><optgroup label="Sonstige">';
+            ['admin','mitglied','gast'].forEach(function(role) {
+                html += '<option value="' + role + '"' + (m.role === role ? ' selected' : '') + '>' + ROLES[role].label + '</option>';
+            });
+            html += '</optgroup></select>';
             html += '<button class="btn btn-xs" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="removeMember(\'' + m.id + '\')" title="Entfernen">✕</button>';
         } else if (isMe) {
             html += '<span style="font-size:.72rem;color:#A69580;font-style:italic">Dein Account</span>';
