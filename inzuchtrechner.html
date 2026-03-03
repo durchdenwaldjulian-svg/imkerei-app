@@ -143,8 +143,9 @@
     <!-- === TABS === -->
     <div class="iz-tabs">
         <button class="iz-tab active" onclick="switchIzTab('stammbaum',this)">🌳 Stammbaum</button>
-        <button class="iz-tab" onclick="switchIzTab('rechner',this)">📊 COI Rechner</button>
+        <button class="iz-tab" onclick="switchIzTab('rechner',this)">📊 COI</button>
         <button class="iz-tab" onclick="switchIzTab('anpaarung',this)">💕 Anpaarung</button>
+        <button class="iz-tab" onclick="switchIzTab('import',this)">🔍 Import</button>
         <button class="iz-tab" onclick="switchIzTab('gespeichert',this)">💾 Gespeichert</button>
     </div>
 
@@ -282,6 +283,69 @@
                 </div>
                 <span style="color:#A69580">↗</span>
             </a>
+        </div>
+    </div>
+
+    <!-- ==================== TAB: IMPORT ==================== -->
+    <div class="iz-panel" id="panel-import">
+        <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem;margin-bottom:.5rem">🔍 Pedigree von PedigreeApis.org importieren</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Durchsuche die Buckfast-Pedigree-Datenbank und importiere Stammbäume direkt.</p>
+
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">1. Züchter suchen</label>
+                <div style="display:flex;gap:.5rem">
+                    <input type="text" id="searchBreeder" class="input" placeholder="Züchterkürzel oder Name, z.B. MKN, TR, PJ..." style="flex:1" onkeydown="if(event.key==='Enter')searchBreeders()">
+                    <button class="btn btn-primary" onclick="searchBreeders()">🔍 Suchen</button>
+                </div>
+            </div>
+
+            <div id="breederResults" style="display:none;margin-bottom:1rem">
+                <label class="form-label">Züchter gefunden:</label>
+                <div id="breederList" style="max-height:200px;overflow-y:auto"></div>
+            </div>
+
+            <div id="yearSelect" style="display:none;margin-bottom:1rem">
+                <label class="form-label">2. Jahr wählen:</label>
+                <div id="yearList" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
+            </div>
+
+            <div id="queenResults" style="display:none;margin-bottom:1rem">
+                <label class="form-label">3. Königin wählen:</label>
+                <div id="queenList" style="max-height:400px;overflow-y:auto"></div>
+            </div>
+
+            <div id="importProgress" style="display:none;margin-bottom:1rem">
+                <div style="text-align:center;padding:1.5rem">
+                    <div class="spinner" style="margin:0 auto .75rem"></div>
+                    <div id="importStatus" style="font-size:.85rem;color:#7A6652">Lade Daten...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crawler-Ergebnis Vorschau -->
+        <div id="importPreview" style="display:none">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                    <h3 style="font-size:1rem;margin:0">📋 Importierte Abstammung</h3>
+                    <button class="btn btn-sm btn-primary" onclick="useImportedPedigree()">✅ Übernehmen</button>
+                </div>
+                <div id="importTreePreview"></div>
+            </div>
+        </div>
+
+        <!-- Anleitung -->
+        <div class="card" style="background:#f9fafb">
+            <h4 style="font-size:.9rem;margin-bottom:.5rem">📖 So funktioniert der Import</h4>
+            <div style="font-size:.82rem;color:#7A6652;line-height:1.7">
+                <strong>Pedigree-Syntax verstehen:</strong><br>
+                <code style="background:#E8DFD4;padding:.1rem .4rem;border-radius:4px">B10(MKN).20</code> = <strong>B</strong>uckfast Nr. <strong>10</strong>, Züchter <strong>MKN</strong> (Foundation Buckfast Marken), Jahrgang 20<strong>20</strong><br><br>
+                <strong>Begattungsarten:</strong><br>
+                <code>mrk</code> = Belegstelle Marken · <code>ins</code> = Instrumentelle Besamung · <code>bal</code> = Belegstelle Baltrum<br>
+                <code>ieg</code> = Inselbelegstelle · <code>bzd</code> = Besamung Drohn · <code>hbts</code> = Hausbelegstelle<br><br>
+                <strong>Bekannte Züchterkürzel:</strong><br>
+                <code>TR</code> = Thomas Rueppel · <code>PJ</code> = Paul Jungels · <code>MKN</code> = Buckfast Marken · <code>MKK</code> = Marken Kollektion · <code>BB</code> = Bernd Brix · <code>AS</code> = Schrüfer · <code>FF</code> = Klaus Fehrenbach
+            </div>
         </div>
     </div>
 
@@ -883,6 +947,313 @@ function showToast(msg, typ) {
 function formatDate(str) {
     if (!str) return '–';
     return new Date(str).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// ============================================
+// PEDIGREEAPIS.ORG CRAWLER
+// ============================================
+var PROXY = 'https://api.allorigins.win/raw?url=';
+var BASE_URL = 'https://perso.unamur.be/~jvandyck/homage/elver/';
+var breederCache = [];
+var importedTree = {};
+var importedQueen = '';
+
+async function fetchPage(url) {
+    var resp = await fetch(PROXY + encodeURIComponent(url));
+    if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+    return await resp.text();
+}
+
+async function searchBreeders() {
+    var query = document.getElementById('searchBreeder').value.trim().toLowerCase();
+    if (!query) { showToast('⚠️ Bitte Suchbegriff eingeben', 'error'); return; }
+
+    document.getElementById('importProgress').style.display = 'block';
+    document.getElementById('importStatus').textContent = 'Durchsuche Züchterliste...';
+    document.getElementById('breederResults').style.display = 'none';
+    document.getElementById('yearSelect').style.display = 'none';
+    document.getElementById('queenResults').style.display = 'none';
+
+    try {
+        if (breederCache.length === 0) {
+            var html = await fetchPage(BASE_URL);
+            // Parse breeder links: ped_CODE_YEAR.html
+            var regex = /href="[^"]*pedgr\/ped_([^_]+)_(\d{4})\.html"/g;
+            var match;
+            var breeders = {};
+            while ((match = regex.exec(html)) !== null) {
+                var code = match[1];
+                var year = match[2];
+                if (!breeders[code]) breeders[code] = { code: code, years: [], name: '' };
+                if (breeders[code].years.indexOf(year) === -1) breeders[code].years.push(year);
+            }
+            // Try to extract names from the table
+            var nameRegex = /ped_([^_]+)_\d{4}\.html[^<]*<\/a>\](?:\s*\[.*?\])*/g;
+            var rows = html.split(/ligne arc-en-ciel|rainbow dividing/);
+            rows.forEach(function(row) {
+                var codeMatch = row.match(/ped_([^_]+)_\d{4}\.html/);
+                if (codeMatch) {
+                    var c = codeMatch[1];
+                    // Find name in the row - usually between | characters
+                    var nameMatch = row.match(/\|\s*([A-Z][a-zäöüß&;]+(?:\s+[A-Z&;][a-zäöüß]+)*(?:\s*\([A-Z]{2}\))?)\s*\|/);
+                    if (nameMatch && breeders[c]) breeders[c].name = nameMatch[1].replace(/&amp;/g, '&');
+                }
+            });
+            breederCache = Object.values(breeders);
+        }
+
+        // Filter
+        var results = breederCache.filter(function(b) {
+            return b.code.toLowerCase().indexOf(query) > -1 || b.name.toLowerCase().indexOf(query) > -1;
+        });
+
+        document.getElementById('importProgress').style.display = 'none';
+
+        if (results.length === 0) {
+            showToast('Keine Züchter gefunden für "' + query + '"', 'error');
+            return;
+        }
+
+        var html = '';
+        results.slice(0, 30).forEach(function(b) {
+            html += '<div class="ped-saved-card" onclick="selectBreeder(\'' + esc(b.code) + '\')" style="margin-bottom:.4rem">';
+            html += '<div class="ped-saved-icon" style="background:#F5A623;color:#fff;font-weight:700;font-size:.75rem">' + esc(b.code) + '</div>';
+            html += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem">' + esc(b.code) + (b.name ? ' – ' + esc(b.name) : '') + '</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">' + b.years.length + ' Jahre: ' + b.years.sort().join(', ') + '</div></div>';
+            html += '</div>';
+        });
+        if (results.length > 30) html += '<div style="font-size:.8rem;color:#7A6652;text-align:center;padding:.5rem">... und ' + (results.length - 30) + ' weitere</div>';
+
+        document.getElementById('breederList').innerHTML = html;
+        document.getElementById('breederResults').style.display = 'block';
+        showToast(results.length + ' Züchter gefunden', 'success');
+
+    } catch(e) {
+        document.getElementById('importProgress').style.display = 'none';
+        showToast('❌ Fehler: ' + e.message, 'error');
+    }
+}
+
+function selectBreeder(code) {
+    var breeder = breederCache.find(function(b) { return b.code === code; });
+    if (!breeder) return;
+
+    var html = '';
+    breeder.years.sort().reverse().forEach(function(y) {
+        html += '<button class="btn btn-sm" style="background:#fff;border:2px solid #E8DFD4" onclick="loadBreederYear(\'' + code + '\',\'' + y + '\')">' + y + '</button>';
+    });
+    document.getElementById('yearList').innerHTML = html;
+    document.getElementById('yearSelect').style.display = 'block';
+    document.getElementById('queenResults').style.display = 'none';
+}
+
+async function loadBreederYear(code, year) {
+    document.getElementById('importProgress').style.display = 'block';
+    document.getElementById('importStatus').textContent = 'Lade Pedigrees von ' + code + ' ' + year + '...';
+    document.getElementById('queenResults').style.display = 'none';
+
+    try {
+        var url = BASE_URL + 'pedgr/ped_' + code + '_' + year + '.html';
+        var html = await fetchPage(url);
+
+        // Parse queens from the pedigree page
+        var queens = parsePedigreePage(html, code, year);
+
+        document.getElementById('importProgress').style.display = 'none';
+
+        if (queens.length === 0) {
+            showToast('Keine Königinnen gefunden', 'error');
+            return;
+        }
+
+        var listHtml = '';
+        queens.forEach(function(q, idx) {
+            var ancestorCount = 0;
+            for (var k in q.tree) { if (q.tree[k]) ancestorCount++; }
+            listHtml += '<div class="ped-saved-card" onclick="previewImport(' + idx + ')" style="margin-bottom:.4rem">';
+            listHtml += '<div class="ped-saved-icon" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;font-size:.75rem;font-weight:700">' + (q.race || 'B') + '</div>';
+            listHtml += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem;font-family:monospace">' + esc(q.name) + '</div>';
+            listHtml += '<div style="font-size:.75rem;color:#7A6652">' + ancestorCount + ' Vorfahren · Mutter: ' + esc(q.tree['q.m'] || '?') + ' · Drohn: ' + esc(q.tree['q.v'] || '?') + '</div></div>';
+            listHtml += '</div>';
+        });
+
+        document.getElementById('queenList').innerHTML = listHtml;
+        document.getElementById('queenResults').style.display = 'block';
+        window._importedQueens = queens;
+        showToast(queens.length + ' Königinnen geladen', 'success');
+
+    } catch(e) {
+        document.getElementById('importProgress').style.display = 'none';
+        showToast('❌ Fehler: ' + e.message, 'error');
+    }
+}
+
+function parsePedigreePage(html, breederCode, year) {
+    var queens = [];
+
+    // Remove HTML tags for easier parsing, but keep structure via table rows
+    // The pedigree format is in <table> rows:
+    // Queen = .YY – Mother MATING Drone [X dr.c.] : .YY – GrandMother MATING GrandDrone
+    
+    // Split by table rows
+    var rows = html.split(/<tr/gi);
+    var currentQueen = null;
+    var lineBuffer = [];
+
+    rows.forEach(function(row) {
+        // Strip tags
+        var text = row.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!text) return;
+
+        // Queen line pattern: CODE = .YY – MOTHER MATING DRONE
+        var queenMatch = text.match(/^[^=]*?([A-Z][a-z]*\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*/);
+        if (!queenMatch) {
+            // Also match lines starting with queen code without = but continuing pedigree
+            queenMatch = text.match(/^\s*([A-Z][a-z]*\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*/);
+        }
+
+        if (queenMatch) {
+            // Save previous queen
+            if (currentQueen && lineBuffer.length > 0) {
+                var parsed = parsePedigreeLines(currentQueen, lineBuffer);
+                if (parsed) queens.push(parsed);
+            }
+            currentQueen = queenMatch[1] + '.' + queenMatch[2];
+            lineBuffer = [text];
+        } else if (currentQueen && text.match(/\.\d{2}\s*[–-]/)) {
+            lineBuffer.push(text);
+        }
+    });
+
+    // Last queen
+    if (currentQueen && lineBuffer.length > 0) {
+        var parsed = parsePedigreeLines(currentQueen, lineBuffer);
+        if (parsed) queens.push(parsed);
+    }
+
+    // Simpler fallback parser if table parser fails
+    if (queens.length === 0) {
+        queens = simplePedigreeParse(html);
+    }
+
+    return queens;
+}
+
+function simplePedigreeParse(html) {
+    var queens = [];
+    var text = html.replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
+    var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+
+    var i = 0;
+    while (i < lines.length) {
+        // Look for pattern: QueenCode = .YY – Mother mating Drone [X dr.c.] : .YY – ...
+        var match = lines[i].match(/([A-Za-z]+\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*(.+)/);
+        if (match) {
+            var queenName = match[1] + '.' + match[2];
+            var restLine = match[3];
+            var nextLine = (i + 1 < lines.length) ? lines[i + 1] : '';
+
+            var tree = { 'q': queenName };
+            var race = queenName.charAt(0);
+
+            // Parse first line: Mother mating Drone [X dr.c.] : .YY – GrandMother ...
+            var parts = restLine.split(/\s*:\s*/);
+            if (parts[0]) {
+                var gen1 = parseGenPart(parts[0]);
+                if (gen1.mother) tree['q.m'] = gen1.mother;
+                if (gen1.drone) tree['q.v'] = gen1.drone;
+            }
+            if (parts[1]) {
+                var gen2a = parseGenPart(parts[1]);
+                if (gen2a.mother) tree['q.m.m'] = gen2a.mother;
+                if (gen2a.drone) tree['q.m.v'] = gen2a.drone;
+            }
+
+            // Second line (father side): .YY – Mother mating Drone : ...
+            if (nextLine.match(/^\.\d{2}\s*[–-]/)) {
+                var fatherParts = nextLine.split(/\s*:\s*/);
+                if (fatherParts[0]) {
+                    var gen2b = parseGenPart(fatherParts[0]);
+                    if (gen2b.mother) tree['q.v.m'] = gen2b.mother;
+                    if (gen2b.drone) tree['q.v.v'] = gen2b.drone;
+                }
+                if (fatherParts[1]) {
+                    var gen3 = parseGenPart(fatherParts[1]);
+                    if (gen3.mother) tree['q.v.m.m'] = gen3.mother;
+                    if (gen3.drone) tree['q.v.m.v'] = gen3.drone;
+                }
+                i++;
+            }
+
+            queens.push({
+                name: queenName,
+                race: race,
+                year: 2000 + parseInt(match[2]),
+                tree: tree
+            });
+        }
+        i++;
+    }
+    return queens;
+}
+
+function parseGenPart(text) {
+    var result = { mother: null, drone: null };
+    // Pattern: .YY – MotherCode mating DroneCode [X dr.c.]
+    // Or: MotherCode mating DroneCode [X dr.c.]
+    var clean = text.replace(/\[[\d\s]+dr\.c\.\]/g, '').replace(/\(not registered.*?\)/g, '').trim();
+
+    // Extract year prefix
+    var yearMatch = clean.match(/\.(\d{2})\s*[–-]\s*/);
+    var yearSuffix = yearMatch ? '.' + yearMatch[1] : '';
+    if (yearMatch) clean = clean.replace(/\.\d{2}\s*[–-]\s*/, '');
+
+    // Find queen codes: Letter(s)+Number(s)+(BREEDERCODE) or similar
+    var codes = clean.match(/[A-Za-z]+\d+\([A-Z]+\)(?:1dr)?/g);
+    if (codes && codes.length >= 1) {
+        result.mother = codes[0] + yearSuffix;
+        if (codes.length >= 2) result.drone = codes[1] + yearSuffix;
+    }
+    return result;
+}
+
+function previewImport(idx) {
+    var q = window._importedQueens[idx];
+    if (!q) return;
+
+    importedTree = q.tree;
+    importedQueen = q.name;
+
+    var html = '<div style="font-family:monospace;font-size:.85rem;line-height:1.8">';
+    html += '<div style="font-weight:700;font-size:1rem;margin-bottom:.5rem">👑 ' + esc(q.name) + '</div>';
+    for (var key in q.tree) {
+        if (key === 'q') continue;
+        var label = key.replace('q.', '').replace(/\./g, ' → ');
+        var icon = key.endsWith('.v') ? '🐝' : '👑';
+        html += '<div>' + icon + ' <span style="color:#7A6652">' + label + ':</span> <strong>' + esc(q.tree[key]) + '</strong></div>';
+    }
+    html += '</div>';
+
+    document.getElementById('importTreePreview').innerHTML = html;
+    document.getElementById('importPreview').style.display = 'block';
+    showToast('📋 Vorschau: ' + q.name, '');
+}
+
+function useImportedPedigree() {
+    if (!importedQueen) { showToast('⚠️ Nichts zum Importieren', 'error'); return; }
+
+    // Parse queen name and year
+    var parts = importedQueen.split('.');
+    var year = parts.length > 1 ? '20' + parts[parts.length - 1] : '';
+    var name = parts.length > 1 ? parts.slice(0, -1).join('.') : importedQueen;
+
+    document.getElementById('queenName').value = name;
+    document.getElementById('queenYear').value = year;
+    document.getElementById('queenRace').value = importedQueen.charAt(0) || 'B';
+    currentTree = Object.assign({}, importedTree);
+    renderPedForm();
+    switchIzTab('stammbaum', document.querySelector('.iz-tab'));
+    showToast('✅ ' + name + ' importiert! Bearbeite oder berechne den COI.', 'success');
 }
 
 // ============================================
