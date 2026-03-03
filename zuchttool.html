@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🧬 Zuchttool – Imkerei Tagesplaner</title>
+<meta name="theme-color" content="#F5A623">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared-styles.css">
+<link rel="stylesheet" href="zucht/zucht-styles.css">
+<style>body{padding-left:220px;padding-bottom:2rem}</style>
+</head>
+<body>
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+<div class="loading-screen" id="loadingScreen"><div class="spinner"></div><div style="color:#7A6652;font-size:.85rem">Lade Zuchttool...</div></div>
+<div class="toast" id="toast"></div>
+<div class="container" style="max-width:960px;margin:0 auto;padding:1rem">
+
+<div class="zt-header"><div class="zt-header-inner">
+<div style="display:flex;align-items:center;gap:.75rem"><span style="font-size:2.2rem">🧬</span><div><div class="zt-title">Zuchttool</div><div class="zt-sub">Stammbaum · COI · Anpaarung · Zuchtwert · Linienanalyse · Körung</div></div></div>
+<div class="zt-badges"><span>🐝 Buckfast &amp; Carnica</span><span>📊 BeeBreed-Standard</span><span>🔗 pedigreeapis.org + karlkehrle.org</span></div>
+</div></div>
+
+<div class="zt-tabs">
+<button class="zt-tab active" onclick="ZT.switchTab('stammbaum',this)">🌳 Stammbaum</button>
+<button class="zt-tab" onclick="ZT.switchTab('coi',this)">📊 COI</button>
+<button class="zt-tab" onclick="ZT.switchTab('anpaarung',this)">💕 Anpaarung</button>
+<button class="zt-tab" onclick="ZT.switchTab('linien',this)">🧬 Linien</button>
+<button class="zt-tab" onclick="ZT.switchTab('zuchtziel',this)">🎯 Zuchtziel</button>
+<button class="zt-tab" onclick="ZT.switchTab('koerung',this)">🏆 Körung</button>
+<button class="zt-tab" onclick="ZT.switchTab('beleg',this)">🗺️ Belegstellen</button>
+<button class="zt-tab" onclick="ZT.switchTab('datenbank',this)">🔍 Datenbank</button>
+</div>
+
+<!-- TAB 1: STAMMBAUM -->
+<div class="zt-panel active" id="panel-stammbaum">
+<div class="card" style="margin-bottom:1rem">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3 style="font-size:1rem;margin:0">🌳 Stammbaum eingeben</h3><div style="display:flex;gap:.5rem"><button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="ZT.clearTree()">🗑️</button><button class="btn btn-sm btn-primary" onclick="ZT.savePedigree()">💾 Speichern</button></div></div>
+<div class="form-group" style="margin-bottom:1rem"><label class="form-label">Name der Königin</label>
+<div style="display:flex;gap:.5rem"><input type="text" id="queenName" class="input" placeholder="z.B. B10(MKN)" style="flex:1;font-family:monospace;font-weight:600"><select id="queenRace" class="input" style="width:130px"><option value="B">Buckfast</option><option value="C">Carnica</option><option value="A">Anatolica</option><option value="M">Monticola</option><option value="GR">Gr.Reinet</option><option value="L">Ligustica</option><option value="X">Gemischt</option></select><input type="number" id="queenYear" class="input" placeholder="Jahr" style="width:80px" min="1925" max="2030"></div></div>
+<div class="info-box" style="margin-bottom:1rem">💡 <code>B10(MKN).20</code> = Buckfast Nr.10, Züchter MKN, Jg.2020</div>
+<div class="ped-form" id="pedForm"></div></div>
+<div class="card"><h3 style="font-size:1rem;margin-bottom:1rem">🌳 Stammbaumansicht</h3><div class="tree-container" id="treeView"></div></div></div>
+
+<!-- TAB 2: COI -->
+<div class="zt-panel" id="panel-coi">
+<div class="card" style="margin-bottom:1rem"><h3 style="font-size:1rem;margin-bottom:.5rem">📊 COI &amp; Zuchtwert</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Wright-Pfadkoeffizient. Zuchtwerte nach BeeBreed (100=Durchschnitt).</p><button class="btn btn-primary btn-block" onclick="ZT.runCOI()">🧬 Berechnen</button></div>
+<div id="coiResult" style="display:none"><div class="coi-result"><div class="coi-label">Inzuchtkoeffizient</div><div class="coi-value" id="coiValue">0%</div><div class="coi-bar"><div class="coi-bar-fill" id="coiBar" style="width:0"></div></div><div id="coiInterpretation" style="font-size:.85rem;margin-top:.75rem"></div></div><div id="coiPaths"></div></div>
+<div id="zuchtWertResult"></div></div>
+
+<!-- TAB 3: ANPAARUNG -->
+<div class="zt-panel" id="panel-anpaarung">
+<div class="card" style="margin-bottom:1rem"><h3 style="font-size:1rem;margin-bottom:.75rem">💕 Anpaarungsplaner</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">COI-Vorhersage, Eigenschafts-Prognose, Kompatibilitäts-Score in %.</p>
+<div class="mate-grid"><div class="mate-box" id="mateQueen" onclick="ZT.selectMate('queen')"><div style="font-size:2rem;margin-bottom:.5rem">👑</div><div style="font-weight:700" id="mateQueenName">Königin wählen</div><div style="font-size:.75rem;color:#7A6652" id="mateQueenInfo">Klicken</div></div><div class="mate-vs">×</div><div class="mate-box" id="mateDrone" onclick="ZT.selectMate('drone')"><div style="font-size:2rem;margin-bottom:.5rem">🐝</div><div style="font-weight:700" id="mateDroneName">Drohnenvolk wählen</div><div style="font-size:.75rem;color:#7A6652" id="mateDroneInfo">Klicken</div></div></div>
+<button class="btn btn-primary btn-block" onclick="ZT.runMating()" style="margin-top:.5rem">💕 Berechnen</button></div>
+<div id="matingResult"></div></div>
+
+<!-- TAB 4: LINIEN -->
+<div class="zt-panel" id="panel-linien">
+<div class="card"><h3 style="font-size:1rem;margin-bottom:.5rem">🧬 Liniendiversität</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Rassen-Anteile, Heterosis, F2-Warnung.</p><button class="btn btn-primary btn-block" onclick="ZT.runLinien()">🧬 Analysieren</button></div>
+<div id="linienResult"></div></div>
+
+<!-- TAB 5: ZUCHTZIEL -->
+<div class="zt-panel" id="panel-zuchtziel">
+<div class="card"><h3 style="font-size:1rem;margin-bottom:.5rem">🎯 Zuchtziel-Optimierer</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Definiere Zuchtziele – Tool findet die besten Anpaarungen.</p><div id="zielForm"></div><button class="btn btn-primary btn-block" onclick="ZT.runZuchtziel()" style="margin-top:1rem">🎯 Beste finden</button></div>
+<div id="zielResult"></div></div>
+
+<!-- TAB 6: KOERUNG -->
+<div class="zt-panel" id="panel-koerung">
+<div class="card"><h3 style="font-size:1rem;margin-bottom:.5rem">🏆 Ranking &amp; Körschein</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Geschwistergruppen, Vertrauensfaktor, Körschein nach GdeB.</p><div id="koerungContent"><div style="text-align:center;padding:2rem;color:#7A6652"><div style="font-size:3rem;margin-bottom:.5rem">🏆</div><p>Speichere Stammbäume mit Bewertungen.</p></div></div></div></div>
+
+<!-- TAB 7: BELEGSTELLEN -->
+<div class="zt-panel" id="panel-beleg">
+<div class="card"><h3 style="font-size:1rem;margin-bottom:.5rem">🗺️ Belegstellen</h3><p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Welche Belegstelle passt?</p><button class="btn btn-primary btn-block" onclick="ZT.runBeleg()">🗺️ Empfehlungen</button></div>
+<div id="belegResult"></div></div>
+
+<!-- TAB 8: DATENBANK -->
+<div class="zt-panel" id="panel-datenbank">
+<div class="card" style="margin-bottom:1rem"><h3 style="font-size:1rem;margin-bottom:.75rem">🔍 Pedigree-Datenbank</h3>
+<div id="dbInfo" style="font-size:.85rem;margin-bottom:.75rem"></div>
+<div style="display:flex;gap:.5rem;margin-bottom:1rem"><input type="text" id="dbSearch" class="input" placeholder="Suche: B10(MKN), TR..." oninput="ZT.doSearch()" style="flex:1;font-family:monospace"><button class="btn btn-primary btn-sm" onclick="ZT.doSearch()">🔍</button></div>
+<div><label class="form-label">📂 JSON hochladen</label><input type="file" accept=".json" class="input" onchange="ZT.importDB(this.files[0])" style="padding:.4rem"></div>
+</div><div id="dbResults"></div></div>
+
+<div class="card" style="margin-top:1.5rem"><h3 style="font-size:1rem;margin-bottom:.75rem">💾 Gespeicherte Stammbäume</h3><div id="savedList"></div></div>
+</div>
+
+<!-- MODAL -->
+<div class="zt-modal" id="mateModal"><div class="zt-modal-content"><div class="zt-modal-header"><h3 id="mateModalTitle" style="font-size:1rem;margin:0">Wählen</h3><button class="zt-modal-close" onclick="document.getElementById('mateModal').classList.remove('active')">&times;</button></div><div id="mateModalBody"></div></div></div>
+
+<!-- SCRIPTS -->
+<script src="zucht/zucht-core.js"></script>
+<script src="zucht/zucht-wert.js"></script>
+<script src="zucht/zucht-paarung.js"></script>
+<script src="zucht/zucht-linien.js"></script>
+<script src="zucht/zucht-ziel.js"></script>
+<script src="zucht/zucht-koerung.js"></script>
+<script src="zucht/zucht-beleg.js"></script>
+<script src="zucht/zucht-charts.js"></script>
+
+<script>
+// === COI UI ===
+ZT.runCOI = function(){
+    var tree = Object.assign({}, ZT.currentTree);
+    var qN = document.getElementById('queenName').value.trim();
+    if(qN) tree['q'] = qN;
+    var r = ZT.calculateCOI(tree);
+    document.getElementById('coiResult').style.display = 'block';
+    document.getElementById('coiValue').textContent = r.percent + '%';
+    document.getElementById('coiValue').className = 'coi-value coi-'+r.rating;
+    document.getElementById('coiBar').style.width = Math.min(parseFloat(r.percent)/25*100,100)+'%';
+    document.getElementById('coiBar').style.background = r.rating==='good'?'#10b981':(r.rating==='ok'?'#f59e0b':'#ef4444');
+    var msg = r.rating==='good' ? '✅ <strong>Niedrige Inzucht</strong> – Gute genetische Vielfalt.' : r.rating==='ok' ? '⚠️ <strong>Mittlere Inzucht</strong> – Frisches Blut einplanen.' : '❌ <strong>Hohe Inzucht</strong> – Fremdblut dringend empfohlen.';
+    document.getElementById('coiInterpretation').innerHTML = msg;
+    var ph = '';
+    if(r.ancestors.length > 0){
+        ph += '<div class="card" style="background:#f9fafb;margin-top:1rem"><h4 style="font-size:.9rem;margin-bottom:.5rem">🔍 Gemeinsame Ahnen</h4>';
+        r.ancestors.forEach(function(a){ ph += '<div style="padding:.4rem 0;border-bottom:1px solid #E8DFD4;font-size:.82rem"><strong style="font-family:monospace">'+ZT.esc(a.name)+'</strong> <span style="color:#7A6652">Mütterl. F'+(a.mDepth+1)+', Väterl. F'+(a.pDepth+1)+'</span> <span style="color:#8B5CF6;font-weight:600">+'+(a.contrib*100).toFixed(3)+'%</span></div>'; });
+        ph += '</div>';
+    } else { ph = '<div class="info-box" style="margin-top:1rem">Keine gemeinsamen Ahnen. Mehr Generationen eintragen.</div>'; }
+    document.getElementById('coiPaths').innerHTML = ph;
+    if(typeof ZT.renderZuchtwert==='function') ZT.renderZuchtwert();
+    ZT.showToast('🧬 COI: '+r.percent+'%', r.rating==='good'?'success':'');
+};
+
+// === DB Suche ===
+ZT.doSearch = function(){
+    var q = document.getElementById('dbSearch').value.trim();
+    var el = document.getElementById('dbResults');
+    if(!q || q.length < 2){ el.innerHTML = ''; return; }
+    var results = ZT.searchDB(q);
+    if(results.length === 0){ el.innerHTML = '<div class="card" style="text-align:center;color:#7A6652;padding:1.5rem">Keine Ergebnisse</div>'; return; }
+    var html = '<div class="card"><div style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">'+results.length+' Treffer</div>';
+    results.forEach(function(q){
+        var ri = ZT.RACES[q.race] || ZT.RACES['X'];
+        html += '<div class="ped-saved-card" style="margin-bottom:.5rem;cursor:pointer" onclick="ZT.importFromDB(ZT.db.queens['+ZT.db.queens.indexOf(q)+'])">';
+        html += '<div class="ped-saved-icon" style="background:'+ri.bg+';color:'+ri.color+';font-weight:700">'+(q.race||'?')+'</div>';
+        html += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem;font-family:monospace">'+ZT.esc(q.name)+'</div><div style="font-size:.72rem;color:#7A6652">'+(q.breeder_name||q.breeder_code||'')+(q.year?' · Jg.'+q.year:'')+'</div></div></div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+};
+
+// === Mate Selection ===
+ZT.selectMate = function(mode){
+    ZT._mateMode = mode;
+    document.getElementById('mateModalTitle').textContent = mode==='queen'?'👑 Königin wählen':'🐝 Drohnenvolk wählen';
+    var all = ZT.DEMOS.concat(ZT.pedigrees);
+    var html = '';
+    all.forEach(function(p){
+        var ri = ZT.RACES[p.race]||ZT.RACES['X'];
+        html += '<div class="ped-saved-card" data-pid="'+p.id+'" style="cursor:pointer"><div class="ped-saved-icon" style="background:'+ri.bg+';color:'+ri.color+';font-weight:700">'+(p.race||'?')+'</div><div style="flex:1"><div style="font-weight:700;font-size:.9rem">'+ZT.esc(p.name)+'</div><div style="font-size:.75rem;color:#7A6652">'+ri.name+' · Jg.'+(p.year||'?')+'</div></div></div>';
+    });
+    document.getElementById('mateModalBody').innerHTML = html || '<div style="text-align:center;padding:2rem;color:#7A6652">Keine Stammbäume.</div>';
+    var bd=document.getElementById('mateModalBody');bd.querySelectorAll('[data-pid]').forEach(function(el){el.onclick=function(){ZT.chooseMate(this.getAttribute('data-pid'));};});
+    document.getElementById('mateModal').classList.add('active');
+};
+
+ZT.chooseMate = function(id){
+    var ped = ZT.pedigrees.find(function(p){return p.id===id}) || ZT.DEMOS.find(function(p){return p.id===id});
+    if(!ped) return;
+    if(ZT._mateMode==='queen'){
+        ZT.mateQueen = ped;
+        document.getElementById('mateQueenName').textContent = ped.name;
+        document.getElementById('mateQueenInfo').textContent = (ZT.RACES[ped.race]||{name:'?'}).name+' · Jg.'+(ped.year||'?');
+        document.getElementById('mateQueen').classList.add('selected');
+    } else {
+        ZT.mateDrone = ped;
+        document.getElementById('mateDroneName').textContent = ped.name;
+        document.getElementById('mateDroneInfo').textContent = (ZT.RACES[ped.race]||{name:'?'}).name+' · Jg.'+(ped.year||'?');
+        document.getElementById('mateDrone').classList.add('selected');
+    }
+    document.getElementById('mateModal').classList.remove('active');
+};
+</script>
+</body>
+</html>
