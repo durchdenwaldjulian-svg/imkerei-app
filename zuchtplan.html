@@ -12,14 +12,6 @@
     <style>
         body{padding-left:220px;padding-bottom:2rem}
 
-        /* === SIDEBAR NAV === */
-        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-        .nav-item:hover{background:rgba(245,166,35,0.06)}
-        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
-
         /* === TOAST === */
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
 
@@ -38,13 +30,87 @@
         .stat-value{font-size:1.75rem;font-weight:700;color:#1C1410}
         .stat-label{font-size:.75rem;color:#A69580;margin-top:.25rem}
 
-        /* === ZUCHT CARD === */
+        /* === NEXT EVENT === */
+        .next-event{background:#FFFCF5;border:1px solid rgba(245,166,35,0.08);border-left:4px solid #F5A623;border-radius:.75rem;padding:1rem;margin-bottom:1.5rem;box-shadow:0 1px 3px rgba(28,20,16,0.06)}
+
+        /* === FILTER TABS === */
+        .filter-tabs{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem}
+        .filter-tab{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;text-align:center;font-family:inherit}
+        .filter-tab.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+        /* === VIEW TOGGLE === */
+        .view-toggle{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
+        .view-btn{padding:.5rem .75rem;border:none;background:none;border-radius:.5rem;font-size:.8rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;font-family:inherit;display:flex;align-items:center;gap:.35rem}
+        .view-btn.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+        /* ======================================
+           GANTT / SWIMLANE VIEW
+           ====================================== */
+        .gantt-container{background:#fff;border-radius:1rem;border:1px solid rgba(245,166,35,0.08);overflow:hidden;box-shadow:0 1px 3px rgba(28,20,16,0.06)}
+        .gantt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+        .gantt-time-header{display:flex;border-bottom:2px solid #f5f0eb;background:#FDFAF5;position:sticky;top:0;z-index:5}
+        .gantt-label-col{min-width:180px;max-width:180px;padding:.75rem 1rem;font-size:.75rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #f5f0eb;display:flex;align-items:center}
+        .gantt-timeline-col{flex:1;display:flex;position:relative;min-width:0}
+        .gantt-week{flex:none;text-align:center;padding:.5rem .25rem;font-size:.7rem;font-weight:600;color:#A69580;border-right:1px solid #f5f0eb}
+        .gantt-week.current{background:rgba(245,166,35,0.08);color:#92400E}
+
+        .gantt-row{display:flex;border-bottom:1px solid #f5f0eb;transition:background .15s;min-height:64px}
+        .gantt-row:hover{background:#FFFCF5}
+        .gantt-row:last-child{border-bottom:none}
+
+        .gantt-row-label{min-width:180px;max-width:180px;padding:.75rem 1rem;border-right:1px solid #f5f0eb;display:flex;flex-direction:column;justify-content:center;gap:.25rem}
+        .gantt-row-name{font-weight:600;font-size:.9rem;color:#1C1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .gantt-row-phase{font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;gap:.25rem;padding:.1rem .4rem;border-radius:.25rem;width:fit-content}
+        .phase-active{background:#FFF3D6;color:#92400E}
+        .phase-completed{background:#d1fae5;color:#065f46}
+        .phase-planned{background:#dbeafe;color:#1e40af}
+
+        .gantt-row-timeline{flex:1;position:relative;padding:.5rem 0;display:flex;align-items:center;min-width:0}
+
+        .gantt-bar{position:absolute;height:32px;border-radius:6px;display:flex;align-items:center;transition:all .3s ease;cursor:pointer}
+        .gantt-bar:hover{transform:scaleY(1.15);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+
+        .gantt-bar-segment{height:100%;position:relative;display:flex;align-items:center;justify-content:center}
+        .gantt-bar-segment:first-child{border-radius:6px 0 0 6px}
+        .gantt-bar-segment:last-child{border-radius:0 6px 6px 0}
+
+        .seg-sammelbrut{background:linear-gradient(135deg,#F5A623,#f7bc5e)}
+        .seg-umlarven{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        .seg-zusetzen{background:linear-gradient(135deg,#10b981,#34d399)}
+        .seg-completed{background:linear-gradient(135deg,#9ca3af,#b4b9c2)}
+
+        .gantt-dot{width:10px;height:10px;border-radius:50%;border:2px solid rgba(255,255,255,.8);position:absolute;top:50%;transform:translateY(-50%);z-index:3}
+        .gantt-dot.dot-mid{background:#3b82f6}
+        .gantt-dot.dot-done{background:#9ca3af}
+
+        .gantt-step-label{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.95);white-space:nowrap;padding:0 .5rem;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+
+        .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:4;pointer-events:none}
+        .gantt-today::before{content:'Heute';position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:.6rem;font-weight:700;color:#ef4444;background:#fff;padding:0 .35rem;border-radius:3px;white-space:nowrap;border:1px solid #fecaca}
+
+        .gantt-grid-lines{position:absolute;inset:0;display:flex;pointer-events:none;z-index:0}
+        .gantt-grid-line{flex:none;border-right:1px solid rgba(245,240,235,0.6)}
+        .gantt-grid-line.current{background:rgba(245,166,35,0.04)}
+
+        .gantt-legend{display:flex;gap:1rem;padding:.75rem 1rem;border-top:2px solid #f5f0eb;flex-wrap:wrap;background:#FDFAF5}
+        .legend-item{display:flex;align-items:center;gap:.35rem;font-size:.75rem;color:#7A6652}
+        .legend-dot{width:12px;height:12px;border-radius:3px}
+
+        .gantt-tooltip{display:none;position:fixed;background:#1C1410;color:#fff;padding:.75rem 1rem;border-radius:.75rem;font-size:.8rem;z-index:1000;max-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none}
+        .gantt-tooltip.show{display:block}
+        .gantt-tooltip h4{font-size:.9rem;margin-bottom:.5rem;color:#F5A623}
+        .gantt-tooltip-row{display:flex;justify-content:space-between;gap:1rem;padding:.2rem 0;border-bottom:1px solid rgba(255,255,255,.1)}
+        .gantt-tooltip-row:last-child{border-bottom:none}
+        .gantt-tooltip-step{color:#C4A882}
+        .gantt-tooltip-date{font-weight:600}
+
+        /* === CARD VIEW (Classic) === */
         .zucht-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;transition:all .2s}
         .zucht-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
         .zucht-card-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem}
         .zucht-title{font-size:1.25rem;font-weight:bold;color:#1C1410}
 
-        /* === TIMELINE === */
         .timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
         .timeline-item{position:relative;padding-bottom:1.5rem;border-left:2px solid #E8DFD4}
         .timeline-item:last-child{border-left:none;padding-bottom:0}
@@ -55,34 +121,32 @@
         .timeline-content{margin-left:1rem;background:#FFF8EE;padding:.75rem;border-radius:.5rem}
         .timeline-title{font-weight:600;font-size:.9rem;color:#1C1410}
         .timeline-date{font-size:.8rem;color:#7A6652;margin-top:.25rem}
-        .timeline-note{font-size:.8rem;color:#F5A623;font-weight:600;margin-top:.35rem}
+        .timeline-note{font-size:.8rem;font-weight:600;margin-top:.35rem}
 
-        /* === BADGES === */
         .badge-completed{background:#d1fae5;color:#065f46;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
         .badge-active{background:#FFF3D6;color:#92400e;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
         .badge-upcoming{background:#dbeafe;color:#1e40af;display:inline-block;padding:.15rem .5rem;border-radius:.25rem;font-size:.7rem;font-weight:600}
+
+        .btn-check{width:40px;height:40px;border-radius:10px;border:2px solid #E8DFD4;background:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;color:#A69580}
+        .btn-check:hover{border-color:#F5A623;background:#FFF8EE;transform:scale(1.15)}
+        .btn-check.done{border-color:#10b981;background:#d1fae5;color:#065f46}
+        .btn-check.done:hover{border-color:#ef4444;background:#fee2e2}
 
         /* === TAGE COUNTER (Modal) === */
         .tage-counter{display:flex;align-items:center;gap:.75rem}
         .tage-counter .counter-value{font-size:1.5rem;min-width:2.5rem}
         .tage-counter .counter-label{font-size:.85rem;color:#7A6652;margin-left:.25rem}
 
-        /* === FILTER TABS === */
-        .filter-tabs{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem}
-        .filter-tab{flex:1;padding:.5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .15s;text-align:center}
-        .filter-tab.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-
         /* === MOBILE === */
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
-            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
-            .nav-brand,.nav-section{display:none}
-            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
             .stats-row{grid-template-columns:1fr 1fr 1fr}
             .stat-value{font-size:1.25rem}
             .zucht-header-banner{padding:1.5rem 1rem}
             .zucht-header-banner h1{font-size:1.35rem}
+            .gantt-label-col{min-width:120px;max-width:120px;padding:.5rem .75rem}
+            .gantt-row-name{font-size:.8rem}
+            .gantt-row-label{padding:.5rem .75rem}
         }
 
         @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
@@ -97,7 +161,6 @@
 <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 <script src="nav.js"></script>
 
-
 <!-- === LOADING === -->
 <div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
     <div style="text-align:center;color:#7A6652">
@@ -107,10 +170,13 @@
 </div>
 
 <!-- === MAIN APP === -->
-<div id="app" class="container" style="display:none;max-width:900px"></div>
+<div id="app" class="container" style="display:none;max-width:960px"></div>
 
 <!-- === TOAST === -->
 <div id="toast" class="toast"></div>
+
+<!-- === TOOLTIP === -->
+<div id="ganttTooltip" class="gantt-tooltip"></div>
 
 <!-- === ZUCHTPLAN MODAL === -->
 <div id="zuchtModal" class="modal modal-center">
@@ -122,7 +188,7 @@
         <div class="modal-body">
             <div class="form-group">
                 <label class="form-label">Königin Name/Nummer *</label>
-                <input type="text" id="zuchtName" class="input" placeholder="z.B. Königin 2025-1">
+                <input type="text" id="zuchtName" class="input" placeholder="z.B. Königin 2026-1">
             </div>
             <div class="form-group">
                 <label class="form-label">📦 Sammelbrutableger erstellt *</label>
@@ -162,8 +228,7 @@
 <script src="presence.js" defer></script>
 <script>
 // ============================================
-// KÖNIGINNENZUCHT – Eigenständiges Modul
-// Speichert direkt nach Supabase
+// KÖNIGINNENZUCHT – mit Gantt + Karten-Ansicht
 // ============================================
 
 let isPreview = false;
@@ -171,15 +236,18 @@ let plaene = [];
 let editId = null;
 let tageUmlarven = 4;
 let tageZusetzen = 12;
-let currentFilter = 'alle'; // alle | aktiv | abgeschlossen
+let currentFilter = 'alle';
+let currentView = 'gantt'; // 'gantt' oder 'cards'
 
 // ============================================
 // DEMO-DATEN für Preview
 // ============================================
 const DEMO_PLAENE = [
-    {id:'z1', name:'Königin 2026-1 (Buckfast)', sammelbrut: new Date('2026-03-15').getTime(), umlarven: new Date('2026-03-19').getTime(), zusetzen: new Date('2026-03-31').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-20').getTime()},
-    {id:'z2', name:'Königin 2026-2 (Carnica)', sammelbrut: new Date('2026-04-01').getTime(), umlarven: new Date('2026-04-05').getTime(), zusetzen: new Date('2026-04-17').getTime(), notizen:'Carnica aus dem Verein. Schwarmträge Linie.', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-02-22').getTime()},
-    {id:'z3', name:'Standbegattung Ableger 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Bereits abgeschlossen. Königin zeichnen!', tageUmlarven:4, tageZusetzen:12, created: new Date('2026-01-15').getTime()}
+    {id:'z1', name:'Buckfast 2026-1', sammelbrut: new Date('2026-02-20').getTime(), umlarven: new Date('2026-02-24').getTime(), zusetzen: new Date('2026-03-08').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-02-20').getTime(), umlarven_done: new Date('2026-02-24').getTime(), zusetzen_done: new Date('2026-03-08').getTime(), created: new Date('2026-02-15').getTime()},
+    {id:'z2', name:'Carnica Vereinslinie', sammelbrut: new Date('2026-03-01').getTime(), umlarven: new Date('2026-03-05').getTime(), zusetzen: new Date('2026-03-17').getTime(), notizen:'Schwarmträge Carnica aus dem Verein.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-03-01').getTime(), umlarven_done: null, zusetzen_done: null, created: new Date('2026-02-22').getTime()},
+    {id:'z3', name:'Buckfast 2026-2', sammelbrut: new Date('2026-03-10').getTime(), umlarven: new Date('2026-03-14').getTime(), zusetzen: new Date('2026-03-26').getTime(), notizen:'Zweite Charge. Belegstelle Hohenlohe.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: null, umlarven_done: null, zusetzen_done: null, created: new Date('2026-02-28').getTime()},
+    {id:'z4', name:'Standbegattung Abl. 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Abgeschlossen. Königin gezeichnet (blau).', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-02-01').getTime(), umlarven_done: new Date('2026-02-05').getTime(), zusetzen_done: new Date('2026-02-17').getTime(), created: new Date('2026-01-15').getTime()},
+    {id:'z5', name:'Carnica Reinzucht', sammelbrut: new Date('2026-03-20').getTime(), umlarven: new Date('2026-03-24').getTime(), zusetzen: new Date('2026-04-05').getTime(), notizen:'Reinzuchtlinie aus Kärnten.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: null, umlarven_done: null, zusetzen_done: null, created: new Date('2026-03-01').getTime()}
 ];
 
 // ============================================
@@ -221,13 +289,16 @@ async function loadFromSupabase() {
             notizen: r.notizen,
             tageUmlarven: r.tage_umlarven || 4,
             tageZusetzen: r.tage_zusetzen || 12,
+            sammelbrut_done: r.sammelbrut_done || null,
+            umlarven_done: r.umlarven_done || null,
+            zusetzen_done: r.zusetzen_done || null,
             created: new Date(r.created_at).getTime()
         };
     });
 }
 
 // ============================================
-// RENDER
+// MAIN RENDER
 // ============================================
 function render() {
     var app = document.getElementById('app');
@@ -240,19 +311,13 @@ function render() {
     // Header
     html += '<div class="zucht-header-banner">';
     html += '<h1>👑 Königinnenzucht</h1>';
-    html += '<p>Plane deine Zucht mit automatischer Datumsberechnung.</p>';
+    html += '<p>Plane deine Zucht – alle Chargen auf einen Blick.</p>';
     html += '</div>';
 
     // Stats
     var jetzt = Date.now();
-    var aktive = plaene.filter(function(p) { return jetzt < p.zusetzen; });
-    var abgeschlossen = plaene.filter(function(p) { return jetzt >= p.zusetzen; });
-    var naechsterTermin = null;
-    aktive.forEach(function(p) {
-        [p.sammelbrut, p.umlarven, p.zusetzen].forEach(function(t) {
-            if (t > jetzt && (!naechsterTermin || t < naechsterTermin)) naechsterTermin = t;
-        });
-    });
+    var aktive = plaene.filter(function(p) { return !p.zusetzen_done && jetzt < p.zusetzen; });
+    var abgeschlossen = plaene.filter(function(p) { return !!p.zusetzen_done || jetzt >= p.zusetzen; });
 
     html += '<div class="stats-row">';
     html += '<div class="stat-card"><div class="stat-value">' + plaene.length + '</div><div class="stat-label">Zuchtpläne</div></div>';
@@ -260,26 +325,31 @@ function render() {
     html += '<div class="stat-card"><div class="stat-value" style="color:#10b981">' + abgeschlossen.length + '</div><div class="stat-label">Abgeschlossen</div></div>';
     html += '</div>';
 
-    // Nächster Termin Highlight
-    if (naechsterTermin) {
-        var tageVerbl = Math.ceil((naechsterTermin - jetzt) / (1000*60*60*24));
-        var naechsterPlan = null;
-        var naechsterStep = '';
-        aktive.forEach(function(p) {
-            if (p.sammelbrut === naechsterTermin) { naechsterPlan = p; naechsterStep = '📦 Sammelbrut'; }
-            else if (p.umlarven === naechsterTermin) { naechsterPlan = p; naechsterStep = '🔬 Umlarven'; }
-            else if (p.zusetzen === naechsterTermin) { naechsterPlan = p; naechsterStep = '👑 Zusetzen'; }
+    // Nächster Termin
+    var naechsterTermin = null, naechsterPlan = null, naechsterStep = '';
+    plaene.forEach(function(p) {
+        if (p.zusetzen_done) return;
+        var steps = [];
+        if (!p.sammelbrut_done) steps.push({t: p.sammelbrut, s: '📦 Sammelbrut'});
+        if (!p.umlarven_done) steps.push({t: p.umlarven, s: '🔬 Umlarven'});
+        if (!p.zusetzen_done) steps.push({t: p.zusetzen, s: '👑 Zusetzen'});
+        steps.forEach(function(x) {
+            if (x.t > 0 && (!naechsterTermin || x.t < naechsterTermin)) {
+                naechsterTermin = x.t; naechsterPlan = p; naechsterStep = x.s;
+            }
         });
-        if (naechsterPlan) {
-            html += '<div class="card" style="border-left:4px solid #F5A623;background:#FFFCF5;margin-bottom:1rem">';
-            html += '<div style="font-size:.8rem;color:#A69580;margin-bottom:.25rem">Nächster Termin</div>';
-            html += '<div style="font-weight:700;font-size:1.1rem;color:#1C1410">' + naechsterStep + ' – ' + esc(naechsterPlan.name) + '</div>';
-            html += '<div style="color:#F5A623;font-weight:600;margin-top:.25rem">';
-            if (tageVerbl === 0) html += '🔴 Heute!';
-            else if (tageVerbl === 1) html += '🟡 Morgen';
-            else html += 'In ' + tageVerbl + ' Tagen (' + formatDatum(naechsterTermin) + ')';
-            html += '</div></div>';
-        }
+    });
+
+    if (naechsterPlan) {
+        var tageVerbl = Math.ceil((naechsterTermin - jetzt) / 86400000);
+        html += '<div class="next-event">';
+        html += '<div style="font-size:.8rem;color:#A69580;margin-bottom:.25rem">Nächster Termin</div>';
+        html += '<div style="font-weight:700;font-size:1.1rem;color:#1C1410">' + naechsterStep + ' – ' + esc(naechsterPlan.name) + '</div>';
+        html += '<div style="color:#F5A623;font-weight:600;margin-top:.25rem">';
+        if (tageVerbl <= 0) html += '🔴 Heute!';
+        else if (tageVerbl === 1) html += '🟡 Morgen';
+        else html += 'In ' + tageVerbl + ' Tagen (' + formatDatum(naechsterTermin) + ')';
+        html += '</div></div>';
     }
 
     // Action Bar
@@ -295,11 +365,14 @@ function render() {
     html += '<button class="filter-tab' + (currentFilter === 'abgeschlossen' ? ' active' : '') + '" onclick="setFilter(\'abgeschlossen\')">Fertig (' + abgeschlossen.length + ')</button>';
     html += '</div></div>';
 
-    // Gefilterte Pläne
-    var filtered = plaene.slice();
-    if (currentFilter === 'aktiv') filtered = aktive;
-    else if (currentFilter === 'abgeschlossen') filtered = abgeschlossen;
-    filtered.sort(function(a, b) { return b.created - a.created; });
+    // View Toggle
+    html += '<div class="view-toggle">';
+    html += '<button class="view-btn' + (currentView === 'gantt' ? ' active' : '') + '" onclick="setView(\'gantt\')">📊 Gantt</button>';
+    html += '<button class="view-btn' + (currentView === 'cards' ? ' active' : '') + '" onclick="setView(\'cards\')">📋 Karten</button>';
+    html += '</div>';
+
+    // Get filtered data
+    var filtered = getFiltered();
 
     if (filtered.length === 0) {
         html += '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">';
@@ -312,17 +385,200 @@ function render() {
             html += '<h3>Keine ' + (currentFilter === 'aktiv' ? 'aktiven' : 'abgeschlossenen') + ' Zuchtpläne</h3>';
         }
         html += '</div>';
+    } else {
+        // Gantt View
+        html += '<div id="ganttViewArea" style="' + (currentView === 'gantt' ? '' : 'display:none') + '">';
+        html += renderGanttHTML(filtered);
+        html += '</div>';
+
+        // Card View
+        html += '<div id="cardViewArea" style="' + (currentView === 'cards' ? '' : 'display:none') + '">';
+        html += renderCardsHTML(filtered);
+        html += '</div>';
     }
+
+    app.innerHTML = html;
+
+    // Auto-scroll gantt to today
+    if (currentView === 'gantt' && filtered.length > 0) {
+        setTimeout(function() {
+            var todayLine = document.querySelector('.gantt-today');
+            var scroll = document.querySelector('.gantt-scroll');
+            if (todayLine && scroll) {
+                var todayLeft = parseInt(todayLine.style.left) || 0;
+                scroll.scrollLeft = Math.max(0, todayLeft - 200);
+            }
+        }, 100);
+    }
+}
+
+// ============================================
+// FILTER
+// ============================================
+function getFiltered() {
+    var jetzt = Date.now();
+    var filtered = plaene.slice();
+    if (currentFilter === 'aktiv') filtered = filtered.filter(function(p) { return !p.zusetzen_done && jetzt < p.zusetzen; });
+    else if (currentFilter === 'abgeschlossen') filtered = filtered.filter(function(p) { return !!p.zusetzen_done || jetzt >= p.zusetzen; });
+    filtered.sort(function(a, b) { return a.sammelbrut - b.sammelbrut; });
+    return filtered;
+}
+
+function setFilter(f) { currentFilter = f; render(); }
+
+function setView(v) {
+    currentView = v;
+    var gantt = document.getElementById('ganttViewArea');
+    var cards = document.getElementById('cardViewArea');
+    if (gantt) gantt.style.display = v === 'gantt' ? '' : 'none';
+    if (cards) cards.style.display = v === 'cards' ? '' : 'none';
+    // Update toggle buttons
+    document.querySelectorAll('.view-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.textContent.includes(v === 'gantt' ? 'Gantt' : 'Karten'));
+    });
+    if (v === 'gantt') {
+        setTimeout(function() {
+            var todayLine = document.querySelector('.gantt-today');
+            var scroll = document.querySelector('.gantt-scroll');
+            if (todayLine && scroll) {
+                scroll.scrollLeft = Math.max(0, (parseInt(todayLine.style.left) || 0) - 200);
+            }
+        }, 50);
+    }
+}
+
+// ============================================
+// GANTT RENDER
+// ============================================
+function renderGanttHTML(filtered) {
+    var msPerDay = 86400000;
+    var allDates = [];
+    filtered.forEach(function(p) { allDates.push(p.sammelbrut, p.zusetzen); });
+    var minDate = Math.min.apply(null, allDates);
+    var maxDate = Math.max.apply(null, allDates);
+
+    var rangeStart = minDate - 7 * msPerDay;
+    var rangeEnd = maxDate + 7 * msPerDay;
+
+    // Generate weeks
+    var weeks = [];
+    var weekStart = new Date(rangeStart);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    while (weekStart.getTime() < rangeEnd) {
+        var weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+        var isCurrent = today >= weekStart && today <= weekEnd;
+        weeks.push({ start: weekStart.getTime(), end: weekEnd.getTime(), label: weekStart.getDate() + '.' + (weekStart.getMonth()+1), isCurrent: isCurrent });
+        weekStart = new Date(weekStart); weekStart.setDate(weekStart.getDate() + 7);
+    }
+
+    var weekWidth = 80;
+    var totalWidth = weeks.length * weekWidth;
+    var jetzt = Date.now();
+
+    var html = '<div class="gantt-container"><div class="gantt-scroll">';
+
+    // Time header
+    html += '<div class="gantt-time-header">';
+    html += '<div class="gantt-label-col">Charge</div>';
+    html += '<div class="gantt-timeline-col" style="min-width:' + totalWidth + 'px">';
+    weeks.forEach(function(w) {
+        html += '<div class="gantt-week' + (w.isCurrent ? ' current' : '') + '" style="width:' + weekWidth + 'px;min-width:' + weekWidth + 'px">KW ' + getKW(new Date(w.start)) + '<br><span style="font-weight:400;color:#bbb;font-size:.6rem">' + w.label + '</span></div>';
+    });
+    html += '</div></div>';
+
+    // Rows
+    filtered.forEach(function(plan) {
+        var isCompleted = !!plan.zusetzen_done || jetzt >= plan.zusetzen;
+        var phase = getPhase(plan);
+        var phaseClass = isCompleted ? 'phase-completed' : (!!plan.sammelbrut_done || jetzt >= plan.sammelbrut ? 'phase-active' : 'phase-planned');
+
+        html += '<div class="gantt-row">';
+
+        // Label
+        html += '<div class="gantt-row-label">';
+        html += '<div class="gantt-row-name" title="' + esc(plan.name) + '">' + esc(plan.name) + '</div>';
+        html += '<div class="gantt-row-phase ' + phaseClass + '">' + phase + '</div>';
+        html += '</div>';
+
+        // Timeline
+        html += '<div class="gantt-row-timeline" style="min-width:' + totalWidth + 'px">';
+
+        // Grid lines
+        html += '<div class="gantt-grid-lines">';
+        weeks.forEach(function(w) {
+            html += '<div class="gantt-grid-line' + (w.isCurrent ? ' current' : '') + '" style="width:' + weekWidth + 'px;min-width:' + weekWidth + 'px"></div>';
+        });
+        html += '</div>';
+
+        // Today line
+        var todayMs = today.getTime();
+        if (todayMs >= weeks[0].start && todayMs <= weeks[weeks.length-1].end) {
+            var todayPx = ((todayMs - weeks[0].start) / (weeks.length * 7 * msPerDay)) * totalWidth;
+            html += '<div class="gantt-today" style="left:' + todayPx + 'px"></div>';
+        }
+
+        // Bar
+        var barStartPx = ((plan.sammelbrut - weeks[0].start) / (weeks.length * 7 * msPerDay)) * totalWidth;
+        var barEndPx = ((plan.zusetzen - weeks[0].start) / (weeks.length * 7 * msPerDay)) * totalWidth;
+        var barWidth = Math.max(barEndPx - barStartPx, 30);
+
+        var totalMs = plan.zusetzen - plan.sammelbrut;
+        var seg1W = ((plan.umlarven - plan.sammelbrut) / totalMs) * 100;
+        var seg2W = ((plan.zusetzen - plan.umlarven) / totalMs) * 100;
+
+        var segClass1 = isCompleted ? 'seg-completed' : 'seg-sammelbrut';
+        var segClass2 = isCompleted ? 'seg-completed' : (!!plan.umlarven_done || jetzt >= plan.umlarven ? 'seg-umlarven' : 'seg-sammelbrut');
+
+        html += '<div class="gantt-bar" style="left:' + barStartPx + 'px;width:' + barWidth + 'px" onmouseenter="showGanttTooltip(event,\'' + plan.id + '\')" onmouseleave="hideGanttTooltip()" onclick="setView(\'cards\')">';
+
+        html += '<div class="gantt-bar-segment ' + segClass1 + '" style="width:' + seg1W + '%">';
+        if (barWidth > 140) html += '<span class="gantt-step-label">📦</span>';
+        html += '</div>';
+
+        html += '<div class="gantt-bar-segment ' + segClass2 + '" style="width:' + seg2W + '%">';
+        if (barWidth > 140) html += '<span class="gantt-step-label">🔬→👑</span>';
+        html += '</div>';
+
+        html += '<div class="gantt-dot ' + (isCompleted ? 'dot-done' : 'dot-mid') + '" style="left:calc(' + seg1W + '% - 5px)"></div>';
+
+        html += '</div>'; // bar
+        html += '</div>'; // timeline
+        html += '</div>'; // row
+    });
+
+    html += '</div>'; // scroll
+
+    // Legend
+    html += '<div class="gantt-legend">';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#F5A623,#f7bc5e)"></div> Sammelbrut</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#3b82f6,#60a5fa)"></div> Umlarven</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#10b981,#34d399)"></div> Zusetzen</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#9ca3af,#b4b9c2)"></div> Abgeschlossen</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:#ef4444;width:3px;border-radius:1px"></div> Heute</div>';
+    html += '</div>';
+
+    html += '</div>'; // container
+    return html;
+}
+
+// ============================================
+// CARD VIEW RENDER
+// ============================================
+function renderCardsHTML(filtered) {
+    var jetzt = Date.now();
+    var html = '';
 
     filtered.forEach(function(plan, idx) {
         var phase = getPhase(plan);
-        var badgeClass = jetzt >= plan.zusetzen ? 'badge-completed' : (jetzt >= plan.sammelbrut ? 'badge-active' : 'badge-upcoming');
+        var isCompleted = !!plan.zusetzen_done || jetzt >= plan.zusetzen;
+        var badgeClass = isCompleted ? 'badge-completed' : (!!plan.sammelbrut_done || jetzt >= plan.sammelbrut ? 'badge-active' : 'badge-upcoming');
 
-        var naechster = null;
-        var naechstesDatum = null;
-        if (jetzt < plan.sammelbrut) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
-        else if (jetzt < plan.umlarven) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
-        else if (jetzt < plan.zusetzen) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
+        var naechster = null, naechstesDatum = null;
+        if (!plan.sammelbrut_done && jetzt < plan.sammelbrut) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
+        else if (!plan.umlarven_done && jetzt < plan.umlarven) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
+        else if (!plan.zusetzen_done && jetzt < plan.zusetzen) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
         var verbleibend = naechstesDatum ? getTageVerbleibend(naechstesDatum) : null;
 
         html += '<div class="zucht-card anim-in" style="animation-delay:' + (idx * 0.06) + 's">';
@@ -341,31 +597,107 @@ function render() {
         }
         html += '</div>';
 
-        // Timeline
+        // Timeline with checkboxes
         html += '<div class="timeline">';
-        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.sammelbrut ? 'completed' : 'upcoming') + '"></div>';
-        html += '<div class="timeline-content"><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div></div>';
 
-        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.umlarven ? (jetzt < plan.zusetzen ? 'active' : 'completed') : 'upcoming') + '"></div>';
-        html += '<div class="timeline-content"><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div>';
-        if (jetzt >= plan.umlarven && jetzt < plan.zusetzen) html += '<div class="timeline-note">🐝 Weiselzellen wachsen...</div>';
-        html += '</div></div>';
-
-        html += '<div class="timeline-item"><div class="timeline-dot ' + (jetzt >= plan.zusetzen ? 'completed' : 'upcoming') + '"></div>';
-        html += '<div class="timeline-content"><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div>';
-        if (jetzt >= plan.zusetzen) html += '<div class="timeline-note">✅ Zuchtplan abgeschlossen!</div>';
-        html += '</div></div>';
+        // Sammelbrut
+        var sd = !!plan.sammelbrut_done;
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (sd ? 'completed' : (jetzt >= plan.sammelbrut ? 'active' : 'upcoming')) + '"></div>';
+        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><div class="timeline-title">📦 Sammelbrutableger</div><div class="timeline-date">' + formatDatum(plan.sammelbrut) + '</div></div>';
+        if (!isPreview) html += '<button class="btn-check' + (sd ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'sammelbrut_done\')">' + (sd ? '✅' : '☐') + '</button>';
         html += '</div>';
+        if (sd) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.sammelbrut_done) + '</div>';
+        html += '</div></div>';
 
-        // Notizen
+        // Umlarven
+        var ud = !!plan.umlarven_done;
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (ud ? 'completed' : (jetzt >= plan.umlarven ? 'active' : 'upcoming')) + '"></div>';
+        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><div class="timeline-title">🔬 Umlarven</div><div class="timeline-date">' + formatDatum(plan.umlarven) + ' <small style="color:#A69580">(+' + (plan.tageUmlarven || 4) + ' Tage)</small></div></div>';
+        if (!isPreview) html += '<button class="btn-check' + (ud ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'umlarven_done\')">' + (ud ? '✅' : '☐') + '</button>';
+        html += '</div>';
+        if (ud) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.umlarven_done) + '</div>';
+        else if (jetzt >= plan.umlarven && !ud && jetzt < plan.zusetzen) html += '<div class="timeline-note" style="color:#F5A623">🐝 Weiselzellen wachsen...</div>';
+        html += '</div></div>';
+
+        // Zusetzen
+        var zd = !!plan.zusetzen_done;
+        html += '<div class="timeline-item"><div class="timeline-dot ' + (zd ? 'completed' : (jetzt >= plan.zusetzen ? 'active' : 'upcoming')) + '"></div>';
+        html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div></div>';
+        if (!isPreview) html += '<button class="btn-check' + (zd ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'zusetzen_done\')">' + (zd ? '✅' : '☐') + '</button>';
+        html += '</div>';
+        if (zd) html += '<div class="timeline-note" style="color:#10b981">✅ Abgeschlossen am ' + formatDatum(plan.zusetzen_done) + '</div>';
+        html += '</div></div>';
+
+        html += '</div>'; // timeline
+
         if (plan.notizen) {
             html += '<div style="margin-top:.5rem;padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#7A6652">💭 ' + esc(plan.notizen) + '</div>';
         }
 
-        html += '</div>';
+        html += '</div>'; // card
     });
 
-    app.innerHTML = html;
+    return html;
+}
+
+// ============================================
+// GANTT TOOLTIP
+// ============================================
+function showGanttTooltip(event, id) {
+    var plan = plaene.find(function(p) { return p.id === id; });
+    if (!plan) return;
+    var tip = document.getElementById('ganttTooltip');
+    tip.innerHTML = '<h4>👑 ' + esc(plan.name) + '</h4>'
+        + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">📦 Sammelbrut</span><span class="gantt-tooltip-date">' + formatDatum(plan.sammelbrut) + (plan.sammelbrut_done ? ' ✅' : '') + '</span></div>'
+        + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">🔬 Umlarven (+' + plan.tageUmlarven + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.umlarven) + (plan.umlarven_done ? ' ✅' : '') + '</span></div>'
+        + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">👑 Zusetzen (+' + plan.tageZusetzen + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.zusetzen) + (plan.zusetzen_done ? ' ✅' : '') + '</span></div>'
+        + (plan.notizen ? '<div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.15);color:#C4A882;font-size:.75rem">💭 ' + esc(plan.notizen) + '</div>' : '');
+    tip.classList.add('show');
+    positionTooltip(event);
+}
+
+function positionTooltip(e) {
+    var tip = document.getElementById('ganttTooltip');
+    var x = e.clientX + 12, y = e.clientY - 10;
+    if (x + 280 > window.innerWidth) x = e.clientX - 290;
+    if (y + 200 > window.innerHeight) y = e.clientY - 180;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+}
+
+function hideGanttTooltip() {
+    document.getElementById('ganttTooltip').classList.remove('show');
+}
+
+document.addEventListener('mousemove', function(e) {
+    if (document.getElementById('ganttTooltip').classList.contains('show')) positionTooltip(e);
+});
+
+// ============================================
+// TOGGLE STEP (Checkbox abhaken)
+// ============================================
+async function toggleStep(id, field) {
+    if (isPreview) { showToast('Bitte einloggen', 'error'); return; }
+
+    var plan = plaene.find(function(p) { return p.id === id; });
+    if (!plan) return;
+
+    var newVal = plan[field] ? null : Date.now();
+
+    try {
+        var upd = {};
+        upd[field] = newVal;
+        var res = await sb.from('zuchtplaene').update(upd).eq('id', id);
+        if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
+        plan[field] = newVal;
+        showToast(newVal ? '✅ Erledigt!' : '↩️ Zurückgesetzt', newVal ? 'success' : '');
+        render();
+    } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+    }
 }
 
 // ============================================
@@ -429,7 +761,7 @@ function berechneAlles() {
 }
 
 // ============================================
-// SAVE – direkt nach Supabase!
+// SAVE
 // ============================================
 async function saveZucht() {
     if (isPreview) return;
@@ -459,24 +791,23 @@ async function saveZucht() {
     try {
         if (editId) {
             var res = await sb.from('zuchtplaene').update(dbData).eq('id', editId);
-            if (res.error) { 
-                console.error('[Zucht] ❌ UPDATE Fehler:', res.error); 
-                showToast('Fehler: ' + res.error.message, 'error'); 
-                return; 
+            if (res.error) {
+                console.error('[Zucht] ❌ UPDATE Fehler:', res.error);
+                showToast('Fehler: ' + res.error.message, 'error');
+                return;
             }
             showToast('✅ Zuchtplan aktualisiert!', 'success');
         } else {
             dbData.id = crypto.randomUUID ? crypto.randomUUID() : 'zucht_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             var res = await sb.from('zuchtplaene').insert(dbData);
-            if (res.error) { 
-                console.error('[Zucht] ❌ INSERT Fehler:', res.error); 
-                showToast('Fehler: ' + res.error.message, 'error'); 
-                return; 
+            if (res.error) {
+                console.error('[Zucht] ❌ INSERT Fehler:', res.error);
+                showToast('Fehler: ' + res.error.message, 'error');
+                return;
             }
             showToast('✅ Zuchtplan erstellt!', 'success');
         }
 
-        // Reload aus Supabase
         await loadFromSupabase();
         closeModal();
         render();
@@ -487,7 +818,7 @@ async function saveZucht() {
 }
 
 // ============================================
-// DELETE – direkt aus Supabase!
+// DELETE
 // ============================================
 async function deleteZucht(id) {
     if (isPreview) return;
@@ -502,17 +833,12 @@ async function deleteZucht(id) {
 }
 
 // ============================================
-// FILTER
-// ============================================
-function setFilter(f) {
-    currentFilter = f;
-    render();
-}
-
-// ============================================
 // HELPERS
 // ============================================
 function getPhase(plan) {
+    if (plan.zusetzen_done) return '✅ Abgeschlossen';
+    if (plan.umlarven_done) return '🔬 Nach Umlarven';
+    if (plan.sammelbrut_done) return '📦 Sammelbrut ✓';
     var j = Date.now();
     if (j >= plan.zusetzen) return '✅ Abgeschlossen';
     if (j >= plan.umlarven) return '🔬 Nach Umlarven';
@@ -521,7 +847,7 @@ function getPhase(plan) {
 }
 
 function getTageVerbleibend(d) {
-    var t = Math.ceil((d - Date.now()) / (1000*60*60*24));
+    var t = Math.ceil((d - Date.now()) / 86400000);
     if (t < 0) return null;
     if (t === 0) return 'Heute!';
     if (t === 1) return 'Morgen';
@@ -530,6 +856,13 @@ function getTageVerbleibend(d) {
 
 function formatDatum(ts) {
     return new Date(ts).toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit', year: 'numeric'});
+}
+
+function getKW(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
 function esc(s) {
