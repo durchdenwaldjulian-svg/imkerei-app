@@ -289,62 +289,51 @@
     <!-- ==================== TAB: IMPORT ==================== -->
     <div class="iz-panel" id="panel-import">
         <div class="card" style="margin-bottom:1rem">
-            <h3 style="font-size:1rem;margin-bottom:.5rem">🔍 Pedigree von PedigreeApis.org importieren</h3>
-            <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Durchsuche die Buckfast-Pedigree-Datenbank und importiere Stammbäume direkt.</p>
+            <h3 style="font-size:1rem;margin-bottom:.5rem">🔍 Pedigree-Datenbank durchsuchen</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Durchsuche die Buckfast-Pedigree-Datenbank (pedigreeapis.org) und importiere Stammbäume direkt.</p>
 
-            <div class="form-group" style="margin-bottom:1rem">
-                <label class="form-label">1. Züchter suchen</label>
-                <div style="display:flex;gap:.5rem">
-                    <input type="text" id="searchBreeder" class="input" placeholder="Züchterkürzel oder Name, z.B. MKN, TR, PJ..." style="flex:1" onkeydown="if(event.key==='Enter')searchBreeders()">
-                    <button class="btn btn-primary" onclick="searchBreeders()">🔍 Suchen</button>
-                </div>
-            </div>
-
-            <div id="breederResults" style="display:none;margin-bottom:1rem">
-                <label class="form-label">Züchter gefunden:</label>
-                <div id="breederList" style="max-height:200px;overflow-y:auto"></div>
-            </div>
-
-            <div id="yearSelect" style="display:none;margin-bottom:1rem">
-                <label class="form-label">2. Jahr wählen:</label>
-                <div id="yearList" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
-            </div>
-
-            <div id="queenResults" style="display:none;margin-bottom:1rem">
-                <label class="form-label">3. Königin wählen:</label>
-                <div id="queenList" style="max-height:400px;overflow-y:auto"></div>
-            </div>
-
-            <div id="importProgress" style="display:none;margin-bottom:1rem">
-                <div style="text-align:center;padding:1.5rem">
+            <div id="dbStatus" style="margin-bottom:1rem">
+                <div style="text-align:center;padding:1rem;color:#7A6652">
                     <div class="spinner" style="margin:0 auto .75rem"></div>
-                    <div id="importStatus" style="font-size:.85rem;color:#7A6652">Lade Daten...</div>
+                    Lade Datenbank...
                 </div>
+            </div>
+
+            <div id="dbLoaded" style="display:none">
+                <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+                    <input type="text" id="dbSearch" class="input" placeholder="Königin, Züchter oder Code suchen... z.B. B10(MKN), TR, Rueppel" style="flex:1" onkeydown="if(event.key==='Enter')searchDB()" oninput="if(this.value.length>=2)searchDB()">
+                    <button class="btn btn-primary" onclick="searchDB()">🔍</button>
+                </div>
+
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+                    <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="filterDB('all')">Alle</button>
+                    <button class="btn btn-sm" style="background:#FEF3C7;color:#92400E" onclick="filterDB('B')">Buckfast</button>
+                    <button class="btn btn-sm" style="background:#D1FAE5;color:#065F46" onclick="filterDB('C')">Carnica</button>
+                    <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B" onclick="filterDB('A')">Anatolica</button>
+                </div>
+
+                <div id="dbInfo" style="font-size:.78rem;color:#A69580;margin-bottom:.75rem"></div>
+                <div id="dbResults" style="max-height:500px;overflow-y:auto"></div>
             </div>
         </div>
 
-        <!-- Crawler-Ergebnis Vorschau -->
-        <div id="importPreview" style="display:none">
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-                    <h3 style="font-size:1rem;margin:0">📋 Importierte Abstammung</h3>
-                    <button class="btn btn-sm btn-primary" onclick="useImportedPedigree()">✅ Übernehmen</button>
-                </div>
-                <div id="importTreePreview"></div>
-            </div>
+        <!-- Upload eigene DB -->
+        <div class="card" style="background:#f9fafb">
+            <h4 style="font-size:.9rem;margin-bottom:.5rem">📂 Eigene Datenbank laden</h4>
+            <p style="font-size:.82rem;color:#7A6652;margin-bottom:.75rem">
+                Nutze den <strong>Crawler</strong> (<code>crawler.html</code>) um die Pedigree-Datenbank herunterzuladen.
+                Lade die erzeugte <code>pedigree_db.json</code> dann auf GitHub hoch oder wähle sie hier:
+            </p>
+            <input type="file" id="dbFile" accept=".json" onchange="loadLocalDB(this)" style="font-size:.85rem">
         </div>
 
         <!-- Anleitung -->
-        <div class="card" style="background:#f9fafb">
-            <h4 style="font-size:.9rem;margin-bottom:.5rem">📖 So funktioniert der Import</h4>
+        <div class="card" style="background:#f9fafb;margin-top:1rem">
+            <h4 style="font-size:.9rem;margin-bottom:.5rem">📖 Pedigree-Syntax</h4>
             <div style="font-size:.82rem;color:#7A6652;line-height:1.7">
-                <strong>Pedigree-Syntax verstehen:</strong><br>
-                <code style="background:#E8DFD4;padding:.1rem .4rem;border-radius:4px">B10(MKN).20</code> = <strong>B</strong>uckfast Nr. <strong>10</strong>, Züchter <strong>MKN</strong> (Foundation Buckfast Marken), Jahrgang 20<strong>20</strong><br><br>
-                <strong>Begattungsarten:</strong><br>
-                <code>mrk</code> = Belegstelle Marken · <code>ins</code> = Instrumentelle Besamung · <code>bal</code> = Belegstelle Baltrum<br>
-                <code>ieg</code> = Inselbelegstelle · <code>bzd</code> = Besamung Drohn · <code>hbts</code> = Hausbelegstelle<br><br>
-                <strong>Bekannte Züchterkürzel:</strong><br>
-                <code>TR</code> = Thomas Rueppel · <code>PJ</code> = Paul Jungels · <code>MKN</code> = Buckfast Marken · <code>MKK</code> = Marken Kollektion · <code>BB</code> = Bernd Brix · <code>AS</code> = Schrüfer · <code>FF</code> = Klaus Fehrenbach
+                <code style="background:#E8DFD4;padding:.1rem .4rem;border-radius:4px">B10(MKN).20</code> = <strong>B</strong>uckfast Nr. <strong>10</strong>, Züchter <strong>MKN</strong>, Jahrgang 20<strong>20</strong><br>
+                <strong>Begattung:</strong> <code>mrk</code>=Marken · <code>ins</code>=Insemination · <code>bal</code>=Baltrum · <code>ieg</code>=Inselbelegstelle<br>
+                <strong>Züchter:</strong> <code>TR</code>=Rueppel · <code>PJ</code>=Jungels · <code>MKN</code>=Marken · <code>FF</code>=Fehrenbach · <code>BB</code>=Brix
             </div>
         </div>
     </div>
@@ -950,311 +939,136 @@ function formatDate(str) {
 }
 
 // ============================================
-// PEDIGREEAPIS.ORG CRAWLER
+// PEDIGREE-DATENBANK (JSON)
 // ============================================
-var PROXY = 'https://api.allorigins.win/raw?url=';
-var BASE_URL = 'https://perso.unamur.be/~jvandyck/homage/elver/';
-var breederCache = [];
-var importedTree = {};
-var importedQueen = '';
+var pedDB = null; // { queens: [...] }
+var dbFiltered = [];
 
-async function fetchPage(url) {
-    var resp = await fetch(PROXY + encodeURIComponent(url));
-    if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
-    return await resp.text();
-}
-
-async function searchBreeders() {
-    var query = document.getElementById('searchBreeder').value.trim().toLowerCase();
-    if (!query) { showToast('⚠️ Bitte Suchbegriff eingeben', 'error'); return; }
-
-    document.getElementById('importProgress').style.display = 'block';
-    document.getElementById('importStatus').textContent = 'Durchsuche Züchterliste...';
-    document.getElementById('breederResults').style.display = 'none';
-    document.getElementById('yearSelect').style.display = 'none';
-    document.getElementById('queenResults').style.display = 'none';
-
+async function loadDB() {
+    var statusEl = document.getElementById('dbStatus');
     try {
-        if (breederCache.length === 0) {
-            var html = await fetchPage(BASE_URL);
-            // Parse breeder links: ped_CODE_YEAR.html
-            var regex = /href="[^"]*pedgr\/ped_([^_]+)_(\d{4})\.html"/g;
-            var match;
-            var breeders = {};
-            while ((match = regex.exec(html)) !== null) {
-                var code = match[1];
-                var year = match[2];
-                if (!breeders[code]) breeders[code] = { code: code, years: [], name: '' };
-                if (breeders[code].years.indexOf(year) === -1) breeders[code].years.push(year);
-            }
-            // Try to extract names from the table
-            var nameRegex = /ped_([^_]+)_\d{4}\.html[^<]*<\/a>\](?:\s*\[.*?\])*/g;
-            var rows = html.split(/ligne arc-en-ciel|rainbow dividing/);
-            rows.forEach(function(row) {
-                var codeMatch = row.match(/ped_([^_]+)_\d{4}\.html/);
-                if (codeMatch) {
-                    var c = codeMatch[1];
-                    // Find name in the row - usually between | characters
-                    var nameMatch = row.match(/\|\s*([A-Z][a-zäöüß&;]+(?:\s+[A-Z&;][a-zäöüß]+)*(?:\s*\([A-Z]{2}\))?)\s*\|/);
-                    if (nameMatch && breeders[c]) breeders[c].name = nameMatch[1].replace(/&amp;/g, '&');
-                }
-            });
-            breederCache = Object.values(breeders);
-        }
-
-        // Filter
-        var results = breederCache.filter(function(b) {
-            return b.code.toLowerCase().indexOf(query) > -1 || b.name.toLowerCase().indexOf(query) > -1;
-        });
-
-        document.getElementById('importProgress').style.display = 'none';
-
-        if (results.length === 0) {
-            showToast('Keine Züchter gefunden für "' + query + '"', 'error');
+        // Versuche pedigree_db.json vom selben Server zu laden
+        var resp = await fetch('pedigree_db.json');
+        if (resp.ok) {
+            pedDB = await resp.json();
+            showDBReady();
             return;
         }
+    } catch(e) { /* Datei nicht gefunden */ }
 
-        var html = '';
-        results.slice(0, 30).forEach(function(b) {
-            html += '<div class="ped-saved-card" onclick="selectBreeder(\'' + esc(b.code) + '\')" style="margin-bottom:.4rem">';
-            html += '<div class="ped-saved-icon" style="background:#F5A623;color:#fff;font-weight:700;font-size:.75rem">' + esc(b.code) + '</div>';
-            html += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem">' + esc(b.code) + (b.name ? ' – ' + esc(b.name) : '') + '</div>';
-            html += '<div style="font-size:.75rem;color:#7A6652">' + b.years.length + ' Jahre: ' + b.years.sort().join(', ') + '</div></div>';
-            html += '</div>';
-        });
-        if (results.length > 30) html += '<div style="font-size:.8rem;color:#7A6652;text-align:center;padding:.5rem">... und ' + (results.length - 30) + ' weitere</div>';
-
-        document.getElementById('breederList').innerHTML = html;
-        document.getElementById('breederResults').style.display = 'block';
-        showToast(results.length + ' Züchter gefunden', 'success');
-
-    } catch(e) {
-        document.getElementById('importProgress').style.display = 'none';
-        showToast('❌ Fehler: ' + e.message, 'error');
-    }
+    // Kein DB File vorhanden
+    statusEl.innerHTML = '<div style="text-align:center;padding:1.5rem">' +
+        '<div style="font-size:2.5rem;margin-bottom:.75rem">📂</div>' +
+        '<h3 style="color:#1C1410;margin-bottom:.5rem">Keine Datenbank gefunden</h3>' +
+        '<p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Öffne <code>crawler.html</code> in deinem Browser, um die Pedigree-Datenbank herunterzuladen. Lade die <code>pedigree_db.json</code> dann auf GitHub hoch oder wähle sie unten aus.</p>' +
+        '</div>';
 }
 
-function selectBreeder(code) {
-    var breeder = breederCache.find(function(b) { return b.code === code; });
-    if (!breeder) return;
+function loadLocalDB(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            pedDB = JSON.parse(e.target.result);
+            showDBReady();
+            showToast('✅ Datenbank geladen: ' + (pedDB.total_queens || pedDB.queens.length) + ' Königinnen', 'success');
+        } catch(err) {
+            showToast('❌ Ungültige JSON-Datei', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
 
+function showDBReady() {
+    document.getElementById('dbStatus').style.display = 'none';
+    document.getElementById('dbLoaded').style.display = 'block';
+    document.getElementById('dbInfo').textContent = '📊 ' + pedDB.queens.length + ' Königinnen geladen · Quelle: ' + (pedDB.source || 'pedigreeapis.org') + ' · Stand: ' + (pedDB.crawled_at ? new Date(pedDB.crawled_at).toLocaleDateString('de-DE') : '?');
+}
+
+function searchDB() {
+    if (!pedDB) return;
+    var query = document.getElementById('dbSearch').value.trim().toLowerCase();
+    if (query.length < 2) { document.getElementById('dbResults').innerHTML = ''; return; }
+
+    dbFiltered = pedDB.queens.filter(function(q) {
+        return q.name.toLowerCase().indexOf(query) > -1 ||
+               (q.breeder_code && q.breeder_code.toLowerCase().indexOf(query) > -1) ||
+               (q.breeder_name && q.breeder_name.toLowerCase().indexOf(query) > -1);
+    });
+
+    renderDBResults(dbFiltered.slice(0, 50));
+}
+
+function filterDB(race) {
+    if (!pedDB) return;
+    if (race === 'all') {
+        dbFiltered = pedDB.queens;
+    } else {
+        dbFiltered = pedDB.queens.filter(function(q) { return q.race === race; });
+    }
+    document.getElementById('dbSearch').value = '';
+    document.getElementById('dbInfo').textContent = '📊 ' + dbFiltered.length + ' Königinnen' + (race !== 'all' ? ' (' + race + ')' : '');
+    renderDBResults(dbFiltered.slice(0, 50));
+}
+
+function renderDBResults(results) {
+    var el = document.getElementById('dbResults');
+    if (results.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#7A6652">Keine Ergebnisse</div>';
+        return;
+    }
+
+    var raceColors = { B: '#F59E0B', C: '#10b981', A: '#ef4444', M: '#6B7280', X: '#8B5CF6' };
     var html = '';
-    breeder.years.sort().reverse().forEach(function(y) {
-        html += '<button class="btn btn-sm" style="background:#fff;border:2px solid #E8DFD4" onclick="loadBreederYear(\'' + code + '\',\'' + y + '\')">' + y + '</button>';
-    });
-    document.getElementById('yearList').innerHTML = html;
-    document.getElementById('yearSelect').style.display = 'block';
-    document.getElementById('queenResults').style.display = 'none';
-}
+    results.forEach(function(q, idx) {
+        var color = raceColors[q.race] || '#8B5CF6';
+        var ancestors = 0;
+        if (q.tree) { for (var k in q.tree) { if (q.tree[k] && k !== 'q') ancestors++; } }
+        var globalIdx = pedDB.queens.indexOf(q);
 
-async function loadBreederYear(code, year) {
-    document.getElementById('importProgress').style.display = 'block';
-    document.getElementById('importStatus').textContent = 'Lade Pedigrees von ' + code + ' ' + year + '...';
-    document.getElementById('queenResults').style.display = 'none';
-
-    try {
-        var url = BASE_URL + 'pedgr/ped_' + code + '_' + year + '.html';
-        var html = await fetchPage(url);
-
-        // Parse queens from the pedigree page
-        var queens = parsePedigreePage(html, code, year);
-
-        document.getElementById('importProgress').style.display = 'none';
-
-        if (queens.length === 0) {
-            showToast('Keine Königinnen gefunden', 'error');
-            return;
-        }
-
-        var listHtml = '';
-        queens.forEach(function(q, idx) {
-            var ancestorCount = 0;
-            for (var k in q.tree) { if (q.tree[k]) ancestorCount++; }
-            listHtml += '<div class="ped-saved-card" onclick="previewImport(' + idx + ')" style="margin-bottom:.4rem">';
-            listHtml += '<div class="ped-saved-icon" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;font-size:.75rem;font-weight:700">' + (q.race || 'B') + '</div>';
-            listHtml += '<div style="flex:1"><div style="font-weight:700;font-size:.85rem;font-family:monospace">' + esc(q.name) + '</div>';
-            listHtml += '<div style="font-size:.75rem;color:#7A6652">' + ancestorCount + ' Vorfahren · Mutter: ' + esc(q.tree['q.m'] || '?') + ' · Drohn: ' + esc(q.tree['q.v'] || '?') + '</div></div>';
-            listHtml += '</div>';
-        });
-
-        document.getElementById('queenList').innerHTML = listHtml;
-        document.getElementById('queenResults').style.display = 'block';
-        window._importedQueens = queens;
-        showToast(queens.length + ' Königinnen geladen', 'success');
-
-    } catch(e) {
-        document.getElementById('importProgress').style.display = 'none';
-        showToast('❌ Fehler: ' + e.message, 'error');
-    }
-}
-
-function parsePedigreePage(html, breederCode, year) {
-    var queens = [];
-
-    // Remove HTML tags for easier parsing, but keep structure via table rows
-    // The pedigree format is in <table> rows:
-    // Queen = .YY – Mother MATING Drone [X dr.c.] : .YY – GrandMother MATING GrandDrone
-    
-    // Split by table rows
-    var rows = html.split(/<tr/gi);
-    var currentQueen = null;
-    var lineBuffer = [];
-
-    rows.forEach(function(row) {
-        // Strip tags
-        var text = row.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-        if (!text) return;
-
-        // Queen line pattern: CODE = .YY – MOTHER MATING DRONE
-        var queenMatch = text.match(/^[^=]*?([A-Z][a-z]*\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*/);
-        if (!queenMatch) {
-            // Also match lines starting with queen code without = but continuing pedigree
-            queenMatch = text.match(/^\s*([A-Z][a-z]*\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*/);
-        }
-
-        if (queenMatch) {
-            // Save previous queen
-            if (currentQueen && lineBuffer.length > 0) {
-                var parsed = parsePedigreeLines(currentQueen, lineBuffer);
-                if (parsed) queens.push(parsed);
-            }
-            currentQueen = queenMatch[1] + '.' + queenMatch[2];
-            lineBuffer = [text];
-        } else if (currentQueen && text.match(/\.\d{2}\s*[–-]/)) {
-            lineBuffer.push(text);
-        }
+        html += '<div class="ped-saved-card" onclick="importFromDB(' + globalIdx + ')" style="margin-bottom:.4rem">';
+        html += '<div class="ped-saved-icon" style="background:' + color + ';color:#fff;font-weight:700;font-size:.7rem">' + (q.race || '?') + '</div>';
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-weight:700;font-size:.85rem;font-family:monospace">' + esc(q.name) + '</div>';
+        html += '<div style="font-size:.72rem;color:#7A6652">';
+        if (q.breeder_code) html += q.breeder_code + (q.breeder_name ? ' – ' + esc(q.breeder_name) : '') + ' · ';
+        html += ancestors + ' Vorfahren';
+        if (q.tree && q.tree['q.m']) html += ' · ♀ ' + esc(q.tree['q.m']);
+        html += '</div></div></div>';
     });
 
-    // Last queen
-    if (currentQueen && lineBuffer.length > 0) {
-        var parsed = parsePedigreeLines(currentQueen, lineBuffer);
-        if (parsed) queens.push(parsed);
+    if (dbFiltered.length > 50) {
+        html += '<div style="text-align:center;padding:.75rem;font-size:.8rem;color:#7A6652">... ' + (dbFiltered.length - 50) + ' weitere Ergebnisse. Suche verfeinern.</div>';
     }
 
-    // Simpler fallback parser if table parser fails
-    if (queens.length === 0) {
-        queens = simplePedigreeParse(html);
-    }
-
-    return queens;
+    el.innerHTML = html;
 }
 
-function simplePedigreeParse(html) {
-    var queens = [];
-    var text = html.replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
-    var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
-
-    var i = 0;
-    while (i < lines.length) {
-        // Look for pattern: QueenCode = .YY – Mother mating Drone [X dr.c.] : .YY – ...
-        var match = lines[i].match(/([A-Za-z]+\d+\([A-Z]+\))\s*=\s*\.(\d{2})\s*[–-]\s*(.+)/);
-        if (match) {
-            var queenName = match[1] + '.' + match[2];
-            var restLine = match[3];
-            var nextLine = (i + 1 < lines.length) ? lines[i + 1] : '';
-
-            var tree = { 'q': queenName };
-            var race = queenName.charAt(0);
-
-            // Parse first line: Mother mating Drone [X dr.c.] : .YY – GrandMother ...
-            var parts = restLine.split(/\s*:\s*/);
-            if (parts[0]) {
-                var gen1 = parseGenPart(parts[0]);
-                if (gen1.mother) tree['q.m'] = gen1.mother;
-                if (gen1.drone) tree['q.v'] = gen1.drone;
-            }
-            if (parts[1]) {
-                var gen2a = parseGenPart(parts[1]);
-                if (gen2a.mother) tree['q.m.m'] = gen2a.mother;
-                if (gen2a.drone) tree['q.m.v'] = gen2a.drone;
-            }
-
-            // Second line (father side): .YY – Mother mating Drone : ...
-            if (nextLine.match(/^\.\d{2}\s*[–-]/)) {
-                var fatherParts = nextLine.split(/\s*:\s*/);
-                if (fatherParts[0]) {
-                    var gen2b = parseGenPart(fatherParts[0]);
-                    if (gen2b.mother) tree['q.v.m'] = gen2b.mother;
-                    if (gen2b.drone) tree['q.v.v'] = gen2b.drone;
-                }
-                if (fatherParts[1]) {
-                    var gen3 = parseGenPart(fatherParts[1]);
-                    if (gen3.mother) tree['q.v.m.m'] = gen3.mother;
-                    if (gen3.drone) tree['q.v.m.v'] = gen3.drone;
-                }
-                i++;
-            }
-
-            queens.push({
-                name: queenName,
-                race: race,
-                year: 2000 + parseInt(match[2]),
-                tree: tree
-            });
-        }
-        i++;
-    }
-    return queens;
-}
-
-function parseGenPart(text) {
-    var result = { mother: null, drone: null };
-    // Pattern: .YY – MotherCode mating DroneCode [X dr.c.]
-    // Or: MotherCode mating DroneCode [X dr.c.]
-    var clean = text.replace(/\[[\d\s]+dr\.c\.\]/g, '').replace(/\(not registered.*?\)/g, '').trim();
-
-    // Extract year prefix
-    var yearMatch = clean.match(/\.(\d{2})\s*[–-]\s*/);
-    var yearSuffix = yearMatch ? '.' + yearMatch[1] : '';
-    if (yearMatch) clean = clean.replace(/\.\d{2}\s*[–-]\s*/, '');
-
-    // Find queen codes: Letter(s)+Number(s)+(BREEDERCODE) or similar
-    var codes = clean.match(/[A-Za-z]+\d+\([A-Z]+\)(?:1dr)?/g);
-    if (codes && codes.length >= 1) {
-        result.mother = codes[0] + yearSuffix;
-        if (codes.length >= 2) result.drone = codes[1] + yearSuffix;
-    }
-    return result;
-}
-
-function previewImport(idx) {
-    var q = window._importedQueens[idx];
+function importFromDB(idx) {
+    var q = pedDB.queens[idx];
     if (!q) return;
 
-    importedTree = q.tree;
-    importedQueen = q.name;
-
-    var html = '<div style="font-family:monospace;font-size:.85rem;line-height:1.8">';
-    html += '<div style="font-weight:700;font-size:1rem;margin-bottom:.5rem">👑 ' + esc(q.name) + '</div>';
-    for (var key in q.tree) {
-        if (key === 'q') continue;
-        var label = key.replace('q.', '').replace(/\./g, ' → ');
-        var icon = key.endsWith('.v') ? '🐝' : '👑';
-        html += '<div>' + icon + ' <span style="color:#7A6652">' + label + ':</span> <strong>' + esc(q.tree[key]) + '</strong></div>';
+    // Parse name and year
+    var parts = q.name.split('.');
+    var year = '';
+    var name = q.name;
+    if (parts.length > 1 && parts[parts.length - 1].length === 2) {
+        year = '20' + parts[parts.length - 1];
+        name = parts.slice(0, -1).join('.');
     }
-    html += '</div>';
-
-    document.getElementById('importTreePreview').innerHTML = html;
-    document.getElementById('importPreview').style.display = 'block';
-    showToast('📋 Vorschau: ' + q.name, '');
-}
-
-function useImportedPedigree() {
-    if (!importedQueen) { showToast('⚠️ Nichts zum Importieren', 'error'); return; }
-
-    // Parse queen name and year
-    var parts = importedQueen.split('.');
-    var year = parts.length > 1 ? '20' + parts[parts.length - 1] : '';
-    var name = parts.length > 1 ? parts.slice(0, -1).join('.') : importedQueen;
 
     document.getElementById('queenName').value = name;
-    document.getElementById('queenYear').value = year;
-    document.getElementById('queenRace').value = importedQueen.charAt(0) || 'B';
-    currentTree = Object.assign({}, importedTree);
+    document.getElementById('queenYear').value = year || (q.year || '');
+    document.getElementById('queenRace').value = q.race || 'B';
+    currentTree = Object.assign({}, q.tree || {});
     renderPedForm();
     switchIzTab('stammbaum', document.querySelector('.iz-tab'));
-    showToast('✅ ' + name + ' importiert! Bearbeite oder berechne den COI.', 'success');
+    showToast('✅ ' + name + ' importiert!', 'success');
 }
+
+// DB beim Start laden
+setTimeout(loadDB, 500);
 
 // ============================================
 // START
