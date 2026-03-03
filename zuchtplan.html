@@ -237,6 +237,21 @@
     </div>
 </div>
 
+<!-- === BESTÄTIGUNGS-MODAL === -->
+<div id="confirmModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:400px;height:auto;border-radius:1rem;margin:auto;overflow:hidden">
+        <div class="modal-body" style="padding:2rem;text-align:center">
+            <div style="font-size:3rem;margin-bottom:.75rem" id="confirmIcon">🗑️</div>
+            <h3 style="margin-bottom:.5rem;color:#1C1410" id="confirmTitle">Zuchtplan löschen?</h3>
+            <p style="font-size:.9rem;color:#7A6652;margin-bottom:1.5rem" id="confirmText">Dieser Zuchtplan wird unwiderruflich gelöscht.</p>
+            <div style="display:flex;gap:.75rem;justify-content:center">
+                <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652;min-width:100px" onclick="closeConfirm()">Abbrechen</button>
+                <button class="btn btn-sm" id="confirmBtn" style="background:#ef4444;color:#fff;min-width:100px" onclick="">Löschen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="config.js"></script>
 <script src="presence.js" defer></script>
 <script>
@@ -842,16 +857,37 @@ async function saveZucht() {
 // ============================================
 // DELETE
 // ============================================
-async function deleteZucht(id) {
-    if (isPreview) return;
-    if (!confirm('Zuchtplan wirklich löschen?')) return;
+var pendingDeleteId = null;
 
-    var res = await db.del('zuchtplaene', id);
+function deleteZucht(id) {
+    if (isPreview) return;
+    var plan = plaene.find(function(p) { return p.id === id; });
+    if (!plan) return;
+
+    pendingDeleteId = id;
+    document.getElementById('confirmIcon').textContent = '🗑️';
+    document.getElementById('confirmTitle').textContent = 'Zuchtplan löschen?';
+    document.getElementById('confirmText').innerHTML = '„<strong>' + esc(plan.name) + '</strong>" wird unwiderruflich gelöscht.';
+    document.getElementById('confirmBtn').onclick = confirmDelete;
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.remove('active');
+    pendingDeleteId = null;
+}
+
+async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    closeConfirm();
+
+    var res = await db.del('zuchtplaene', pendingDeleteId);
     if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
 
     await loadFromSupabase();
     render();
     showToast('🗑️ Zuchtplan gelöscht', '');
+    pendingDeleteId = null;
 }
 
 // ============================================

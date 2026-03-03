@@ -1391,7 +1391,7 @@ function renderMemberAdmin() {
         return m.role === memberFilter;
     });
 
-    var isVorsitz = meineRolle === 'vorsitzender';
+    var isVorsitz = meineRolle === 'vorsitzender' || meineRolle === 'stellvertreter' || meineRolle === 'admin';
     var myUid = isPreview ? 'u1' : (currentUser ? currentUser.id : null);
 
     var html = '';
@@ -1458,6 +1458,7 @@ async function changeRole(mitgliedId, newRole) {
 
     m.role = newRole;
     renderMitglieder();
+    renderMemberAdmin();
     toast('✅ ' + m.name + ' ist jetzt: ' + ROLES[newRole].label, 'success');
 }
 
