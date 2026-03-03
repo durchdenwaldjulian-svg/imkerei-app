@@ -555,8 +555,8 @@
         <div class="card" style="border-color:#fee2e2">
             <h3 style="color:#ef4444">⚠️ Gefahrenzone</h3>
             <p style="font-size:.85rem;color:#7A6652;margin-bottom:.75rem">Möchtest du den Verein verlassen? Deine Trachtmeldungen bleiben erhalten.</p>
-            <button class="btn btn-sm" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="alert('Demo – Funktion kommt mit Supabase-Anbindung')">🚪 Verein verlassen</button>
-            <div class="info-box" style="margin-top:.75rem">ℹ️ Einen Verein auflösen kann nur der Administrator.</div>
+            <button class="btn btn-sm" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA" onclick="vereinVerlassen()">🚪 Verein verlassen</button>
+            <div class="info-box" style="margin-top:.75rem">ℹ️ Der 1. Vorsitzende kann den Verein nicht verlassen – erst das Amt an jemand anderen übertragen. Einen Verein auflösen kann nur der 1. Vorsitzende.</div>
         </div>
     </div>
 
@@ -1508,6 +1508,31 @@ async function regenerateCode() {
 
 function showInvite() {
     copyCode();
+}
+
+// ============================================
+// VEREIN VERLASSEN
+// ============================================
+async function vereinVerlassen() {
+    if (isPreview) { toast('ℹ️ Demo-Modus – nicht verfügbar', 'info'); return; }
+
+    // Vorsitzender darf nicht einfach gehen
+    if (meineRolle === 'vorsitzender') {
+        toast('❌ Als 1. Vorsitzende/r kannst du den Verein nicht verlassen. Übertrage zuerst das Amt an ein anderes Mitglied.', 'error');
+        return;
+    }
+
+    if (!confirm('Wirklich den Verein verlassen?\n\nDeine Trachtmeldungen bleiben erhalten, aber du hast keinen Zugriff mehr auf die Vereins-Karte und Mitgliederliste.')) return;
+
+    // Eigene Mitgliedschaft finden und löschen
+    var meineMitgliedschaft = mitglieder.find(function(m) { return m.user_id === currentUser.id; });
+    if (!meineMitgliedschaft) { toast('❌ Mitgliedschaft nicht gefunden', 'error'); return; }
+
+    var { error } = await sb.from('verein_mitglieder').delete().eq('id', meineMitgliedschaft.id);
+    if (error) { toast('❌ Fehler: ' + error.message, 'error'); return; }
+
+    toast('✅ Du hast den Verein verlassen.', 'success');
+    setTimeout(function() { location.reload(); }, 1200);
 }
 
 // ============================================
