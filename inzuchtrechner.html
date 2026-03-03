@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🧬 Inzuchtrechner – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+
+        /* === SIDEBAR NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        /* === HEADER BANNER === */
+        .iz-header{background:linear-gradient(135deg,#1C1410 0%,#2D1F4E 50%,#1C1410 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden;color:#fff}
+        .iz-header::before{content:'';position:absolute;top:-40%;right:-15%;width:250px;height:250px;background:radial-gradient(circle,rgba(139,92,246,0.2) 0%,transparent 70%);border-radius:50%}
+        .iz-header::after{content:'';position:absolute;bottom:-30%;left:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 70%);border-radius:50%}
+        .iz-header-inner{position:relative;z-index:1}
+        .iz-title{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:.25rem}
+        .iz-sub{font-size:.8rem;color:rgba(255,255,255,.55)}
+
+        /* === TABS === */
+        .iz-tabs{display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1.25rem}
+        .iz-tab{flex:1;padding:.625rem .5rem;border:none;background:none;border-radius:.5rem;font-size:.85rem;font-weight:500;cursor:pointer;color:#7A6652;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.35rem}
+        .iz-tab.active{background:#fff;color:#1C1410;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+        .iz-tab:hover:not(.active){background:rgba(245,166,35,0.08)}
+        .iz-panel{display:none}
+        .iz-panel.active{display:block}
+
+        /* === STAMMBAUM TREE === */
+        .tree-container{overflow-x:auto;padding:1rem 0}
+        .tree-row{display:flex;justify-content:center;gap:.5rem;margin-bottom:.5rem;position:relative}
+        .tree-node{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.6rem .8rem;min-width:140px;max-width:200px;text-align:center;transition:all .2s;cursor:pointer;position:relative}
+        .tree-node:hover{border-color:#F5A623;box-shadow:0 2px 8px rgba(245,166,35,0.15);transform:translateY(-2px)}
+        .tree-node.queen{border-color:#F5A623;background:#FFFBF0}
+        .tree-node.drone{border-color:#3b82f6;background:#EFF6FF}
+        .tree-node.empty{border-style:dashed;border-color:#D1D5DB;background:#FAFAFA;color:#A69580}
+        .tree-node .node-name{font-weight:600;font-size:.85rem;color:#1C1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .tree-node .node-year{font-size:.7rem;color:#7A6652}
+        .tree-node .node-type{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.1rem .4rem;border-radius:999px;display:inline-block;margin-top:.2rem}
+        .type-queen{background:#FEF3C7;color:#92400E}
+        .type-drone{background:#DBEAFE;color:#1E40AF}
+        .type-unknown{background:#F3F4F6;color:#6B7280}
+
+        .tree-gen-label{position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.05em;writing-mode:vertical-rl;text-orientation:mixed}
+
+        /* === COI RESULT === */
+        .coi-result{text-align:center;padding:1.5rem;background:linear-gradient(135deg,#FFFBF0,#FFF8EE);border:2px solid #E8DFD4;border-radius:1rem;margin:1rem 0}
+        .coi-value{font-family:'DM Serif Display',serif;font-size:3rem;font-weight:700}
+        .coi-good{color:#10b981}
+        .coi-ok{color:#f59e0b}
+        .coi-bad{color:#ef4444}
+        .coi-label{font-size:.85rem;color:#7A6652;margin-top:.25rem}
+        .coi-bar{height:8px;border-radius:4px;background:#E8DFD4;margin:1rem auto;max-width:300px;overflow:hidden}
+        .coi-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+
+        /* === PEDIGREE FORM === */
+        .ped-form{display:grid;gap:.75rem}
+        .ped-gen{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;transition:all .2s}
+        .ped-gen:hover{border-color:rgba(245,166,35,0.3)}
+        .ped-gen-title{font-weight:700;font-size:.85rem;color:#1C1410;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+        .ped-gen-title .gen-badge{font-size:.65rem;background:#8B5CF6;color:#fff;padding:.15rem .5rem;border-radius:999px}
+        .ped-pair{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+
+        /* === SAVED LIST === */
+        .ped-saved-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;transition:all .2s;cursor:pointer}
+        .ped-saved-card:hover{border-color:#F5A623;transform:translateY(-1px);box-shadow:0 2px 8px rgba(245,166,35,0.1)}
+        .ped-saved-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+
+        /* === ANPAARUNGS-PLANER === */
+        .mate-box{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;text-align:center}
+        .mate-box.selected{border-color:#F5A623;background:#FFFBF0}
+        .mate-vs{font-size:2rem;margin:0 .5rem}
+        .mate-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;margin:1rem 0}
+
+        /* === LINKS === */
+        .ext-link{display:flex;align-items:center;gap:.75rem;padding:1rem;background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;text-decoration:none;color:#1C1410;transition:all .2s;margin-bottom:.75rem}
+        .ext-link:hover{border-color:#F5A623;transform:translateY(-1px)}
+
+        /* === RESPONSIVE === */
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .iz-header{padding:1.25rem;border-radius:.75rem}
+            .iz-title{font-size:1.3rem}
+            .ped-pair{grid-template-columns:1fr}
+            .mate-grid{grid-template-columns:1fr}
+            .mate-vs{margin:.5rem 0}
+            .tree-node{min-width:110px;padding:.4rem .5rem}
+            .iz-tab{font-size:.75rem;padding:.5rem .25rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+<script src="config.js"></script>
+<script src="presence.js" defer></script>
+
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color:#7A6652;font-size:.85rem">Lade Inzuchtrechner...</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="container" style="max-width:900px;margin:0 auto;padding:1rem">
+
+    <div id="previewBanner"></div>
+
+    <!-- === HEADER === -->
+    <div class="iz-header">
+        <div class="iz-header-inner">
+            <div style="display:flex;align-items:center;gap:.75rem">
+                <span style="font-size:2.2rem">🧬</span>
+                <div>
+                    <div class="iz-title">Inzuchtrechner</div>
+                    <div class="iz-sub">COI-Berechnung · Stammbaum · Anpaarungsplaner</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem;font-size:.78rem;color:rgba(255,255,255,.5)">
+                <span>🐝 Buckfast & Carnica</span>
+                <span>📊 Wright's Pfadkoeffizient</span>
+                <span>🔗 pedigreeapis.org kompatibel</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- === TABS === -->
+    <div class="iz-tabs">
+        <button class="iz-tab active" onclick="switchIzTab('stammbaum',this)">🌳 Stammbaum</button>
+        <button class="iz-tab" onclick="switchIzTab('rechner',this)">📊 COI Rechner</button>
+        <button class="iz-tab" onclick="switchIzTab('anpaarung',this)">💕 Anpaarung</button>
+        <button class="iz-tab" onclick="switchIzTab('gespeichert',this)">💾 Gespeichert</button>
+    </div>
+
+    <!-- ==================== TAB: STAMMBAUM ==================== -->
+    <div class="iz-panel active" id="panel-stammbaum">
+        <div class="card" style="margin-bottom:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+                <h3 style="font-size:1rem;margin:0">🌳 Stammbaum eingeben</h3>
+                <div style="display:flex;gap:.5rem">
+                    <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652" onclick="clearTree()">🗑️ Leeren</button>
+                    <button class="btn btn-sm btn-primary" onclick="savePedigree()">💾 Speichern</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">Name der Königin / Kolonie</label>
+                <div style="display:flex;gap:.5rem">
+                    <input type="text" id="queenName" class="input" placeholder="z.B. B10(MKN)" style="flex:1;font-family:monospace;font-weight:600">
+                    <select id="queenRace" class="input" style="width:140px">
+                        <option value="B">Buckfast</option>
+                        <option value="C">Carnica</option>
+                        <option value="A">Anatolica</option>
+                        <option value="M">Mellifera</option>
+                        <option value="X">Gemischt</option>
+                    </select>
+                    <input type="number" id="queenYear" class="input" placeholder="Jahr" style="width:80px" min="1925" max="2030">
+                </div>
+            </div>
+
+            <div class="info-box" style="margin-bottom:1rem">
+                💡 <strong>Pedigree-Syntax:</strong> Nutze das Format von pedigreeapis.org, z.B. <code>B10(MKN).20</code> = Buckfast-Kolonie Nr. 10, Züchter MKN, Jahrgang 2020. Kürzel: <em>mrk</em>=Marken, <em>ins</em>=Insemination, <em>bal</em>=Belegstelle.
+            </div>
+
+            <div class="ped-form" id="pedForm"></div>
+        </div>
+
+        <!-- VISUALISIERUNG -->
+        <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:1rem">🌳 Stammbaumansicht</h3>
+            <div class="tree-container" id="treeView">
+                <div style="text-align:center;color:#A69580;padding:2rem">Gib oben die Abstammung ein, um den Stammbaum zu sehen.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TAB: COI RECHNER ==================== -->
+    <div class="iz-panel" id="panel-rechner">
+        <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem;margin-bottom:.5rem">📊 COI berechnen</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Der Inzuchtkoeffizient (COI) wird nach Wright's Pfadkoeffizienten-Methode berechnet. Trage den Stammbaum im ersten Tab ein.</p>
+
+            <button class="btn btn-primary btn-block" onclick="calculateCOI()" style="margin-bottom:1rem">🧬 COI berechnen</button>
+
+            <div id="coiResult" style="display:none">
+                <div class="coi-result">
+                    <div class="coi-value" id="coiValue">0.00%</div>
+                    <div class="coi-label">Inzuchtkoeffizient (COI)</div>
+                    <div class="coi-bar"><div class="coi-bar-fill" id="coiBar" style="width:0%;background:#10b981"></div></div>
+                    <div id="coiInterpretation" style="font-size:.85rem;color:#7A6652;margin-top:.75rem"></div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:1rem;background:#f9fafb">
+                <h4 style="font-size:.9rem;margin-bottom:.5rem">ℹ️ COI-Bewertung bei Honigbienen</h4>
+                <div style="font-size:.82rem;color:#7A6652;line-height:1.6">
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:12px;height:12px;border-radius:50%;background:#10b981;flex-shrink:0"></span> <strong>0–6%</strong> – Niedrig: Gesunde genetische Vielfalt</div>
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:12px;height:12px;border-radius:50%;background:#f59e0b;flex-shrink:0"></span> <strong>6–12%</strong> – Mittel: Aufmerksamkeit empfohlen</div>
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem"><span style="width:12px;height:12px;border-radius:50%;background:#ef4444;flex-shrink:0"></span> <strong>&gt;12%</strong> – Hoch: Inzuchtdepression möglich</div>
+                    <div style="margin-top:.5rem">Bei Bienen: Durch die haplodiploide Vererbung und Mehrfachpaarung der Königin ist die effektive Populationsgröße oft kleiner als gedacht. Ein COI unter 6% ist ideal.</div>
+                </div>
+            </div>
+
+            <div id="coiPaths" style="margin-top:1rem"></div>
+        </div>
+    </div>
+
+    <!-- ==================== TAB: ANPAARUNG ==================== -->
+    <div class="iz-panel" id="panel-anpaarung">
+        <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem;margin-bottom:.5rem">💕 Anpaarungsplaner</h3>
+            <p style="font-size:.85rem;color:#7A6652;margin-bottom:1rem">Prüfe den voraussichtlichen COI bevor du eine Königin mit einem Drohnenvolk anpaarst.</p>
+
+            <div class="mate-grid">
+                <div class="mate-box" id="mateQueen">
+                    <div style="font-size:2rem;margin-bottom:.5rem">👑</div>
+                    <div style="font-weight:700;font-size:.9rem" id="mateQueenName">Keine Königin</div>
+                    <div style="font-size:.75rem;color:#7A6652" id="mateQueenInfo">Wähle aus gespeicherten Pedigrees</div>
+                    <button class="btn btn-sm" style="margin-top:.5rem" onclick="selectMate('queen')">Königin wählen</button>
+                </div>
+                <div class="mate-vs">✕</div>
+                <div class="mate-box" id="mateDrone">
+                    <div style="font-size:2rem;margin-bottom:.5rem">🐝</div>
+                    <div style="font-weight:700;font-size:.9rem" id="mateDroneName">Kein Drohnenvolk</div>
+                    <div style="font-size:.75rem;color:#7A6652" id="mateDroneInfo">Wähle aus gespeicherten Pedigrees</div>
+                    <button class="btn btn-sm" style="margin-top:.5rem" onclick="selectMate('drone')">Drohnenvolk wählen</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="calculateMatingCOI()" style="margin-top:1rem">🧬 Anpaarungs-COI berechnen</button>
+
+            <div id="matingResult" style="display:none;margin-top:1rem">
+                <div class="coi-result">
+                    <div style="font-size:.8rem;color:#7A6652;margin-bottom:.25rem">Erwarteter COI der Nachkommen</div>
+                    <div class="coi-value" id="matingCoiValue">0.00%</div>
+                    <div class="coi-bar"><div class="coi-bar-fill" id="matingCoiBar" style="width:0%;background:#10b981"></div></div>
+                    <div id="matingInterpretation" style="font-size:.85rem;color:#7A6652;margin-top:.5rem"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Links zu externen Datenbanken -->
+        <div class="card">
+            <h3 style="font-size:1rem;margin-bottom:.75rem">🔗 Externe Datenbanken</h3>
+            <a href="https://www.pedigreeapis.org/" target="_blank" rel="noopener" class="ext-link">
+                <span style="font-size:1.5rem">📜</span>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:.9rem">PedigreeApis.org</div>
+                    <div style="font-size:.78rem;color:#7A6652">Buckfast-Pedigrees seit 1925 (Bruder Adam). Statische HTML-Seiten.</div>
+                </div>
+                <span style="color:#A69580">↗</span>
+            </a>
+            <a href="https://pedigree.karlkehrle.org/" target="_blank" rel="noopener" class="ext-link">
+                <span style="font-size:1.5rem">🧬</span>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:.9rem">Karl Kehrle Foundation</div>
+                    <div style="font-size:.78rem;color:#7A6652">COI-Berechnung, Zuchtwerte, Anpaarungspartner. Open Source seit 2023.</div>
+                </div>
+                <span style="color:#A69580">↗</span>
+            </a>
+            <a href="https://www.beebreed.eu/" target="_blank" rel="noopener" class="ext-link">
+                <span style="font-size:1.5rem">🐝</span>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:.9rem">BeeBreed.eu</div>
+                    <div style="font-size:.78rem;color:#7A6652">Zuchtwertschätzung für Carnica & Mellifera. Datenbank des LIB Berlin.</div>
+                </div>
+                <span style="color:#A69580">↗</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ==================== TAB: GESPEICHERT ==================== -->
+    <div class="iz-panel" id="panel-gespeichert">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h3 style="font-size:1rem;margin:0">💾 Gespeicherte Pedigrees</h3>
+            <button class="btn btn-sm btn-primary" onclick="switchIzTab('stammbaum',document.querySelector('.iz-tab'))">+ Neues Pedigree</button>
+        </div>
+        <div id="savedList"></div>
+    </div>
+
+</div>
+
+<!-- === MATE SELECT MODAL === -->
+<div id="mateModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:500px;height:auto;max-height:80vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2 id="mateModalTitle">Pedigree wählen</h2>
+            <button class="close-btn" onclick="closeMateModal()">✕</button>
+        </div>
+        <div class="modal-body" id="mateModalBody"></div>
+    </div>
+</div>
+
+<!-- === CONFIRM MODAL === -->
+<div id="confirmModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:400px;height:auto;border-radius:1rem;margin:auto;overflow:hidden">
+        <div class="modal-body" style="padding:2rem;text-align:center">
+            <div style="font-size:3rem;margin-bottom:.75rem" id="confirmIcon">🗑️</div>
+            <h3 style="margin-bottom:.5rem;color:#1C1410" id="confirmTitle">Löschen?</h3>
+            <p style="font-size:.9rem;color:#7A6652;margin-bottom:1.5rem" id="confirmText"></p>
+            <div style="display:flex;gap:.75rem;justify-content:center">
+                <button class="btn btn-sm" style="background:#f5f0eb;color:#7A6652;min-width:100px" onclick="closeConfirmModal()">Abbrechen</button>
+                <button class="btn btn-sm" id="confirmBtn" style="background:#ef4444;color:#fff;min-width:100px">Löschen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// INZUCHTRECHNER – CORE
+// ============================================
+var isPreview = false;
+var pedigrees = []; // Gespeicherte Pedigrees
+var currentTree = {}; // Aktueller Stammbaum
+var mateQueenPed = null;
+var mateDronePed = null;
+var mateSelectMode = null; // 'queen' oder 'drone'
+var GENERATIONS = 4;
+
+// Stammbaum-Felder: Jede Generation hat Mutter + Vater
+// Key-System: 'q' = Fokus-Königin, 'm' = Mutter, 'v' = Vater
+// Gen1: q.m (Mutter), q.v (Vater/Drohnenvolk)
+// Gen2: q.m.m, q.m.v, q.v.m, q.v.v
+// Gen3: q.m.m.m, q.m.m.v, q.m.v.m, q.m.v.v, q.v.m.m, q.v.m.v, q.v.v.m, q.v.v.v
+var GEN_KEYS = [
+    ['q'],
+    ['q.m', 'q.v'],
+    ['q.m.m', 'q.m.v', 'q.v.m', 'q.v.v'],
+    ['q.m.m.m', 'q.m.m.v', 'q.m.v.m', 'q.m.v.v', 'q.v.m.m', 'q.v.m.v', 'q.v.v.m', 'q.v.v.v'],
+    ['q.m.m.m.m','q.m.m.m.v','q.m.m.v.m','q.m.m.v.v','q.m.v.m.m','q.m.v.m.v','q.m.v.v.m','q.m.v.v.v','q.v.m.m.m','q.v.m.m.v','q.v.m.v.m','q.v.m.v.v','q.v.v.m.m','q.v.v.m.v','q.v.v.v.m','q.v.v.v.v']
+];
+
+var GEN_LABELS = ['Königin', 'Eltern (F1)', 'Großeltern (F2)', 'Urgroßeltern (F3)', 'Ur-Urgroßeltern (F4)'];
+
+// Demo-Pedigrees
+var DEMO_PEDIGREES = [
+    {
+        id: 'demo1', name: 'B10(MKN)', race: 'B', year: 2020,
+        tree: {
+            'q': 'B10(MKN).20', 'q.m': 'B62(MKN).18', 'q.v': 'M102(MKN).18',
+            'q.m.m': 'B26(TR).16', 'q.m.v': 'B59(MKN).16', 'q.v.m': 'B06(MKN).16', 'q.v.v': 'B100(PJ).16',
+            'q.m.m.m': 'B77(TR).13', 'q.m.m.v': 'B47(MKK).13', 'q.m.v.m': 'B54(TR).14', 'q.m.v.v': 'B59(MKN).14',
+            'q.v.m.m': 'B43(TR).15', 'q.v.m.v': 'B100(PJ).15', 'q.v.v.m': 'B158(PJ).17', 'q.v.v.v': 'B120(PJ).17'
+        },
+        coi: 3.12, created_at: '2026-02-15'
+    },
+    {
+        id: 'demo2', name: 'A07(MKN)', race: 'A', year: 2020,
+        tree: {
+            'q': 'A07(MKN).20', 'q.m': 'A36(MKN).18', 'q.v': 'M102(MKN).18',
+            'q.m.m': 'A337(MKN).17', 'q.m.v': 'B100(PJ).17', 'q.v.m': 'B06(MKN).16', 'q.v.v': 'B100(PJ).16',
+            'q.m.m.m': 'A318(MKN).16', 'q.m.m.v': 'A533(MKN).16'
+        },
+        coi: 5.47, created_at: '2026-02-20'
+    },
+    {
+        id: 'demo3', name: 'C100(MKN)', race: 'C', year: 2019,
+        tree: {
+            'q': 'C100(MKN).19', 'q.m': 'C11(MKN).15', 'q.v': 'B43(TR).15',
+            'q.m.m': 'C02(MKN).12', 'q.m.v': 'B53(MKK).12', 'q.v.m': 'B54(TR).14', 'q.v.v': 'B59(MKN).14'
+        },
+        coi: 1.56, created_at: '2026-03-01'
+    }
+];
+
+// ============================================
+// INIT
+// ============================================
+var ALLOWED_EMAILS = ['durchdenwald.julian@gmail.com'];
+
+async function init() {
+    try {
+        var result = await sb.auth.getSession();
+        if (!result.data.session) {
+            showAccessDenied();
+            return;
+        }
+        currentUser = result.data.session.user;
+
+        // Zugriffsprüfung
+        if (ALLOWED_EMAILS.indexOf(currentUser.email.toLowerCase()) === -1) {
+            showAccessDenied();
+            return;
+        }
+
+        await loadPedigrees();
+    } catch(e) {
+        showAccessDenied();
+        return;
+    }
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('queenYear').value = new Date().getFullYear();
+    renderPedForm();
+    renderSaved();
+}
+
+function showAccessDenied() {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.querySelector('.container').innerHTML = '<div style="text-align:center;padding:4rem 1rem"><div style="font-size:4rem;margin-bottom:1rem">🔒</div><h2 style="font-family:\'DM Serif Display\',serif;color:#1C1410;margin-bottom:.5rem">Zugriff eingeschränkt</h2><p style="color:#7A6652;max-width:400px;margin:0 auto 1.5rem">Der Inzuchtrechner befindet sich in der Entwicklung und ist aktuell nur für Administratoren verfügbar.</p><a href="app.html" class="btn btn-primary">← Zurück zur App</a></div>';
+}
+
+async function loadPedigrees() {
+    var { data, error } = await sb.from('pedigrees')
+        .select('*').eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+    if (!error && data) {
+        pedigrees = data.map(function(p) {
+            return { id: p.id, name: p.name, race: p.race || 'B', year: p.year, tree: JSON.parse(p.tree_json || '{}'), coi: p.coi, created_at: p.created_at };
+        });
+    }
+}
+
+// ============================================
+// PEDIGREE FORM – Generationen
+// ============================================
+function renderPedForm() {
+    var html = '';
+    for (var g = 1; g <= GENERATIONS; g++) {
+        var keys = GEN_KEYS[g];
+        html += '<div class="ped-gen">';
+        html += '<div class="ped-gen-title"><span class="gen-badge">F' + g + '</span> ' + GEN_LABELS[g] + '</div>';
+        html += '<div class="ped-pair">';
+        for (var k = 0; k < keys.length; k++) {
+            var key = keys[k];
+            var isVater = key.endsWith('.v');
+            var label = isVater ? '🐝 Drohnenvolk' : '👑 Mutter';
+            var val = currentTree[key] || '';
+            html += '<div>';
+            html += '<label style="font-size:.72rem;color:#7A6652;display:block;margin-bottom:.2rem">' + label + ' <code style="font-size:.65rem;color:#A69580">' + key.replace('q.','') + '</code></label>';
+            html += '<input type="text" class="input" style="font-family:monospace;font-size:.82rem" placeholder="z.B. B10(MKN).20" value="' + esc(val) + '" onchange="updateTree(\'' + key + '\',this.value)">';
+            html += '</div>';
+        }
+        html += '</div></div>';
+    }
+    document.getElementById('pedForm').innerHTML = html;
+    renderTree();
+}
+
+function updateTree(key, val) {
+    currentTree[key] = val.trim();
+    renderTree();
+}
+
+function clearTree() {
+    currentTree = {};
+    document.getElementById('queenName').value = '';
+    document.getElementById('queenYear').value = new Date().getFullYear();
+    renderPedForm();
+}
+
+// ============================================
+// TREE VISUALISIERUNG
+// ============================================
+function renderTree() {
+    var container = document.getElementById('treeView');
+    var hasData = false;
+    var qName = document.getElementById('queenName').value.trim();
+
+    for (var k in currentTree) { if (currentTree[k]) { hasData = true; break; } }
+    if (!hasData && !qName) {
+        container.innerHTML = '<div style="text-align:center;color:#A69580;padding:2rem">Gib oben die Abstammung ein, um den Stammbaum zu sehen.</div>';
+        return;
+    }
+
+    var html = '';
+    // Queen row
+    html += '<div class="tree-row">';
+    html += makeNode(qName || '?', document.getElementById('queenYear').value, 'queen');
+    html += '</div>';
+
+    // Generations
+    for (var g = 1; g <= 3; g++) {
+        var keys = GEN_KEYS[g];
+        html += '<div class="tree-row" style="margin-top:.25rem">';
+        for (var k = 0; k < keys.length; k++) {
+            var val = currentTree[keys[k]] || '';
+            var isV = keys[k].endsWith('.v');
+            html += makeNode(val || '—', '', isV ? 'drone' : 'queen');
+        }
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+}
+
+function makeNode(name, year, type) {
+    var cls = type === 'queen' ? 'queen' : type === 'drone' ? 'drone' : '';
+    if (!name || name === '—') cls = 'empty';
+    var typeBadge = type === 'queen' ? '<span class="node-type type-queen">♀ Königin</span>' : '<span class="node-type type-drone">♂ Drohn</span>';
+    if (cls === 'empty') typeBadge = '<span class="node-type type-unknown">?</span>';
+
+    var displayName = name;
+    var displayYear = year || '';
+    // Parse "B10(MKN).20" format
+    if (name && name.includes('.') && !name.includes(' ')) {
+        var parts = name.split('.');
+        var yearPart = parts[parts.length - 1];
+        if (yearPart.length === 2) {
+            displayYear = '20' + yearPart;
+            displayName = parts.slice(0, -1).join('.');
+        }
+    }
+
+    return '<div class="tree-node ' + cls + '">' +
+        '<div class="node-name">' + esc(displayName) + '</div>' +
+        (displayYear ? '<div class="node-year">Jg. ' + displayYear + '</div>' : '') +
+        typeBadge + '</div>';
+}
+
+// ============================================
+// COI BERECHNUNG – Wright's Pfadkoeffizient
+// ============================================
+function calculateCOI() {
+    // Sammle alle Vorfahren und finde gemeinsame Ahnen
+    var tree = Object.assign({}, currentTree);
+    var qName = document.getElementById('queenName').value.trim();
+    if (qName) tree['q'] = qName;
+
+    // Normalisiere alle Namen (lowercase, ohne Leerzeichen)
+    var norm = {};
+    for (var k in tree) {
+        if (tree[k]) norm[k] = tree[k].trim().toLowerCase();
+    }
+
+    // Mütterliche und väterliche Ahnen trennen
+    var maternal = {}; // q.m Seite
+    var paternal = {}; // q.v Seite
+
+    for (var k in norm) {
+        if (k === 'q') continue;
+        if (k.startsWith('q.m')) {
+            var depth = k.split('.').length - 2; // 0-basiert
+            if (!maternal[norm[k]]) maternal[norm[k]] = [];
+            maternal[norm[k]].push({ key: k, depth: depth });
+        }
+        if (k.startsWith('q.v')) {
+            var depth = k.split('.').length - 2;
+            if (!paternal[norm[k]]) paternal[norm[k]] = [];
+            paternal[norm[k]].push({ key: k, depth: depth });
+        }
+    }
+
+    // Finde gemeinsame Ahnen
+    var commonAncestors = [];
+    for (var name in maternal) {
+        if (paternal[name] && name) {
+            maternal[name].forEach(function(mPath) {
+                paternal[name].forEach(function(pPath) {
+                    commonAncestors.push({
+                        name: name,
+                        mDepth: mPath.depth,
+                        pDepth: pPath.depth,
+                        mKey: mPath.key,
+                        pKey: pPath.key
+                    });
+                });
+            });
+        }
+    }
+
+    // Wright's Formel: COI = Σ [(1/2)^(n1+n2+1) × (1 + Fa)]
+    // Vereinfacht ohne Fa (Inzucht des gemeinsamen Ahnen)
+    var coi = 0;
+    commonAncestors.forEach(function(ca) {
+        // n1 = Generationen Mutter→Ahn, n2 = Generationen Vater→Ahn
+        var n1 = ca.mDepth + 1; // +1 weil wir von der Königin aus zählen
+        var n2 = ca.pDepth + 1;
+        var pathCoeff = Math.pow(0.5, n1 + n2 + 1);
+        coi += pathCoeff;
+    });
+
+    var coiPercent = (coi * 100).toFixed(2);
+
+    // UI Update
+    document.getElementById('coiResult').style.display = 'block';
+    document.getElementById('coiValue').textContent = coiPercent + '%';
+    document.getElementById('coiBar').style.width = Math.min(coi * 100 / 25 * 100, 100) + '%';
+
+    var cls, barColor, interpretation;
+    if (coi * 100 < 6) {
+        cls = 'coi-good'; barColor = '#10b981';
+        interpretation = '✅ <strong>Niedrige Inzucht</strong> – Gute genetische Vielfalt. Ideal für die Zucht.';
+    } else if (coi * 100 < 12) {
+        cls = 'coi-ok'; barColor = '#f59e0b';
+        interpretation = '⚠️ <strong>Mittlere Inzucht</strong> – Beobachten. Bei der nächsten Anpaarung auf frisches Blut achten.';
+    } else {
+        cls = 'coi-bad'; barColor = '#ef4444';
+        interpretation = '❌ <strong>Hohe Inzucht</strong> – Inzuchtdepression möglich (Bruttückigkeit, reduzierte Vitalität). Fremdblut dringend empfohlen.';
+    }
+
+    document.getElementById('coiValue').className = 'coi-value ' + cls;
+    document.getElementById('coiBar').style.background = barColor;
+    document.getElementById('coiInterpretation').innerHTML = interpretation;
+
+    // Pfade anzeigen
+    var pathHtml = '';
+    if (commonAncestors.length > 0) {
+        pathHtml += '<div class="card" style="background:#f9fafb"><h4 style="font-size:.9rem;margin-bottom:.5rem">🔍 Gefundene gemeinsame Ahnen</h4>';
+        commonAncestors.forEach(function(ca) {
+            var contrib = (Math.pow(0.5, ca.mDepth + ca.pDepth + 3) * 100).toFixed(3);
+            pathHtml += '<div style="padding:.4rem 0;border-bottom:1px solid #E8DFD4;font-size:.82rem">';
+            pathHtml += '<strong style="font-family:monospace">' + esc(ca.name) + '</strong>';
+            pathHtml += ' <span style="color:#7A6652">– Mütterlicherseits F' + (ca.mDepth + 1) + ', Väterlicherseits F' + (ca.pDepth + 1) + '</span>';
+            pathHtml += ' <span style="color:#8B5CF6;font-weight:600">+' + contrib + '%</span>';
+            pathHtml += '</div>';
+        });
+        pathHtml += '</div>';
+    } else {
+        pathHtml += '<div class="info-box">ℹ️ Keine gemeinsamen Ahnen gefunden in den eingetragenen Generationen. Der COI ist 0%. Tipp: Trage mehr Generationen ein für eine genauere Berechnung.</div>';
+    }
+    document.getElementById('coiPaths').innerHTML = pathHtml;
+
+    showToast('🧬 COI berechnet: ' + coiPercent + '%', coi * 100 < 6 ? 'success' : (coi * 100 < 12 ? '' : 'error'));
+}
+
+// ============================================
+// ANPAARUNGSPLANER
+// ============================================
+function selectMate(mode) {
+    mateSelectMode = mode;
+    document.getElementById('mateModalTitle').textContent = mode === 'queen' ? '👑 Königin wählen' : '🐝 Drohnenvolk wählen';
+    var html = '';
+    if (pedigrees.length === 0) {
+        html = '<div style="text-align:center;padding:2rem;color:#7A6652">Noch keine Pedigrees gespeichert. Erstelle zuerst einen Stammbaum.</div>';
+    } else {
+        pedigrees.forEach(function(p) {
+            html += '<div class="ped-saved-card" onclick="chooseMate(\'' + p.id + '\')">';
+            html += '<div class="ped-saved-icon" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff">' + (p.race || 'B') + '</div>';
+            html += '<div style="flex:1"><div style="font-weight:700;font-size:.9rem">' + esc(p.name) + '</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">Jg. ' + (p.year || '?') + (p.coi ? ' · COI: ' + p.coi + '%' : '') + '</div></div>';
+            html += '</div>';
+        });
+    }
+    document.getElementById('mateModalBody').innerHTML = html;
+    document.getElementById('mateModal').classList.add('active');
+}
+
+function chooseMate(pedId) {
+    var ped = pedigrees.find(function(p) { return p.id === pedId; });
+    if (!ped) return;
+
+    if (mateSelectMode === 'queen') {
+        mateQueenPed = ped;
+        document.getElementById('mateQueenName').textContent = ped.name;
+        document.getElementById('mateQueenInfo').textContent = 'Jg. ' + (ped.year || '?') + ' · ' + (ped.race || 'B');
+        document.getElementById('mateQueen').classList.add('selected');
+    } else {
+        mateDronePed = ped;
+        document.getElementById('mateDroneName').textContent = ped.name;
+        document.getElementById('mateDroneInfo').textContent = 'Jg. ' + (ped.year || '?') + ' · ' + (ped.race || 'B');
+        document.getElementById('mateDrone').classList.add('selected');
+    }
+    closeMateModal();
+}
+
+function closeMateModal() {
+    document.getElementById('mateModal').classList.remove('active');
+}
+
+function calculateMatingCOI() {
+    if (!mateQueenPed || !mateDronePed) {
+        showToast('⚠️ Bitte Königin UND Drohnenvolk wählen', 'error');
+        return;
+    }
+
+    // Kombiniere die Trees: Nachkommen hat Mutter = Queen, Vater = Drone
+    var combined = {};
+    // Queen wird zur Mutter-Seite
+    if (mateQueenPed.tree['q']) combined['q.m'] = mateQueenPed.tree['q'];
+    for (var k in mateQueenPed.tree) {
+        if (k === 'q') continue;
+        combined['q.m' + k.substring(1)] = mateQueenPed.tree[k]; // q.m → q.m.m, q.v → q.m.v etc.
+    }
+    // Drone wird zur Vater-Seite
+    if (mateDronePed.tree['q']) combined['q.v'] = mateDronePed.tree['q'];
+    for (var k in mateDronePed.tree) {
+        if (k === 'q') continue;
+        combined['q.v' + k.substring(1)] = mateDronePed.tree[k];
+    }
+
+    // Gleiche COI-Berechnung
+    var norm = {};
+    for (var k in combined) { if (combined[k]) norm[k] = combined[k].trim().toLowerCase(); }
+
+    var maternal = {}, paternal = {};
+    for (var k in norm) {
+        if (k === 'q') continue;
+        var depth = k.split('.').length - 2;
+        if (k.startsWith('q.m')) {
+            if (!maternal[norm[k]]) maternal[norm[k]] = [];
+            maternal[norm[k]].push(depth);
+        }
+        if (k.startsWith('q.v')) {
+            if (!paternal[norm[k]]) paternal[norm[k]] = [];
+            paternal[norm[k]].push(depth);
+        }
+    }
+
+    var coi = 0;
+    for (var name in maternal) {
+        if (paternal[name] && name) {
+            maternal[name].forEach(function(md) {
+                paternal[name].forEach(function(pd) {
+                    coi += Math.pow(0.5, md + pd + 3);
+                });
+            });
+        }
+    }
+
+    var coiPercent = (coi * 100).toFixed(2);
+    document.getElementById('matingResult').style.display = 'block';
+    document.getElementById('matingCoiValue').textContent = coiPercent + '%';
+    document.getElementById('matingCoiBar').style.width = Math.min(coi * 100 / 25 * 100, 100) + '%';
+
+    var barColor, interpretation;
+    if (coi * 100 < 6) {
+        barColor = '#10b981';
+        interpretation = '✅ <strong>Gute Anpaarung!</strong> Niedrige erwartete Inzucht der Nachkommen.';
+        document.getElementById('matingCoiValue').className = 'coi-value coi-good';
+    } else if (coi * 100 < 12) {
+        barColor = '#f59e0b';
+        interpretation = '⚠️ <strong>Akzeptable Anpaarung</strong> – Mittlere Inzucht. Nächste Generation auf Fremdblut achten.';
+        document.getElementById('matingCoiValue').className = 'coi-value coi-ok';
+    } else {
+        barColor = '#ef4444';
+        interpretation = '❌ <strong>Nicht empfohlen!</strong> Hohe Inzucht. Bitte anderes Drohnenvolk wählen.';
+        document.getElementById('matingCoiValue').className = 'coi-value coi-bad';
+    }
+    document.getElementById('matingCoiBar').style.background = barColor;
+    document.getElementById('matingInterpretation').innerHTML = interpretation;
+
+    showToast('🧬 Anpaarungs-COI: ' + coiPercent + '%', coi * 100 < 6 ? 'success' : '');
+}
+
+// ============================================
+// SPEICHERN / LADEN / LÖSCHEN
+// ============================================
+async function savePedigree() {
+    var name = document.getElementById('queenName').value.trim();
+    if (!name) { showToast('⚠️ Bitte Königin-Name eingeben', 'error'); return; }
+
+    var race = document.getElementById('queenRace').value;
+    var year = parseInt(document.getElementById('queenYear').value) || new Date().getFullYear();
+
+    // COI berechnen
+    calculateCOI();
+    var coiEl = document.getElementById('coiValue');
+    var coiVal = coiEl ? parseFloat(coiEl.textContent) : 0;
+
+    if (isPreview) {
+        var newPed = { id: 'p' + Date.now(), name: name, race: race, year: year, tree: Object.assign({}, currentTree), coi: coiVal, created_at: new Date().toISOString() };
+        pedigrees.unshift(newPed);
+        renderSaved();
+        showToast('✅ Pedigree gespeichert (Demo)', 'success');
+        return;
+    }
+
+    var treeJson = JSON.stringify(currentTree);
+    var { data, error } = await sb.from('pedigrees').insert({
+        user_id: currentUser.id, name: name, race: race, year: year,
+        tree_json: treeJson, coi: coiVal
+    }).select().single();
+
+    if (error) { showToast('❌ ' + error.message, 'error'); return; }
+
+    pedigrees.unshift({ id: data.id, name: name, race: race, year: year, tree: Object.assign({}, currentTree), coi: coiVal, created_at: data.created_at });
+    renderSaved();
+    showToast('✅ Pedigree gespeichert!', 'success');
+}
+
+function loadPedigreeIntoForm(pedId) {
+    var ped = pedigrees.find(function(p) { return p.id === pedId; });
+    if (!ped) return;
+
+    document.getElementById('queenName').value = ped.name;
+    document.getElementById('queenRace').value = ped.race || 'B';
+    document.getElementById('queenYear').value = ped.year || '';
+    currentTree = Object.assign({}, ped.tree);
+    renderPedForm();
+    switchIzTab('stammbaum', document.querySelector('.iz-tab'));
+    showToast('📂 Pedigree geladen: ' + ped.name, '');
+}
+
+async function deletePedigree(pedId) {
+    var ped = pedigrees.find(function(p) { return p.id === pedId; });
+    if (!ped) return;
+
+    document.getElementById('confirmIcon').textContent = '🗑️';
+    document.getElementById('confirmTitle').textContent = 'Pedigree löschen?';
+    document.getElementById('confirmText').innerHTML = '„<strong>' + esc(ped.name) + '</strong>" wird unwiderruflich gelöscht.';
+    document.getElementById('confirmBtn').onclick = async function() {
+        closeConfirmModal();
+        if (!isPreview) {
+            await sb.from('pedigrees').delete().eq('id', pedId);
+        }
+        pedigrees = pedigrees.filter(function(p) { return p.id !== pedId; });
+        renderSaved();
+        showToast('🗑️ Gelöscht', '');
+    };
+    document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+}
+
+// ============================================
+// RENDER SAVED LIST
+// ============================================
+function renderSaved() {
+    var list = document.getElementById('savedList');
+    if (!list) return;
+
+    if (pedigrees.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:3rem;color:#7A6652"><div style="font-size:3rem;margin-bottom:.75rem;opacity:.5">🧬</div><h3 style="color:#1C1410;margin-bottom:.5rem">Noch keine Pedigrees</h3><p style="font-size:.85rem">Erstelle deinen ersten Stammbaum im Tab „Stammbaum".</p></div>';
+        return;
+    }
+
+    var html = '';
+    pedigrees.forEach(function(p) {
+        var raceColors = { B: '#F59E0B', C: '#10b981', A: '#ef4444', M: '#6B7280', X: '#8B5CF6' };
+        var raceNames = { B: 'Buckfast', C: 'Carnica', A: 'Anatolica', M: 'Mellifera', X: 'Gemischt' };
+        var color = raceColors[p.race] || '#8B5CF6';
+        var ancestors = 0;
+        if (p.tree) { for (var k in p.tree) { if (p.tree[k]) ancestors++; } }
+
+        html += '<div class="ped-saved-card" onclick="loadPedigreeIntoForm(\'' + p.id + '\')">';
+        html += '<div class="ped-saved-icon" style="background:' + color + ';color:#fff;font-weight:700;font-size:1.1rem">' + (p.race || '?') + '</div>';
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-weight:700;font-size:.9rem;color:#1C1410">' + esc(p.name) + '</div>';
+        html += '<div style="font-size:.75rem;color:#7A6652">' + (raceNames[p.race] || '?') + ' · Jg. ' + (p.year || '?') + ' · ' + ancestors + ' Vorfahren</div>';
+        if (p.coi !== undefined && p.coi !== null) {
+            var coiColor = p.coi < 6 ? '#10b981' : (p.coi < 12 ? '#f59e0b' : '#ef4444');
+            html += '<div style="font-size:.78rem;margin-top:.2rem"><span style="color:' + coiColor + ';font-weight:700">COI: ' + p.coi + '%</span></div>';
+        }
+        html += '</div>';
+        html += '<button class="btn btn-xs" style="background:#FEF2F2;color:#ef4444;border:1px solid #FECACA;flex-shrink:0" onclick="event.stopPropagation();deletePedigree(\'' + p.id + '\')" title="Löschen">✕</button>';
+        html += '</div>';
+    });
+    list.innerHTML = html;
+}
+
+// ============================================
+// TAB SWITCHING & HELPERS
+// ============================================
+function switchIzTab(tab, el) {
+    document.querySelectorAll('.iz-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.iz-panel').forEach(function(p) { p.classList.remove('active'); });
+    if (el) el.classList.add('active');
+    var panel = document.getElementById('panel-' + tab);
+    if (panel) panel.classList.add('active');
+}
+
+function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showToast(msg, typ) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast' + (typ ? ' ' + typ : '');
+    requestAnimationFrame(function() { el.classList.add('show'); });
+    setTimeout(function() { el.classList.remove('show'); }, 2500);
+}
+
+function formatDate(str) {
+    if (!str) return '–';
+    return new Date(str).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+
+</body>
+</html>
