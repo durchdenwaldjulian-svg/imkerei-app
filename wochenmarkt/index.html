@@ -801,6 +801,7 @@ body {
     <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
     <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
     <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
+    <button class="btn btn-outline" id="installBtn" onclick="installApp()" style="display:none">📲 Installieren</button>
   </div>
 </div>
 
@@ -1969,6 +1970,33 @@ if (localStorage.getItem(WM_PW_KEY) === WM_PW_HASH) {
 } else {
   document.getElementById('pwInput').focus();
 }
+
+// ─── PWA INSTALL ────────────────────────────────────────────────────
+var deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = '';
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    });
+  } else {
+    // iOS oder Browser ohne Install-Prompt
+    showToast('Teilen-Button (□↑) → "Zum Home-Bildschirm"');
+  }
+}
+
+window.addEventListener('appinstalled', function() {
+  document.getElementById('installBtn').style.display = 'none';
+  showToast('App installiert!');
+});
 
 // ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
 if ('serviceWorker' in navigator) {
