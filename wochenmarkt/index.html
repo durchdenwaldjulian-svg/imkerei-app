@@ -974,20 +974,23 @@ Propolis Tinktur 20ml;1</pre>
   <div class="detail-footer" id="detailFooter"></div>
 </div>
 
-<!-- GPS PFLICHT MODAL (nach Login) -->
-<div class="modal-overlay" id="gpsPflichtModal">
+<!-- GPS PFLICHT MODAL (nach Login) — NICHT schließbar -->
+<div class="modal-overlay" id="gpsPflichtModal" style="z-index:10000">
   <div class="modal" style="max-width:400px;text-align:center">
     <div style="font-size:3rem;margin-bottom:.5rem">📍</div>
-    <h3>Standort erforderlich</h3>
-    <p style="font-size:.85rem;color:var(--text);line-height:1.6;margin-bottom:.75rem">Diese App benötigt deinen Standort um korrekt zu funktionieren. Bitte erlaube den Zugriff auf deinen Standort.</p>
-    <p style="font-size:.75rem;color:var(--text-soft);margin-bottom:1rem">Dein Standort wird beim Speichern von Verkäufen gespeichert und live an den Admin übertragen.</p>
+    <h3 style="color:#DC2626">Standort erforderlich</h3>
+    <p style="font-size:.85rem;color:var(--text);line-height:1.6;margin-bottom:.75rem">Diese App funktioniert <b>nur mit aktiviertem Standort</b>. Ohne GPS-Freigabe kann die App nicht verwendet werden.</p>
+    <p style="font-size:.75rem;color:var(--text-soft);margin-bottom:1rem">Dein Standort wird beim Speichern von Verkäufen gespeichert und live übertragen.</p>
     <button class="btn btn-honey" onclick="grantGPSPflicht()" style="width:100%;padding:.6rem;font-size:.9rem" id="gpsPflichtBtn">📍 Standort jetzt freigeben</button>
     <div id="gpsPflichtError" style="color:#DC2626;font-size:.8rem;margin-top:.5rem;min-height:1.2em"></div>
-    <div id="gpsPflichtHilfe" style="display:none;text-align:left;margin-top:1rem;font-size:.8rem;line-height:1.7;color:var(--text)">
-      <p style="color:#DC2626;font-weight:700;margin-bottom:.3rem">GPS wurde im Browser blockiert. So aktivierst du es:</p>
-      <p><b>Chrome (Handy):</b> Tippe auf 🔒 neben der URL → Berechtigungen → Standort → Erlauben → Seite neu laden</p>
-      <p><b>Chrome (Desktop):</b> Klicke auf 🔒 → Standort → Erlauben → F5</p>
-      <p><b>Safari:</b> Einstellungen → Safari → Standort → Erlauben</p>
+    <div id="gpsPflichtHilfe" style="display:none;text-align:left;margin-top:1rem;font-size:.8rem;line-height:1.7;color:var(--text);background:var(--cream-dark);padding:.75rem;border-radius:.5rem">
+      <p style="color:#DC2626;font-weight:700;margin-bottom:.5rem">GPS ist blockiert! So behebst du es:</p>
+      <p style="margin-bottom:.3rem"><b>1.</b> Schließe den <b>Inkognito-Modus</b> und öffne die Seite im <b>normalen Browser</b></p>
+      <p style="margin-bottom:.3rem"><b>2.</b> Tippe auf das <b>🔒 Schloss</b> neben der URL</p>
+      <p style="margin-bottom:.3rem"><b>3.</b> Gehe zu <b>Berechtigungen → Standort → Erlauben</b></p>
+      <p style="margin-bottom:.3rem"><b>4.</b> <b>Seite neu laden</b></p>
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.5rem 0">
+      <p style="font-size:.75rem;color:var(--text-soft)">Wichtig: GPS/Standort muss auch in den Handy-Einstellungen aktiviert sein!</p>
     </div>
   </div>
 </div>
@@ -2409,12 +2412,32 @@ function showGPSBlockedHelp() {
 function checkGPSPflicht() {
   // Admin überspringt GPS-Pflicht
   if (isAdmin) return;
-  // Desktop überspringt
-  if (!/Mobi|Android|iPhone/i.test(navigator.userAgent)) return;
-  // Schon erlaubt?
-  if (localStorage.getItem('wm_gps_granted') === 'true') return;
-  // Modal zeigen
+  // Prüfe ob GPS wirklich funktioniert (nicht nur ob localStorage gesetzt ist)
+  if (!navigator.geolocation) {
+    blockApp('Dein Browser unterstützt kein GPS. Bitte nutze Chrome.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      // GPS funktioniert → freigeben
+      localStorage.setItem('wm_gps_granted', 'true');
+      localStorage.setItem('wm_gps_allowed', 'true');
+      gpsAllowed = true;
+      startBackgroundGPS();
+    },
+    function(err) {
+      // GPS blockiert oder nicht verfügbar → App sperren
+      document.getElementById('gpsPflichtModal').classList.add('active');
+    },
+    { enableHighAccuracy: true, timeout: 5000 }
+  );
+}
+
+function blockApp(msg) {
   document.getElementById('gpsPflichtModal').classList.add('active');
+  document.getElementById('gpsPflichtBtn').style.display = 'none';
+  document.getElementById('gpsPflichtError').textContent = msg || 'GPS nicht verfügbar';
+  document.getElementById('gpsPflichtHilfe').style.display = 'block';
 }
 
 function grantGPSPflicht() {
@@ -2873,15 +2896,8 @@ async function initApp() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
-  // GPS: Pflicht-Abfrage für normale User, Hintergrund-Tracking starten
-  if ('geolocation' in navigator && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-    if (localStorage.getItem('wm_gps_granted') === 'true') {
-      gpsAllowed = true;
-      startBackgroundGPS();
-    } else if (!isAdmin) {
-      checkGPSPflicht();
-    }
-  }
+  // GPS-Pflicht für alle User (außer Admin) — App blockiert ohne GPS
+  checkGPSPflicht();
 }
 
 // Prüfe ob schon entsperrt (gespeicherter Hash muss übereinstimmen)
