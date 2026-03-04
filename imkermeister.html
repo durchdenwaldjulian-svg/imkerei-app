@@ -162,6 +162,7 @@
         <div style="display:flex;align-items:center;gap:1rem">
             <span style="font-size:.75rem;color:#9ca3af" id="adminEmailDisplay"></span>
             <a href="app.html">← Zur App</a>
+            <a href="#" onclick="doAdminLogout();return false" style="color:#ef4444">Abmelden</a>
         </div>
     </div>
     
@@ -516,6 +517,17 @@ async function doPasswordReset() {
     } catch(e) {
         msgEl.innerHTML = '<span style="color:#ef4444">Fehler: ' + e.message + '</span>';
     }
+}
+
+async function doAdminLogout() {
+    await sb.auth.signOut();
+    adminUser = null;
+    currentAdminUser = null;
+    document.getElementById('adminContainer').style.display = 'none';
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('loginFormBox').style.display = 'block';
+    document.getElementById('loginStatus').textContent = '';
+    document.getElementById('loginError').style.display = 'none';
 }
 
 function showTab(name) {
@@ -1151,27 +1163,62 @@ async function deleteUserData(userId, email) {
 var onlineChannel = null;
 
 function startPresenceListener() {
-    // Eigener Client für Realtime Presence (braucht andere Config als PublicClient)
-    var realtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    onlineChannel = realtimeClient.channel('online-users');
+    console.log('[Imkermeister] startPresenceListener mit bestehendem sb-Client...');
     
-    onlineChannel.on('presence', { event: 'sync' }, function() {
-        renderOnlineUsers();
+    // WICHTIG: Gleichen sb-Client nutzen wie config.js initPresence()
+    // Sonst sehen wir die anderen User nicht!
+    onlineChannel = sb.channel('online-users-admin', {
+        config: { presence: { key: adminUser ? adminUser.id : 'admin' } }
+    });
+    
+    // Auch den normalen online-users Channel abhören
+    var listenChannel = sb.channel('online-users');
+    
+    listenChannel.on('presence', { event: 'sync' }, function() {
+        console.log('[Imkermeister] Presence sync Event');
+        renderOnlineUsersFromChannel(listenChannel);
     });
 
-    onlineChannel.on('presence', { event: 'join' }, function(key, newPresences) {
+    listenChannel.on('presence', { event: 'join' }, function(key, newPresences) {
+        console.log('[Imkermeister] Presence join:', key);
     });
 
-    onlineChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
+    listenChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
+        console.log('[Imkermeister] Presence leave:', key);
     });
 
-    onlineChannel.subscribe(function(status) {
+    listenChannel.subscribe(async function(status) {
+        console.log('[Imkermeister] Listen-Channel subscribe status:', status);
+        if (status === 'SUBSCRIBED' && adminUser) {
+            // Admin selbst als online tracken auf diesem Channel
+            await listenChannel.track({
+                user_id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.email,
+                page: 'Imkermeister',
+                online_at: new Date().toISOString()
+            });
+            console.log('[Imkermeister] Admin getrackt auf online-users Channel');
+        }
     });
+    
+    // onlineChannel Referenz für renderOnlineUsers
+    onlineChannel = listenChannel;
+}
+
+function renderOnlineUsersFromChannel(channel) {
+    if (!channel) return;
+    var state = channel.presenceState();
+    renderOnlineUsersFromState(state);
 }
 
 function renderOnlineUsers() {
     if (!onlineChannel) return;
     var state = onlineChannel.presenceState();
+    renderOnlineUsersFromState(state);
+}
+
+function renderOnlineUsersFromState(state) {
     var users = [];
     
     Object.keys(state).forEach(function(key) {
@@ -1180,6 +1227,8 @@ function renderOnlineUsers() {
             users.push(presences[0]);
         }
     });
+    
+    console.log('[Imkermeister] renderOnlineUsers:', users.length, 'User online', JSON.stringify(users.map(function(u){return u.email||u.user_id;})));
     
     var countEl = document.getElementById('onlineCount');
     if (countEl) countEl.textContent = users.length + ' Nutzer online';
