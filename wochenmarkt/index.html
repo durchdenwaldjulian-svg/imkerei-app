@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Wochenmarkt | Imkerei Durchdenwald</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C1410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wochenmarkt">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>if(!window.supabase){window.supabase={createClient:function(){return null}};console.warn('Supabase CDN nicht erreichbar – Offline-Modus')}</script>
@@ -1962,6 +1968,11 @@ if (localStorage.getItem(WM_PW_KEY) === WM_PW_HASH) {
   initApp();
 } else {
   document.getElementById('pwInput').focus();
+}
+
+// ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
 }
 </script>
 </body>
