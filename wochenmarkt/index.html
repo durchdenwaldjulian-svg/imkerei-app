@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wochenmarkt | Imkerei Durchdenwald</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C1410">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wochenmarkt">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>if(!window.supabase){window.supabase={createClient:function(){return null}};console.warn('Supabase CDN nicht erreichbar – Offline-Modus')}</script>
+<script src="../config.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --honey: #F5A623;
+  --honey-deep: #D4891C;
+  --honey-glow: #FFD980;
+  --cream: #FFFBF0;
+  --cream-dark: #FFF3D6;
+  --bark: #1C1410;
+  --bark-warm: #2D1F14;
+  --text: #4A3728;
+  --text-soft: #8B7355;
+  --forest: #3D7C47;
+  --forest-light: #E8F5E9;
+  --white: #fff;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 90px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* === HEADER === */
+.header {
+  background: linear-gradient(135deg, var(--bark), var(--bark-warm));
+  color: var(--white);
+  padding: .75rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(28,20,16,.15);
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.header-date {
+  font-size: .75rem;
+  opacity: .7;
+}
+.header-actions {
+  display: flex;
+  gap: .4rem;
+  margin-top: .4rem;
+  flex-wrap: wrap;
+}
+
+/* === BUTTONS === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: .45rem .8rem;
+  border-radius: .5rem;
+  font-size: .75rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.btn-honey { background: var(--honey); color: var(--bark); }
+.btn-honey:hover { background: var(--honey-deep); color: var(--white); }
+.btn-outline { background: transparent; color: var(--white); border: 1.5px solid rgba(255,255,255,.3); }
+.btn-outline:hover { border-color: var(--honey); color: var(--honey); }
+.btn-red { background: var(--red); color: var(--white); }
+.btn-ghost { background: rgba(255,255,255,.08); color: var(--white); border: 1.5px solid rgba(255,255,255,.15); }
+
+/* === MITARBEITER BAR === */
+.mitarbeiter-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .4rem 1rem;
+  background: var(--cream-dark);
+  border-bottom: 1px solid rgba(245,166,35,.15);
+}
+.mitarbeiter-bar label {
+  font-size: 1rem;
+}
+.mitarbeiter-bar select {
+  flex: 1;
+  max-width: 220px;
+  padding: .4rem .6rem;
+  border: 1.5px solid #E8DFD4;
+  border-radius: .4rem;
+  font-size: .8rem;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--text);
+}
+.btn-ma-add {
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  background: var(--honey);
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--bark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* === TABS === */
+.tabs {
+  display: flex;
+  background: var(--cream-dark);
+  border-bottom: 2px solid rgba(245,166,35,.12);
+  overflow-x: auto;
+}
+.tab {
+  padding: .6rem 1rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--honey-deep); }
+.tab.active {
+  color: var(--honey-deep);
+  border-bottom-color: var(--honey);
+  background: var(--white);
+}
+
+/* === CONTENT === */
+.content { max-width: 960px; margin: 0 auto; padding: .75rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* === SEARCH === */
+.search-bar {
+  position: relative;
+  margin-bottom: .75rem;
+}
+.search-bar input {
+  width: 100%;
+  padding: .6rem .8rem .6rem 2.2rem;
+  border: 2px solid #E8DFD4;
+  border-radius: .5rem;
+  font-size: .85rem;
+  background: var(--white);
+  color: var(--text);
+  font-family: inherit;
+}
+.search-bar input:focus { outline: none; border-color: var(--honey); }
+.search-bar::before {
+  content: '\1F50D';
+  position: absolute;
+  left: .65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .85rem;
+}
+
+/* === CATEGORY === */
+.category { margin-bottom: 1rem; }
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem 0;
+  cursor: pointer;
+}
+.category-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--bark);
+}
+.category-count {
+  font-size: .7rem;
+  color: var(--text-soft);
+  background: var(--cream-dark);
+  padding: .1rem .4rem;
+  border-radius: 999px;
+  margin-left: auto;
+}
+
+/* === PRODUCT GRID === */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: .5rem;
+}
+
+/* === PRODUCT CARD === */
+.card {
+  position: relative;
+  background: var(--white);
+  border: 2px solid #E8DFD4;
+  border-radius: .65rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.card:active {
+  transform: scale(.95);
+}
+.card.sold {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 1px var(--forest);
+}
+.card.sold .card-img {
+  opacity: .7;
+}
+
+/* Image */
+.card-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #f5f0e8;
+  display: block;
+}
+.card-img-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #f5f0e8, #ebe3d5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+/* Info */
+.card-info {
+  padding: .35rem .4rem;
+}
+.card-name {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--bark);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 1.6em;
+}
+.card-price {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--honey-deep);
+  margin-top: .15rem;
+}
+
+/* Quantity Badge */
+.card-qty {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--forest);
+  color: var(--white);
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  z-index: 2;
+  opacity: 0;
+  transform: scale(0);
+  transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  padding: 0 6px;
+}
+.card.sold .card-qty {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Minus button (shown when sold) */
+.card-minus {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--red);
+  color: var(--white);
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  z-index: 3;
+  opacity: 0;
+  transform: scale(0);
+  transition: all .2s cubic-bezier(.34,1.56,.64,1);
+  line-height: 1;
+}
+.card.sold .card-minus {
+  opacity: 1;
+  transform: scale(1);
+}
+.card-minus:active {
+  transform: scale(.85);
+}
+
+/* Tap animation */
+@keyframes tapPulse {
+  0% { box-shadow: 0 0 0 0 rgba(61,124,71,.4); }
+  100% { box-shadow: 0 0 0 12px rgba(61,124,71,0); }
+}
+.card.pulse {
+  animation: tapPulse .3s ease-out;
+}
+
+/* === SUMMARY BAR === */
+.summary-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bark);
+  color: var(--white);
+  padding: .5rem .75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(28,20,16,.15);
+}
+.summary-main {
+  flex: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.summary-total {
+  font-size: .85rem;
+  font-weight: 700;
+}
+.summary-total span {
+  color: var(--honey);
+  font-size: 1.15rem;
+}
+.summary-sub {
+  font-size: .65rem;
+  opacity: .6;
+  margin-top: .1rem;
+}
+.summary-items {
+  font-size: .7rem;
+  opacity: .7;
+  margin-top: .1rem;
+}
+.summary-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  margin-left: .5rem;
+}
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.summary-arrow {
+  font-size: .65rem;
+  opacity: .5;
+  animation: bounceUp 2s ease-in-out infinite;
+  cursor: pointer;
+}
+
+/* === DETAIL PANEL === */
+.detail-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28,20,16,.4);
+  z-index: 150;
+}
+.detail-overlay.open { display: block; }
+
+.detail-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 85vh;
+  background: var(--white);
+  border-radius: 1.25rem 1.25rem 0 0;
+  z-index: 200;
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.32,.72,0,1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 32px rgba(28,20,16,.2);
+}
+.detail-panel.open {
+  transform: translateY(0);
+}
+.detail-handle {
+  width: 36px;
+  height: 4px;
+  background: #d0c8bc;
+  border-radius: 2px;
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .6rem 1rem;
+  border-bottom: 1px solid #E8DFD4;
+  flex-shrink: 0;
+}
+.detail-header h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.05rem;
+}
+.detail-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  background: #f5f0e8;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: .75rem 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+.detail-group {
+  margin-bottom: 1rem;
+}
+.detail-group-header {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  padding: .3rem .5rem;
+  background: var(--cream-dark);
+  border-radius: .35rem;
+  margin-bottom: .4rem;
+}
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .4rem 0;
+  border-bottom: 1px solid #F5EDE3;
+  font-size: .8rem;
+}
+.detail-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: .5rem;
+}
+.detail-item-controls {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-shrink: 0;
+}
+.detail-qty-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  border: 1.5px solid #E8DFD4;
+  background: var(--white);
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+.detail-qty-btn.minus { color: var(--red); border-color: var(--red-light); }
+.detail-qty-btn.plus { color: var(--forest); border-color: var(--forest-light); }
+.detail-item-qty {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+.detail-item-total {
+  min-width: 55px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--honey-deep);
+}
+.detail-footer {
+  border-top: 2px solid #E8DFD4;
+  padding: .6rem 1rem;
+  background: var(--cream);
+  flex-shrink: 0;
+}
+.detail-tax-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .75rem;
+  color: var(--text-soft);
+  padding: .15rem 0;
+}
+.detail-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: .15rem 0;
+}
+.detail-total-row.grand {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--bark);
+  border-top: 1.5px solid #E8DFD4;
+  padding-top: .4rem;
+  margin-top: .2rem;
+}
+.detail-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+.detail-actions .btn { flex: 1; justify-content: center; }
+
+/* === HISTORY === */
+.history-card {
+  background: var(--white);
+  border: 1.5px solid #E8DFD4;
+  border-radius: .75rem;
+  padding: 1rem;
+  margin-bottom: .75rem;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: .75rem;
+}
+.history-date { font-weight: 700; color: var(--bark); font-size: .9rem; }
+.history-ma { font-size: .75rem; color: var(--text-soft); display: block; margin-top: .15rem; }
+.history-total { font-weight: 700; color: var(--honey-deep); font-size: 1.1rem; }
+.history-sync { font-size: .7rem; opacity: .6; }
+.history-items { font-size: .8rem; color: var(--text-soft); line-height: 1.6; }
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: .2rem 0;
+  border-bottom: 1px solid #F5EDE3;
+}
+.history-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid #E8DFD4;
+}
+.no-history {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-soft);
+}
+
+/* === CSV UPLOAD === */
+.upload-area {
+  border: 2px dashed #E8DFD4;
+  border-radius: .75rem;
+  padding: 2rem;
+  text-align: center;
+  background: var(--white);
+  cursor: pointer;
+  transition: all .2s;
+  margin-bottom: 1rem;
+}
+.upload-area:hover, .upload-area.dragover {
+  border-color: var(--honey);
+  background: var(--cream-dark);
+}
+
+/* === MODAL === */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28,20,16,.5);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--white);
+  border-radius: 1rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  box-shadow: 0 24px 64px rgba(28,20,16,.2);
+}
+.modal h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+.modal-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
+
+/* Mitarbeiter Modal */
+.ma-add-row {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.ma-add-row input {
+  flex: 1;
+  padding: .5rem .75rem;
+  border: 1.5px solid #E8DFD4;
+  border-radius: .5rem;
+  font-size: .85rem;
+  font-family: inherit;
+  color: var(--text);
+}
+.ma-add-row input:focus { outline: none; border-color: var(--honey); }
+.ma-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid #F5EDE3;
+}
+.btn-ma-del {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--red-light);
+  color: var(--red);
+  border: none;
+  cursor: pointer;
+  font-size: .75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bark);
+  color: var(--white);
+  padding: .65rem 1.25rem;
+  border-radius: .75rem;
+  font-size: .8rem;
+  font-weight: 600;
+  z-index: 400;
+  opacity: 0;
+  transition: all .3s;
+  box-shadow: 0 8px 24px rgba(28,20,16,.25);
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* === RESPONSIVE === */
+@media (min-width: 500px) {
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+@media (min-width: 700px) {
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .card-name { font-size: .72rem; }
+}
+/* === PASSWORT GATE === */
+.pw-gate {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--bark), var(--bark-warm));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+.pw-gate.hidden { display: none; }
+.pw-gate h2 {
+  font-family: 'Fraunces', serif;
+  color: var(--honey);
+  font-size: 1.4rem;
+}
+.pw-gate input {
+  padding: .6rem 1rem;
+  border: 2px solid rgba(255,255,255,.2);
+  border-radius: .5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: rgba(255,255,255,.1);
+  color: var(--white);
+  text-align: center;
+  width: 220px;
+}
+.pw-gate input::placeholder { color: rgba(255,255,255,.4); }
+.pw-gate input:focus { outline: none; border-color: var(--honey); }
+.pw-gate button {
+  padding: .5rem 1.5rem;
+  background: var(--honey);
+  color: var(--bark);
+  border: none;
+  border-radius: .5rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pw-gate .pw-error {
+  color: #f87171;
+  font-size: .8rem;
+  min-height: 1.2em;
+}
+</style>
+</head>
+<body>
+
+<!-- PASSWORT GATE -->
+<div class="pw-gate" id="pwGate">
+  <div style="font-size:3rem">🐝</div>
+  <h2>Wochenmarkt</h2>
+  <input type="password" id="pwInput" placeholder="Passwort..." onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()">Entsperren</button>
+  <div class="pw-error" id="pwError"></div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <h1>🐝 Wochenmarkt</h1>
+    <span class="header-date" id="headerDate"></span>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:.3rem .6rem;font-size:.7rem">🔒</button>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>
+    <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
+    <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
+    <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
+    <button class="btn btn-outline" onclick="openCamera('produkt')">📷 Foto</button>
+  </div>
+</div>
+
+<!-- APP INSTALLIEREN BANNER -->
+<div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
+  <button onclick="installApp()" id="installBtnMain" style="background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App aufs Handy installieren</button>
+  <a id="installChromeLink" href="intent://www.bienenplan.de/wochenmarkt/#Intent;scheme=https;package=com.android.chrome;end" style="display:none;background:var(--forest);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;margin-top:.4rem">🌐 In Chrome öffnen zum Installieren</a>
+</div>
+
+<!-- MITARBEITER BAR -->
+<div class="mitarbeiter-bar">
+  <label>👤</label>
+  <select id="mitarbeiterSelect" onchange="updateSummary()">
+    <option value="">– Mitarbeiter –</option>
+  </select>
+  <button class="btn-ma-add" onclick="openMitarbeiterModal()" title="Mitarbeiter verwalten">+</button>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('verkauf')">🛒 Verkauf</button>
+  <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
+  <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
+  <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
+  <button class="tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">🔑 Admin</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- TAB: VERKAUF -->
+  <div class="tab-panel active" id="panel-verkauf">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Produkt suchen..." oninput="filterProducts()">
+    </div>
+    <div id="productList"></div>
+  </div>
+
+  <!-- TAB: HISTORIE -->
+  <div class="tab-panel" id="panel-historie">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Vergangene Markttage</h2>
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="exportAllCSV()">📤 Alles exportieren</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- TAB: UPLOAD -->
+  <div class="tab-panel" id="panel-upload">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">Verkaufsliste hochladen</h2>
+    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">📄</div>
+      <div style="font-size:.9rem;color:var(--text-soft)">CSV- oder Textdatei hierher ziehen<br>oder klicken zum Auswählen</div>
+      <div style="font-size:.75rem;color:var(--text-soft);opacity:.7;margin-top:.5rem">Format: Produktname;Menge (eine Zeile pro Produkt)</div>
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.txt" style="display:none" onchange="handleFileUpload(event)">
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-top:1rem">
+      <h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem">Beispiel-Format:</h3>
+      <pre style="font-size:.78rem;color:var(--text-soft);line-height:1.6;white-space:pre-wrap">Blütenhonig 500g;3
+Waldhonig 500g;2
+Bienenwachskerze - Stumpenkerze;5
+Propolis Tinktur 20ml;1</pre>
+    </div>
+  </div>
+
+  <!-- TAB: KAMERA -->
+  <div class="tab-panel" id="panel-kamera">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">Fotos aufnehmen</h2>
+
+    <!-- Produktfoto -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📷 Produktfoto</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Foto aufnehmen und einem Produkt zuordnen</p>
+      <select id="fotoProduktSelect" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;margin-bottom:.5rem">
+        <option value="">– Produkt wählen –</option>
+      </select>
+      <button class="btn btn-honey" onclick="openCamera('produkt')" style="width:100%">📷 Produktfoto aufnehmen</button>
+      <input type="file" id="cameraProdukt" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'produkt')">
+    </div>
+
+    <!-- Beleg -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">🧾 Beleg fotografieren</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Kassenbon oder Beleg als Foto speichern</p>
+      <button class="btn btn-honey" onclick="openCamera('beleg')" style="width:100%">📷 Beleg aufnehmen</button>
+      <input type="file" id="cameraBeleg" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'beleg')">
+    </div>
+
+    <!-- Gespeicherte Fotos -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">🖼️ Gespeicherte Fotos</h3>
+      <div id="fotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem">
+        <p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Lade...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ADMIN -->
+  <div class="tab-panel" id="panel-admin">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">🔑 Admin-Bereich</h2>
+
+    <!-- Nachricht senden -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📢 Nachricht an alle senden</h3>
+      <textarea id="adminMsgInput" placeholder="Nachricht eingeben..." style="width:100%;min-height:80px;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text);resize:vertical"></textarea>
+      <button class="btn btn-honey" onclick="sendAdminMessage()" style="width:100%;margin-top:.5rem">📢 Nachricht senden</button>
+    </div>
+
+    <!-- Letzte Nachrichten -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">📋 Letzte Nachrichten</h3>
+      <div id="adminMsgList"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar" id="summaryBar">
+  <div class="summary-main" onclick="openDetailPanel()">
+    <div class="summary-total">Gesamt: <span id="totalAmount">0,00 €</span></div>
+    <div class="summary-sub"><span id="totalNetto">Netto: 0,00 €</span> · <span id="totalMwst">MwSt: 0,00 €</span></div>
+    <div class="summary-items"><span id="totalItems">0 Artikel</span><span id="summaryMitarbeiter"></span></div>
+  </div>
+  <div class="summary-side">
+    <div class="summary-arrow" onclick="openDetailPanel()">▲</div>
+    <button class="btn btn-honey" onclick="saveSession()" style="padding:.4rem .6rem;font-size:.8rem">💾</button>
+  </div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailPanel()"></div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-handle"></div>
+  <div class="detail-header">
+    <h3>Verkaufsübersicht</h3>
+    <button class="detail-close" onclick="closeDetailPanel()">✕</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-footer" id="detailFooter"></div>
+</div>
+
+<!-- INSTALL HILFE MODAL -->
+<div class="modal-overlay" id="installHilfe" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <h3>📲 App installieren</h3>
+    <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
+      <p style="font-weight:700;margin-bottom:.5rem;color:var(--forest)">Empfohlen: Google Chrome</p>
+      <p>1. Öffne diese Seite in <b>Chrome</b></p>
+      <p>2. Tippe auf <b>⋮</b> (oben rechts)</p>
+      <p>3. Wähle <b>"App installieren"</b></p>
+      <p style="font-size:.75rem;color:var(--text-soft);margin-top:.3rem">Funktioniert dann auch offline!</p>
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+      <p style="font-weight:700;margin-bottom:.5rem">Safari (iPhone):</p>
+      <p>1. Tippe auf <b>□↑</b> (Teilen, unten Mitte)</p>
+      <p>2. Wähle <b>"Zum Home-Bildschirm"</b></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-honey" onclick="closeInstallHilfe()">Verstanden</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmTitle">Bestätigung</h3>
+    <p id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-red" id="confirmBtn" onclick="confirmAction()">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MITARBEITER MODAL -->
+<div class="modal-overlay" id="mitarbeiterModal">
+  <div class="modal">
+    <h3>Mitarbeiter verwalten</h3>
+    <div class="ma-add-row">
+      <input type="text" id="maNameInput" placeholder="Name eingeben..." onkeydown="if(event.key==='Enter')addMitarbeiter()">
+      <button class="btn btn-honey" onclick="addMitarbeiter()">Hinzufügen</button>
+    </div>
+    <div id="maList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeMitarbeiterModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── PRODUKT-DATENBANK (Fallback, wird aus DB überschrieben) ────────
+const PRODUCTS_FALLBACK = [
+  { name: 'Blütenhonig 500g', price: 7.50, category: 'Honig', img: 'blutenhonig.png', tax: 0.078 },
+  { name: 'Waldhonig 500g', price: 9.50, category: 'Honig', img: 'waldhonig-500g.png', tax: 0.078 },
+  { name: 'Tannenhonig 500g', price: 11.90, category: 'Honig', img: 'tannenhonig-500g.png', tax: 0.078 },
+  { name: 'Akazienhonig 500g', price: 9.50, category: 'Honig', img: 'akazienhonig-500g-die-delikatesse-der-bienen.png', tax: 0.078 },
+  { name: 'Lindenhonig 500g', price: 8.90, category: 'Honig', img: 'lindenhonig-500g.png', tax: 0.078 },
+  { name: 'Buchweizenhonig 500g', price: 9.90, category: 'Honig', img: '', tax: 0.078 },
+  { name: 'Edelkastanienhonig 500g', price: 11.00, category: 'Honig', img: 'edelkastanienhonig-500g.png', tax: 0.078 },
+  { name: 'Manukahonig 250g MGO 550', price: 44.90, category: 'Honig', img: 'manukahonig-aus-neuseeland.png', tax: 0.078 },
+  { name: 'Eier Gr. L (10 Stk)', price: 3.60, category: 'Eier', img: '', tax: 0.07 },
+  { name: 'Eier Gr. L (6 Stk)', price: 2.20, category: 'Eier', img: '', tax: 0.07 },
+  { name: 'Eier Gr. M (10 Stk)', price: 3.40, category: 'Eier', img: '', tax: 0.07 },
+  { name: 'Stumpenkerze', price: 13.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-sternschnuppe.png', tax: 0.19 },
+  { name: 'Tulpe', price: 14.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kleiner-zapfen.png', tax: 0.19 },
+  { name: 'kleine Tulpe', price: 5.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kleiner-nikolaus.png', tax: 0.19 },
+  { name: 'Hirsch', price: 17.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-sonnenblumen.png', tax: 0.19 },
+  { name: 'Hirsche im Wald', price: 4.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-hirsch.png', tax: 0.19 },
+  { name: 'großer Zapfen', price: 11.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-zylinderkerze-mit-ornamenten.png', tax: 0.19 },
+  { name: 'kleiner Zapfen', price: 3.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-tannenbaum.png', tax: 0.19 },
+  { name: 'Häuschen', price: 12.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-maria-und-josef.png', tax: 0.19 },
+  { name: 'Maria und Josef', price: 14.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kleiner-engel.png', tax: 0.19 },
+  { name: 'Tannenbaum', price: 4.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-grosser-zapfen.png', tax: 0.19 },
+  { name: 'Zylinderkerze', price: 8.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-hirsche-im-wald.png', tax: 0.19 },
+  { name: 'rund mit Ornamenten', price: 8.50, category: 'Kerzen', img: 'waldhonig.jpg', tax: 0.19 },
+  { name: 'Sonnenblumen', price: 8.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-stumpenkerze.png', tax: 0.19 },
+  { name: 'Bienenkorb', price: 5.90, category: 'Kerzen', img: 'bienenwachskerze-bienenkorb.png', tax: 0.19 },
+  { name: 'kleiner Bienenkorb', price: 3.00, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kleiner-bienenkorb.png', tax: 0.19 },
+  { name: 'Schneeflocke', price: 5.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-schnecki.png', tax: 0.19 },
+  { name: 'Sternschnuppe', price: 3.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kugelkerze-mit-schneeflocke.png', tax: 0.19 },
+  { name: 'Wirbelchen', price: 5.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-schafchen.png', tax: 0.19 },
+  { name: 'Schnecki', price: 3.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-wirbelchen.png', tax: 0.19 },
+  { name: 'Schäfchen', price: 5.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-baltasar.png', tax: 0.19 },
+  { name: 'kleiner Nikolaus', price: 5.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-tulpe.png', tax: 0.19 },
+  { name: 'Baltasar', price: 2.90, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-hauschen.png', tax: 0.19 },
+  { name: 'kleiner Engel', price: 3.00, category: 'Kerzen', img: 'kopie-von-bienenwachskerze-kleiner-bienenkorb-1.png', tax: 0.19 },
+  { name: 'Teelichter (Stk.)', price: 0.85, category: 'Kerzen', img: 'selbstgemachte-bienenwachs-teelichter-ohne-aluhulle.jpg', tax: 0.19 },
+  { name: 'Propolis Tinktur 20ml', price: 10.90, category: 'Propolis & Pflege', img: 'propolis-tinktur-20ml.jpg', tax: 0.19 },
+  { name: 'Propolis Tinktur 50ml', price: 24.90, category: 'Propolis & Pflege', img: 'propolis-tinktur.png', tax: 0.19 },
+  { name: 'Propolis Salbe 30ml', price: 11.90, category: 'Propolis & Pflege', img: 'propolis-salbe-naturel-im-30-ml.png', tax: 0.19 },
+  { name: 'Propolis Balsam sportiv', price: 14.50, category: 'Propolis & Pflege', img: 'propolis-balsam-sportiv-im-30-ml.png', tax: 0.19 },
+  { name: 'Propolis Gesichtscreme', price: 11.90, category: 'Propolis & Pflege', img: 'propolis-gesichtscreme.jpg', tax: 0.19 },
+  { name: 'Propolis Handcreme', price: 5.90, category: 'Propolis & Pflege', img: 'propolis-handcreme-75ml.png', tax: 0.19 },
+  { name: 'Propolis Sirup 200ml', price: 19.00, category: 'Propolis & Pflege', img: 'propolis-sirup-mit-honig-pflanzenextrakten.jpg', tax: 0.07 },
+  { name: 'Propolis Deo Roll-on', price: 10.00, category: 'Propolis & Pflege', img: 'propolis-deo-roll-on.png', tax: 0.19 },
+  { name: 'Propolis Shampoo', price: 6.50, category: 'Propolis & Pflege', img: 'propolis-shampp-hulle-und-fulle-200ml.png', tax: 0.19 },
+  { name: 'Propolis Seife', price: 3.00, category: 'Propolis & Pflege', img: 'propolis-seife-naturliche-reinigung-mit-propolis-und-honig.png', tax: 0.19 },
+  { name: 'Propolino Lippenstift', price: 4.00, category: 'Propolis & Pflege', img: 'propolino-pflegestift-kussfein-der-propolis-lippenpflegestift.png', tax: 0.19 },
+  { name: 'Propolis Mundspray', price: 12.90, category: 'Propolis & Pflege', img: 'propolisplus-propolis-mundspray-20-ml.jpg', tax: 0.19 },
+  { name: 'Propolind (ohne Alk.)', price: 12.50, category: 'Propolis & Pflege', img: 'propolind-propolis-losung-ohne-alkohol-_.jpg', tax: 0.19 },
+  { name: 'Propodent Zahncreme', price: 6.50, category: 'Propolis & Pflege', img: 'propodent-die-zahncreme-mit-propolis-fur-zuverlassigen-schutz.jpg', tax: 0.19 },
+  { name: 'Hyaluron Serum', price: 18.90, category: 'Propolis & Pflege', img: 'hyaluron-serum-mit-propolis-30-ml.jpg', tax: 0.19 },
+  { name: 'Gelée Royale Creme', price: 11.90, category: 'Cremes & Kosmetik', img: 'gelee-royale-honig-creme.jpg', tax: 0.19 },
+  { name: 'Gelée Royale Trunk', price: 33.90, category: 'Cremes & Kosmetik', img: 'gelee-royale-trink-kur-250ml-imker-zauber-trunk.png', tax: 0.07 },
+  { name: 'Lotion-Royal 120ml', price: 29.90, category: 'Cremes & Kosmetik', img: 'lotion-royal-120ml-mit-5-fach-wirkstoffkomplex.png', tax: 0.19 },
+  { name: 'Honig Body Lotion', price: 11.90, category: 'Cremes & Kosmetik', img: 'honig-body-lotion.jpg', tax: 0.19 },
+  { name: 'Männer Pflege Creme', price: 13.90, category: 'Cremes & Kosmetik', img: 'manner-pflege-creme-entstressend-50ml.png', tax: 0.19 },
+  { name: 'After Shave Balm', price: 14.00, category: 'Cremes & Kosmetik', img: 'after-shave-balm-die-perfekte-pflege-nach-der-rasur.png', tax: 0.19 },
+  { name: 'Fuß & Beincreme', price: 8.90, category: 'Cremes & Kosmetik', img: 'bienen-fuss-beincreme-mit-honig-75ml.png', tax: 0.19 },
+  { name: 'Lindesa Hautschutz', price: 3.90, category: 'Cremes & Kosmetik', img: 'lindesa-hautschutz-und-pflegecreme-50ml.png', tax: 0.19 },
+  { name: 'Lindesa Natur', price: 3.90, category: 'Cremes & Kosmetik', img: 'lindesa-natur-50ml.png', tax: 0.19 },
+  { name: 'Lindesa O', price: 4.50, category: 'Cremes & Kosmetik', img: 'lindesa-o.png', tax: 0.19 },
+  { name: 'Lindesa F', price: 4.50, category: 'Cremes & Kosmetik', img: 'lindesa-f.png', tax: 0.19 },
+  { name: 'LINDESA K', price: 3.90, category: 'Cremes & Kosmetik', img: 'lindesa\u00ae-k.png', tax: 0.19 },
+  { name: 'Lippenbalm', price: 4.50, category: 'Cremes & Kosmetik', img: 'lippenbalm-mit-bienenwachs-10-ml-dose.png', tax: 0.19 },
+  { name: 'API-HOT Bienengift', price: 31.90, category: 'Cremes & Kosmetik', img: 'die-echte-bienengift-salbe-api-hot\u00ae.jpg', tax: 0.19 },
+  { name: 'Api-Regent', price: 31.90, category: 'Cremes & Kosmetik', img: 'api-regent-bienengiftsalbe.png', tax: 0.19 },
+  { name: 'Honig Seife 100g', price: 3.00, category: 'Seifen & Bad', img: 'honig-seife-100g-naturliche-pflege-mit-feinem-honigduft.png', tax: 0.19 },
+  { name: 'Honig Seife 250ml', price: 5.50, category: 'Seifen & Bad', img: 'honig-seife-250ml.jpg', tax: 0.19 },
+  { name: 'Honig Creme Seife 1L', price: 13.90, category: 'Seifen & Bad', img: 'honig-creme-seife-1000-ml.png', tax: 0.19 },
+  { name: 'Honig Dusch Balm', price: 6.50, category: 'Seifen & Bad', img: 'honig-dusch-balm-naturliche-frische-fur-den-perfekten-start.jpg', tax: 0.19 },
+  { name: 'Dusch Balm Gelée Royale', price: 12.60, category: 'Seifen & Bad', img: 'dusch-balm-200ml-gelee-royale-honig-ajovita.jpg', tax: 0.19 },
+  { name: 'Naturshampoo', price: 12.60, category: 'Seifen & Bad', img: 'naturshampoo-mit-honig-propolis-100ml.jpg', tax: 0.19 },
+  { name: 'Honig Spülung', price: 7.50, category: 'Seifen & Bad', img: 'honig-spulung.png', tax: 0.19 },
+  { name: 'Honig Traum Bad', price: 7.90, category: 'Seifen & Bad', img: 'honig-traum-bad-250-ml.png', tax: 0.19 },
+  { name: 'Meersalzbad', price: 11.25, category: 'Seifen & Bad', img: 'meersalzbad-mit-eukalyptus-minze-gelee-royale-300g.png', tax: 0.19 },
+  { name: 'Propolis Bonbons', price: 2.20, category: 'Süßes & Getränke', img: 'honig-propolis-bonbons.png', tax: 0.07 },
+  { name: 'Sanddorn Bären', price: 2.20, category: 'Süßes & Getränke', img: 'honig-sanddorn-baren-100g-beutel.jpg', tax: 0.07 },
+  { name: 'MET 0,7l', price: 9.90, category: 'Süßes & Getränke', img: '', tax: 0.07 },
+  { name: 'Bio Hägenmark', price: 4.50, category: 'Süßes & Getränke', img: 'bio-hagenmark-430g.png', tax: 0.07 },
+  { name: 'Räuberlinsen 400g', price: 5.30, category: 'Süßes & Getränke', img: 'rauberlinsen-aus-dem-mainhardter-wald.jpg', tax: 0.07 },
+  { name: 'Blütenpollen 250g', price: 14.90, category: 'Sonstiges', img: 'deutsche-blutenpollen-250g.png', tax: 0.078 },
+  { name: 'Honig-Löffelset', price: 8.90, category: 'Sonstiges', img: 'honig-marmeladenloffelset.png', tax: 0.19 },
+  { name: 'Holz- & Lederbalsam', price: 14.00, category: 'Sonstiges', img: 'holz-lederbalsam-mit-bienenwachs-100ml.jpg', tax: 0.19 },
+  { name: 'Imkerhandschuh M', price: 8.90, category: 'Sonstiges', img: '', tax: 0.19 },
+];
+
+// Wird beim Start aus DB geladen, Fallback = PRODUCTS_FALLBACK
+let PRODUCTS = [];
+
+async function loadProductsFromDB() {
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.from('wochenmarkt_produkte').select('*').eq('active', true).order('sort_order');
+    if (result.error) throw result.error;
+    if (!result.data || result.data.length === 0) throw new Error('keine Produkte');
+    PRODUCTS = result.data.map(function(r) {
+      return { name: r.name, price: parseFloat(r.price), category: r.category, img: r.img || '', tax: parseFloat(r.tax) };
+    });
+  } catch(e) {
+    console.warn('Produkte aus DB laden fehlgeschlagen, nutze Fallback:', e);
+    PRODUCTS = PRODUCTS_FALLBACK.slice();
+  }
+  quantities = {};
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+}
+
+const IMG_DIR = 'wochenmarkt-img/';
+
+const CATEGORY_EMOJIS = {
+  'Honig': '🍯',
+  'Eier': '🥚',
+  'Kerzen': '🕯️',
+  'Propolis & Pflege': '🧴',
+  'Cremes & Kosmetik': '✨',
+  'Seifen & Bad': '🧼',
+  'Süßes & Getränke': '🍬',
+  'Sonstiges': '📦',
+};
+
+const CAT_ORDER = ['Honig', 'Eier', 'Kerzen', 'Propolis & Pflege', 'Cremes & Kosmetik', 'Seifen & Bad', 'Süßes & Getränke', 'Sonstiges'];
+
+const TAX_LABELS = {
+  '0.078': '7,8% (§24 UStG)',
+  '0.07': '7%',
+  '0.19': '19%',
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────
+let quantities = {};
+let pendingConfirm = null;
+let detailPanelOpen = false;
+
+// ─── CALCULATIONS ───────────────────────────────────────────────────
+function calculateTotals() {
+  let brutto = 0, netto = 0, mwst = 0, items = 0;
+  const byTax = {};
+
+  PRODUCTS.forEach((p, i) => {
+    if (quantities[i] > 0) {
+      const lineBrutto = p.price * quantities[i];
+      const lineNetto = lineBrutto / (1 + p.tax);
+      const lineMwst = lineBrutto - lineNetto;
+      brutto += lineBrutto;
+      netto += lineNetto;
+      mwst += lineMwst;
+      items += quantities[i];
+
+      const taxKey = String(p.tax);
+      if (!byTax[taxKey]) byTax[taxKey] = { brutto: 0, netto: 0, mwst: 0, items: [] };
+      byTax[taxKey].brutto += lineBrutto;
+      byTax[taxKey].netto += lineNetto;
+      byTax[taxKey].mwst += lineMwst;
+      byTax[taxKey].items.push({ ...p, index: i, qty: quantities[i], lineBrutto, lineNetto, lineMwst });
+    }
+  });
+
+  return { brutto, netto, mwst, items, byTax };
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────
+function renderProducts(filter) {
+  filter = filter || '';
+  const container = document.getElementById('productList');
+  const search = filter.toLowerCase().trim();
+
+  const groups = {};
+  PRODUCTS.forEach((p, i) => {
+    if (search && !p.name.toLowerCase().includes(search) && !p.category.toLowerCase().includes(search)) return;
+    if (!groups[p.category]) groups[p.category] = [];
+    groups[p.category].push({ ...p, index: i });
+  });
+
+  let html = '';
+  for (const cat of CAT_ORDER) {
+    if (!groups[cat]) continue;
+    const emoji = CATEGORY_EMOJIS[cat] || '📦';
+    const soldInCat = groups[cat].filter(p => quantities[p.index] > 0).length;
+
+    html += '<div class="category"><div class="category-header"><span>' + emoji + '</span><h2>' + cat + '</h2><span class="category-count">' + (soldInCat > 0 ? soldInCat + '/' : '') + groups[cat].length + '</span></div><div class="product-grid">';
+
+    for (const p of groups[cat]) {
+      const qty = quantities[p.index];
+      const soldClass = qty > 0 ? ' sold' : '';
+      const imgHtml = p.img
+        ? '<img class="card-img" src="' + IMG_DIR + p.img + '" alt="' + p.name + '" loading="lazy" onerror="this.outerHTML=\'<div class=card-img-placeholder>' + emoji + '</div>\'">'
+        : '<div class="card-img-placeholder">' + emoji + '</div>';
+
+      html += '<div class="card' + soldClass + '" id="card-' + p.index + '" onclick="tapCard(' + p.index + ', event)">'
+        + '<button class="card-minus" onclick="minusCard(' + p.index + ', event)">−</button>'
+        + '<div class="card-qty">' + qty + '</div>'
+        + imgHtml
+        + '<div class="card-info"><div class="card-name">' + p.name + '</div><div class="card-price">' + formatPrice(p.price) + '</div></div>'
+        + '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  if (!html) {
+    html = '<div style="text-align:center;padding:2rem;color:var(--text-soft)">Keine Produkte gefunden</div>';
+  }
+  container.innerHTML = html;
+}
+
+function updateSummary() {
+  const t = calculateTotals();
+  document.getElementById('totalAmount').textContent = formatPrice(t.brutto);
+  document.getElementById('totalNetto').textContent = 'Netto: ' + formatPrice(t.netto);
+  document.getElementById('totalMwst').textContent = 'MwSt: ' + formatPrice(t.mwst);
+  document.getElementById('totalItems').textContent = t.items === 1 ? '1 Artikel' : t.items + ' Artikel';
+
+  var ma = document.getElementById('mitarbeiterSelect').value;
+  document.getElementById('summaryMitarbeiter').textContent = ma ? ' · 👤 ' + ma : '';
+
+  if (detailPanelOpen) renderDetailPanel();
+}
+
+// ─── TAP TO ADD ─────────────────────────────────────────────────────
+function tapCard(index, e) {
+  if (e.target.classList.contains('card-minus')) return;
+  quantities[index] = (quantities[index] || 0) + 1;
+  updateCard(index);
+  updateSummary();
+  var card = document.getElementById('card-' + index);
+  card.classList.remove('pulse');
+  void card.offsetWidth;
+  card.classList.add('pulse');
+}
+
+function minusCard(index, e) {
+  e.stopPropagation();
+  if (quantities[index] > 0) {
+    quantities[index]--;
+    updateCard(index);
+    updateSummary();
+  }
+}
+
+function updateCard(index) {
+  var card = document.getElementById('card-' + index);
+  if (!card) return;
+  var qty = quantities[index];
+  card.classList.toggle('sold', qty > 0);
+  card.querySelector('.card-qty').textContent = qty;
+}
+
+// ─── DETAIL PANEL ───────────────────────────────────────────────────
+function openDetailPanel() {
+  detailPanelOpen = true;
+  renderDetailPanel();
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('detailOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetailPanel() {
+  detailPanelOpen = false;
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('detailPanel').style.transform = '';
+}
+
+function renderDetailPanel() {
+  var t = calculateTotals();
+  var body = document.getElementById('detailBody');
+  var footer = document.getElementById('detailFooter');
+
+  if (t.items === 0) {
+    body.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:var(--text-soft)"><div style="font-size:2rem;margin-bottom:.5rem">🛒</div><p>Noch keine Artikel ausgewählt</p></div>';
+    footer.innerHTML = '';
+    return;
+  }
+
+  // Body: grouped by tax rate
+  var taxKeys = Object.keys(t.byTax).sort();
+  var bodyHtml = '';
+  for (var ti = 0; ti < taxKeys.length; ti++) {
+    var taxKey = taxKeys[ti];
+    var group = t.byTax[taxKey];
+    var label = TAX_LABELS[taxKey] || (parseFloat(taxKey) * 100).toFixed(1).replace('.', ',') + '%';
+    bodyHtml += '<div class="detail-group"><div class="detail-group-header">MwSt ' + label + ' (' + group.items.length + ' Produkte)</div>';
+    for (var gi = 0; gi < group.items.length; gi++) {
+      var item = group.items[gi];
+      bodyHtml += '<div class="detail-item">'
+        + '<div class="detail-item-name">' + item.name + '</div>'
+        + '<div class="detail-item-controls">'
+        + '<button class="detail-qty-btn minus" onclick="detailMinus(' + item.index + ')">−</button>'
+        + '<span class="detail-item-qty">' + item.qty + '</span>'
+        + '<button class="detail-qty-btn plus" onclick="detailPlus(' + item.index + ')">+</button>'
+        + '<span class="detail-item-total">' + formatPrice(item.lineBrutto) + '</span>'
+        + '</div></div>';
+    }
+    bodyHtml += '</div>';
+  }
+  body.innerHTML = bodyHtml;
+
+  // Footer: tax breakdown + totals
+  var footerHtml = '';
+  for (var fi = 0; fi < taxKeys.length; fi++) {
+    var fKey = taxKeys[fi];
+    var fGroup = t.byTax[fKey];
+    var fLabel = TAX_LABELS[fKey] || (parseFloat(fKey) * 100).toFixed(1).replace('.', ',') + '%';
+    footerHtml += '<div class="detail-tax-row"><span>Netto ' + fLabel + ':</span><span>' + formatPrice(fGroup.netto) + '</span></div>';
+    footerHtml += '<div class="detail-tax-row"><span>MwSt ' + fLabel + ':</span><span>' + formatPrice(fGroup.mwst) + '</span></div>';
+  }
+  footerHtml += '<div class="detail-total-row"><span>Netto gesamt:</span><span>' + formatPrice(t.netto) + '</span></div>';
+  footerHtml += '<div class="detail-total-row"><span>MwSt gesamt:</span><span>' + formatPrice(t.mwst) + '</span></div>';
+  footerHtml += '<div class="detail-total-row grand"><span>Brutto gesamt:</span><span>' + formatPrice(t.brutto) + '</span></div>';
+  footerHtml += '<div class="detail-actions">'
+    + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="exportCSV()">📤 CSV</button>'
+    + '<button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>'
+    + '</div>';
+  footer.innerHTML = footerHtml;
+}
+
+function detailPlus(index) {
+  quantities[index] = (quantities[index] || 0) + 1;
+  updateCard(index);
+  updateSummary();
+}
+
+function detailMinus(index) {
+  if (quantities[index] > 0) {
+    quantities[index]--;
+    updateCard(index);
+    updateSummary();
+  }
+}
+
+// Touch swipe-to-close for detail panel
+(function() {
+  var panel = document.getElementById('detailPanel');
+  var startY = 0, currentY = 0, swiping = false;
+  panel.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.detail-body')) return;
+    startY = e.touches[0].clientY;
+    swiping = true;
+  });
+  panel.addEventListener('touchmove', function(e) {
+    if (!swiping) return;
+    currentY = e.touches[0].clientY;
+    var dy = currentY - startY;
+    if (dy > 0) {
+      panel.style.transform = 'translateY(' + dy + 'px)';
+      panel.style.transition = 'none';
+    }
+  });
+  panel.addEventListener('touchend', function() {
+    if (!swiping) return;
+    swiping = false;
+    var dy = currentY - startY;
+    panel.style.transition = '';
+    if (dy > 100) {
+      closeDetailPanel();
+    } else {
+      panel.style.transform = '';
+    }
+    currentY = 0;
+  });
+})();
+
+// ─── MITARBEITER ────────────────────────────────────────────────────
+async function loadMitarbeiter() {
+  var names = [];
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_mitarbeiter').select('name').eq('active', true).order('name');
+      if (!result.error && result.data) {
+        names = result.data.map(function(r) { return r.name; });
+        localStorage.setItem('wm_mitarbeiter', JSON.stringify(names));
+      } else {
+        throw new Error('DB Fehler');
+      }
+    } else {
+      throw new Error('offline');
+    }
+  } catch(e) {
+    names = JSON.parse(localStorage.getItem('wm_mitarbeiter') || '[]');
+  }
+  var select = document.getElementById('mitarbeiterSelect');
+  var current = select.value;
+  select.innerHTML = '<option value="">– Mitarbeiter –</option>';
+  for (var i = 0; i < names.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = names[i];
+    opt.textContent = names[i];
+    select.appendChild(opt);
+  }
+  if (current && names.indexOf(current) !== -1) select.value = current;
+}
+
+function openMitarbeiterModal() {
+  renderMitarbeiterList();
+  document.getElementById('mitarbeiterModal').classList.add('active');
+}
+
+function closeMitarbeiterModal() {
+  document.getElementById('mitarbeiterModal').classList.remove('active');
+}
+
+async function addMitarbeiter() {
+  var input = document.getElementById('maNameInput');
+  var name = input.value.trim();
+  if (!name) return;
+  try {
+    if (sb) {
+      var result = await db.insert('wochenmarkt_mitarbeiter', { name: name });
+      if (result.error) {
+        if (result.error.code === '23505') { showToast('Name existiert bereits'); return; }
+        throw result.error;
+      }
+    } else {
+      throw new Error('offline');
+    }
+  } catch(e) {
+    var names = JSON.parse(localStorage.getItem('wm_mitarbeiter') || '[]');
+    if (names.indexOf(name) !== -1) { showToast('Name existiert bereits'); return; }
+    names.push(name);
+    localStorage.setItem('wm_mitarbeiter', JSON.stringify(names));
+  }
+  input.value = '';
+  await loadMitarbeiter();
+  renderMitarbeiterList();
+  document.getElementById('mitarbeiterSelect').value = name;
+  updateSummary();
+  showToast('Mitarbeiter hinzugefügt');
+}
+
+async function removeMitarbeiter(name) {
+  try {
+    if (sb) {
+      await sb.from('wochenmarkt_mitarbeiter').delete().eq('name', name);
+    }
+  } catch(e) { console.warn('Mitarbeiter löschen (DB) fehlgeschlagen:', e); }
+  var names = JSON.parse(localStorage.getItem('wm_mitarbeiter') || '[]');
+  names = names.filter(function(n) { return n !== name; });
+  localStorage.setItem('wm_mitarbeiter', JSON.stringify(names));
+  await loadMitarbeiter();
+  renderMitarbeiterList();
+  updateSummary();
+}
+
+async function renderMitarbeiterList() {
+  var names = [];
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_mitarbeiter').select('name').eq('active', true).order('name');
+      if (!result.error && result.data) names = result.data.map(function(r) { return r.name; });
+      else throw new Error('DB');
+    } else { throw new Error('offline'); }
+  } catch(e) {
+    names = JSON.parse(localStorage.getItem('wm_mitarbeiter') || '[]');
+  }
+  var container = document.getElementById('maList');
+  if (names.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-soft);font-size:.85rem;padding:.5rem 0">Noch keine Mitarbeiter angelegt</p>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < names.length; i++) {
+    html += '<div class="ma-item"><span>' + names[i] + '</span>'
+      + '<button class="btn-ma-del" onclick="removeMitarbeiter(\'' + names[i].replace(/'/g, "\\'") + '\')">✕</button></div>';
+  }
+  container.innerHTML = html;
+}
+
+// ─── SAVE / LOAD ────────────────────────────────────────────────────
+async function getGPS() {
+  return new Promise(function(resolve) {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      function(pos) { resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+      function() { resolve(null); },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  });
+}
+
+async function saveSession() {
+  var t = calculateTotals();
+  if (t.items === 0) { showToast('Keine Artikel zum Speichern'); return; }
+
+  var mitarbeiter = document.getElementById('mitarbeiterSelect').value;
+  var soldItems = [];
+  PRODUCTS.forEach(function(p, i) {
+    if (quantities[i] > 0) {
+      soldItems.push({
+        name: p.name,
+        price: p.price,
+        qty: quantities[i],
+        tax: p.tax,
+        netto: (p.price * quantities[i]) / (1 + p.tax)
+      });
+    }
+  });
+
+  // GPS abfragen
+  var gps = await getGPS();
+
+  var entry = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    dateShort: new Date().toLocaleDateString('de-DE'),
+    items: soldItems,
+    total: t.brutto,
+    netto: t.netto,
+    mwst: t.mwst,
+    mitarbeiter: mitarbeiter,
+    latitude: gps ? gps.lat : null,
+    longitude: gps ? gps.lng : null,
+    synced: false
+  };
+
+  var produkte = soldItems.map(function(item) {
+    return {
+      name: item.name,
+      anzahl: item.qty,
+      preis: item.price,
+      tax: item.tax,
+      netto_summe: parseFloat(item.netto.toFixed(2))
+    };
+  });
+
+  // Primär in Supabase speichern
+  try {
+    if (sb) {
+      var insertData = {
+        datum: dateStr(),
+        mitarbeiter: mitarbeiter || null,
+        produkte: produkte,
+        gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
+        gesamt_netto: parseFloat(t.netto.toFixed(2)),
+        gesamt_mwst: parseFloat(t.mwst.toFixed(2))
+      };
+      if (gps) {
+        insertData.latitude = gps.lat;
+        insertData.longitude = gps.lng;
+      }
+      var result = await db.insert('wochenmarkt_verkauf', insertData);
+      if (!result.error) entry.synced = true;
+    }
+  } catch(e) {
+    console.warn('Supabase Speichern fehlgeschlagen:', e);
+  }
+
+  // localStorage als Backup
+  var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  history.unshift(entry);
+  localStorage.setItem('wm_history', JSON.stringify(history));
+
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+  renderProducts(document.getElementById('searchInput').value);
+  updateSummary();
+  closeDetailPanel();
+
+  showToast('Markttag gespeichert: ' + formatPrice(t.brutto));
+}
+
+function resetSession() {
+  var hasSold = PRODUCTS.some(function(_, i) { return quantities[i] > 0; });
+  if (!hasSold) { showToast('Nichts zum Zurücksetzen'); return; }
+  showConfirm('Zurücksetzen?', 'Alle Mengen werden auf 0 gesetzt.', function() {
+    PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+    renderProducts(document.getElementById('searchInput').value);
+    updateSummary();
+    closeDetailPanel();
+    showToast('Zurückgesetzt');
+  });
+}
+
+// ─── HISTORY ────────────────────────────────────────────────────────
+async function renderHistory() {
+  var container = document.getElementById('historyList');
+  var entries = [];
+
+  // Primär aus Supabase laden
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').order('created_at', { ascending: false }).limit(100);
+      if (!result.error && result.data) {
+        entries = result.data.map(function(d) {
+          var datum = new Date(d.datum + 'T00:00:00');
+          return {
+            id: d.id,
+            dbId: d.id,
+            date: datum.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            dateShort: datum.toLocaleDateString('de-DE'),
+            items: (d.produkte || []).map(function(p) {
+              return { name: p.name, price: parseFloat(p.preis), qty: p.anzahl, tax: parseFloat(p.tax), netto: parseFloat(p.netto_summe) };
+            }),
+            total: parseFloat(d.gesamt_brutto),
+            netto: parseFloat(d.gesamt_netto),
+            mwst: parseFloat(d.gesamt_mwst),
+            mitarbeiter: d.mitarbeiter || '',
+            latitude: d.latitude || null,
+            longitude: d.longitude || null,
+            synced: true
+          };
+        });
+      }
+    }
+  } catch(e) {
+    console.warn('Historie aus DB laden fehlgeschlagen:', e);
+  }
+
+  // Fallback: localStorage (nur Einträge die nicht synced sind)
+  if (entries.length === 0) {
+    entries = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  }
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="no-history"><div style="font-size:2rem;margin-bottom:.5rem">📋</div><p>Noch keine Markttage gespeichert</p></div>';
+    return;
+  }
+
+  var html = '';
+  for (var h = 0; h < entries.length; h++) {
+    var entry = entries[h];
+    var itemsHtml = '';
+    for (var j = 0; j < entry.items.length; j++) {
+      var item = entry.items[j];
+      var lineTotal = item.price * item.qty;
+      itemsHtml += '<div class="history-item"><span>' + item.qty + '× ' + item.name + '</span><span>' + formatPrice(lineTotal) + '</span></div>';
+    }
+    var maHtml = entry.mitarbeiter ? '<span class="history-ma">👤 ' + entry.mitarbeiter + '</span>' : '';
+    var syncIcon = entry.synced ? ' <span class="history-sync" title="In Cloud gespeichert">☁️</span>' : '';
+    var entryId = entry.dbId || entry.id;
+    html += '<div class="history-card">'
+      + '<div class="history-header"><div><span class="history-date">📅 ' + entry.date + '</span>' + maHtml + '</div>'
+      + '<div><span class="history-total">' + formatPrice(entry.total) + '</span>' + syncIcon + '</div></div>'
+      + '<div class="history-items">' + itemsHtml + '</div>';
+    if (entry.netto !== undefined) {
+      html += '<div style="font-size:.75rem;color:var(--text-soft);margin-top:.4rem">Netto: ' + formatPrice(entry.netto) + ' · MwSt: ' + formatPrice(entry.mwst) + '</div>';
+    }
+    if (entry.latitude && entry.longitude) {
+      html += '<div style="font-size:.75rem;margin-top:.3rem"><a href="https://www.google.com/maps?q=' + entry.latitude + ',' + entry.longitude + '" target="_blank" rel="noopener" style="color:var(--forest);text-decoration:none">📍 Standort anzeigen</a></div>';
+    }
+    html += '<div class="history-actions">'
+      + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem" onclick="exportSingleEntry(' + entryId + ')">📤 CSV</button>'
+      + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem" onclick="loadToSelling(' + entryId + ')">🔄 Laden</button>'
+      + '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red-light);font-size:.7rem" onclick="deleteEntry(' + entryId + ')">🗑️</button>'
+      + '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function deleteEntry(id) {
+  showConfirm('Eintrag löschen?', 'Dieser Markttag wird unwiderruflich gelöscht.', async function() {
+    // Aus DB löschen
+    try {
+      if (sb) {
+        await sb.from('wochenmarkt_verkauf').delete().eq('id', id);
+      }
+    } catch(e) { console.warn('DB delete fehlgeschlagen:', e); }
+    // Auch aus localStorage entfernen (falls vorhanden)
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    history = history.filter(function(e) { return e.id !== id; });
+    localStorage.setItem('wm_history', JSON.stringify(history));
+    renderHistory();
+    showToast('Gelöscht');
+  });
+}
+
+async function loadToSelling(id) {
+  var entry = null;
+  // Aus DB laden
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').eq('id', id).single();
+      if (!result.error && result.data) {
+        var d = result.data;
+        entry = {
+          items: (d.produkte || []).map(function(p) { return { name: p.name, price: parseFloat(p.preis), qty: p.anzahl }; }),
+          mitarbeiter: d.mitarbeiter || ''
+        };
+      }
+    }
+  } catch(e) { console.warn('Laden aus DB fehlgeschlagen:', e); }
+  // Fallback localStorage
+  if (!entry) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    entry = history.find(function(e) { return e.id === id; });
+  }
+  if (!entry) { showToast('Eintrag nicht gefunden'); return; }
+
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+  for (var k = 0; k < entry.items.length; k++) {
+    var item = entry.items[k];
+    var idx = PRODUCTS.findIndex(function(p) { return p.name === item.name; });
+    if (idx !== -1) quantities[idx] = item.qty;
+  }
+
+  if (entry.mitarbeiter) {
+    var select = document.getElementById('mitarbeiterSelect');
+    if (select.querySelector('option[value="' + entry.mitarbeiter + '"]')) {
+      select.value = entry.mitarbeiter;
+    }
+  }
+
+  switchTab('verkauf');
+  renderProducts();
+  updateSummary();
+  showToast('Markttag geladen');
+}
+
+// CSV-Export für einzelnen Eintrag (aus DB oder localStorage)
+async function exportSingleEntry(id) {
+  var entry = null;
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').eq('id', id).single();
+      if (!result.error && result.data) {
+        var d = result.data;
+        var datum = new Date(d.datum + 'T00:00:00');
+        entry = {
+          dateShort: datum.toLocaleDateString('de-DE'),
+          mitarbeiter: d.mitarbeiter || '',
+          items: (d.produkte || []).map(function(p) { return { name: p.name, price: parseFloat(p.preis), qty: p.anzahl, tax: parseFloat(p.tax) }; })
+        };
+      }
+    }
+  } catch(e) {}
+  if (!entry) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    entry = history.find(function(e) { return e.id === id; });
+  }
+  if (!entry) return;
+  var lines = [];
+  if (entry.mitarbeiter) lines.push('Mitarbeiter;' + entry.mitarbeiter);
+  lines.push('Datum;' + entry.dateShort);
+  lines.push('');
+  lines.push('Produkt;Anzahl;Einzelpreis;Steuersatz;Netto;MwSt;Brutto');
+  var totBrutto = 0, totNetto = 0, totMwst = 0;
+  for (var i = 0; i < entry.items.length; i++) {
+    var item = entry.items[i];
+    var lineBrutto = item.price * item.qty;
+    var tax = item.tax !== undefined ? item.tax : 0.19;
+    var lineNetto = lineBrutto / (1 + tax);
+    var lineMwst = lineBrutto - lineNetto;
+    totBrutto += lineBrutto;
+    totNetto += lineNetto;
+    totMwst += lineMwst;
+    var taxPct = (tax * 100).toFixed(1).replace('.', ',') + '%';
+    lines.push(item.name + ';' + item.qty + ';' + fmtRaw(item.price) + ';' + taxPct + ';' + fmtRaw(lineNetto) + ';' + fmtRaw(lineMwst) + ';' + fmtRaw(lineBrutto));
+  }
+  lines.push('');
+  lines.push('SUMME;;;;' + fmtRaw(totNetto) + ';' + fmtRaw(totMwst) + ';' + fmtRaw(totBrutto));
+  downloadCSV(lines.join('\n'), 'wochenmarkt_' + entry.dateShort.replace(/\./g, '-') + '.csv');
+  showToast('CSV exportiert');
+}
+
+// ─── CSV EXPORT ─────────────────────────────────────────────────────
+function exportCSV() {
+  var mitarbeiter = document.getElementById('mitarbeiterSelect').value;
+  var lines = [];
+  if (mitarbeiter) lines.push('Mitarbeiter;' + mitarbeiter);
+  lines.push('Datum;' + new Date().toLocaleDateString('de-DE'));
+  lines.push('');
+  lines.push('Produkt;Anzahl;Einzelpreis;Steuersatz;Netto;MwSt;Brutto');
+
+  var totBrutto = 0, totNetto = 0, totMwst = 0;
+  PRODUCTS.forEach(function(p, i) {
+    if (quantities[i] > 0) {
+      var lineBrutto = p.price * quantities[i];
+      var lineNetto = lineBrutto / (1 + p.tax);
+      var lineMwst = lineBrutto - lineNetto;
+      totBrutto += lineBrutto;
+      totNetto += lineNetto;
+      totMwst += lineMwst;
+      var taxPct = (p.tax * 100).toFixed(1).replace('.', ',') + '%';
+      lines.push(p.name + ';' + quantities[i] + ';' + fmtRaw(p.price) + ';' + taxPct + ';' + fmtRaw(lineNetto) + ';' + fmtRaw(lineMwst) + ';' + fmtRaw(lineBrutto));
+    }
+  });
+
+  if (totBrutto === 0) { showToast('Keine Artikel'); return; }
+  lines.push('');
+  lines.push('SUMME;;;;' + fmtRaw(totNetto) + ';' + fmtRaw(totMwst) + ';' + fmtRaw(totBrutto));
+  downloadCSV(lines.join('\n'), 'wochenmarkt_' + dateStr() + '.csv');
+  showToast('CSV exportiert');
+}
+
+async function exportAllCSV() {
+  var entries = [];
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').order('datum', { ascending: false });
+      if (!result.error && result.data) {
+        entries = result.data.map(function(d) {
+          var datum = new Date(d.datum + 'T00:00:00');
+          return {
+            dateShort: datum.toLocaleDateString('de-DE'),
+            mitarbeiter: d.mitarbeiter || '',
+            items: (d.produkte || []).map(function(p) { return { name: p.name, price: parseFloat(p.preis), qty: p.anzahl, tax: parseFloat(p.tax) }; })
+          };
+        });
+      }
+    }
+  } catch(e) {}
+  if (entries.length === 0) {
+    entries = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  }
+  if (entries.length === 0) { showToast('Keine Historie'); return; }
+
+  var lines = ['Datum;Mitarbeiter;Produkt;Anzahl;Einzelpreis;Steuersatz;Netto;MwSt;Brutto'];
+  var grand = 0, grandNetto = 0, grandMwst = 0;
+  for (var h = 0; h < entries.length; h++) {
+    var entry = entries[h];
+    for (var j = 0; j < entry.items.length; j++) {
+      var item = entry.items[j];
+      var lineBrutto = item.price * item.qty;
+      var tax = item.tax !== undefined ? item.tax : 0.19;
+      var lineNetto = lineBrutto / (1 + tax);
+      var lineMwst = lineBrutto - lineNetto;
+      grand += lineBrutto;
+      grandNetto += lineNetto;
+      grandMwst += lineMwst;
+      var taxPct = (tax * 100).toFixed(1).replace('.', ',') + '%';
+      lines.push(entry.dateShort + ';' + (entry.mitarbeiter || '') + ';' + item.name + ';' + item.qty + ';' + fmtRaw(item.price) + ';' + taxPct + ';' + fmtRaw(lineNetto) + ';' + fmtRaw(lineMwst) + ';' + fmtRaw(lineBrutto));
+    }
+  }
+  lines.push('');
+  lines.push('GESAMT;;;;;' + fmtRaw(grandNetto) + ';' + fmtRaw(grandMwst) + ';' + fmtRaw(grand));
+  downloadCSV(lines.join('\n'), 'wochenmarkt_komplett_' + dateStr() + '.csv');
+  showToast('Gesamtexport erstellt');
+}
+
+function downloadCSV(content, filename) {
+  var blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── PDF PREISLISTE ─────────────────────────────────────────────────
+function generatePriceListPDF() {
+  if (!window.jspdf) { showToast('PDF-Bibliothek nicht geladen'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(28, 20, 16);
+  doc.text('Preisliste Imkerei Durchdenwald', 14, 20);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 80, 60);
+  doc.text('Stand: ' + new Date().toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }), 14, 27);
+
+  // Decorative line
+  doc.setDrawColor(245, 166, 35);
+  doc.setLineWidth(0.8);
+  doc.line(14, 30, 196, 30);
+
+  // Group by category
+  var groups = {};
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    var p = PRODUCTS[i];
+    if (!groups[p.category]) groups[p.category] = [];
+    groups[p.category].push(p);
+  }
+
+  var tableBody = [];
+  for (var ci = 0; ci < CAT_ORDER.length; ci++) {
+    var cat = CAT_ORDER[ci];
+    if (!groups[cat]) continue;
+    var emoji = CATEGORY_EMOJIS[cat] || '';
+    // Category header row
+    tableBody.push([{
+      content: emoji + ' ' + cat,
+      colSpan: 3,
+      styles: { fontStyle: 'bold', fillColor: [245, 237, 227], textColor: [28, 20, 16], fontSize: 9 }
+    }]);
+    for (var pi = 0; pi < groups[cat].length; pi++) {
+      var prod = groups[cat][pi];
+      var taxStr = (prod.tax * 100).toFixed(1).replace('.', ',') + '%';
+      tableBody.push([prod.name, formatPrice(prod.price), taxStr]);
+    }
+  }
+
+  doc.autoTable({
+    startY: 34,
+    margin: { left: 14, right: 14 },
+    head: [['Produkt', 'Preis (brutto)', 'MwSt']],
+    body: tableBody,
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      textColor: [28, 20, 16],
+      font: 'helvetica',
+      lineColor: [200, 185, 165],
+      lineWidth: 0.15
+    },
+    headStyles: {
+      fillColor: [28, 20, 16],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8.5
+    },
+    columnStyles: {
+      0: { cellWidth: 110 },
+      1: { cellWidth: 35, halign: 'right' },
+      2: { cellWidth: 25, halign: 'center' }
+    },
+    alternateRowStyles: { fillColor: [252, 249, 245] },
+    didDrawPage: function(data) {
+      // Footer on every page
+      doc.setFontSize(7);
+      doc.setTextColor(150, 130, 110);
+      doc.text('Imkerei Durchdenwald – Preisliste', 14, doc.internal.pageSize.height - 8);
+      doc.text('Seite ' + doc.internal.getCurrentPageInfo().pageNumber, doc.internal.pageSize.width - 14, doc.internal.pageSize.height - 8, { align: 'right' });
+    }
+  });
+
+  doc.save('preisliste_imkerei_durchdenwald.pdf');
+  showToast('Preisliste PDF erstellt');
+}
+
+// ─── CSV UPLOAD ─────────────────────────────────────────────────────
+function handleFileUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) { parseUploadedData(e.target.result); };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function parseUploadedData(text) {
+  var lines = text.trim().split('\n');
+  var matched = 0, unmatched = [];
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+
+  for (var l = 0; l < lines.length; l++) {
+    var line = lines[l].trim();
+    if (!line || line.toLowerCase().startsWith('produkt')) continue;
+    var parts;
+    if (line.includes(';')) parts = line.split(';');
+    else if (line.includes('\t')) parts = line.split('\t');
+    else if (line.includes(',')) parts = line.split(',');
+    else {
+      var m = line.match(/^(.+?)\s+(\d+)\s*$/);
+      if (m) parts = [m[1], m[2]];
+      else { unmatched.push(line); continue; }
+    }
+    var name = parts[0].trim();
+    var qty = parseInt(parts[1]) || 1;
+    var idx = findBestMatch(name);
+    if (idx !== -1) { quantities[idx] += qty; matched++; }
+    else unmatched.push(name);
+  }
+
+  switchTab('verkauf');
+  renderProducts();
+  updateSummary();
+  var msg = matched + ' Produkte geladen';
+  if (unmatched.length > 0) msg += ', ' + unmatched.length + ' nicht erkannt';
+  showToast(msg);
+}
+
+function findBestMatch(search) {
+  var s = search.toLowerCase().replace(/[^a-zäöüß0-9]/g, '');
+  var bestIdx = -1, bestScore = 0;
+
+  PRODUCTS.forEach(function(p, i) {
+    var pName = p.name.toLowerCase().replace(/[^a-zäöüß0-9]/g, '');
+    if (pName === s) { bestIdx = i; bestScore = 1000; return; }
+    if (pName.includes(s) || s.includes(pName)) {
+      var score = Math.min(s.length, pName.length);
+      if (score > bestScore) { bestIdx = i; bestScore = score; }
+    }
+    var sWords = s.match(/[a-zäöüß]+/g) || [];
+    var pWords = pName.match(/[a-zäöüß]+/g) || [];
+    var ws = 0;
+    for (var w = 0; w < sWords.length; w++) {
+      if (pWords.some(function(pw) { return pw.includes(sWords[w]) || sWords[w].includes(pw); })) ws++;
+    }
+    if (ws > 1 && ws > bestScore) { bestIdx = i; bestScore = ws; }
+  });
+  return bestScore >= 2 ? bestIdx : -1;
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var tabs = document.querySelectorAll('.tab');
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3, 'admin': 4 };
+  if (tabs[panels[name]]) tabs[panels[name]].classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'historie') renderHistory();
+  if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
+  if (name === 'admin') loadAdminMessages();
+}
+
+// ─── HELPERS ────────────────────────────────────────────────────────
+function filterProducts() { renderProducts(document.getElementById('searchInput').value); }
+function formatPrice(v) { return v.toFixed(2).replace('.', ',') + ' €'; }
+function fmtRaw(v) { return v.toFixed(2).replace('.', ','); }
+function dateStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+function showConfirm(title, text, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent = text;
+  pendingConfirm = cb;
+  document.getElementById('confirmModal').classList.add('active');
+}
+function confirmAction() { if (pendingConfirm) pendingConfirm(); closeModal(); }
+function closeModal() { document.getElementById('confirmModal').classList.remove('active'); pendingConfirm = null; }
+
+// Drag & Drop
+var uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', function() { uploadArea.classList.remove('dragover'); });
+uploadArea.addEventListener('drop', function(e) {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  var file = e.dataTransfer.files[0];
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(ev) { parseUploadedData(ev.target.result); };
+    reader.readAsText(file);
+  }
+});
+
+// ─── PASSWORT GATE ──────────────────────────────────────────────────
+var WM_PW_HASH = '0069b5f8416a40ed88ab4e12c6b6389d17d05245bbfd84cc12227ac6f818b3d4';
+var WM_MASTER_HASH = '66483caa89cedd7c07f7f00ab8f1687254af77739ae0caf648430e74fd0480d3';
+var WM_PW_KEY = 'wm_unlocked';
+var WM_ADMIN_KEY = 'wm_admin';
+var isAdmin = false;
+
+async function hashPw(pw) {
+  var data = new TextEncoder().encode(pw);
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function checkPw() {
+  var input = document.getElementById('pwInput');
+  var hash = await hashPw(input.value);
+  if (hash === WM_PW_HASH || hash === WM_MASTER_HASH) {
+    localStorage.setItem(WM_PW_KEY, WM_PW_HASH);
+    if (hash === WM_MASTER_HASH) {
+      isAdmin = true;
+      localStorage.setItem(WM_ADMIN_KEY, 'true');
+    } else {
+      isAdmin = false;
+      localStorage.removeItem(WM_ADMIN_KEY);
+    }
+    document.getElementById('pwGate').classList.add('hidden');
+    updateAdminUI();
+    initApp();
+  } else {
+    document.getElementById('pwError').textContent = 'Falsches Passwort';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function updateAdminUI() {
+  var adminTab = document.getElementById('tabAdmin');
+  if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
+}
+
+// ─── KAMERA & FOTOS ─────────────────────────────────────────────────
+var FOTO_BUCKET = 'wochenmarkt-fotos';
+
+function openCamera(typ) {
+  if (typ === 'produkt') {
+    document.getElementById('cameraProdukt').click();
+  } else {
+    document.getElementById('cameraBeleg').click();
+  }
+}
+
+async function handlePhoto(event, typ) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  // Datei komprimieren
+  var compressed = await compressImage(file, 1200, 0.8);
+
+  var timestamp = Date.now();
+  var fileName = typ + '/' + dateStr() + '_' + timestamp + '.jpg';
+
+  showToast('Foto wird hochgeladen...');
+
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.storage.from(FOTO_BUCKET).upload(fileName, compressed, {
+      contentType: 'image/jpeg',
+      upsert: false
+    });
+    if (result.error) throw result.error;
+
+    // Bei Produktfoto: Produktname speichern
+    if (typ === 'produkt') {
+      var produktName = document.getElementById('fotoProduktSelect').value;
+      if (produktName) {
+        // Produktbild in DB aktualisieren
+        var publicUrl = sb.storage.from(FOTO_BUCKET).getPublicUrl(fileName).data.publicUrl;
+        await sb.from('wochenmarkt_produkte').update({ img: publicUrl }).eq('name', produktName);
+      }
+    }
+
+    showToast('Foto gespeichert!');
+    if (document.getElementById('panel-kamera').classList.contains('active')) {
+      loadFotoGallery();
+    }
+  } catch(e) {
+    console.error('Foto Upload fehlgeschlagen:', e);
+    showToast('Upload fehlgeschlagen');
+  }
+
+  event.target.value = '';
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+          else { w = Math.round(w * maxSize / h); h = maxSize; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function fillFotoProduktSelect() {
+  var select = document.getElementById('fotoProduktSelect');
+  select.innerHTML = '<option value="">– Produkt wählen –</option>';
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = PRODUCTS[i].name;
+    opt.textContent = PRODUCTS[i].name;
+    select.appendChild(opt);
+  }
+}
+
+async function loadFotoGallery() {
+  var container = document.getElementById('fotoGallery');
+  try {
+    if (!sb) throw new Error('offline');
+
+    var produktFotos = await sb.storage.from(FOTO_BUCKET).list('produkt', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+    var belegFotos = await sb.storage.from(FOTO_BUCKET).list('beleg', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+
+    var alleFotos = [];
+    if (produktFotos.data) {
+      produktFotos.data.forEach(function(f) {
+        if (f.name === '.emptyFolderPlaceholder') return;
+        alleFotos.push({ name: f.name, path: 'produkt/' + f.name, typ: 'Produkt' });
+      });
+    }
+    if (belegFotos.data) {
+      belegFotos.data.forEach(function(f) {
+        if (f.name === '.emptyFolderPlaceholder') return;
+        alleFotos.push({ name: f.name, path: 'beleg/' + f.name, typ: 'Beleg' });
+      });
+    }
+
+    if (alleFotos.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Noch keine Fotos gespeichert</p>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < alleFotos.length; i++) {
+      var foto = alleFotos[i];
+      var url = sb.storage.from(FOTO_BUCKET).getPublicUrl(foto.path).data.publicUrl;
+      html += '<div style="position:relative;border-radius:.5rem;overflow:hidden;border:1.5px solid #E8DFD4">'
+        + '<img src="' + url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(28,20,16,.7);color:#fff;font-size:.6rem;padding:.2rem .3rem;text-align:center">' + foto.typ + '</div>'
+        + '<button onclick="deleteFoto(\'' + foto.path + '\')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;border:none;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>'
+        + '</div>';
+    }
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Fotos konnten nicht geladen werden</p>';
+  }
+}
+
+async function deleteFoto(path) {
+  showConfirm('Foto löschen?', 'Das Foto wird unwiderruflich gelöscht.', async function() {
+    try {
+      await sb.storage.from(FOTO_BUCKET).remove([path]);
+      showToast('Foto gelöscht');
+      loadFotoGallery();
+    } catch(e) {
+      showToast('Löschen fehlgeschlagen');
+    }
+  });
+}
+
+function logout() {
+  localStorage.removeItem(WM_PW_KEY);
+  localStorage.removeItem(WM_ADMIN_KEY);
+  isAdmin = false;
+  updateAdminUI();
+  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  document.getElementById('pwGate').classList.remove('hidden');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwInput').focus();
+  document.getElementById('pwError').textContent = '';
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────
+document.getElementById('headerDate').textContent = new Date().toLocaleDateString('de-DE', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+// ─── ADMIN NACHRICHTEN & REALTIME ─────────────────────────────────
+var realtimeChannel = null;
+
+async function sendAdminMessage() {
+  var input = document.getElementById('adminMsgInput');
+  var text = input.value.trim();
+  if (!text) { showToast('Bitte Nachricht eingeben'); return; }
+  if (!sb) { showToast('Offline - nicht möglich'); return; }
+
+  try {
+    var result = await sb.from('wochenmarkt_nachrichten').insert({ text: text, von: 'Admin' });
+    if (result.error) throw result.error;
+    input.value = '';
+    showToast('Nachricht gesendet');
+    loadAdminMessages();
+  } catch(e) {
+    console.error('Nachricht senden fehlgeschlagen:', e);
+    showToast('Senden fehlgeschlagen');
+  }
+}
+
+async function loadAdminMessages() {
+  var container = document.getElementById('adminMsgList');
+  if (!container) return;
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.from('wochenmarkt_nachrichten').select('*').order('created_at', { ascending: false }).limit(20);
+    if (result.error) throw result.error;
+    if (!result.data || result.data.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Noch keine Nachrichten</p>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < result.data.length; i++) {
+      var msg = result.data[i];
+      var zeit = new Date(msg.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      html += '<div style="padding:.5rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><strong>' + (msg.von || 'System') + '</strong><span style="color:var(--text-soft);font-size:.7rem">' + zeit + '</span></div>'
+        + '<div style="color:var(--text)">' + msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+        + '</div>';
+    }
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Nachrichten konnten nicht geladen werden</p>';
+  }
+}
+
+function setupRealtime() {
+  if (!sb || realtimeChannel) return;
+  realtimeChannel = sb.channel('wochenmarkt-nachrichten')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wochenmarkt_nachrichten' }, function(payload) {
+      var msg = payload.new;
+      showToast('📢 ' + (msg.von || 'System') + ': ' + msg.text.substring(0, 60));
+      // Browser-Notification
+      if (Notification.permission === 'granted') {
+        new Notification('Wochenmarkt: ' + (msg.von || 'System'), { body: msg.text, icon: 'icon.svg' });
+      }
+      // Admin-Tab aktualisieren falls offen
+      if (document.getElementById('panel-admin') && document.getElementById('panel-admin').classList.contains('active')) {
+        loadAdminMessages();
+      }
+    })
+    .subscribe();
+}
+
+async function initApp() {
+  await loadProductsFromDB();
+  await loadMitarbeiter();
+  renderProducts();
+  updateSummary();
+  updateAdminUI();
+  // Realtime & Notifications
+  setupRealtime();
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// Prüfe ob schon entsperrt (gespeicherter Hash muss übereinstimmen)
+if (localStorage.getItem(WM_PW_KEY) === WM_PW_HASH) {
+  // Admin-Status aus Cache laden
+  if (localStorage.getItem(WM_ADMIN_KEY) === 'true') isAdmin = true;
+  document.getElementById('pwGate').classList.add('hidden');
+  updateAdminUI();
+  initApp();
+} else {
+  document.getElementById('pwInput').focus();
+}
+
+// ─── PWA INSTALL ────────────────────────────────────────────────────
+var deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Automatisch Install-Dialog zeigen
+  setTimeout(function() {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  }, 1000);
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  } else {
+    document.getElementById('installHilfe').style.display = 'flex';
+  }
+}
+
+function closeInstallHilfe() {
+  document.getElementById('installHilfe').style.display = 'none';
+}
+
+window.addEventListener('appinstalled', function() {
+  document.getElementById('installBanner').style.display = 'none';
+  showToast('App installiert!');
+});
+
+// Banner ausblenden wenn App bereits als Standalone läuft
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  document.getElementById('installBanner').style.display = 'none';
+}
+
+// Bei Nicht-Chrome: Chrome-Link anzeigen (nur Android)
+var isChrome = /Chrome/.test(navigator.userAgent) && !/SamsungBrowser|OPR|Edge/.test(navigator.userAgent);
+var isAndroid = /Android/.test(navigator.userAgent);
+if (!isChrome && isAndroid) {
+  document.getElementById('installChromeLink').style.display = 'inline-block';
+}
+
+// ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>
