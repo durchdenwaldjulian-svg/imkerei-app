@@ -987,6 +987,42 @@ Propolis Tinktur 20ml;1</pre>
   </div>
 </div>
 
+<!-- GPS BLOCKIERT ANLEITUNG -->
+<div class="modal-overlay" id="gpsBlockedModal">
+  <div class="modal" style="max-width:420px">
+    <h3>📍 GPS ist im Browser blockiert</h3>
+    <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
+      <p style="color:var(--red);font-weight:700;margin-bottom:.5rem">Dein Browser blockiert den Standortzugriff. So aktivierst du ihn:</p>
+
+      <p style="font-weight:700;margin-top:.5rem;color:var(--forest)">Chrome (Handy):</p>
+      <p>1. Tippe auf das <b>🔒 Schloss</b> links neben der URL</p>
+      <p>2. Tippe auf <b>"Berechtigungen"</b></p>
+      <p>3. Setze <b>"Standort"</b> auf <b>Erlauben</b></p>
+      <p>4. <b>Seite neu laden</b></p>
+
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+
+      <p style="font-weight:700;color:var(--forest)">Chrome (Desktop):</p>
+      <p>1. Klicke auf das <b>🔒 Schloss</b> in der Adressleiste</p>
+      <p>2. Bei <b>"Standort"</b> → <b>"Erlauben"</b> wählen</p>
+      <p>3. <b>Seite neu laden</b> (F5)</p>
+
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+
+      <p style="font-weight:700;color:var(--forest)">Safari (iPhone):</p>
+      <p>1. Öffne <b>Einstellungen → Safari → Standort</b></p>
+      <p>2. Wähle <b>"Erlauben"</b></p>
+      <p>3. Seite neu laden</p>
+
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+      <p style="font-size:.75rem;color:var(--text-soft)">Wichtig: Auch das Handy/PC muss GPS/Standort in den Geräte-Einstellungen aktiviert haben!</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-honey" onclick="document.getElementById('gpsBlockedModal').classList.remove('active')">Verstanden</button>
+    </div>
+  </div>
+</div>
+
 <!-- INSTALL HILFE MODAL -->
 <div class="modal-overlay" id="installHilfe" style="display:none">
   <div class="modal" style="max-width:400px">
@@ -2313,6 +2349,8 @@ function allowGPS() {
   gpsAllowed = true;
   localStorage.setItem('wm_gps_allowed', 'true');
   document.getElementById('gpsModal').classList.remove('active');
+  document.getElementById('gpsStatus').textContent = 'Warte auf Browser-Freigabe...';
+  // Browser-Prompt auslösen — das ist das native Browser-Popup
   startGPSTracking();
 }
 
@@ -2321,6 +2359,11 @@ function denyGPS() {
   localStorage.removeItem('wm_gps_allowed');
   document.getElementById('gpsModal').classList.remove('active');
   document.getElementById('gpsStatus').textContent = 'GPS deaktiviert';
+}
+
+function showGPSBlockedHelp() {
+  document.getElementById('gpsBlockedModal').classList.add('active');
+  document.getElementById('gpsStatus').innerHTML = '<span style="color:var(--red);font-weight:600">● Blockiert</span> GPS im Browser freigeben (siehe Anleitung)';
 }
 
 function resetGPS() {
@@ -2343,10 +2386,14 @@ function resetGPS() {
 }
 
 function startGPSTracking() {
-  if (gpsWatchId !== null) return;
   if (!navigator.geolocation) {
     document.getElementById('gpsStatus').textContent = 'GPS nicht verfügbar';
     return;
+  }
+  // Alten Watcher beenden falls vorhanden
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
   }
 
   document.getElementById('gpsStatus').textContent = 'Standort wird gesucht...';
@@ -2379,7 +2426,11 @@ function startGPSTracking() {
       liveMarker._accCircle = L.circle([lat, lng], { radius: acc, color: '#3D7C47', fillOpacity: 0.08, weight: 1 }).addTo(liveMapInstance);
     },
     function(err) {
-      document.getElementById('gpsStatus').textContent = 'GPS Fehler: ' + err.message;
+      if (err.code === 1) {
+        showGPSBlockedHelp();
+      } else {
+        document.getElementById('gpsStatus').textContent = 'GPS Fehler: ' + err.message;
+      }
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
   );
