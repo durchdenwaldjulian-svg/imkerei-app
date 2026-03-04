@@ -253,6 +253,7 @@
 </div>
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -288,6 +289,12 @@ async function init() {
             isPreview = true;
             plaene = DEMO_PLAENE;
         } else {
+            await planManager.load();
+            if (!planManager.can('zucht')) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                planManager.showUpgradeHint('zucht');
+                return;
+            }
             await loadFromSupabase();
         }
     } catch(e) {

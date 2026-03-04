@@ -173,6 +173,7 @@
 </div>
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -194,6 +195,7 @@ async function init() {
     var { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'app.html'; return; }
     currentUser = session.user;
+    await planManager.load();
 
     var results = await Promise.all([
         sb.from('standorte').select('*').eq('user_id', currentUser.id),
@@ -311,6 +313,18 @@ function saveStandort() {
     var lng = parseFloat(document.getElementById('standortLng').value) || null;
 
     if (!name) { alert('Bitte Namen eingeben!'); return; }
+
+    // Plan-Limits prüfen bei neuem Standort
+    if (!editStandortId) {
+        if (!planManager.checkLimit('standorte', standorte.length)) {
+            planManager.showLimitReached('standorte');
+            return;
+        }
+        if (!planManager.checkLimit('voelker', voelker.length + voelkerCount)) {
+            planManager.showLimitReached('voelker');
+            return;
+        }
+    }
 
     if (editStandortId) {
         var s = standorte.find(function(x){return x.id === editStandortId;});

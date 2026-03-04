@@ -374,6 +374,7 @@
 
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // Hash früh speichern bevor Supabase Auth ihn entfernt
@@ -519,6 +520,9 @@ async function startApp() {
     // Load profile
     var profileRes = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     app.data.user = profileRes.data || { name: currentUser.email, email: currentUser.email };
+    
+    // Plan laden
+    await planManager.load();
     
     // Kalender-Zustand aus Profil laden
     if (profileRes.data && profileRes.data.kalender_offen !== undefined) {
@@ -1409,6 +1413,12 @@ const app={
             return;
         }
         
+        // Kosten-Limit prüfen
+        if (typeof planManager !== 'undefined' && !planManager.checkLimit('kosten_eintraege', this.data.kosten.length)) {
+            planManager.showLimitReached('kosten_eintraege');
+            return;
+        }
+        
         const beschreibung = document.getElementById('kostenBeschreibung').value;
         const betrag = parseFloat(document.getElementById('kostenBetrag').value);
         const datum = document.getElementById('kostenDatum').value;
@@ -2295,7 +2305,7 @@ const wetterMod = {
             var url = 'https://api.open-meteo.com/v1/forecast?latitude='+koords.lat+'&longitude='+koords.lng+
                 '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,wind_speed_10m_max'+
                 '&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m'+
-                '&timezone=Europe%2FBerlin&forecast_days=14';
+                '&timezone=Europe%2FBerlin&forecast_days=' + (typeof planManager !== 'undefined' ? planManager.limit('wetter_tage') : 14);
             var resp = await fetch(url);
             var data = await resp.json();
             this.daten = data;

@@ -242,6 +242,7 @@ tbody tr:last-child td { border-bottom:none; }
 </div>
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -269,6 +270,11 @@ async function init() {
         return;
     }
     currentUser = session.user;
+    await planManager.load();
+    if (!planManager.can('bestandsbuch_einfach')) {
+        planManager.showUpgradeHint('bestandsbuch_einfach');
+        return;
+    }
     await loadData();
     loadImkerDaten();
     buildYearFilter();

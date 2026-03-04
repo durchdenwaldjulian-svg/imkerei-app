@@ -272,6 +272,7 @@
 </div>
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -305,6 +306,7 @@ async function init() {
     var { data: { session } } = await sb.auth.getSession();
     if (!session) { window.location.href = 'app.html'; return; }
     currentUser = session.user;
+    await planManager.load();
 
     var results = await Promise.all([
         sb.from('standorte').select('*').eq('user_id', currentUser.id),

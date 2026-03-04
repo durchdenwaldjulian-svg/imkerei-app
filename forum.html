@@ -171,6 +171,7 @@
 </div>
 
 <script src="config.js"></script>
+<script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -233,6 +234,7 @@ async function init() {
             beitraege = DEMO_BEITRAEGE;
             antworten = DEMO_ANTWORTEN;
         } else {
+            await planManager.load();
             await loadFromSupabase();
         }
     } catch(e) {
@@ -538,6 +540,10 @@ function setSort(type) {
 function openNewPost(katId) {
     if (isPreview) {
         showToast('Bitte einloggen um zu posten', 'error');
+        return;
+    }
+    if (!planManager.can('forum_schreiben')) {
+        planManager.showUpgradeHint('forum_schreiben');
         return;
     }
     selectedKatId = katId || null;

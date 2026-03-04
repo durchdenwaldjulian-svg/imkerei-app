@@ -194,7 +194,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 </head>
 <body>
 <div class="bg-deco"><i></i><i></i><i></i><i></i></div>
-<div class="preview-bar"><i></i> Vorschau-Modus – Layout-Preview ohne Login</div>
+<!-- Preview-Banner entfernt (Live-Modus) -->
 
 <!-- NAV -->
 <nav class="topnav" id="topnav">
@@ -477,8 +477,33 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 </footer>
 <div style="height:50px"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 <script>
 var currentInterval='monthly';
+
+// Aktuellen Plan laden und anzeigen
+async function initUpgradePage() {
+  try {
+    var session = await sb.auth.getSession();
+    if (session.data.session) {
+      currentUser = session.data.session.user;
+      var profile = await sb.from('profiles').select('plan').eq('id', currentUser.id).single();
+      if (profile.data && profile.data.plan && profile.data.plan !== 'starter') {
+        var planNames = { pro: 'Imker Pro', meister: 'Imkermeister', verein: 'Verein' };
+        document.getElementById('currentPlan').textContent = planNames[profile.data.plan] || profile.data.plan;
+      }
+    }
+  } catch(e) { console.log('Nicht eingeloggt'); }
+
+  // Erfolgs-Meldung nach Stripe Checkout?
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('upgrade') === 'success') {
+    alert('🎉 Willkommen! Dein Upgrade war erfolgreich. Viel Spaß mit BienenPlan ' + (params.get('plan') || 'Pro') + '!');
+  }
+}
+initUpgradePage();
+
 function switchInterval(interval){
   currentInterval=interval;
   document.querySelectorAll('.interval-btn').forEach(function(b){b.classList.toggle('active',b.dataset.interval===interval)});
@@ -498,11 +523,49 @@ function switchInterval(interval){
     document.getElementById('meisterTrial').textContent='Danach 9,99€/Monat · Jederzeit kündbar';
   }
 }
-function handleUpgrade(plan){
-  var name=plan==='pro'?'Imker Pro':'Imkermeister';
-  var price=plan==='pro'?(currentInterval==='yearly'?'39,99€/Jahr':'4,99€/Monat'):(currentInterval==='yearly'?'89,99€/Jahr':'9,99€/Monat');
-  alert('🐝 Vorschau-Modus\n\nPlan: '+name+'\nIntervall: '+(currentInterval==='yearly'?'Jährlich':'Monatlich')+'\nPreis: '+price+'\n\nIn der Live-Version öffnet sich hier Stripe Checkout.\n(14 Tage kostenlose Testphase)');
+
+async function handleUpgrade(plan){
+  var priceKey = plan + '_' + currentInterval;  // z.B. "pro_monthly"
+  
+  // Prüfe ob eingeloggt
+  var session = await sb.auth.getSession();
+  if (!session.data.session) {
+    window.location.href = 'app.html#register';
+    return;
+  }
+  
+  // Button Loading-State
+  var btns = document.querySelectorAll('.btn-plan.filled, .btn-plan.outline');
+  btns.forEach(function(b){ b.style.pointerEvents='none'; b.style.opacity='.6'; });
+  
+  try {
+    var response = await fetch(
+      'https://reyswuedptkyfdkmdpft.supabase.co/functions/v1/create-checkout',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + session.data.session.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ priceKey: priceKey })
+      }
+    );
+    
+    var data = await response.json();
+    
+    if (data.url) {
+      window.location.href = data.url;  // → Stripe Checkout
+    } else {
+      alert('Fehler: ' + (data.error || 'Unbekannter Fehler. Bitte versuche es erneut.'));
+    }
+  } catch(e) {
+    alert('Verbindungsfehler. Bitte prüfe deine Internetverbindung und versuche es erneut.');
+    console.error('Checkout Error:', e);
+  }
+  
+  btns.forEach(function(b){ b.style.pointerEvents='auto'; b.style.opacity='1'; });
 }
+
 var rvs=document.querySelectorAll('.rv');
 var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
 rvs.forEach(function(el){obs.observe(el)});
