@@ -1,5 +1,5 @@
 // Imkerei Planer – Service Worker v1.0
-const CACHE_NAME = 'imkerei-planer-v2';
+const CACHE_NAME = 'imkerei-planer-v3';
 
 // Dateien die gecacht werden sollen (App-Shell)
 const APP_SHELL = [
