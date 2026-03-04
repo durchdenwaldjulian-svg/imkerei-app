@@ -829,7 +829,7 @@ body {
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
   <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
-  <button class="tab" onclick="switchTab('karte')">📍 Karte</button>
+  <button class="tab" id="tabKarte" onclick="switchTab('karte')" style="display:none">📍 Karte</button>
   <button class="tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">🔑 Admin</button>
 </div>
 
@@ -1572,8 +1572,8 @@ async function saveSession() {
     }
   });
 
-  // GPS abfragen (nur wenn erlaubt)
-  var gps = gpsAllowed ? await getGPS() : null;
+  // GPS immer abfragen beim Speichern
+  var gps = await getGPS();
 
   var entry = {
     id: Date.now(),
@@ -1608,7 +1608,8 @@ async function saveSession() {
         produkte: produkte,
         gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
         gesamt_netto: parseFloat(t.netto.toFixed(2)),
-        gesamt_mwst: parseFloat(t.mwst.toFixed(2))
+        gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
+        device_id: getDeviceId()
       };
       if (gps) {
         insertData.latitude = gps.lat;
@@ -2114,6 +2115,16 @@ uploadArea.addEventListener('drop', function(e) {
 });
 
 // ─── PASSWORT GATE ──────────────────────────────────────────────────
+// Eindeutige Geräte-ID (bleibt pro Gerät gleich)
+function getDeviceId() {
+  var id = localStorage.getItem('wm_device_id');
+  if (!id) {
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    localStorage.setItem('wm_device_id', id);
+  }
+  return id;
+}
+
 var WM_PW_HASH = '0069b5f8416a40ed88ab4e12c6b6389d17d05245bbfd84cc12227ac6f818b3d4';
 var WM_MASTER_HASH = '66483caa89cedd7c07f7f00ab8f1687254af77739ae0caf648430e74fd0480d3';
 var WM_PW_KEY = 'wm_unlocked';
@@ -2150,7 +2161,9 @@ async function checkPw() {
 
 function updateAdminUI() {
   var adminTab = document.getElementById('tabAdmin');
+  var karteTab = document.getElementById('tabKarte');
   if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
+  if (karteTab) karteTab.style.display = isAdmin ? '' : 'none';
 }
 
 // ─── KAMERA & FOTOS ─────────────────────────────────────────────────
@@ -2335,12 +2348,10 @@ function initLiveMap() {
   // Fix für Leaflet in hidden Tabs
   setTimeout(function() { liveMapInstance.invalidateSize(); }, 200);
 
-  // GPS-Erlaubnis prüfen
-  if (gpsAllowed) {
-    startGPSTracking();
-  } else {
-    document.getElementById('gpsModal').classList.add('active');
-  }
+  // GPS direkt starten (Browser fragt nur beim allerersten Mal)
+  gpsAllowed = true;
+  localStorage.setItem('wm_gps_allowed', 'true');
+  startGPSTracking();
   // Vergangene Verkaufsstandorte laden
   loadSalesLocations();
 }
@@ -2436,6 +2447,15 @@ function startGPSTracking() {
   );
 }
 
+var MARKER_COLORS = ['#F5A623', '#3D7C47', '#DC2626', '#2563EB', '#9333EA', '#EC4899', '#14B8A6', '#F97316'];
+
+function getMarkerColor(key) {
+  if (!key) return MARKER_COLORS[0];
+  var hash = 0;
+  for (var i = 0; i < key.length; i++) hash = ((hash << 5) - hash) + key.charCodeAt(i);
+  return MARKER_COLORS[Math.abs(hash) % MARKER_COLORS.length];
+}
+
 async function loadSalesLocations() {
   var infoEl = document.getElementById('mapSalesInfo');
   // Alte Marker entfernen
@@ -2445,7 +2465,7 @@ async function loadSalesLocations() {
   try {
     if (!sb) throw new Error('offline');
     var result = await sb.from('wochenmarkt_verkauf')
-      .select('id, datum, mitarbeiter, gesamt_brutto, latitude, longitude')
+      .select('id, datum, mitarbeiter, gesamt_brutto, latitude, longitude, device_id')
       .not('latitude', 'is', null)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -2456,22 +2476,34 @@ async function loadSalesLocations() {
       return;
     }
 
-    infoEl.textContent = result.data.length + ' Verkaufsstandorte auf der Karte';
-
+    // Legende bauen
+    var geraete = {};
     for (var i = 0; i < result.data.length; i++) {
       var d = result.data[i];
+      var key = d.mitarbeiter || d.device_id || 'Unbekannt';
+      var color = getMarkerColor(key);
+      if (!geraete[key]) geraete[key] = color;
+
       var datum = new Date(d.datum + 'T00:00:00').toLocaleDateString('de-DE');
       var marker = L.marker([d.latitude, d.longitude], {
         icon: L.divIcon({
           className: '',
-          html: '<div style="width:14px;height:14px;background:var(--honey);border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)"></div>',
+          html: '<div style="width:14px;height:14px;background:' + color + ';border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)"></div>',
           iconSize: [14, 14],
           iconAnchor: [7, 7]
         })
       }).addTo(liveMapInstance)
-        .bindPopup('📅 ' + datum + '<br>💰 ' + formatPrice(d.gesamt_brutto) + (d.mitarbeiter ? '<br>👤 ' + d.mitarbeiter : ''));
+        .bindPopup('📅 ' + datum + '<br>💰 ' + formatPrice(d.gesamt_brutto) + '<br>👤 ' + key + (d.device_id ? '<br>📱 ' + d.device_id.substr(0, 10) : ''));
       salesMarkers.push(marker);
     }
+
+    // Legende anzeigen
+    var legendHtml = result.data.length + ' Standorte<br><div style="margin-top:.4rem">';
+    for (var name in geraete) {
+      legendHtml += '<span style="display:inline-flex;align-items:center;gap:.3rem;margin-right:.8rem;margin-bottom:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:' + geraete[name] + ';display:inline-block"></span> ' + name + '</span>';
+    }
+    legendHtml += '</div>';
+    infoEl.innerHTML = legendHtml;
   } catch(e) {
     infoEl.textContent = 'Standorte konnten nicht geladen werden';
   }
