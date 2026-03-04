@@ -653,19 +653,34 @@ async function loadAdmin() {
     // Debug: Profil-Felder ausgeben
     if (profiles.length > 0) {
         console.log('[Imkermeister] Profil-Felder:', Object.keys(profiles[0]));
-        console.log('[Imkermeister] Erstes Profil:', JSON.stringify(profiles[0]).substring(0, 300));
+        profiles.forEach(function(p) {
+            console.log('[Imkermeister] Profil:', p.email, '| id:', p.id, '| user_id:', p.user_id, '| last_login:', p.last_login);
+        });
+    } else {
+        console.log('[Imkermeister] KEINE Profile geladen! RLS blockiert?');
     }
+    
+    // Letzten Login pro User aus login_historie berechnen (als Fallback)
+    var lastLoginFromHist = {};
+    allLoginHistorie.forEach(function(l) {
+        if (!lastLoginFromHist[l.user_id] || new Date(l.logged_in_at) > new Date(lastLoginFromHist[l.user_id])) {
+            lastLoginFromHist[l.user_id] = l.logged_in_at;
+        }
+    });
     
     // Build user list from profiles
     allUsers = profiles.map(function(p) {
         // profiles kann id ODER user_id als Referenz haben
         var uid = p.user_id || p.id;
+        // last_login: aus profiles ODER aus login_historie als Fallback
+        var ll = p.last_login || lastLoginFromHist[uid] || null;
+        console.log('[Imkermeister] User mapping:', p.email, '→ uid:', uid, '→ last_login:', p.last_login, '→ hist:', lastLoginFromHist[uid], '→ final:', ll);
         return {
             id: uid,
             email: p.email || '–',
             name: p.name || '',
             created: p.created_at,
-            lastLogin: p.last_login || p.last_sign_in_at || null,
+            lastLogin: ll,
             loginCount: (p.login_count || 0) + (loginCounts[uid] || 0),
             standorte: allStandorteRaw.filter(function(x){return x.user_id===uid;}).length,
             voelker: allVoelkerRaw.filter(function(x){return x.user_id===uid;}).length,
