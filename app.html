@@ -430,8 +430,22 @@ async function doLogin() {
         return;
     }
     currentUser = result.data.user;
-    // Last login speichern
-    sb.from('profiles').update({last_login: new Date().toISOString()}).eq('user_id', currentUser.id);
+    // Last login speichern (profiles.id = auth user id)
+    sb.from('profiles').update({
+        last_login: new Date().toISOString()
+    }).eq('id', currentUser.id);
+    // Login-Count hochzählen
+    sb.from('profiles').select('login_count').eq('id', currentUser.id).single().then(function(r) {
+        if (r.data !== null) {
+            sb.from('profiles').update({login_count: (r.data.login_count || 0) + 1}).eq('id', currentUser.id);
+        }
+    }).catch(function(){});
+    // Login-Historie eintragen
+    sb.from('login_historie').insert({
+        user_id: currentUser.id,
+        email: currentUser.email,
+        page: 'App Login'
+    }).then(function(){}).catch(function(){});
     // Alte localStorage Trachten aufräumen
     localStorage.removeItem('imkerei_trachten');
     await startApp();
@@ -2586,6 +2600,8 @@ behandlungMod.init();
     var session = await sb.auth.getSession();
     if (session.data.session) {
         currentUser = session.data.session.user;
+        // Last login bei jedem Seitenaufruf aktualisieren
+        sb.from('profiles').update({last_login: new Date().toISOString()}).eq('id', currentUser.id);
         await startApp();
     } else {
         // Show auth screen
