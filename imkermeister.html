@@ -572,12 +572,18 @@ function timeAgo(d) {
     return fd(d);
 }
 
-function getActivityStatus(lastLogin) {
+// IDs der gerade online User (aus Presence)
+var onlineUserIds = {};
+
+function getActivityStatus(lastLogin, userId) {
+    // Prüfe ob User gerade laut Presence online ist
+    if (userId && onlineUserIds[userId]) {
+        return { cls:'online', label:'🟢 Online', badge:'badge-green' };
+    }
     if (!lastLogin) return { cls:'inactive', label:'Nie eingeloggt', badge:'badge-gray' };
     var diff = Date.now() - new Date(lastLogin).getTime();
     var hours = diff / 3600000;
     var days = hours / 24;
-    if (hours < 1) return { cls:'online', label:'Gerade aktiv', badge:'badge-green' };
     if (hours < 24) return { cls:'today', label:'Heute aktiv', badge:'badge-green' };
     if (days < 2) return { cls:'yesterday', label:'Gestern', badge:'badge-yellow' };
     if (days < 7) return { cls:'week', label:'Diese Woche', badge:'badge-yellow' };
@@ -789,7 +795,7 @@ function renderStats() {
 function renderUsers(users) {
     var html = '';
     users.forEach(function(u) {
-        var activity = getActivityStatus(u.lastLogin);
+        var activity = getActivityStatus(u.lastLogin, u.id);
         var safeEmail = (u.email||'').replace(/'/g, "\\'");
         html += '<tr>'+
             '<td><strong>'+u.email+'</strong>'+(u.name ? '<br><span style="font-size:.75rem;color:#6b7280">'+u.name+'</span>' : '')+
@@ -1216,10 +1222,14 @@ function renderOnlineUsers() {
     var state = onlineChannel.presenceState();
     var users = [];
     
+    // onlineUserIds aktualisieren für Benutzer-Tabelle
+    onlineUserIds = {};
     Object.keys(state).forEach(function(key) {
         var presences = state[key];
         if (presences && presences.length > 0) {
             users.push(presences[0]);
+            // User-ID merken
+            if (presences[0].user_id) onlineUserIds[presences[0].user_id] = true;
         }
     });
     
@@ -1274,6 +1284,9 @@ function renderOnlineUsers() {
     });
     
     listEl.innerHTML = html;
+    
+    // Benutzer-Tabelle aktualisieren damit Aktivitäts-Status stimmt
+    if (allUsers.length > 0) renderUsers(allUsers);
 }
 
 // Start presence listener after admin login
