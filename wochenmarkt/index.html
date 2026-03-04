@@ -891,6 +891,29 @@ Propolis Tinktur 20ml;1</pre>
   <div class="detail-footer" id="detailFooter"></div>
 </div>
 
+<!-- INSTALL HILFE MODAL -->
+<div class="modal-overlay" id="installHilfe" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <h3>📲 App installieren</h3>
+    <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
+      <p style="font-weight:700;margin-bottom:.5rem">Chrome / Edge:</p>
+      <p>1. Tippe auf <b>⋮</b> (oben rechts)</p>
+      <p>2. Wähle <b>"App installieren"</b></p>
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+      <p style="font-weight:700;margin-bottom:.5rem">Samsung Internet:</p>
+      <p>1. Tippe auf <b>≡</b> (unten rechts)</p>
+      <p>2. Wähle <b>"Seite zum Startbildschirm"</b></p>
+      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
+      <p style="font-weight:700;margin-bottom:.5rem">Safari (iPhone):</p>
+      <p>1. Tippe auf <b>□↑</b> (Teilen, unten Mitte)</p>
+      <p>2. Wähle <b>"Zum Home-Bildschirm"</b></p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-honey" onclick="closeInstallHilfe()">Verstanden</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1992,14 +2015,12 @@ function installApp() {
       document.getElementById('installBanner').style.display = 'none';
     });
   } else {
-    // Manuelle Anleitung anzeigen
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      alert('App installieren:\n\n1. Tippe unten auf den Teilen-Button (□↑)\n2. Wähle "Zum Home-Bildschirm"');
-    } else {
-      alert('App installieren:\n\n1. Tippe oben rechts auf ⋮ (3 Punkte)\n2. Wähle "App installieren" oder "Zum Startbildschirm hinzufügen"');
-    }
+    document.getElementById('installHilfe').style.display = 'flex';
   }
+}
+
+function closeInstallHilfe() {
+  document.getElementById('installHilfe').style.display = 'none';
 }
 
 window.addEventListener('appinstalled', function() {
