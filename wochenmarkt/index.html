@@ -909,6 +909,7 @@ Propolis Tinktur 20ml;1</pre>
     <div id="gpsStatus" style="font-size:.8rem;color:var(--text-soft);margin-bottom:.5rem">Standort wird gesucht...</div>
     <div id="liveMap" style="height:55vh;border-radius:.75rem;border:1.5px solid #E8DFD4;z-index:1"></div>
     <div id="gpsCoords" style="font-size:.75rem;color:var(--text-soft);margin-top:.5rem;text-align:center"></div>
+    <button class="btn btn-outline" onclick="resetGPS()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem;margin-top:.5rem;width:100%">🔄 GPS-Berechtigung zurücksetzen</button>
     <!-- Vergangene Standorte -->
     <div style="margin-top:1rem">
       <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📋 Gespeicherte Verkaufsstandorte</h3>
@@ -960,6 +961,23 @@ Propolis Tinktur 20ml;1</pre>
   </div>
   <div class="detail-body" id="detailBody"></div>
   <div class="detail-footer" id="detailFooter"></div>
+</div>
+
+<!-- GPS ERLAUBNIS MODAL -->
+<div class="modal-overlay" id="gpsModal">
+  <div class="modal" style="max-width:400px;text-align:center">
+    <div style="font-size:3rem;margin-bottom:.5rem">📍</div>
+    <h3>Standort freigeben</h3>
+    <p style="font-size:.85rem;color:var(--text);line-height:1.6;margin-bottom:.5rem">Die App möchte deinen GPS-Standort verwenden um:</p>
+    <ul style="font-size:.8rem;color:var(--text-soft);text-align:left;line-height:1.8;padding-left:1.5rem;margin-bottom:1rem">
+      <li>Deinen Live-Standort auf der Karte zu zeigen</li>
+      <li>Verkaufsstandorte automatisch zu speichern</li>
+    </ul>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="denyGPS()">Ablehnen</button>
+      <button class="btn btn-honey" onclick="allowGPS()">📍 Standort erlauben</button>
+    </div>
+  </div>
 </div>
 
 <!-- INSTALL HILFE MODAL -->
@@ -1511,8 +1529,8 @@ async function saveSession() {
     }
   });
 
-  // GPS abfragen
-  var gps = await getGPS();
+  // GPS abfragen (nur wenn erlaubt)
+  var gps = gpsAllowed ? await getGPS() : null;
 
   var entry = {
     id: Date.now(),
@@ -2256,6 +2274,7 @@ var liveMapInstance = null;
 var liveMarker = null;
 var gpsWatchId = null;
 var salesMarkers = [];
+var gpsAllowed = localStorage.getItem('wm_gps_allowed') === 'true';
 
 function initLiveMap() {
   var mapEl = document.getElementById('liveMap');
@@ -2273,10 +2292,47 @@ function initLiveMap() {
   // Fix für Leaflet in hidden Tabs
   setTimeout(function() { liveMapInstance.invalidateSize(); }, 200);
 
-  // GPS Tracking starten
-  startGPSTracking();
+  // GPS-Erlaubnis prüfen
+  if (gpsAllowed) {
+    startGPSTracking();
+  } else {
+    document.getElementById('gpsModal').classList.add('active');
+  }
   // Vergangene Verkaufsstandorte laden
   loadSalesLocations();
+}
+
+function allowGPS() {
+  gpsAllowed = true;
+  localStorage.setItem('wm_gps_allowed', 'true');
+  document.getElementById('gpsModal').classList.remove('active');
+  startGPSTracking();
+}
+
+function denyGPS() {
+  gpsAllowed = false;
+  localStorage.removeItem('wm_gps_allowed');
+  document.getElementById('gpsModal').classList.remove('active');
+  document.getElementById('gpsStatus').textContent = 'GPS deaktiviert';
+}
+
+function resetGPS() {
+  // App-seitige Erlaubnis zurücksetzen
+  localStorage.removeItem('wm_gps_allowed');
+  gpsAllowed = false;
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  if (liveMarker) {
+    if (liveMarker._accCircle) liveMapInstance.removeLayer(liveMarker._accCircle);
+    liveMapInstance.removeLayer(liveMarker);
+    liveMarker = null;
+  }
+  document.getElementById('gpsStatus').textContent = 'GPS zurückgesetzt';
+  document.getElementById('gpsCoords').textContent = '';
+  // Modal nochmal zeigen
+  document.getElementById('gpsModal').classList.add('active');
 }
 
 function startGPSTracking() {
