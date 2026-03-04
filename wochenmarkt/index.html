@@ -829,7 +829,7 @@ body {
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
   <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
-  <button class="tab" id="tabKarte" onclick="switchTab('karte')" style="display:none">📍 Karte</button>
+  <button class="tab" id="tabKarte" onclick="switchTab('karte')">📍 Karte</button>
   <button class="tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">🔑 Admin</button>
 </div>
 
@@ -2164,9 +2164,7 @@ async function checkPw() {
 
 function updateAdminUI() {
   var adminTab = document.getElementById('tabAdmin');
-  var karteTab = document.getElementById('tabKarte');
   if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
-  if (karteTab) karteTab.style.display = isAdmin ? '' : 'none';
 }
 
 // ─── KAMERA & FOTOS ─────────────────────────────────────────────────
