@@ -2602,6 +2602,18 @@ behandlungMod.init();
         currentUser = session.data.session.user;
         // Last login bei jedem Seitenaufruf aktualisieren
         sb.from('profiles').update({last_login: new Date().toISOString()}).eq('id', currentUser.id);
+        // Login-Count hochzählen
+        sb.from('profiles').select('login_count').eq('id', currentUser.id).single().then(function(r) {
+            if (r.data !== null) {
+                sb.from('profiles').update({login_count: (r.data.login_count || 0) + 1}).eq('id', currentUser.id);
+            }
+        }).catch(function(){});
+        // Login-Historie eintragen
+        sb.from('login_historie').insert({
+            user_id: currentUser.id,
+            email: currentUser.email,
+            page: 'App (Session)'
+        }).then(function(){}).catch(function(){});
         await startApp();
     } else {
         // Show auth screen
