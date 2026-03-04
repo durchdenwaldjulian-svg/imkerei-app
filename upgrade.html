@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F5A623">
+<title>Upgrade – BienenPlan</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--honey:#F5A623;--honey-deep:#D4891C;--honey-glow:#FFD980;--cream:#FFFBF0;--cream-dark:#FFF3D6;--bark:#1C1410;--bark-warm:#2D1F14;--bark-mid:#3D2E1F;--text:#4A3728;--text-soft:#8B7355;--forest:#3D7C47;--forest-light:#E8F5E9;--white:#fff}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;color:var(--text);background:var(--cream);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.serif{font-family:'Fraunces',serif}
+a{color:inherit;text-decoration:none}
+
+/* === BG DECO === */
+.bg-deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-deco i{position:absolute;width:100px;height:100px;background:var(--honey);opacity:.025;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);animation:drift 30s ease-in-out infinite}
+.bg-deco i:nth-child(1){top:8%;left:4%;width:150px;height:150px;animation-delay:0s}
+.bg-deco i:nth-child(2){top:35%;right:6%;width:90px;height:90px;animation-delay:-7s}
+.bg-deco i:nth-child(3){top:65%;left:12%;width:70px;height:70px;animation-delay:-14s}
+.bg-deco i:nth-child(4){top:85%;right:18%;width:120px;height:120px;animation-delay:-20s}
+@keyframes drift{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-18px) rotate(4deg)}70%{transform:translateY(12px) rotate(-2deg)}}
+
+/* === NAV === */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);background:rgba(255,251,240,.88);border-bottom:1px solid rgba(245,166,35,.1);transition:padding .3s,box-shadow .3s}
+.topnav.stick{padding:12px 32px;box-shadow:0 2px 12px rgba(28,20,16,.06)}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--bark)}
+.logo span{font-size:1.5rem}
+.nav-links{display:flex;gap:28px;align-items:center}
+.nav-links a{font-weight:500;font-size:.92rem;color:var(--text-soft);transition:color .2s}
+.nav-links a:hover{color:var(--honey-deep)}
+.btn-cta{display:inline-flex;align-items:center;gap:8px;background:var(--bark);color:var(--white);padding:11px 26px;border-radius:100px;font-weight:700;font-size:.9rem;transition:all .25s;border:none;cursor:pointer;text-decoration:none}
+.btn-cta:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
+
+/* === HELPERS === */
+.section-inner{max-width:1100px;margin:0 auto}
+.tag{display:inline-block;background:var(--cream-dark);color:var(--honey-deep);font-weight:700;font-size:.78rem;padding:6px 14px;border-radius:100px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase}
+.section-title{font-size:clamp(2rem,4vw,2.8rem);color:var(--bark);line-height:1.15;margin-bottom:14px;font-weight:900}
+.section-sub{font-size:1.05rem;color:var(--text-soft);max-width:560px;line-height:1.6}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--honey);color:var(--bark);padding:15px 30px;border-radius:100px;font-weight:700;font-size:1rem;transition:all .3s;box-shadow:0 4px 16px rgba(245,166,35,.35);border:none;cursor:pointer;position:relative;text-decoration:none}
+.btn-primary:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,166,35,.4)}
+
+/* === HERO === */
+.upgrade-hero{position:relative;z-index:1;padding:140px 32px 60px;text-align:center}
+.upgrade-hero .section-sub{margin:0 auto}
+.current-badge{display:inline-flex;align-items:center;gap:10px;background:var(--white);border:1px solid rgba(245,166,35,.12);border-radius:100px;padding:8px 20px 8px 12px;margin-top:28px;box-shadow:0 2px 8px rgba(28,20,16,.04)}
+.current-badge .cb-dot{width:10px;height:10px;background:var(--forest);border-radius:50%;flex-shrink:0}
+.current-badge .cb-text{font-size:.85rem;color:var(--text);font-weight:600}
+.current-badge .cb-plan{color:var(--honey-deep)}
+
+/* === TOGGLE === */
+.interval-wrap{display:flex;justify-content:center;margin-bottom:40px}
+.interval-toggle{display:inline-flex;background:var(--white);border:2px solid rgba(245,166,35,.1);border-radius:100px;padding:4px;box-shadow:0 2px 12px rgba(28,20,16,.05)}
+.interval-btn{padding:11px 28px;border:none;background:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:.92rem;font-weight:600;color:var(--text-soft);cursor:pointer;transition:all .25s}
+.interval-btn.active{background:var(--bark);color:var(--white);box-shadow:0 2px 8px rgba(28,20,16,.15)}
+.interval-btn .save{display:inline-block;background:var(--forest);color:var(--white);font-size:.65rem;font-weight:700;padding:3px 10px;border-radius:100px;margin-left:8px;vertical-align:middle}
+
+/* === PRICING === */
+.pricing{position:relative;z-index:1;padding:0 32px 80px}
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1100px;margin:0 auto;align-items:start}
+.price-card{background:var(--white);border-radius:20px;padding:36px 28px;border:1px solid rgba(245,166,35,.08);box-shadow:0 2px 8px rgba(28,20,16,.04);text-align:center;position:relative;transition:all .25s}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,20,16,.08)}
+.price-card.popular{border:2px solid var(--honey);box-shadow:0 8px 32px rgba(245,166,35,.15);transform:scale(1.03);z-index:2}
+.price-card.popular:hover{transform:scale(1.03) translateY(-4px)}
+.popular-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--honey);color:var(--bark);font-size:.75rem;font-weight:700;padding:5px 16px;border-radius:100px;white-space:nowrap}
+.plan-emoji{font-size:2.2rem;margin-bottom:12px}
+.plan-name{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--bark);margin-bottom:6px}
+.plan-desc{font-size:.85rem;color:var(--text-soft);margin-bottom:20px;line-height:1.5}
+.plan-price{display:flex;align-items:baseline;justify-content:center;gap:2px;margin-bottom:4px}
+.plan-price .currency{font-size:1.2rem;color:var(--text-soft);font-weight:600;align-self:flex-start;margin-top:8px}
+.plan-price .amount{font-family:'Fraunces',serif;font-size:3rem;font-weight:900;color:var(--bark);line-height:1}
+.plan-price .period{font-size:.9rem;color:var(--text-soft)}
+.plan-yearly{font-size:.8rem;color:var(--text-soft);margin-bottom:20px;min-height:20px}
+.plan-yearly .original{text-decoration:line-through;color:#c4b5a4}
+.plan-yearly .green{color:var(--forest);font-weight:600}
+.plan-divider{height:1px;background:rgba(28,20,16,.06);margin-bottom:20px}
+.plan-feats{list-style:none;text-align:left;margin-bottom:28px;display:flex;flex-direction:column;gap:10px}
+.plan-feats li{font-size:.88rem;color:var(--text);font-weight:500;display:flex;align-items:center;gap:10px}
+.plan-feats li::before{content:'✓';color:var(--forest);font-weight:800;font-size:.85rem;flex-shrink:0}
+.plan-feats li.disabled{color:#c4b5a4}
+.plan-feats li.disabled::before{content:'–';color:#d4c8b8}
+.btn-plan{display:block;padding:13px 24px;border-radius:100px;font-weight:700;font-size:.92rem;text-align:center;transition:all .25s;cursor:pointer;text-decoration:none;border:2px solid transparent}
+.btn-plan.outline{background:transparent;border-color:rgba(28,20,16,.1);color:var(--bark)}
+.btn-plan.outline:hover{border-color:var(--honey);color:var(--honey-deep)}
+.btn-plan.filled{background:var(--honey);border-color:var(--honey);color:var(--bark)}
+.btn-plan.filled:hover{background:var(--honey-deep);color:var(--white);border-color:var(--honey-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
+.btn-plan.current{background:var(--cream);border-color:rgba(245,166,35,.12);color:var(--text-soft);cursor:default;pointer-events:none}
+.plan-trial{font-size:.78rem;color:var(--text-soft);margin-top:10px;text-align:center}
+.guarantee{display:flex;align-items:center;gap:14px;background:var(--forest-light);border:1px solid rgba(61,124,71,.12);border-radius:16px;padding:18px 24px;max-width:600px;margin:36px auto 0;text-align:left}
+.guarantee span{font-size:1.8rem;flex-shrink:0}
+.guarantee p{font-size:.85rem;color:var(--forest);line-height:1.5}
+.guarantee strong{color:var(--bark)}
+
+/* === FEATURE SHOWCASE === */
+.showcase{position:relative;z-index:1;padding:80px 32px;background:var(--bark);overflow:hidden}
+.showcase::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(245,166,35,.08),transparent 70%);border-radius:50%}
+.showcase .section-inner{max-width:1100px;margin:0 auto}
+.showcase .tag{background:rgba(245,166,35,.15);color:var(--honey)}
+.showcase .section-title{color:var(--white)}
+.showcase .section-sub{color:rgba(255,255,255,.6);margin-bottom:48px}
+.show-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.show-card{background:rgba(255,255,255,.05);border:1px solid rgba(245,166,35,.1);border-radius:16px;padding:24px;transition:all .25s;overflow:hidden}
+.show-card:hover{background:rgba(255,255,255,.08);transform:translateY(-3px)}
+.show-card .sc-emoji{font-size:1.8rem;margin-bottom:12px}
+.show-card h3{color:var(--white);font-size:1.05rem;font-weight:700;margin-bottom:8px;font-family:'Outfit',sans-serif}
+.show-card p{color:rgba(255,255,255,.55);font-size:.85rem;line-height:1.5;margin-bottom:14px}
+.show-card .sc-preview{background:rgba(255,255,255,.04);border-radius:10px;padding:12px;font-size:.78rem}
+.show-card .sc-preview .sp-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.6)}
+.show-card .sc-preview .sp-row:last-child{border-bottom:none}
+.show-card .sc-preview .sp-label{font-weight:600;color:rgba(255,255,255,.8)}
+.show-card .sc-preview .sp-val{color:var(--honey);font-weight:600}
+.show-card .sc-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.68rem;font-weight:600;margin-right:4px}
+.sc-badge-green{background:rgba(16,185,129,.2);color:#6ee7b7}
+.sc-badge-yellow{background:rgba(245,166,35,.2);color:var(--honey-glow)}
+.sc-badge-blue{background:rgba(59,130,246,.2);color:#93c5fd}
+.sc-badge-red{background:rgba(239,68,68,.2);color:#fca5a5}
+.show-card .sc-bar{display:flex;gap:3px;margin-top:8px}
+.show-card .sc-bar div{height:24px;border-radius:4px;flex:1}
+.show-card .sc-stars{color:var(--honey);letter-spacing:2px}
+
+/* === COMPARISON === */
+.comparison{position:relative;z-index:1;padding:80px 32px}
+.comp-table-wrap{background:var(--white);border-radius:20px;border:1px solid rgba(245,166,35,.08);box-shadow:0 2px 8px rgba(28,20,16,.04);overflow:hidden;overflow-x:auto;max-width:1000px;margin:0 auto}
+.comp-table{width:100%;border-collapse:collapse;min-width:620px}
+.comp-table thead th{padding:16px 14px;text-align:center;font-weight:700;color:var(--bark);background:var(--cream);border-bottom:2px solid rgba(245,166,35,.08);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+.comp-table thead th:first-child{text-align:left;text-transform:none;letter-spacing:0;font-size:.9rem}
+.comp-table thead th.hl{background:var(--cream-dark);color:var(--honey-deep)}
+.comp-table tbody td{padding:13px 14px;text-align:center;border-bottom:1px solid rgba(28,20,16,.04);font-size:.88rem;color:var(--text)}
+.comp-table tbody td:first-child{text-align:left;font-weight:500;color:var(--bark-mid)}
+.comp-table tbody td.hl{background:rgba(255,243,214,.25)}
+.comp-table .cat td{background:var(--cream);font-weight:700;color:var(--bark);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px}
+.comp-table tbody tr:last-child td{border-bottom:none}
+.ck{color:var(--forest);font-weight:700}.cx{color:#d4c8b8}.ct{font-size:.82rem}
+
+/* === FAQ === */
+.faq{position:relative;z-index:1;padding:0 32px 80px}
+.faq-list{max-width:700px;margin:40px auto 0}
+.faq-item{border-bottom:1px solid rgba(28,20,16,.06);overflow:hidden}
+.faq-q{padding:20px 0;font-weight:600;font-size:1rem;color:var(--bark);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+.faq-q .arr{font-size:1.2rem;color:var(--text-soft);transition:transform .3s}
+.faq-item.open .faq-q .arr{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;font-size:.92rem;color:var(--text-soft);line-height:1.7}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:20px}
+
+/* === CTA === */
+.cta{position:relative;z-index:1;padding:0 32px 80px}
+.cta-box{max-width:900px;margin:0 auto;background:linear-gradient(135deg,var(--bark) 0%,var(--bark-warm) 100%);border-radius:24px;padding:64px 48px;text-align:center;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='rgba(245,166,35,0.04)' stroke-width='1'/%3E%3C/svg%3E");opacity:.6}
+.cta-box h2{font-size:clamp(1.8rem,3.5vw,2.5rem);color:var(--white);margin-bottom:16px;position:relative;font-weight:900}
+.cta-box p{color:rgba(255,255,255,.6);font-size:1.05rem;margin-bottom:32px;position:relative;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.6}
+
+/* === FOOTER === */
+footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px}
+.footer-inner{max-width:1100px;margin:0 auto}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,.06)}
+.footer-brand .logo{color:var(--honey);margin-bottom:12px}
+.footer-brand p{color:rgba(255,255,255,.4);font-size:.85rem;line-height:1.6;max-width:280px}
+.footer-col h4{color:rgba(255,255,255,.5);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.footer-col a{display:block;color:rgba(255,255,255,.45);font-size:.88rem;margin-bottom:10px;transition:color .2s}
+.footer-col a:hover{color:var(--honey)}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;flex-wrap:wrap;gap:12px}
+.footer-bottom p,.footer-bottom a{color:rgba(255,255,255,.3);font-size:.8rem}
+.footer-bottom a:hover{color:var(--honey)}
+
+/* === PREVIEW === */
+.preview-bar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;padding:10px;text-align:center;font-size:.82rem;font-weight:600;z-index:999;display:flex;align-items:center;justify-content:center;gap:8px}
+.preview-bar i{width:8px;height:8px;background:#60a5fa;border-radius:50%;animation:blink 1.5s infinite;display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* === REVEAL === */
+.rv{opacity:0;transform:translateY(24px);transition:all .55s ease-out}
+.rv.vis{opacity:1;transform:translateY(0)}
+
+/* === RESPONSIVE === */
+@media(max-width:900px){
+  .price-grid,.show-grid{grid-template-columns:1fr}
+  .price-grid{max-width:400px;margin:0 auto}
+  .price-card.popular{transform:none}.price-card.popular:hover{transform:translateY(-4px)}
+  .topnav .nav-links{display:none}
+  .upgrade-hero{padding:110px 20px 40px}
+  .guarantee{flex-direction:column;text-align:center}
+  .cta-box{padding:40px 24px}
+  .footer-top{grid-template-columns:1fr 1fr;gap:28px}
+  .footer-bottom{flex-direction:column;text-align:center}
+}
+@media(min-width:901px) and (max-width:1100px){
+  .price-grid{grid-template-columns:repeat(2,1fr);max-width:700px;margin:0 auto}
+  .show-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="bg-deco"><i></i><i></i><i></i><i></i></div>
+<div class="preview-bar"><i></i> Vorschau-Modus – Layout-Preview ohne Login</div>
+
+<!-- NAV -->
+<nav class="topnav" id="topnav">
+  <a href="index.html" class="logo"><span>🐝</span> BienenPlan</a>
+  <div class="nav-links">
+    <a href="index.html#features">Features</a>
+    <a href="index.html#trachtkarte">Trachtkarte</a>
+    <a href="demo.html">Live-Demo</a>
+    <a href="app.html" class="btn-cta">← Zurück zur App</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="upgrade-hero">
+  <div class="tag rv">Upgrade</div>
+  <h1 class="section-title rv">Finde deinen <em style="font-style:italic;color:var(--honey-deep)">perfekten Plan</em></h1>
+  <p class="section-sub rv">Mehr Völker, mehr Features, mehr Kontrolle. Starte mit 14 Tagen gratis – ohne Risiko.</p>
+  <div class="current-badge rv">
+    <span class="cb-dot"></span>
+    <span class="cb-text">Dein Plan: <span class="cb-plan" id="currentPlan">Starter (Kostenlos)</span></span>
+  </div>
+</section>
+
+<!-- TOGGLE -->
+<div class="interval-wrap rv">
+  <div class="interval-toggle">
+    <button class="interval-btn active" data-interval="monthly" onclick="switchInterval('monthly')">Monatlich</button>
+    <button class="interval-btn" data-interval="yearly" onclick="switchInterval('yearly')">Jährlich <span class="save">Spare bis 33%</span></button>
+  </div>
+</div>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="section-inner">
+    <div class="price-grid">
+      <!-- STARTER -->
+      <div class="price-card rv">
+        <div class="plan-emoji">🐝</div>
+        <div class="plan-name">Starter</div>
+        <div class="plan-desc">Für Einsteiger und kleine Imkereien</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">0</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">Für immer kostenlos</div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Bis zu 3 Völker</li>
+          <li>1 Standort</li>
+          <li>Aufgaben & Packliste</li>
+          <li>Behandlungsplaner (ohne Auto-Termine)</li>
+          <li>3-Tage Wetter</li>
+          <li>Trachtkarte (Teaser)</li>
+          <li>Kosten-Tracking (10 Einträge)</li>
+          <li>Forum (nur lesen)</li>
+          <li class="disabled">Königinnenzucht</li>
+          <li class="disabled">Ernte-Dokumentation</li>
+          <li class="disabled">Datenexport & Backup</li>
+        </ul>
+        <a class="btn-plan current">Aktueller Plan ✓</a>
+      </div>
+      <!-- PRO -->
+      <div class="price-card popular rv">
+        <div class="popular-tag">Beliebteste Wahl</div>
+        <div class="plan-emoji">🍯</div>
+        <div class="plan-name">Imker Pro</div>
+        <div class="plan-desc">Für aktive Imker, die alles im Griff haben wollen</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount" id="proAmount">4,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly" id="proYearly">oder 39,99€/Jahr <span class="green">(4 Monate gratis!)</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Unbegrenzt Völker</li>
+          <li>Bis zu 5 Standorte</li>
+          <li>14-Tage Wetter</li>
+          <li>Trachtkarte lesen & teilen</li>
+          <li>Königinnenzucht-Planer</li>
+          <li>Ernte- & Kostenanalyse (unbegrenzt)</li>
+          <li>Auto-Termine Behandlung</li>
+          <li>Bewertungssystem</li>
+          <li>Community-Forum (schreiben)</li>
+          <li>Einfaches Bestandsbuch</li>
+          <li>Datenexport & Backup</li>
+        </ul>
+        <a class="btn-plan filled" onclick="handleUpgrade('pro')">14 Tage kostenlos testen →</a>
+        <div class="plan-trial" id="proTrial">Danach 4,99€/Monat · Jederzeit kündbar</div>
+      </div>
+      <!-- MEISTER -->
+      <div class="price-card rv">
+        <div class="plan-emoji">👑</div>
+        <div class="plan-name">Imkermeister</div>
+        <div class="plan-desc">Für Profis, Erwerbsimker & große Betriebe</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount" id="meisterAmount">9,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly" id="meisterYearly">oder 89,99€/Jahr <span class="green">(3 Monate gratis!)</span></div>
+        <div class="plan-divider"></div>
+        <ul class="plan-feats">
+          <li>Alles aus Imker Pro</li>
+          <li>Unbegrenzt Standorte</li>
+          <li>Veterinäramt-Bestandsbuch PDF</li>
+          <li>Multi-User / Team-Zugang</li>
+          <li>Prioritäts-Support</li>
+        </ul>
+        <a class="btn-plan outline" onclick="handleUpgrade('meister')">14 Tage kostenlos testen →</a>
+        <div class="plan-trial" id="meisterTrial">Danach 9,99€/Monat · Jederzeit kündbar</div>
+      </div>
+    </div>
+    <div class="guarantee rv">
+      <span>🛡️</span>
+      <p><strong>14 Tage kostenlos testen. 30 Tage Geld-zurück-Garantie.</strong> Teste jeden bezahlten Plan risikofrei. Nicht zufrieden? Volle Erstattung, ohne Fragen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE SHOWCASE -->
+<section class="showcase">
+  <div class="section-inner" style="text-align:center">
+    <div class="tag rv">Das bekommst du</div>
+    <h2 class="section-title rv">Schau, was Pro-Imker nutzen</h2>
+    <p class="section-sub rv" style="margin:0 auto">Echte Beispiele aus der App – so sieht deine Imkerei mit BienenPlan Pro aus.</p>
+  </div>
+  <div class="section-inner" style="margin-top:48px">
+    <div class="show-grid">
+      <!-- 1: Standorte & Völker -->
+      <div class="show-card rv">
+        <div class="sc-emoji">📍</div>
+        <h3>Standorte & Völker</h3>
+        <p>Verwalte alle Standorte mit GPS-Karte und Völker-Zuordnung.</p>
+        <div class="sc-preview">
+          <div class="sp-row"><span class="sp-label">🌲 Waldlichtung</span><span class="sp-val">5 Völker</span></div>
+          <div class="sp-row"><span class="sp-label">🏡 Garten</span><span class="sp-val">4 Völker</span></div>
+          <div class="sp-row"><span class="sp-label">🍎 Obstwiese</span><span class="sp-val">3 Völker</span></div>
+          <div class="sp-row" style="border-bottom:none"><span style="color:rgba(255,255,255,.4)">Gesamt</span><span class="sp-val">12 Völker</span></div>
+        </div>
+      </div>
+      <!-- 2: Behandlungen -->
+      <div class="show-card rv">
+        <div class="sc-emoji">💉</div>
+        <h3>Behandlungsplaner</h3>
+        <p>Auto-Termine, Schritte und Erinnerungen für alle Varroa-Methoden.</p>
+        <div class="sc-preview">
+          <div class="sp-row"><span class="sp-label">🧪 Ameisensäure</span><span class="sc-badge sc-badge-yellow">Läuft</span></div>
+          <div class="sp-row"><span class="sp-label">💧 Oxalsäure</span><span class="sc-badge sc-badge-red">Heute</span></div>
+          <div class="sp-row"><span class="sp-label">🌿 Thymol</span><span class="sc-badge sc-badge-blue">Geplant</span></div>
+          <div class="sp-row" style="border-bottom:none;color:rgba(255,255,255,.35);font-size:.72rem">Auto-Termine berechnen nächste Schritte</div>
+        </div>
+      </div>
+      <!-- 3: Königinnenzucht -->
+      <div class="show-card rv">
+        <div class="sc-emoji">👑</div>
+        <h3>Königinnenzucht</h3>
+        <p>Timeline-Planung mit automatischer Datumsberechnung.</p>
+        <div class="sc-preview">
+          <div class="sp-row"><span class="sp-label">Zuchtserie 2026-A</span><span class="sc-badge sc-badge-yellow">Aktiv</span></div>
+          <div class="sp-row" style="color:rgba(255,255,255,.5)">Buckfast · Volk 4 · Waldlichtung</div>
+          <div class="sp-row"><span style="color:rgba(255,255,255,.5)">Sammelbrut → Umlarven → Verschult →</span></div>
+          <div class="sp-row" style="border-bottom:none"><span class="sp-label">Nächster Schritt</span><span class="sp-val">Schlupf 04.03.</span></div>
+        </div>
+      </div>
+      <!-- 4: Ernte & Kosten -->
+      <div class="show-card rv">
+        <div class="sc-emoji">🍯</div>
+        <h3>Ernte & Kosten</h3>
+        <p>Honigernte dokumentieren, Kosten tracken, Rentabilität berechnen.</p>
+        <div class="sc-preview">
+          <div class="sp-row"><span class="sp-label">Gesamternte 2025</span><span class="sp-val">38,5 kg</span></div>
+          <div class="sp-row"><span class="sp-label">Schnitt/Volk</span><span class="sp-val">3,2 kg</span></div>
+          <div class="sp-row"><span class="sp-label">Gesamtkosten</span><span class="sp-val">462 €</span></div>
+          <div class="sc-bar">
+            <div style="background:#F5A623;flex:4.2"></div>
+            <div style="background:#f7bc5e;flex:3.8"></div>
+            <div style="background:#ffe0a0;flex:2.1"></div>
+            <div style="background:#F5A623;flex:5.0"></div>
+            <div style="background:#f7bc5e;flex:3.5"></div>
+            <div style="background:#F5A623;flex:4.8"></div>
+          </div>
+          <div style="text-align:center;color:rgba(255,255,255,.35);font-size:.68rem;margin-top:4px">Ernte pro Volk (kg)</div>
+        </div>
+      </div>
+      <!-- 5: Wetter -->
+      <div class="show-card rv">
+        <div class="sc-emoji">🌤️</div>
+        <h3>14-Tage Wetter</h3>
+        <p>Bienen-Flugwetter mit Temperatur, Wind und Niederschlag.</p>
+        <div class="sc-preview" style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Mo</div><div>☀️</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">9°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Di</div><div>⛅</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">11°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Mi</div><div>🌧️</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">8°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Do</div><div>⛅</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">10°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Fr</div><div>☀️</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">13°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">Sa</div><div>☀️</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">14°</div></div>
+          <div style="text-align:center;min-width:36px"><div style="font-size:.68rem;color:rgba(255,255,255,.4)">So</div><div>⛅</div><div style="color:var(--honey);font-weight:600;font-size:.8rem">12°</div></div>
+        </div>
+      </div>
+      <!-- 6: Bewertung -->
+      <div class="show-card rv">
+        <div class="sc-emoji">⭐</div>
+        <h3>Völker-Bewertung</h3>
+        <p>Radar-Chart, Sterne-Bewertung und Vergleiche für jedes Volk.</p>
+        <div class="sc-preview">
+          <div class="sp-row"><span class="sp-label">Sanftmut</span><span class="sc-stars">★★★★★</span></div>
+          <div class="sp-row"><span class="sp-label">Wabensitz</span><span class="sc-stars">★★★★☆</span></div>
+          <div class="sp-row"><span class="sp-label">Honigertrag</span><span class="sc-stars">★★★★☆</span></div>
+          <div class="sp-row"><span class="sp-label">Winterfest</span><span class="sc-stars">★★★☆☆</span></div>
+          <div class="sp-row" style="border-bottom:none"><span class="sp-label">Volksstärke</span><span class="sc-stars">★★★★☆</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="comparison">
+  <div class="section-inner" style="text-align:center">
+    <div class="tag rv">Vergleich</div>
+    <h2 class="section-title rv">Alle Features im Detail</h2>
+    <p class="section-sub rv" style="margin:0 auto 40px">Was steckt in jedem Plan? Hier siehst du alles auf einen Blick.</p>
+  </div>
+  <div class="comp-table-wrap rv">
+    <table class="comp-table">
+      <thead><tr><th>Feature</th><th>🐝 Starter</th><th class="hl">🍯 Pro</th><th>👑 Meister</th></tr></thead>
+      <tbody>
+        <tr class="cat"><td colspan="4">📦 Grundlagen</td></tr>
+        <tr><td>Völker</td><td><span class="ct">3</span></td><td class="hl"><span class="ct">Unbegrenzt</span></td><td><span class="ct">Unbegrenzt</span></td></tr>
+        <tr><td>Standorte</td><td><span class="ct">1</span></td><td class="hl"><span class="ct">5</span></td><td><span class="ct">Unbegrenzt</span></td></tr>
+        <tr><td>Aufgaben & Packliste</td><td><span class="ck">✓</span></td><td class="hl"><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+        <tr class="cat"><td colspan="4">📅 Planung & Wetter</td></tr>
+        <tr><td>Wettervorhersage</td><td><span class="ct">3 Tage</span></td><td class="hl"><span class="ct">14 Tage</span></td><td><span class="ct">14 Tage</span></td></tr>
+        <tr><td>Behandlungsplaner</td><td><span class="ct">Manuell</span></td><td class="hl"><span class="ct">+ Auto-Termine</span></td><td><span class="ct">+ Auto-Termine</span></td></tr>
+        <tr><td>Königinnenzucht</td><td><span class="cx">–</span></td><td class="hl"><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+        <tr class="cat"><td colspan="4">📋 Dokumentation</td></tr>
+        <tr><td>Kosten-Tracking</td><td><span class="ct">10 Einträge</span></td><td class="hl"><span class="ct">Unbegrenzt</span></td><td><span class="ct">Unbegrenzt</span></td></tr>
+        <tr><td>Ernte-Dokumentation</td><td><span class="cx">–</span></td><td class="hl"><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+        <tr><td>Bestandsbuch PDF</td><td><span class="cx">–</span></td><td class="hl"><span class="ct">Einfach</span></td><td><span class="ct">Veterinäramt</span></td></tr>
+        <tr><td>Datenexport & Backup</td><td><span class="cx">–</span></td><td class="hl"><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+        <tr class="cat"><td colspan="4">💬 Community</td></tr>
+        <tr><td>Trachtkarte</td><td><span class="ct">Teaser</span></td><td class="hl"><span class="ct">Lesen & Teilen</span></td><td><span class="ct">Lesen & Teilen</span></td></tr>
+        <tr><td>Bewertungssystem</td><td><span class="cx">–</span></td><td class="hl"><span class="ck">✓</span></td><td><span class="ck">✓</span></td></tr>
+        <tr><td>Forum</td><td><span class="ct">Nur lesen</span></td><td class="hl"><span class="ct">Lesen & Schreiben</span></td><td><span class="ct">Lesen & Schreiben</span></td></tr>
+        <tr class="cat"><td colspan="4">👑 Profi-Features</td></tr>
+        <tr><td>Multi-User / Team</td><td><span class="cx">–</span></td><td class="hl"><span class="cx">–</span></td><td><span class="ck">✓</span></td></tr>
+        <tr><td>Prioritäts-Support</td><td><span class="cx">–</span></td><td class="hl"><span class="cx">–</span></td><td><span class="ck">✓</span></td></tr>
+        <tr><td>Testphase</td><td><span class="cx">–</span></td><td class="hl"><span class="ct">14 Tage gratis</span></td><td><span class="ct">14 Tage gratis</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="section-inner" style="text-align:center">
+    <div class="tag rv">FAQ</div>
+    <h2 class="section-title rv">Häufige Fragen</h2>
+    <div class="faq-list">
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was passiert nach der 14-Tage-Testphase?<span class="arr">+</span></div><div class="faq-a">Nach 14 Tagen wird dein gewählter Plan automatisch aktiviert und die erste Zahlung eingezogen. Du wirst vorher per E-Mail erinnert. Du kannst jederzeit vor Ablauf kündigen – dann wechselst du zurück zum kostenlosen Starter-Plan.</div></div>
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich jederzeit kündigen?<span class="arr">+</span></div><div class="faq-a">Ja, absolut. Keine Vertragsbindung, keine Kündigungsfrist. Du kannst direkt in den Einstellungen kündigen. Dein Plan bleibt bis zum Ende des Abrechnungszeitraums aktiv, danach wechselst du zum Starter-Plan. Deine Daten bleiben erhalten.</div></div>
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich zwischen Plänen wechseln?<span class="arr">+</span></div><div class="faq-a">Ja. Upgrade jederzeit – die Differenz wird anteilig berechnet. Downgrade ist zum Ende des aktuellen Abrechnungszeitraums möglich.</div></div>
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Welche Zahlungsmethoden werden akzeptiert?<span class="arr">+</span></div><div class="faq-a">Wir nutzen Stripe als Zahlungsanbieter. Du kannst mit Kreditkarte (Visa, Mastercard, Amex), SEPA-Lastschrift, Google Pay und Apple Pay bezahlen. Alle Zahlungen sind verschlüsselt und sicher.</div></div>
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Sind meine Daten sicher?<span class="arr">+</span></div><div class="faq-a">Deine Daten werden verschlüsselt auf europäischen Servern gespeichert (DSGVO-konform). Nur du hast Zugriff auf deine Imkerei-Daten. Wir verkaufen keine Daten an Dritte.</div></div>
+      <div class="faq-item rv"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was ist mit Vereinen?<span class="arr">+</span></div><div class="faq-a">Der Vereins-Plan ist aktuell auf Anfrage verfügbar. Schreibe uns an info@imkershop-durchdenwald.de – wir richten deinen Verein ein. 10 Mitglieder-Codes inklusive, Staffelpreise für größere Vereine.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-box rv">
+    <h2>Bereit für das nächste<br>Level deiner Imkerei?</h2>
+    <p>Starte jetzt mit 14 Tagen gratis – ohne Risiko, ohne Haken. Jederzeit kündbar.</p>
+    <a onclick="handleUpgrade('pro')" class="btn-primary" style="cursor:pointer;position:relative">Jetzt Pro testen 🍯</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand"><div class="logo"><span>🐝</span> BienenPlan</div><p>Die Web-App für moderne Imker. Gebaut mit Liebe zu Bienen und Technologie.</p></div>
+      <div class="footer-col"><h4>Produkt</h4><a href="index.html">Startseite</a><a href="demo.html">Live-Demo</a><a href="index.html#features">Features</a><a href="index.html#faq">FAQ</a></div>
+      <div class="footer-col"><h4>Konto</h4><a href="app.html">Anmelden</a><a href="app.html#register">Registrieren</a></div>
+      <div class="footer-col"><h4>Rechtliches</h4><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="agb.html">AGB</a></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2026 BienenPlan. Mit 🍯 gemacht in Deutschland.</p><a href="mailto:info@imkershop-durchdenwald.de">info@imkershop-durchdenwald.de</a></div>
+  </div>
+</footer>
+<div style="height:50px"></div>
+
+<script>
+var currentInterval='monthly';
+function switchInterval(interval){
+  currentInterval=interval;
+  document.querySelectorAll('.interval-btn').forEach(function(b){b.classList.toggle('active',b.dataset.interval===interval)});
+  if(interval==='yearly'){
+    document.getElementById('proAmount').textContent='3,33';
+    document.getElementById('proYearly').innerHTML='<span class="original">4,99€/Mo</span> → <span class="green">39,99€/Jahr (4 Monate gratis!)</span>';
+    document.getElementById('proTrial').textContent='Danach 39,99€/Jahr · Jederzeit kündbar';
+    document.getElementById('meisterAmount').textContent='7,50';
+    document.getElementById('meisterYearly').innerHTML='<span class="original">9,99€/Mo</span> → <span class="green">89,99€/Jahr (3 Monate gratis!)</span>';
+    document.getElementById('meisterTrial').textContent='Danach 89,99€/Jahr · Jederzeit kündbar';
+  }else{
+    document.getElementById('proAmount').textContent='4,99';
+    document.getElementById('proYearly').innerHTML='oder 39,99€/Jahr <span class="green">(4 Monate gratis!)</span>';
+    document.getElementById('proTrial').textContent='Danach 4,99€/Monat · Jederzeit kündbar';
+    document.getElementById('meisterAmount').textContent='9,99';
+    document.getElementById('meisterYearly').innerHTML='oder 89,99€/Jahr <span class="green">(3 Monate gratis!)</span>';
+    document.getElementById('meisterTrial').textContent='Danach 9,99€/Monat · Jederzeit kündbar';
+  }
+}
+function handleUpgrade(plan){
+  var name=plan==='pro'?'Imker Pro':'Imkermeister';
+  var price=plan==='pro'?(currentInterval==='yearly'?'39,99€/Jahr':'4,99€/Monat'):(currentInterval==='yearly'?'89,99€/Jahr':'9,99€/Monat');
+  alert('🐝 Vorschau-Modus\n\nPlan: '+name+'\nIntervall: '+(currentInterval==='yearly'?'Jährlich':'Monatlich')+'\nPreis: '+price+'\n\nIn der Live-Version öffnet sich hier Stripe Checkout.\n(14 Tage kostenlose Testphase)');
+}
+var rvs=document.querySelectorAll('.rv');
+var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
+rvs.forEach(function(el){obs.observe(el)});
+window.addEventListener('scroll',function(){document.getElementById('topnav').classList.toggle('stick',window.scrollY>40)});
+</script>
+</body>
+</html>
