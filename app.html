@@ -523,6 +523,7 @@ async function startApp() {
     
     // Plan laden
     await planManager.load();
+    if (typeof navUpdatePlan === 'function') navUpdatePlan();
     
     // Kalender-Zustand aus Profil laden
     if (profileRes.data && profileRes.data.kalender_offen !== undefined) {

@@ -188,6 +188,10 @@ var planManager = (function() {
 
         _loaded = true;
         console.log('[Plan] Geladen:', _plan);
+        
+        // Nav aktualisieren wenn verfügbar
+        if (typeof navUpdatePlan === 'function') navUpdatePlan();
+        
         return _plan;
     }
 

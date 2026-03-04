@@ -74,6 +74,14 @@
         });
 
         h += '<div style="flex:1"></div>';
+
+        // Plan-Badge + Upgrade/Abo-Button
+        h += '<div class="nav-plan-box" id="navPlanBox" style="margin:0 .75rem .5rem;padding:.6rem .75rem;background:rgba(245,166,35,.08);border-radius:.5rem;text-align:center;display:none">';
+        h += '<div id="navPlanBadge" style="font-size:.8rem;font-weight:700;color:#8B7355;margin-bottom:.4rem">🐝 Starter</div>';
+        h += '<a href="upgrade.html" id="navUpgradeBtn" class="nav-item" style="background:#F5A623;color:#1C1410;border-radius:100px;text-align:center;font-weight:700;font-size:.8rem;padding:.5rem .75rem;margin:0">⭐ Upgraden</a>';
+        h += '<button id="navPortalBtn" onclick="openCustomerPortal()" class="nav-item" style="display:none;font-size:.75rem;padding:.4rem .75rem;color:#8B7355;margin-top:.3rem">Abo verwalten →</button>';
+        h += '</div>';
+
         h += '<div class="nav-section">Rechtliches</div>';
         legalItems.forEach(function(item) {
             h += '<a href="' + item.href + '" class="nav-item" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">' + item.label + '</a>';
@@ -137,6 +145,8 @@
             ]},
             { title: 'Verwaltung', items: [
                 { page: 'einstellungen', icon: '⚙️', label: 'Einstellungen' },
+                { href: 'upgrade.html', icon: '⭐', label: 'Upgrade', id: 'mobileUpgradeBtn' },
+                { special: 'portal', icon: '💳', label: 'Abo verwalten', id: 'mobilePortalBtn' },
                 { special: 'logout', icon: '🚪', label: 'Abmelden' }
             ]},
             { title: 'Rechtliches', items: [
@@ -157,6 +167,10 @@
                 var st = item.small ? ' style="font-size:.7rem"' : '';
                 if (item.special === 'logout') {
                     h += '<button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                } else if (item.special === 'portal') {
+                    h += '<button class="mobile-menu-item" id="' + (item.id||'') + '" onclick="mobileMenuClose();openCustomerPortal();" style="display:none"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                } else if (item.id) {
+                    h += '<a href="' + item.href + '" class="mobile-menu-item" id="' + item.id + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
                 } else if (item.page) {
                     h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
                 } else {
@@ -254,5 +268,79 @@
             });
         }, 100);
     }
+
+    // === NAV PLAN UPDATE ===
+    // Wird aufgerufen nachdem planManager.load() fertig ist
+    window.navUpdatePlan = function() {
+        if (typeof planManager === 'undefined' || !planManager.loaded) return;
+        var info = planManager.getPlanInfo();
+        
+        // Desktop Nav
+        var box = document.getElementById('navPlanBox');
+        var badge = document.getElementById('navPlanBadge');
+        var upgradeBtn = document.getElementById('navUpgradeBtn');
+        var portalBtn = document.getElementById('navPortalBtn');
+        
+        if (box) box.style.display = 'block';
+        if (badge) {
+            badge.textContent = info.emoji + ' ' + info.name;
+            badge.style.color = info.color;
+            if (info.isTrial) badge.textContent += ' (Trial)';
+        }
+        
+        if (info.plan !== 'starter') {
+            // Bezahlter Plan: Upgrade-Button verstecken, Portal zeigen
+            if (upgradeBtn) upgradeBtn.style.display = 'none';
+            if (portalBtn) portalBtn.style.display = 'block';
+            // Mobile
+            var mUpgrade = document.getElementById('mobileUpgradeBtn');
+            var mPortal = document.getElementById('mobilePortalBtn');
+            if (mUpgrade) mUpgrade.style.display = 'none';
+            if (mPortal) mPortal.style.display = 'flex';
+        } else {
+            // Starter: Upgrade zeigen, Portal verstecken
+            if (upgradeBtn) upgradeBtn.style.display = 'block';
+            if (portalBtn) portalBtn.style.display = 'none';
+            // Mobile
+            var mUpgrade = document.getElementById('mobileUpgradeBtn');
+            var mPortal = document.getElementById('mobilePortalBtn');
+            if (mUpgrade) mUpgrade.style.display = 'flex';
+            if (mPortal) mPortal.style.display = 'none';
+        }
+    };
+
+    // === CUSTOMER PORTAL ===
+    window.openCustomerPortal = async function() {
+        try {
+            var session = await sb.auth.getSession();
+            if (!session.data.session) {
+                alert('Bitte zuerst einloggen.');
+                return;
+            }
+            
+            var response = await fetch(
+                'https://reyswuedptkyfdkmdpft.supabase.co/functions/v1/create-portal-session',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + session.data.session.access_token,
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI',
+                        'Content-Type': 'application/json'
+                    },
+                    body: '{}'
+                }
+            );
+            
+            var data = await response.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert(data.error || 'Fehler beim Öffnen des Kundenportals.');
+            }
+        } catch(e) {
+            alert('Verbindungsfehler. Bitte versuche es erneut.');
+            console.error('Portal Error:', e);
+        }
+    };
 
 })();
