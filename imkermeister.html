@@ -1163,62 +1163,42 @@ async function deleteUserData(userId, email) {
 var onlineChannel = null;
 
 function startPresenceListener() {
-    console.log('[Imkermeister] startPresenceListener mit bestehendem sb-Client...');
+    console.log('[Imkermeister] Starte Presence Listener...');
+    // Eigener Client für Realtime Presence (wie im Original)
+    var realtimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    onlineChannel = realtimeClient.channel('online-users');
     
-    // WICHTIG: Gleichen sb-Client nutzen wie config.js initPresence()
-    // Sonst sehen wir die anderen User nicht!
-    onlineChannel = sb.channel('online-users-admin', {
-        config: { presence: { key: adminUser ? adminUser.id : 'admin' } }
-    });
-    
-    // Auch den normalen online-users Channel abhören
-    var listenChannel = sb.channel('online-users');
-    
-    listenChannel.on('presence', { event: 'sync' }, function() {
-        console.log('[Imkermeister] Presence sync Event');
-        renderOnlineUsersFromChannel(listenChannel);
+    onlineChannel.on('presence', { event: 'sync' }, function() {
+        renderOnlineUsers();
     });
 
-    listenChannel.on('presence', { event: 'join' }, function(key, newPresences) {
-        console.log('[Imkermeister] Presence join:', key);
+    onlineChannel.on('presence', { event: 'join' }, function(key, newPresences) {
+        console.log('[Presence] join:', key);
     });
 
-    listenChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
-        console.log('[Imkermeister] Presence leave:', key);
+    onlineChannel.on('presence', { event: 'leave' }, function(key, leftPresences) {
+        console.log('[Presence] leave:', key);
     });
 
-    listenChannel.subscribe(async function(status) {
-        console.log('[Imkermeister] Listen-Channel subscribe status:', status);
+    onlineChannel.subscribe(async function(status) {
+        console.log('[Presence] subscribe status:', status);
+        // Admin selbst als online tracken
         if (status === 'SUBSCRIBED' && adminUser) {
-            // Admin selbst als online tracken auf diesem Channel
-            await listenChannel.track({
+            await onlineChannel.track({
                 user_id: adminUser.id,
                 email: adminUser.email,
                 name: adminUser.email,
                 page: 'Imkermeister',
                 online_at: new Date().toISOString()
             });
-            console.log('[Imkermeister] Admin getrackt auf online-users Channel');
+            console.log('[Presence] Admin getrackt');
         }
     });
-    
-    // onlineChannel Referenz für renderOnlineUsers
-    onlineChannel = listenChannel;
-}
-
-function renderOnlineUsersFromChannel(channel) {
-    if (!channel) return;
-    var state = channel.presenceState();
-    renderOnlineUsersFromState(state);
 }
 
 function renderOnlineUsers() {
     if (!onlineChannel) return;
     var state = onlineChannel.presenceState();
-    renderOnlineUsersFromState(state);
-}
-
-function renderOnlineUsersFromState(state) {
     var users = [];
     
     Object.keys(state).forEach(function(key) {
@@ -1228,7 +1208,7 @@ function renderOnlineUsersFromState(state) {
         }
     });
     
-    console.log('[Imkermeister] renderOnlineUsers:', users.length, 'User online', JSON.stringify(users.map(function(u){return u.email||u.user_id;})));
+    console.log('[Presence] Online:', users.length, 'User');
     
     var countEl = document.getElementById('onlineCount');
     if (countEl) countEl.textContent = users.length + ' Nutzer online';
