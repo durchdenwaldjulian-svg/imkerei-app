@@ -2357,8 +2357,10 @@ function initLiveMap() {
   } else {
     document.getElementById('gpsStatus').textContent = 'Desktop-Modus — zeigt Standorte vom Handy';
   }
-  // Vergangene Verkaufsstandorte laden
+  // Vergangene Verkaufsstandorte + Live-Positionen anderer Geräte laden
   loadSalesLocations();
+  loadAllLivePositions();
+  setupLiveTracking();
 }
 
 function allowGPS() {
@@ -2420,7 +2422,7 @@ function startGPSTracking() {
       var lng = pos.coords.longitude;
       var acc = Math.round(pos.coords.accuracy);
 
-      document.getElementById('gpsStatus').innerHTML = '<span style="color:var(--forest);font-weight:600">● Live</span> Genauigkeit: ' + acc + 'm';
+      document.getElementById('gpsStatus').innerHTML = '<span style="color:#3D7C47;font-weight:600">● Live</span> Genauigkeit: ' + acc + 'm';
       document.getElementById('gpsCoords').textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
 
       if (!liveMarker) {
@@ -2440,6 +2442,9 @@ function startGPSTracking() {
       // Genauigkeits-Kreis
       if (liveMarker._accCircle) liveMapInstance.removeLayer(liveMarker._accCircle);
       liveMarker._accCircle = L.circle([lat, lng], { radius: acc, color: '#3D7C47', fillOpacity: 0.08, weight: 1 }).addTo(liveMapInstance);
+
+      // Live-Standort an DB senden (alle 10 Sekunden)
+      sendLivePosition(lat, lng, acc);
     },
     function(err) {
       if (err.code === 1) {
@@ -2512,6 +2517,100 @@ async function loadSalesLocations() {
   } catch(e) {
     infoEl.textContent = 'Standorte konnten nicht geladen werden';
   }
+}
+
+// ─── LIVE STANDORT TRACKING ──────────────────────────────────────
+var lastLiveSend = 0;
+var liveOtherMarkers = {};
+var liveTrackingChannel = null;
+
+function sendLivePosition(lat, lng, acc) {
+  if (!sb) return;
+  var now = Date.now();
+  if (now - lastLiveSend < 10000) return; // Max alle 10 Sekunden
+  lastLiveSend = now;
+
+  var ma = document.getElementById('mitarbeiterSelect').value;
+  sb.from('wochenmarkt_live_standort').upsert({
+    device_id: getDeviceId(),
+    mitarbeiter: ma || null,
+    latitude: lat,
+    longitude: lng,
+    accuracy: acc,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'device_id' }).then(function() {});
+}
+
+function setupLiveTracking() {
+  if (!sb || liveTrackingChannel) return;
+  liveTrackingChannel = sb.channel('live-standort')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'wochenmarkt_live_standort' }, function(payload) {
+      var d = payload.new;
+      if (!d || !d.latitude || !d.longitude) return;
+      // Eigenes Gerät ignorieren
+      if (d.device_id === getDeviceId()) return;
+      updateOtherMarker(d);
+    })
+    .subscribe();
+}
+
+function updateOtherMarker(d) {
+  if (!liveMapInstance) return;
+  var name = d.mitarbeiter || d.device_id.substr(0, 10);
+  var color = getMarkerColor(name);
+  var zeit = new Date(d.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+  if (liveOtherMarkers[d.device_id]) {
+    // Marker aktualisieren
+    liveOtherMarkers[d.device_id].marker.setLatLng([d.latitude, d.longitude]);
+    liveOtherMarkers[d.device_id].marker.setPopupContent('👤 ' + name + '<br>🕐 ' + zeit + '<br>📍 ' + (d.accuracy ? d.accuracy + 'm' : ''));
+    if (liveOtherMarkers[d.device_id].circle) {
+      liveOtherMarkers[d.device_id].circle.setLatLng([d.latitude, d.longitude]);
+      if (d.accuracy) liveOtherMarkers[d.device_id].circle.setRadius(d.accuracy);
+    }
+  } else {
+    // Neuer Marker
+    var marker = L.marker([d.latitude, d.longitude], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div style="width:16px;height:16px;background:' + color + ';border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      })
+    }).addTo(liveMapInstance)
+      .bindPopup('👤 ' + name + '<br>🕐 ' + zeit + '<br>📍 ' + (d.accuracy ? d.accuracy + 'm' : ''));
+    var circle = d.accuracy ? L.circle([d.latitude, d.longitude], { radius: d.accuracy, color: color, fillOpacity: 0.06, weight: 1 }).addTo(liveMapInstance) : null;
+    liveOtherMarkers[d.device_id] = { marker: marker, circle: circle };
+  }
+}
+
+async function loadAllLivePositions() {
+  if (!sb || !liveMapInstance) return;
+  try {
+    var result = await sb.from('wochenmarkt_live_standort').select('*');
+    if (result.error || !result.data) return;
+    for (var i = 0; i < result.data.length; i++) {
+      var d = result.data[i];
+      if (d.device_id === getDeviceId()) continue;
+      // Nur Positionen der letzten 2 Stunden anzeigen
+      var age = Date.now() - new Date(d.updated_at).getTime();
+      if (age > 2 * 60 * 60 * 1000) continue;
+      updateOtherMarker(d);
+    }
+  } catch(e) {}
+}
+
+var bgGpsWatchId = null;
+
+function startBackgroundGPS() {
+  if (bgGpsWatchId !== null) return;
+  bgGpsWatchId = navigator.geolocation.watchPosition(
+    function(pos) {
+      sendLivePosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy));
+    },
+    function() {},
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+  );
 }
 
 // ─── ADMIN NACHRICHTEN & REALTIME ─────────────────────────────────
@@ -2618,6 +2717,10 @@ async function initApp() {
   setupRealtime();
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
+  }
+  // GPS Live-Tracking im Hintergrund starten (Handy sendet Standort)
+  if ('geolocation' in navigator && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+    startBackgroundGPS();
   }
 }
 
