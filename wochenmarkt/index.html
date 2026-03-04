@@ -909,7 +909,10 @@ Propolis Tinktur 20ml;1</pre>
     <div id="gpsStatus" style="font-size:.8rem;color:var(--text-soft);margin-bottom:.5rem">Standort wird gesucht...</div>
     <div id="liveMap" style="height:55vh;border-radius:.75rem;border:1.5px solid #E8DFD4;z-index:1"></div>
     <div id="gpsCoords" style="font-size:.75rem;color:var(--text-soft);margin-top:.5rem;text-align:center"></div>
-    <button class="btn btn-outline" onclick="resetGPS()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem;margin-top:.5rem;width:100%">🔄 GPS-Berechtigung zurücksetzen</button>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem">
+      <button class="btn btn-honey" onclick="loadSalesLocations()" style="flex:1;font-size:.7rem">🔄 Standorte aktualisieren</button>
+      <button class="btn btn-outline" onclick="resetGPS()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem">GPS zurücksetzen</button>
+    </div>
     <!-- Vergangene Standorte -->
     <div style="margin-top:1rem">
       <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📋 Gespeicherte Verkaufsstandorte</h3>
@@ -2348,10 +2351,14 @@ function initLiveMap() {
   // Fix für Leaflet in hidden Tabs
   setTimeout(function() { liveMapInstance.invalidateSize(); }, 200);
 
-  // GPS direkt starten (Browser fragt nur beim allerersten Mal)
-  gpsAllowed = true;
-  localStorage.setItem('wm_gps_allowed', 'true');
-  startGPSTracking();
+  // GPS nur auf Geräten mit GPS starten (Handy), am Desktop nur Karte zeigen
+  if ('geolocation' in navigator && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+    gpsAllowed = true;
+    localStorage.setItem('wm_gps_allowed', 'true');
+    startGPSTracking();
+  } else {
+    document.getElementById('gpsStatus').textContent = 'Desktop-Modus — zeigt Standorte vom Handy';
+  }
   // Vergangene Verkaufsstandorte laden
   loadSalesLocations();
 }
@@ -2422,7 +2429,7 @@ function startGPSTracking() {
         liveMarker = L.marker([lat, lng], {
           icon: L.divIcon({
             className: '',
-            html: '<div style="width:18px;height:18px;background:var(--forest);border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
+            html: '<div style="width:18px;height:18px;background:#3D7C47;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
             iconSize: [18, 18],
             iconAnchor: [9, 9]
           })
