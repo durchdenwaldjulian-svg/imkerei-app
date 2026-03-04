@@ -910,8 +910,9 @@ Propolis Tinktur 20ml;1</pre>
     <div id="liveMap" style="height:55vh;border-radius:.75rem;border:1.5px solid #E8DFD4;z-index:1"></div>
     <div id="gpsCoords" style="font-size:.75rem;color:var(--text-soft);margin-top:.5rem;text-align:center"></div>
     <div style="display:flex;gap:.5rem;margin-top:.5rem">
-      <button class="btn btn-honey" onclick="loadSalesLocations()" style="flex:1;font-size:.7rem">🔄 Standorte aktualisieren</button>
-      <button class="btn btn-outline" onclick="resetGPS()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem">GPS zurücksetzen</button>
+      <button class="btn btn-honey" onclick="loadSalesLocations();loadAllLivePositions()" style="flex:1;font-size:.7rem">🔄 Aktualisieren</button>
+      <button class="btn btn-outline" id="bgTrackBtn" onclick="toggleBackgroundTracking()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem">📡 Hintergrund-Tracking AN</button>
+      <button class="btn btn-outline" onclick="resetGPS()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem">⚙️</button>
     </div>
     <!-- Vergangene Standorte -->
     <div style="margin-top:1rem">
@@ -2601,6 +2602,9 @@ async function loadAllLivePositions() {
 }
 
 var bgGpsWatchId = null;
+var wakeLock = null;
+var bgWorker = null;
+var bgTrackingActive = false;
 
 function startBackgroundGPS() {
   if (bgGpsWatchId !== null) return;
@@ -2611,6 +2615,94 @@ function startBackgroundGPS() {
     function() {},
     { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
   );
+  bgTrackingActive = true;
+
+  // Wake Lock — Bildschirm bleibt an
+  requestWakeLock();
+
+  // Web Worker — hält App im Hintergrund am Leben
+  startKeepAliveWorker();
+
+  // Notification zeigen dass Tracking läuft
+  if (Notification.permission === 'granted') {
+    new Notification('Wochenmarkt GPS', { body: 'Standort-Tracking ist aktiv', icon: 'icon.svg', tag: 'gps-tracking', silent: true });
+  }
+}
+
+function stopBackgroundGPS() {
+  if (bgGpsWatchId !== null) {
+    navigator.geolocation.clearWatch(bgGpsWatchId);
+    bgGpsWatchId = null;
+  }
+  bgTrackingActive = false;
+  releaseWakeLock();
+  stopKeepAliveWorker();
+}
+
+// Wake Lock API — verhindert Bildschirm-Aus
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', function() {
+        // Erneut anfordern wenn Seite wieder sichtbar wird
+      });
+    }
+  } catch(e) {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// Bei Sichtbarkeitsänderung Wake Lock erneuern
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && bgTrackingActive) {
+    requestWakeLock();
+  }
+});
+
+// Web Worker Keep-Alive — verhindert dass Browser die Seite killt
+function startKeepAliveWorker() {
+  if (bgWorker) return;
+  var blob = new Blob([
+    'setInterval(function(){ postMessage("keepalive"); }, 5000);'
+  ], { type: 'application/javascript' });
+  bgWorker = new Worker(URL.createObjectURL(blob));
+  bgWorker.onmessage = function() {
+    // Kleiner Ping um die Seite aktiv zu halten
+    if (bgTrackingActive && bgGpsWatchId === null) {
+      // Watcher wurde vom Browser beendet → neu starten
+      bgGpsWatchId = navigator.geolocation.watchPosition(
+        function(pos) {
+          sendLivePosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy));
+        },
+        function() {},
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    }
+  };
+}
+
+function stopKeepAliveWorker() {
+  if (bgWorker) { bgWorker.terminate(); bgWorker = null; }
+}
+
+function toggleBackgroundTracking() {
+  var btn = document.getElementById('bgTrackBtn');
+  if (bgTrackingActive) {
+    stopBackgroundGPS();
+    btn.textContent = '📡 Hintergrund-Tracking AN';
+    btn.style.background = '';
+    btn.style.color = 'var(--text)';
+    showToast('Hintergrund-Tracking gestoppt');
+  } else {
+    startBackgroundGPS();
+    btn.textContent = '📡 Tracking AKTIV';
+    btn.style.background = '#3D7C47';
+    btn.style.color = '#fff';
+    showToast('Hintergrund-Tracking gestartet — App offen lassen');
+  }
 }
 
 // ─── ADMIN NACHRICHTEN & REALTIME ─────────────────────────────────
