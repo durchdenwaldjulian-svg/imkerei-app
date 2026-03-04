@@ -805,7 +805,7 @@ body {
 </div>
 
 <!-- APP INSTALLIEREN BANNER -->
-<div id="installBanner" style="display:none;background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
+<div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
   <button onclick="installApp()" style="background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App aufs Handy installieren</button>
 </div>
 
@@ -1992,7 +1992,13 @@ function installApp() {
       document.getElementById('installBanner').style.display = 'none';
     });
   } else {
-    showToast('Teilen-Button (□↑) → "Zum Home-Bildschirm"');
+    // Manuelle Anleitung anzeigen
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      alert('App installieren:\n\n1. Tippe unten auf den Teilen-Button (□↑)\n2. Wähle "Zum Home-Bildschirm"');
+    } else {
+      alert('App installieren:\n\n1. Tippe oben rechts auf ⋮ (3 Punkte)\n2. Wähle "App installieren" oder "Zum Startbildschirm hinzufügen"');
+    }
   }
 }
 
@@ -2001,8 +2007,8 @@ window.addEventListener('appinstalled', function() {
   showToast('App installiert!');
 });
 
-// Banner auch ausblenden wenn App bereits installiert ist
-if (window.matchMedia('(display-mode: standalone)').matches) {
+// Banner ausblenden wenn App bereits als Standalone läuft
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
   document.getElementById('installBanner').style.display = 'none';
 }
 
