@@ -802,6 +802,7 @@ body {
     <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
     <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
     <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
+    <button class="btn btn-outline" onclick="openCamera('produkt')">📷 Foto</button>
   </div>
 </div>
 
@@ -825,6 +826,7 @@ body {
   <button class="tab active" onclick="switchTab('verkauf')">🛒 Verkauf</button>
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
+  <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
 </div>
 
 <!-- CONTENT -->
@@ -862,6 +864,38 @@ body {
 Waldhonig 500g;2
 Bienenwachskerze - Stumpenkerze;5
 Propolis Tinktur 20ml;1</pre>
+    </div>
+  </div>
+
+  <!-- TAB: KAMERA -->
+  <div class="tab-panel" id="panel-kamera">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">Fotos aufnehmen</h2>
+
+    <!-- Produktfoto -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📷 Produktfoto</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Foto aufnehmen und einem Produkt zuordnen</p>
+      <select id="fotoProduktSelect" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;margin-bottom:.5rem">
+        <option value="">– Produkt wählen –</option>
+      </select>
+      <button class="btn btn-honey" onclick="openCamera('produkt')" style="width:100%">📷 Produktfoto aufnehmen</button>
+      <input type="file" id="cameraProdukt" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'produkt')">
+    </div>
+
+    <!-- Beleg -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">🧾 Beleg fotografieren</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Kassenbon oder Beleg als Foto speichern</p>
+      <button class="btn btn-honey" onclick="openCamera('beleg')" style="width:100%">📷 Beleg aufnehmen</button>
+      <input type="file" id="cameraBeleg" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'beleg')">
+    </div>
+
+    <!-- Gespeicherte Fotos -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">🖼️ Gespeicherte Fotos</h3>
+      <div id="fotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem">
+        <p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Lade...</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1911,10 +1945,11 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2 };
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3 };
   tabs[panels[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'historie') renderHistory();
+  if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -1976,6 +2011,148 @@ async function checkPw() {
     input.value = '';
     input.focus();
   }
+}
+
+// ─── KAMERA & FOTOS ─────────────────────────────────────────────────
+var FOTO_BUCKET = 'wochenmarkt-fotos';
+
+function openCamera(typ) {
+  if (typ === 'produkt') {
+    document.getElementById('cameraProdukt').click();
+  } else {
+    document.getElementById('cameraBeleg').click();
+  }
+}
+
+async function handlePhoto(event, typ) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  // Datei komprimieren
+  var compressed = await compressImage(file, 1200, 0.8);
+
+  var timestamp = Date.now();
+  var fileName = typ + '/' + dateStr() + '_' + timestamp + '.jpg';
+
+  showToast('Foto wird hochgeladen...');
+
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.storage.from(FOTO_BUCKET).upload(fileName, compressed, {
+      contentType: 'image/jpeg',
+      upsert: false
+    });
+    if (result.error) throw result.error;
+
+    // Bei Produktfoto: Produktname speichern
+    if (typ === 'produkt') {
+      var produktName = document.getElementById('fotoProduktSelect').value;
+      if (produktName) {
+        // Produktbild in DB aktualisieren
+        var publicUrl = sb.storage.from(FOTO_BUCKET).getPublicUrl(fileName).data.publicUrl;
+        await sb.from('wochenmarkt_produkte').update({ img: publicUrl }).eq('name', produktName);
+      }
+    }
+
+    showToast('Foto gespeichert!');
+    if (document.getElementById('panel-kamera').classList.contains('active')) {
+      loadFotoGallery();
+    }
+  } catch(e) {
+    console.error('Foto Upload fehlgeschlagen:', e);
+    showToast('Upload fehlgeschlagen');
+  }
+
+  event.target.value = '';
+}
+
+function compressImage(file, maxSize, quality) {
+  return new Promise(function(resolve) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+          else { w = Math.round(w * maxSize / h); h = maxSize; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function fillFotoProduktSelect() {
+  var select = document.getElementById('fotoProduktSelect');
+  select.innerHTML = '<option value="">– Produkt wählen –</option>';
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = PRODUCTS[i].name;
+    opt.textContent = PRODUCTS[i].name;
+    select.appendChild(opt);
+  }
+}
+
+async function loadFotoGallery() {
+  var container = document.getElementById('fotoGallery');
+  try {
+    if (!sb) throw new Error('offline');
+
+    var produktFotos = await sb.storage.from(FOTO_BUCKET).list('produkt', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+    var belegFotos = await sb.storage.from(FOTO_BUCKET).list('beleg', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+
+    var alleFotos = [];
+    if (produktFotos.data) {
+      produktFotos.data.forEach(function(f) {
+        if (f.name === '.emptyFolderPlaceholder') return;
+        alleFotos.push({ name: f.name, path: 'produkt/' + f.name, typ: 'Produkt' });
+      });
+    }
+    if (belegFotos.data) {
+      belegFotos.data.forEach(function(f) {
+        if (f.name === '.emptyFolderPlaceholder') return;
+        alleFotos.push({ name: f.name, path: 'beleg/' + f.name, typ: 'Beleg' });
+      });
+    }
+
+    if (alleFotos.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Noch keine Fotos gespeichert</p>';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < alleFotos.length; i++) {
+      var foto = alleFotos[i];
+      var url = sb.storage.from(FOTO_BUCKET).getPublicUrl(foto.path).data.publicUrl;
+      html += '<div style="position:relative;border-radius:.5rem;overflow:hidden;border:1.5px solid #E8DFD4">'
+        + '<img src="' + url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(28,20,16,.7);color:#fff;font-size:.6rem;padding:.2rem .3rem;text-align:center">' + foto.typ + '</div>'
+        + '<button onclick="deleteFoto(\'' + foto.path + '\')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;border:none;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>'
+        + '</div>';
+    }
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Fotos konnten nicht geladen werden</p>';
+  }
+}
+
+async function deleteFoto(path) {
+  showConfirm('Foto löschen?', 'Das Foto wird unwiderruflich gelöscht.', async function() {
+    try {
+      await sb.storage.from(FOTO_BUCKET).remove([path]);
+      showToast('Foto gelöscht');
+      loadFotoGallery();
+    } catch(e) {
+      showToast('Löschen fehlgeschlagen');
+    }
+  });
 }
 
 function logout() {
