@@ -223,10 +223,31 @@ window.deleteAllMyTrachten = deleteAllMyTrachten;
         var sess = await authSb.auth.getSession();
         if (sess.data.session) {
             loggedInUserId = sess.data.session.user.id;
+            currentUser = sess.data.session.user;
+            await planManager.load();
         }
     } catch(e) { /* not logged in */ }
-    // Jetzt erst Trachten laden (loggedInUserId ist gesetzt)
-    loadTrachten();
+
+    // Trachtkarte: Starter sieht nur geblurrte Version
+    if (!loggedInUserId || !planManager.can('trachtkarte_voll')) {
+        // Karte laden aber blur drüber
+        loadTrachten();
+        setTimeout(function() {
+            document.getElementById('map').style.filter = 'blur(5px)';
+            document.getElementById('map').style.pointerEvents = 'none';
+            // Teaser-Overlay
+            var teaser = document.createElement('div');
+            teaser.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:rgba(255,251,240,.95);border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;box-shadow:0 16px 48px rgba(28,20,16,.2);border:1px solid rgba(245,166,35,.15)';
+            teaser.innerHTML = '<div style="font-size:2.5rem;margin-bottom:12px">🗺️</div>'
+                + '<h3 style="font-family:Fraunces,serif;font-size:1.3rem;font-weight:900;color:#1C1410;margin-bottom:8px">Trachtkarte freischalten</h3>'
+                + '<p style="font-size:.9rem;color:#8B7355;line-height:1.6;margin-bottom:24px">Mit Imker Pro siehst du alle geteilten Trachtquellen in deiner Region und kannst eigene Trachten teilen.</p>'
+                + '<a href="upgrade.html" style="display:inline-block;background:#F5A623;color:#1C1410;padding:12px 28px;border-radius:100px;font-weight:700;font-size:.95rem;text-decoration:none;box-shadow:0 4px 16px rgba(245,166,35,.3)">Jetzt upgraden →</a>'
+                + '<br><a href="app.html" style="display:inline-block;margin-top:14px;color:#8B7355;font-size:.85rem;text-decoration:none">← Zurück zur App</a>';
+            document.body.appendChild(teaser);
+        }, 500);
+    } else {
+        loadTrachten();
+    }
 })();
 
 const TRACHT_COLORS = {
