@@ -529,10 +529,17 @@ async function handleUpgrade(plan){
   
   // Prüfe ob eingeloggt
   var session = await sb.auth.getSession();
+  console.log('[Upgrade] Session:', session.data.session ? 'OK (' + session.data.session.user.email + ')' : 'KEINE');
+  
   if (!session.data.session) {
-    window.location.href = 'app.html#register';
+    alert('Du musst eingeloggt sein, um ein Upgrade durchzuführen. Du wirst zur Login-Seite weitergeleitet.');
+    window.location.href = 'app.html';
     return;
   }
+  
+  var token = session.data.session.access_token;
+  console.log('[Upgrade] Token (erste 20 Zeichen):', token.substring(0, 20) + '...');
+  console.log('[Upgrade] PriceKey:', priceKey);
   
   // Button Loading-State
   var btns = document.querySelectorAll('.btn-plan.filled, .btn-plan.outline');
@@ -544,23 +551,26 @@ async function handleUpgrade(plan){
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + session.data.session.access_token,
+          'Authorization': 'Bearer ' + token,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ priceKey: priceKey })
       }
     );
     
+    console.log('[Upgrade] Response Status:', response.status);
     var data = await response.json();
+    console.log('[Upgrade] Response Data:', data);
     
     if (data.url) {
       window.location.href = data.url;  // → Stripe Checkout
     } else {
-      alert('Fehler: ' + (data.error || 'Unbekannter Fehler. Bitte versuche es erneut.'));
+      alert('Fehler (' + response.status + '): ' + (data.error || data.msg || JSON.stringify(data)));
     }
   } catch(e) {
-    alert('Verbindungsfehler. Bitte prüfe deine Internetverbindung und versuche es erneut.');
-    console.error('Checkout Error:', e);
+    alert('Verbindungsfehler: ' + e.message);
+    console.error('[Upgrade] Error:', e);
   }
   
   btns.forEach(function(b){ b.style.pointerEvents='auto'; b.style.opacity='1'; });
