@@ -6,7 +6,7 @@
     <title>🏘️ Vereins-Trachten – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="/fonts/fonts.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -318,6 +318,16 @@
         </div>
         <div class="stat-card">
             <div class="stat-value" id="statStandorte" style="color:#8b5cf6">0</div>
+
+    <!-- Vereins-Info-Box -->
+    <div style="background:#F0FDF4;border:2px solid #BBF7D0;border-radius:.75rem;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:start;gap:.75rem;font-size:.82rem;color:#166534;line-height:1.5">
+        <span style="font-size:1.2rem;flex-shrink:0;margin-top:.1rem">🏘️</span>
+        <div>
+            <strong>Eure private Vereins-Trachtkarte</strong> – nur für Mitglieder sichtbar, getrennt von der öffentlichen Karte.
+            <span id="vereinInfoMore" style="display:none"><br>🔒 Alle Meldungen bleiben innerhalb des Vereins<br>📍 Mitglieder melden Trachten mit GPS-Position<br>💬 Kommentare und Erfahrungsaustausch zu Trachtquellen<br>🔑 Neue Mitglieder treten per Einladungscode bei<br><strong>Tipp:</strong> Teile den Einladungscode oben mit deinen Vereinskollegen!</span>
+            <button onclick="var el=document.getElementById('vereinInfoMore');var btn=this;if(el.style.display==='none'){el.style.display='inline';btn.textContent='weniger ▲'}else{el.style.display='none';btn.textContent='mehr erfahren ▼'}" style="background:none;border:none;color:#166534;font-weight:600;cursor:pointer;font-size:.78rem;text-decoration:underline;margin-left:.25rem">mehr erfahren ▼</button>
+        </div>
+    </div>
             <div class="stat-label">Standorte</div>
         </div>
     </div>

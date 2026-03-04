@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <title>📋 Bestandsbuch – Imkerei Cloud</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="/fonts/fonts.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared-styles.css">
 <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
@@ -184,7 +184,10 @@ tbody tr:last-child td { border-bottom:none; }
         <div class="icon">⚖️</div>
         <div>
             <h3>Amtliche Dokumentationspflicht</h3>
-            <p>Gemäß Verordnung (EU) 2019/6 und § 108 (2) müssen alle Arzneimittel-Anwendungen bei Bienenvölkern dokumentiert werden. Belege sind <strong>5 Jahre aufzubewahren</strong>. Für jeden Bienenstand wird ein separates Blatt geführt. Die PDFs können jederzeit ausgedruckt und dem Veterinäramt vorgelegt werden.</p>
+            <p>Alle Behandlungen müssen dokumentiert und <strong>5 Jahre aufbewahrt</strong> werden – hier erzeugst du dein Bestandsbuch als PDF.
+            <span id="bbInfoMore" style="display:none"><br><br>Gemäß Verordnung (EU) 2019/6 und § 108 (2) müssen alle Arzneimittel-Anwendungen bei Bienenvölkern dokumentiert werden. Für jeden Bienenstand wird ein separates Blatt geführt. Die PDFs können jederzeit ausgedruckt und dem Veterinäramt vorgelegt werden.<br><br><strong>Tipp:</strong> Trage zuerst deine Imker-Daten ein – die erscheinen dann automatisch auf jedem Bestandsbuch-PDF.</span>
+            <button onclick="var el=document.getElementById('bbInfoMore');var btn=this;if(el.style.display==='none'){el.style.display='inline';btn.textContent='weniger ▲'}else{el.style.display='none';btn.textContent='mehr erfahren ▼'}" style="background:none;border:none;color:inherit;font-weight:600;cursor:pointer;font-size:.78rem;text-decoration:underline;margin-left:.25rem">mehr erfahren ▼</button>
+            </p>
         </div>
     </div>
 

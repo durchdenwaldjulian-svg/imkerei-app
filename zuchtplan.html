@@ -6,7 +6,7 @@
     <title>👑 Königinnenzucht – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="/fonts/fonts.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
@@ -36,6 +36,27 @@
         .stat-card{background:#fff;border-radius:.75rem;padding:1rem;text-align:center;border:1px solid rgba(245,166,35,0.08)}
         .stat-value{font-size:1.75rem;font-weight:700;color:#1C1410}
         .stat-label{font-size:.75rem;color:#A69580;margin-top:.25rem}
+
+        /* === ZUCHT FEATURE INFO CARD === */
+        .zucht-info-card{
+            background:linear-gradient(135deg,#065f46 0%,#059669 50%,#34d399 100%);
+            border-radius:1rem;padding:1.25rem;margin-bottom:1.25rem;
+            color:#fff;position:relative;overflow:hidden;
+            transition:transform .2s,box-shadow .2s;
+        }
+        .zucht-info-card:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(5,150,105,.3)}
+        .zucht-info-card::before{content:'';position:absolute;top:-40%;right:-15%;width:180px;height:180px;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);pointer-events:none}
+        .zucht-info-inner{position:relative;z-index:1}
+        .zucht-info-header{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem}
+        .zucht-info-icon{width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:.75rem;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;backdrop-filter:blur(4px)}
+        .zucht-info-title{font-family:'DM Serif Display',serif;font-size:1.2rem;line-height:1.2}
+        .zucht-info-subtitle{font-size:.85rem;opacity:.85;margin-bottom:.75rem;line-height:1.4}
+        .zucht-info-steps{display:flex;gap:.35rem;flex-wrap:wrap}
+        .zucht-info-step{background:rgba(255,255,255,.15);border-radius:999px;padding:.2rem .6rem;font-size:.72rem;font-weight:500}
+        .zucht-info-toggle{position:absolute;top:.75rem;right:.75rem;z-index:2;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.3);color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;line-height:1}
+        .zucht-info-toggle:hover{background:rgba(255,255,255,.35)}
+        .zucht-info-details{display:none;margin-top:.75rem;padding:.75rem;background:rgba(255,255,255,.12);border-radius:.5rem;font-size:.8rem;line-height:1.6;backdrop-filter:blur(4px)}
+        .zucht-info-details.open{display:block}
 
         /* === NEXT EVENT === */
         .next-event{background:#FFFCF5;border:1px solid rgba(245,166,35,0.08);border-left:4px solid #F5A623;border-radius:.75rem;padding:1rem;margin-bottom:1.5rem;box-shadow:0 1px 3px rgba(28,20,16,0.06)}
@@ -348,6 +369,22 @@ function render() {
     html += '<h1>👑 Königinnenzucht</h1>';
     html += '<p>Plane deine Zucht – alle Chargen auf einen Blick.</p>';
     html += '</div>';
+
+    // === ZUCHT FEATURE INFO CARD ===
+    html += '<div class="zucht-info-card">';
+    html += '<div class="zucht-info-toggle" onclick="event.stopPropagation();var el=document.getElementById(\'zuchtInfoDetails\');el.classList.toggle(\'open\')" title="Mehr erfahren">?</div>';
+    html += '<div class="zucht-info-inner">';
+    html += '<div class="zucht-info-header"><div class="zucht-info-icon">👑</div><div><div class="zucht-info-title">Zuchtplaner mit Timeline</div></div></div>';
+    html += '<div class="zucht-info-subtitle">Plane Königinnenzucht von der Sammelbrut bis zum Zusetzen – mit automatischer Terminberechnung.</div>';
+    html += '<div class="zucht-info-steps"><span class="zucht-info-step">1. Sammelbrut</span><span class="zucht-info-step">2. Umlarven</span><span class="zucht-info-step">3. Verschulen</span><span class="zucht-info-step">4. Schlupf</span><span class="zucht-info-step">5. Zusetzen</span></div>';
+    html += '<div class="zucht-info-details" id="zuchtInfoDetails">';
+    html += '<strong>So funktioniert\'s:</strong><br>';
+    html += '📅 Lege ein Startdatum fest – alle Folgetermine werden automatisch berechnet<br>';
+    html += '✅ Hake jeden Schritt ab, wenn er erledigt ist<br>';
+    html += '📊 Gantt-Ansicht zeigt alle Chargen auf einer Timeline<br>';
+    html += '🏷️ Ordne Chargen Zuchtlinien und Standorten zu<br><br>';
+    html += '<em>Tipp: In der Gantt-Ansicht siehst du auf einen Blick, welche Schritte als nächstes anstehen!</em>';
+    html += '</div></div></div>';
 
     // Stats
     var jetzt = Date.now();

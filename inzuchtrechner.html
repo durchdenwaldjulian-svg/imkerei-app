@@ -6,7 +6,7 @@
     <title>🧬 Inzuchtrechner – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="/fonts/fonts.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
@@ -141,6 +141,14 @@
     </div>
 
     <!-- === TABS === -->
+    <div style="background:#EEF2FF;border:2px solid #C7D2FE;border-radius:.75rem;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:start;gap:.75rem;font-size:.82rem;color:#4338ca;line-height:1.5">
+        <span style="font-size:1.2rem;flex-shrink:0;margin-top:.1rem">🧬</span>
+        <div>
+            <strong>Was ist der Inzuchtrechner?</strong> Berechne den Inzuchtkoeffizienten (COI) deiner Königinnen anhand des Stammbaums.
+            <span id="izInfoMore" style="display:none"><br>📊 Nutzt Wright's Pfadkoeffizienten-Methode für genaue COI-Werte<br>🔗 Kompatibel mit pedigreeapis.org – importiere Stammbäume direkt<br>🐝 Plane Anpaarungen und sieh den erwarteten COI <em>bevor</em> du züchtest<br><strong>Ziel:</strong> COI unter 6,25% halten für vitale, gesunde Völker</span>
+            <button onclick="var el=document.getElementById('izInfoMore');var btn=this;if(el.style.display==='none'){el.style.display='inline';btn.textContent='weniger ▲'}else{el.style.display='none';btn.textContent='mehr erfahren ▼'}" style="background:none;border:none;color:#4338ca;font-weight:600;cursor:pointer;font-size:.78rem;text-decoration:underline;margin-left:.25rem">mehr erfahren ▼</button>
+        </div>
+    </div>
     <div class="iz-tabs">
         <button class="iz-tab active" onclick="switchIzTab('stammbaum',this)">🌳 Stammbaum</button>
         <button class="iz-tab" onclick="switchIzTab('rechner',this)">📊 COI</button>
