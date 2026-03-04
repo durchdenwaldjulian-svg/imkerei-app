@@ -446,7 +446,7 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
   <div class="section-inner" style="text-align:center">
     <div class="tag rv">Preise</div>
     <h2 class="section-title rv">Ein Plan für jeden Imker</h2>
-    <p class="section-sub rv" style="margin:0 auto 48px">Starte kostenlos und upgrade, wenn du bereit bist.</p>
+    <p class="section-sub rv" style="margin:0 auto 48px">Starte kostenlos und upgrade, wenn du bereit bist. 14 Tage gratis testen.</p>
     
     <div class="price-grid">
       <!-- STARTER -->
@@ -458,12 +458,12 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <div class="plan-yearly">Für immer kostenlos</div>
         <div class="plan-divider"></div>
         <ul class="plan-feats">
-          <li>Bis zu 5 Völker</li>
+          <li>Bis zu 3 Völker</li>
           <li>1 Standort</li>
           <li>Aufgaben & Packliste</li>
-          <li>Behandlungsplaner</li>
-          <li>Trachtkarte (lesen)</li>
-          <li>14-Tage Wetter</li>
+          <li>Behandlungsplaner (ohne Auto-Termine)</li>
+          <li>3-Tage Wetter</li>
+          <li>Trachtkarte (Teaser)</li>
         </ul>
         <a href="app.html#register" class="btn-plan outline">Kostenlos starten</a>
       </div>
@@ -475,63 +475,53 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
         <div class="plan-name">Imker Pro</div>
         <div class="plan-desc">Für aktive Imker, die alles im Griff haben wollen</div>
         <div class="plan-price"><span class="currency">€</span><span class="amount">4,99</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">oder €49/Jahr (2 Monate gratis!)</div>
+        <div class="plan-yearly">oder 39,99€/Jahr (4 Monate gratis!)</div>
         <div class="plan-divider"></div>
         <ul class="plan-feats">
-          <li>Unbegrenzt Völker & Standorte</li>
+          <li>Unbegrenzt Völker</li>
+          <li>Bis zu 5 Standorte</li>
+          <li>14-Tage Wetter</li>
           <li>Königinnenzucht-Planer</li>
           <li>Ernte- & Kostenanalyse</li>
-          <li>Trachten teilen auf Karte</li>
-          <li>KI-Assistent</li>
+          <li>Trachtkarte lesen & teilen</li>
           <li>Bewertungssystem</li>
-          <li>Community-Forum</li>
+          <li>Community-Forum (schreiben)</li>
           <li>Datenexport & Backup</li>
         </ul>
-        <a href="app.html#register" class="btn-plan filled">Pro starten →</a>
+        <a href="upgrade.html" class="btn-plan filled">14 Tage kostenlos testen →</a>
       </div>
       
       <!-- MEISTER -->
       <div class="price-card rv">
         <div class="plan-emoji">👑</div>
         <div class="plan-name">Imkermeister</div>
-        <div class="plan-desc">Für Profis, Vereine & Erwerbsimker</div>
-        <div class="plan-price"><span class="currency">€</span><span class="amount">12,99</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">oder €129/Jahr (1 Monat gratis!)</div>
+        <div class="plan-desc">Für Profis & Erwerbsimker</div>
+        <div class="plan-price"><span class="currency">€</span><span class="amount">9,99</span><span class="period">/Monat</span></div>
+        <div class="plan-yearly">oder 89,99€/Jahr (3 Monate gratis!)</div>
         <div class="plan-divider"></div>
         <ul class="plan-feats">
           <li>Alles aus Imker Pro</li>
-          <li>Bestandsbuch PDF-Export</li>
-          <li>Admin-Dashboard</li>
+          <li>Unbegrenzt Standorte</li>
+          <li>Veterinäramt-Bestandsbuch PDF</li>
+          <li>Multi-User / Team-Zugang</li>
           <li>Prioritäts-Support</li>
-          <li>Veterinäramt-Berichte</li>
         </ul>
-        <a href="app.html#register" class="btn-plan outline">Meister werden →</a>
+        <a href="upgrade.html" class="btn-plan outline">14 Tage kostenlos testen →</a>
       </div>
+    </div>
 
-      <!-- VEREIN -->
-      <div class="price-card rv">
-        <div class="plan-emoji">🏘️</div>
-        <div class="plan-name">Verein</div>
-        <div class="plan-desc">Für Imkervereine – gemeinsam digital imkern</div>
-        <div class="plan-price"><span class="currency">€</span><span class="amount">29,99</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">oder €299/Jahr (2 Monate gratis!)</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-feats">
-          <li>Alles aus Imkermeister</li>
-          <li>10 Mitglieder-Codes inklusive</li>
-          <li>Vereins-Trachtkarte</li>
-          <li>Gemeinsame Meldungen & Kommentare</li>
-          <li>Rollen-Management</li>
-          <li>Weitere Codes: 1,99 €/Stk.</li>
-        </ul>
-        <a href="mailto:info@imkershop-durchdenwald.de" class="btn-plan filled">Verein starten →</a>
-        <p class="plan-hint">Größerer Verein? <a href="mailto:info@imkershop-durchdenwald.de" style="color:var(--honey-deep);text-decoration:underline">Kontakt für Staffelpreise</a></p>
+    <!-- VEREIN CTA -->
+    <div style="max-width:700px;margin:32px auto 0;background:var(--white);border:1px solid rgba(245,166,35,.12);border-radius:16px;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px" class="rv">
+      <div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--bark)">🏘️ Imkerverein?</div>
+        <div style="font-size:.88rem;color:var(--text-soft)">Vereins-Plan auf Anfrage — 10 Mitglieder-Codes inklusive.</div>
       </div>
+      <a href="mailto:info@imkershop-durchdenwald.de" style="background:var(--bark);color:var(--white);padding:10px 24px;border-radius:100px;font-weight:700;font-size:.88rem;text-decoration:none;white-space:nowrap">Kontakt aufnehmen →</a>
     </div>
     
     <div class="guarantee rv">
       <span>🛡️</span>
-      <p><strong>30 Tage Geld-zurück-Garantie.</strong> Teste jeden bezahlten Plan risikofrei. Nicht zufrieden? Volle Erstattung.</p>
+      <p><strong>14 Tage kostenlos testen. 30 Tage Geld-zurück-Garantie.</strong> Teste jeden bezahlten Plan risikofrei. Nicht zufrieden? Volle Erstattung.</p>
     </div>
   </div>
 </section>
