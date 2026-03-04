@@ -121,7 +121,6 @@
         .activity-dot.inactive { background:#d1d5db; }
         .badge-yellow { background:#fef3c7; color:#92400e; }
         .badge-red { background:#fee2e2; color:#dc2626; }
-        .badge-blue { background:#dbeafe; color:#2563eb; }
         .login-count-badge { display:inline-flex; align-items:center; gap:.25rem; padding:.15rem .5rem; border-radius:999px; font-size:.65rem; font-weight:700; background:#ede9fe; color:#7c3aed; }
     </style>
 </head>
@@ -309,9 +308,19 @@
                 </div>
             </div>
         </div>
+        
+        <div id="tabVereine" style="display:none">
+            <div class="card">
+                <h3 style="margin-bottom:1rem">🏘️ Vereins-Auflösungsanträge</h3>
+                <div id="aufloesungenList">
+                    <div style="text-align:center;color:#6b7280;padding:2rem">Lade...</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Login-Historie Modal -->
 <div id="loginModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)closeLoginModal()">
     <div style="background:#fff;border-radius:1rem;max-width:600px;width:100%;max-height:80vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
         <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
@@ -326,8 +335,8 @@
 <script>
 // Supabase Auth-basierter Admin-Zugang (kein Passwort mehr!)
 var adminUser = null;
-var currentAdminUser = null; // Email des aktuellen Admins (für Vereine-Tab)
-var adminSb = sb; // Admin-Client = normaler Client (RLS-Policies regeln Zugriff)
+var currentAdminUser = null;
+var adminSb = null; // wird nach Login gesetzt
 
 var allUsers = [];
 var allTrachten = [];
@@ -394,6 +403,7 @@ async function checkAdminAccess() {
         
         // 5. Zugang gewährt!
         currentAdminUser = adminUser.email;
+        adminSb = sb; // gleicher Client, RLS regelt Zugriff
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContainer').style.display = 'block';
         var emailDisp = document.getElementById('adminEmailDisplay');
@@ -519,7 +529,6 @@ function showTab(name) {
     if(target) target.style.display = 'block';
     event.target.classList.add('active');
     
-    // Tab-spezifische Aktionen
     if (name === 'admins') renderAdminsList();
     if (name === 'vereine') loadAufloesungen();
     if (name === 'logins') renderLoginHistorie();
@@ -560,8 +569,8 @@ function getActivityStatus(lastLogin) {
     if (hours < 24) return { cls:'today', label:'Heute aktiv', badge:'badge-green' };
     if (days < 2) return { cls:'yesterday', label:'Gestern', badge:'badge-yellow' };
     if (days < 7) return { cls:'week', label:'Diese Woche', badge:'badge-yellow' };
-    if (days < 30) return { cls:'inactive', label:Math.floor(days)+' Tage inaktiv', badge:'badge-gray' };
-    return { cls:'inactive', label:'Inaktiv (>30 T.)', badge:'badge-red' };
+    if (days < 30) return { cls:'inactive', label:Math.floor(days)+' T. inaktiv', badge:'badge-gray' };
+    return { cls:'inactive', label:'Inaktiv >30T', badge:'badge-red' };
 }
 
 function getUserEmail(uid) {
@@ -578,8 +587,11 @@ function getStandortName(sid) {
 }
 
 async function loadAdmin() {
+    console.log('[Imkermeister] loadAdmin gestartet...');
+    
     // Load users from profiles table
     var profilesResult = await sb.from('profiles').select('*');
+    console.log('[Imkermeister] profiles:', profilesResult.data ? profilesResult.data.length + ' Einträge' : 'FEHLER: ' + (profilesResult.error ? profilesResult.error.message : 'null'));
     var profiles = profilesResult.data || [];
     
     // Load shared trachten
@@ -594,9 +606,23 @@ async function loadAdmin() {
     var behandlungenResult = await sb.from('behandlungen').select('*');
     var kostenResult = await sb.from('kosten').select('*');
     
-    // Login-Historie laden (neue Tabelle)
-    var loginHistResult = await sb.from('login_historie').select('*').order('logged_in_at', {ascending: false}).limit(500);
-    allLoginHistorie = loginHistResult.data || [];
+    console.log('[Imkermeister] standorte:', standorteResult.data ? standorteResult.data.length : 'FEHLER: ' + (standorteResult.error ? standorteResult.error.message : 'null'));
+    console.log('[Imkermeister] voelker:', voelkerResult.data ? voelkerResult.data.length : 'FEHLER: ' + (voelkerResult.error ? voelkerResult.error.message : 'null'));
+    
+    // Login-Historie laden (neue Tabelle – kann fehlschlagen falls nicht vorhanden)
+    try {
+        var loginHistResult = await sb.from('login_historie').select('*').order('logged_in_at', {ascending: false}).limit(500);
+        if (loginHistResult.error) {
+            console.warn('[Imkermeister] login_historie Fehler:', loginHistResult.error.message);
+            allLoginHistorie = [];
+        } else {
+            allLoginHistorie = loginHistResult.data || [];
+            console.log('[Imkermeister] login_historie:', allLoginHistorie.length + ' Einträge');
+        }
+    } catch(e) {
+        console.warn('[Imkermeister] login_historie nicht verfügbar:', e);
+        allLoginHistorie = [];
+    }
     
     allStandorteRaw = standorteResult.data || [];
     allVoelkerRaw = voelkerResult.data || [];
@@ -605,22 +631,29 @@ async function loadAdmin() {
     allBehandlungenRaw = behandlungenResult.data || [];
     allKostenRaw = kostenResult.data || [];
     
-    // Login-Zähler pro User berechnen
+    // Login-Zähler pro User aus Historie berechnen
     var loginCounts = {};
     allLoginHistorie.forEach(function(l) {
         if (!loginCounts[l.user_id]) loginCounts[l.user_id] = 0;
         loginCounts[l.user_id]++;
     });
     
+    // Debug: Profil-Felder ausgeben
+    if (profiles.length > 0) {
+        console.log('[Imkermeister] Profil-Felder:', Object.keys(profiles[0]));
+        console.log('[Imkermeister] Erstes Profil:', JSON.stringify(profiles[0]).substring(0, 300));
+    }
+    
     // Build user list from profiles
     allUsers = profiles.map(function(p) {
+        // profiles kann id ODER user_id als Referenz haben
         var uid = p.user_id || p.id;
         return {
             id: uid,
             email: p.email || '–',
             name: p.name || '',
             created: p.created_at,
-            lastLogin: p.last_login,
+            lastLogin: p.last_login || p.last_sign_in_at || null,
             loginCount: (p.login_count || 0) + (loginCounts[uid] || 0),
             standorte: allStandorteRaw.filter(function(x){return x.user_id===uid;}).length,
             voelker: allVoelkerRaw.filter(function(x){return x.user_id===uid;}).length,
@@ -630,6 +663,8 @@ async function loadAdmin() {
             kosten: allKostenRaw.filter(function(x){return x.user_id===uid;}).length
         };
     });
+    
+    console.log('[Imkermeister] allUsers gebaut:', allUsers.length, '- Beispiel lastLogin:', allUsers.length > 0 ? allUsers[0].lastLogin : 'keine User');
     
     // Discover users from data tables that are NOT in profiles
     var knownIds = allUsers.map(function(u){return u.id;});
@@ -681,6 +716,8 @@ async function loadAdmin() {
     renderKosten();
     renderErnte();
     renderLoginHistorie();
+    
+    console.log('[Imkermeister] Alle Renders abgeschlossen.');
 }
 
 function populateUserFilters() {
@@ -718,14 +755,15 @@ function renderStats() {
         '<div class="stat-card"><div class="stat-number">'+allData.totalTrachten+'</div><div class="stat-label">🌸 Trachten</div></div>'+
         '<div class="stat-card"><div class="stat-number">'+allData.totalBehandlungen+'</div><div class="stat-label">💉 Behandlungen</div></div>'+
         '<div class="stat-card"><div class="stat-number">'+allData.totalShared+'</div><div class="stat-label">🗺️ Geteilt</div></div>'+
-        '<div class="stat-card"><div class="stat-number">'+totalKostenSum.toFixed(0)+'€</div><div class="stat-label">💰 Kosten gesamt</div></div>'+
-        '<div class="stat-card"><div class="stat-number">'+totalErtrag.toFixed(1)+'kg</div><div class="stat-label">🍯 Ertrag gesamt</div></div>';
+        '<div class="stat-card"><div class="stat-number">'+totalKostenSum.toFixed(0)+'€</div><div class="stat-label">💰 Kosten</div></div>'+
+        '<div class="stat-card"><div class="stat-number">'+totalErtrag.toFixed(1)+'kg</div><div class="stat-label">🍯 Ertrag</div></div>';
 }
 
 function renderUsers(users) {
     var html = '';
     users.forEach(function(u) {
         var activity = getActivityStatus(u.lastLogin);
+        var safeEmail = (u.email||'').replace(/'/g, "\\'");
         html += '<tr>'+
             '<td><strong>'+u.email+'</strong>'+(u.name ? '<br><span style="font-size:.75rem;color:#6b7280">'+u.name+'</span>' : '')+
             '<br><span style="font-size:.65rem;color:#9ca3af;font-family:monospace">ID: '+u.id+'</span></td>'+
@@ -740,13 +778,13 @@ function renderUsers(users) {
             '</td>'+
             '<td>'+
                 '<span class="login-count-badge">🔑 '+(u.loginCount||0)+'</span>'+
-                '<br><button class="btn btn-blue" style="margin-top:.3rem;font-size:.65rem;padding:.25rem .5rem" onclick="showLoginHistoryModal(\''+u.id+'\',\''+u.email.replace(/'/g,"\\'")+'\')">📋 Historie</button>'+
+                '<br><button class="btn btn-blue" style="margin-top:.3rem;font-size:.65rem;padding:.25rem .5rem" onclick="showLoginHistoryModal(\''+u.id+'\',\''+safeEmail+'\')">📋 Historie</button>'+
             '</td>'+
             '<td style="font-size:.7rem;color:#6b7280;line-height:1.6">'+
                 '📍'+u.standorte+' 🐝'+u.voelker+' 🌸'+u.trachten+'<br>💉'+u.behandlungen+' 💰'+u.kosten+
             '</td>'+
             '<td>'+
-            '<button class="btn btn-danger" style="margin-top:.25rem" onclick="deleteUserData(\''+u.id+'\',\''+u.email.replace(/'/g,"\\'")+'\')">🗑️ Daten löschen</button>'+
+                '<button class="btn btn-danger" style="margin-top:.25rem" onclick="deleteUserData(\''+u.id+'\',\''+safeEmail+'\')">🗑️ Löschen</button>'+
             '</td>'+
             '</tr>';
     });
@@ -1299,7 +1337,7 @@ async function removeAdmin(adminId, email) {
 }
 
 // ============================================
-// LOGIN-HISTORIE – Modal + Tab
+// LOGIN-HISTORIE – Modal für einzelnen User
 // ============================================
 function showLoginHistoryModal(userId, email) {
     var modal = document.getElementById('loginModal');
@@ -1315,16 +1353,13 @@ function showLoginHistoryModal(userId, email) {
     } else {
         var html = '';
         var prevDay = '';
-        
         userLogins.forEach(function(l) {
             var dt = new Date(l.logged_in_at);
             var dayKey = dt.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short'});
-            
             if (dayKey !== prevDay) {
                 html += '<div style="font-size:.75rem;font-weight:700;color:#FFC107;padding:.5rem 0;border-bottom:1px solid #fef3c7;margin-top:.5rem">📅 ' + dayKey + '</div>';
                 prevDay = dayKey;
             }
-            
             html += '<div style="display:flex;align-items:center;gap:.75rem;padding:.4rem 0;border-bottom:1px solid #f9fafb">'+
                 '<div style="min-width:55px;font-size:.8rem;color:#6b7280;font-weight:600">'+dt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'</div>'+
                 '<div style="font-size:.8rem">'+
@@ -1332,10 +1367,8 @@ function showLoginHistoryModal(userId, email) {
                 '</div>'+
             '</div>';
         });
-        
         body.innerHTML = html;
     }
-    
     modal.style.display = 'flex';
 }
 
@@ -1343,15 +1376,22 @@ function closeLoginModal() {
     document.getElementById('loginModal').style.display = 'none';
 }
 
+// ============================================
+// LOGIN-HISTORIE TAB (globale Ansicht)
+// ============================================
 function renderLoginHistorie() {
-    var userFilter = document.getElementById('loginUserFilter') ? document.getElementById('loginUserFilter').value : '';
-    var daysFilter = document.getElementById('loginDaysFilter') ? parseInt(document.getElementById('loginDaysFilter').value) : 30;
+    var userFilter = document.getElementById('loginUserFilter');
+    var daysFilter = document.getElementById('loginDaysFilter');
+    if (!userFilter || !daysFilter) return;
+    
+    var uVal = userFilter.value;
+    var dVal = parseInt(daysFilter.value) || 30;
     
     var filtered = allLoginHistorie.filter(function(l) {
-        if (userFilter && l.user_id !== userFilter) return false;
-        if (daysFilter > 0) {
+        if (uVal && l.user_id !== uVal) return false;
+        if (dVal > 0) {
             var diff = (Date.now() - new Date(l.logged_in_at).getTime()) / 86400000;
-            if (diff > daysFilter) return false;
+            if (diff > dVal) return false;
         }
         return true;
     });
@@ -1359,7 +1399,6 @@ function renderLoginHistorie() {
     var countEl = document.getElementById('loginHistCount');
     if (countEl) countEl.textContent = filtered.length + ' Logins';
     
-    // Stats
     var uniqueUsers = {};
     filtered.forEach(function(l) { uniqueUsers[l.user_id] = true; });
     var todayLogins = filtered.filter(function(l) {
@@ -1372,47 +1411,36 @@ function renderLoginHistorie() {
             '<div class="detail-stat"><div class="num">'+filtered.length+'</div><div class="lbl">Logins gesamt</div></div>'+
             '<div class="detail-stat"><div class="num">'+Object.keys(uniqueUsers).length+'</div><div class="lbl">Verschiedene Nutzer</div></div>'+
             '<div class="detail-stat"><div class="num">'+todayLogins+'</div><div class="lbl">Heute</div></div>'+
-            '<div class="detail-stat"><div class="num">'+(filtered.length / Math.max(Object.keys(uniqueUsers).length,1)).toFixed(1)+'</div><div class="lbl">Ø pro Nutzer</div></div>';
+            '<div class="detail-stat"><div class="num">'+(filtered.length>0?(filtered.length / Math.max(Object.keys(uniqueUsers).length,1)).toFixed(1):'0')+'</div><div class="lbl">Ø pro Nutzer</div></div>';
     }
     
-    // Liste
     var listEl = document.getElementById('loginHistList');
     if (!listEl) return;
     
     if (filtered.length === 0) {
-        listEl.innerHTML = '<div style="text-align:center;color:#6b7280;padding:2rem">Keine Login-Daten vorhanden.<br><span style="font-size:.8rem">Login-Historie wird ab jetzt aufgezeichnet.</span></div>';
+        listEl.innerHTML = '<div style="text-align:center;color:#6b7280;padding:2rem">Keine Login-Daten vorhanden.<br><span style="font-size:.8rem">Login-Historie wird nach dem nächsten Login aufgezeichnet.</span></div>';
         return;
     }
     
     var html = '<div style="max-height:500px;overflow-y:auto">';
     var prevDay = '';
-    
     filtered.slice(0, 200).forEach(function(l) {
         var dt = new Date(l.logged_in_at);
         var dayKey = dt.toLocaleDateString('de-DE', {weekday:'short', day:'numeric', month:'short'});
-        
         if (dayKey !== prevDay) {
             html += '<div style="font-size:.75rem;font-weight:700;color:#FFC107;padding:.75rem 0 .25rem;border-bottom:1px solid #fef3c7">'+dayKey+'</div>';
             prevDay = dayKey;
         }
-        
-        var userName = l.email || l.user_id.substring(0,8) + '…';
+        var userName = l.email || (l.user_id ? l.user_id.substring(0,8)+'…' : '?');
         var matchUser = allUsers.find(function(u){return u.id===l.user_id;});
         if (matchUser) userName = matchUser.name || matchUser.email;
         
         html += '<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid #f9fafb">'+
             '<div style="min-width:55px;font-size:.8rem;color:#6b7280;font-weight:600">'+dt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'</div>'+
-            '<div style="flex:1">'+
-                '<span style="font-size:.85rem;font-weight:600">'+userName+'</span>'+
-                '<span style="display:inline-block;padding:.1rem .4rem;border-radius:.25rem;font-size:.65rem;background:#f3f4f6;color:#6b7280;margin-left:.5rem">'+(l.page||'App')+'</span>'+
-            '</div>'+
+            '<div style="flex:1"><span style="font-size:.85rem;font-weight:600">'+userName+'</span>'+
+            '<span style="display:inline-block;padding:.1rem .4rem;border-radius:.25rem;font-size:.65rem;background:#f3f4f6;color:#6b7280;margin-left:.5rem">'+(l.page||'App')+'</span></div>'+
         '</div>';
     });
-    
-    if (filtered.length > 200) {
-        html += '<div style="text-align:center;color:#6b7280;padding:1rem;font-size:.8rem">… und '+(filtered.length-200)+' weitere</div>';
-    }
-    
     html += '</div>';
     listEl.innerHTML = html;
 }
