@@ -827,6 +827,7 @@ body {
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
   <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
+  <button class="tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">🔑 Admin</button>
 </div>
 
 <!-- CONTENT -->
@@ -896,6 +897,24 @@ Propolis Tinktur 20ml;1</pre>
       <div id="fotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem">
         <p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Lade...</p>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB: ADMIN -->
+  <div class="tab-panel" id="panel-admin">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">🔑 Admin-Bereich</h2>
+
+    <!-- Nachricht senden -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📢 Nachricht an alle senden</h3>
+      <textarea id="adminMsgInput" placeholder="Nachricht eingeben..." style="width:100%;min-height:80px;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text);resize:vertical"></textarea>
+      <button class="btn btn-honey" onclick="sendAdminMessage()" style="width:100%;margin-top:.5rem">📢 Nachricht senden</button>
+    </div>
+
+    <!-- Letzte Nachrichten -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">📋 Letzte Nachrichten</h3>
+      <div id="adminMsgList"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
     </div>
   </div>
 </div>
@@ -1447,6 +1466,17 @@ async function renderMitarbeiterList() {
 }
 
 // ─── SAVE / LOAD ────────────────────────────────────────────────────
+async function getGPS() {
+  return new Promise(function(resolve) {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      function(pos) { resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+      function() { resolve(null); },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  });
+}
+
 async function saveSession() {
   var t = calculateTotals();
   if (t.items === 0) { showToast('Keine Artikel zum Speichern'); return; }
@@ -1465,6 +1495,9 @@ async function saveSession() {
     }
   });
 
+  // GPS abfragen
+  var gps = await getGPS();
+
   var entry = {
     id: Date.now(),
     date: new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
@@ -1474,6 +1507,8 @@ async function saveSession() {
     netto: t.netto,
     mwst: t.mwst,
     mitarbeiter: mitarbeiter,
+    latitude: gps ? gps.lat : null,
+    longitude: gps ? gps.lng : null,
     synced: false
   };
 
@@ -1490,14 +1525,19 @@ async function saveSession() {
   // Primär in Supabase speichern
   try {
     if (sb) {
-      var result = await db.insert('wochenmarkt_verkauf', {
+      var insertData = {
         datum: dateStr(),
         mitarbeiter: mitarbeiter || null,
         produkte: produkte,
         gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
         gesamt_netto: parseFloat(t.netto.toFixed(2)),
         gesamt_mwst: parseFloat(t.mwst.toFixed(2))
-      });
+      };
+      if (gps) {
+        insertData.latitude = gps.lat;
+        insertData.longitude = gps.lng;
+      }
+      var result = await db.insert('wochenmarkt_verkauf', insertData);
       if (!result.error) entry.synced = true;
     }
   } catch(e) {
@@ -1553,6 +1593,8 @@ async function renderHistory() {
             netto: parseFloat(d.gesamt_netto),
             mwst: parseFloat(d.gesamt_mwst),
             mitarbeiter: d.mitarbeiter || '',
+            latitude: d.latitude || null,
+            longitude: d.longitude || null,
             synced: true
           };
         });
@@ -1590,6 +1632,9 @@ async function renderHistory() {
       + '<div class="history-items">' + itemsHtml + '</div>';
     if (entry.netto !== undefined) {
       html += '<div style="font-size:.75rem;color:var(--text-soft);margin-top:.4rem">Netto: ' + formatPrice(entry.netto) + ' · MwSt: ' + formatPrice(entry.mwst) + '</div>';
+    }
+    if (entry.latitude && entry.longitude) {
+      html += '<div style="font-size:.75rem;margin-top:.3rem"><a href="https://www.google.com/maps?q=' + entry.latitude + ',' + entry.longitude + '" target="_blank" rel="noopener" style="color:var(--forest);text-decoration:none">📍 Standort anzeigen</a></div>';
     }
     html += '<div class="history-actions">'
       + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem" onclick="exportSingleEntry(' + entryId + ')">📤 CSV</button>'
@@ -1945,11 +1990,12 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3 };
-  tabs[panels[name]].classList.add('active');
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3, 'admin': 4 };
+  if (tabs[panels[name]]) tabs[panels[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'historie') renderHistory();
   if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
+  if (name === 'admin') loadAdminMessages();
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -1991,7 +2037,10 @@ uploadArea.addEventListener('drop', function(e) {
 
 // ─── PASSWORT GATE ──────────────────────────────────────────────────
 var WM_PW_HASH = '0069b5f8416a40ed88ab4e12c6b6389d17d05245bbfd84cc12227ac6f818b3d4';
+var WM_MASTER_HASH = '66483caa89cedd7c07f7f00ab8f1687254af77739ae0caf648430e74fd0480d3';
 var WM_PW_KEY = 'wm_unlocked';
+var WM_ADMIN_KEY = 'wm_admin';
+var isAdmin = false;
 
 async function hashPw(pw) {
   var data = new TextEncoder().encode(pw);
@@ -2002,15 +2051,28 @@ async function hashPw(pw) {
 async function checkPw() {
   var input = document.getElementById('pwInput');
   var hash = await hashPw(input.value);
-  if (hash === WM_PW_HASH) {
-    localStorage.setItem(WM_PW_KEY, hash);
+  if (hash === WM_PW_HASH || hash === WM_MASTER_HASH) {
+    localStorage.setItem(WM_PW_KEY, WM_PW_HASH);
+    if (hash === WM_MASTER_HASH) {
+      isAdmin = true;
+      localStorage.setItem(WM_ADMIN_KEY, 'true');
+    } else {
+      isAdmin = false;
+      localStorage.removeItem(WM_ADMIN_KEY);
+    }
     document.getElementById('pwGate').classList.add('hidden');
+    updateAdminUI();
     initApp();
   } else {
     document.getElementById('pwError').textContent = 'Falsches Passwort';
     input.value = '';
     input.focus();
   }
+}
+
+function updateAdminUI() {
+  var adminTab = document.getElementById('tabAdmin');
+  if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
 }
 
 // ─── KAMERA & FOTOS ─────────────────────────────────────────────────
@@ -2157,6 +2219,10 @@ async function deleteFoto(path) {
 
 function logout() {
   localStorage.removeItem(WM_PW_KEY);
+  localStorage.removeItem(WM_ADMIN_KEY);
+  isAdmin = false;
+  updateAdminUI();
+  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
   document.getElementById('pwGate').classList.remove('hidden');
   document.getElementById('pwInput').value = '';
   document.getElementById('pwInput').focus();
@@ -2168,16 +2234,90 @@ document.getElementById('headerDate').textContent = new Date().toLocaleDateStrin
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 });
 
+// ─── ADMIN NACHRICHTEN & REALTIME ─────────────────────────────────
+var realtimeChannel = null;
+
+async function sendAdminMessage() {
+  var input = document.getElementById('adminMsgInput');
+  var text = input.value.trim();
+  if (!text) { showToast('Bitte Nachricht eingeben'); return; }
+  if (!sb) { showToast('Offline - nicht möglich'); return; }
+
+  try {
+    var result = await sb.from('wochenmarkt_nachrichten').insert({ text: text, von: 'Admin' });
+    if (result.error) throw result.error;
+    input.value = '';
+    showToast('Nachricht gesendet');
+    loadAdminMessages();
+  } catch(e) {
+    console.error('Nachricht senden fehlgeschlagen:', e);
+    showToast('Senden fehlgeschlagen');
+  }
+}
+
+async function loadAdminMessages() {
+  var container = document.getElementById('adminMsgList');
+  if (!container) return;
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.from('wochenmarkt_nachrichten').select('*').order('created_at', { ascending: false }).limit(20);
+    if (result.error) throw result.error;
+    if (!result.data || result.data.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Noch keine Nachrichten</p>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < result.data.length; i++) {
+      var msg = result.data[i];
+      var zeit = new Date(msg.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      html += '<div style="padding:.5rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem">'
+        + '<div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><strong>' + (msg.von || 'System') + '</strong><span style="color:var(--text-soft);font-size:.7rem">' + zeit + '</span></div>'
+        + '<div style="color:var(--text)">' + msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+        + '</div>';
+    }
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Nachrichten konnten nicht geladen werden</p>';
+  }
+}
+
+function setupRealtime() {
+  if (!sb || realtimeChannel) return;
+  realtimeChannel = sb.channel('wochenmarkt-nachrichten')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wochenmarkt_nachrichten' }, function(payload) {
+      var msg = payload.new;
+      showToast('📢 ' + (msg.von || 'System') + ': ' + msg.text.substring(0, 60));
+      // Browser-Notification
+      if (Notification.permission === 'granted') {
+        new Notification('Wochenmarkt: ' + (msg.von || 'System'), { body: msg.text, icon: 'icon.svg' });
+      }
+      // Admin-Tab aktualisieren falls offen
+      if (document.getElementById('panel-admin') && document.getElementById('panel-admin').classList.contains('active')) {
+        loadAdminMessages();
+      }
+    })
+    .subscribe();
+}
+
 async function initApp() {
   await loadProductsFromDB();
   await loadMitarbeiter();
   renderProducts();
   updateSummary();
+  updateAdminUI();
+  // Realtime & Notifications
+  setupRealtime();
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
 }
 
 // Prüfe ob schon entsperrt (gespeicherter Hash muss übereinstimmen)
 if (localStorage.getItem(WM_PW_KEY) === WM_PW_HASH) {
+  // Admin-Status aus Cache laden
+  if (localStorage.getItem(WM_ADMIN_KEY) === 'true') isAdmin = true;
   document.getElementById('pwGate').classList.add('hidden');
+  updateAdminUI();
   initApp();
 } else {
   document.getElementById('pwInput').focus();
