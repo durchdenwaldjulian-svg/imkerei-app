@@ -807,7 +807,8 @@ body {
 
 <!-- APP INSTALLIEREN BANNER -->
 <div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
-  <button onclick="installApp()" style="background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App aufs Handy installieren</button>
+  <button onclick="installApp()" id="installBtnMain" style="background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App aufs Handy installieren</button>
+  <a id="installChromeLink" href="intent://www.bienenplan.de/wochenmarkt/#Intent;scheme=https;package=com.android.chrome;end" style="display:none;background:var(--forest);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;margin-top:.4rem">🌐 In Chrome öffnen zum Installieren</a>
 </div>
 
 <!-- MITARBEITER BAR -->
@@ -2045,6 +2046,13 @@ window.addEventListener('appinstalled', function() {
 // Banner ausblenden wenn App bereits als Standalone läuft
 if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
   document.getElementById('installBanner').style.display = 'none';
+}
+
+// Bei Nicht-Chrome: Chrome-Link anzeigen (nur Android)
+var isChrome = /Chrome/.test(navigator.userAgent) && !/SamsungBrowser|OPR|Edge/.test(navigator.userAgent);
+var isAndroid = /Android/.test(navigator.userAgent);
+if (!isChrome && isAndroid) {
+  document.getElementById('installChromeLink').style.display = 'inline-block';
 }
 
 // ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
