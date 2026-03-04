@@ -244,6 +244,10 @@ var planManager = (function() {
             ? '🔒 „' + featureName + '" ist ab dem ' + planName + '-Plan verfügbar.'
             : '🔒 Diese Funktion ist ab dem ' + planName + '-Plan verfügbar.';
 
+        // Ladebildschirm ausblenden (falls vorhanden)
+        var ls = document.getElementById('loadingScreen') || document.getElementById('loadingOverlay');
+        if (ls) ls.style.display = 'none';
+
         // Prüfe ob es schon ein Upgrade-Modal gibt
         var existing = document.getElementById('planUpgradeOverlay');
         if (existing) existing.remove();
@@ -256,11 +260,11 @@ var planManager = (function() {
             + '<h3 style="font-family:\'Fraunces\',\'DM Serif Display\',serif;font-size:1.3rem;font-weight:900;color:#1C1410;margin-bottom:8px">Upgrade auf ' + planName + '</h3>'
             + '<p style="font-size:.9rem;color:#8B7355;line-height:1.6;margin-bottom:24px">' + msg + '<br>14 Tage kostenlos testen!</p>'
             + '<a href="upgrade.html" style="display:inline-block;background:#F5A623;color:#1C1410;padding:12px 28px;border-radius:100px;font-weight:700;font-size:.95rem;text-decoration:none;transition:all .2s;box-shadow:0 4px 16px rgba(245,166,35,.3)">Jetzt upgraden →</a>'
-            + '<br><button onclick="this.closest(\'#planUpgradeOverlay\').remove()" style="margin-top:14px;background:none;border:none;color:#8B7355;font-size:.85rem;cursor:pointer;font-family:inherit;padding:8px">Nicht jetzt</button>'
+            + '<br><button onclick="window.location.href=\'app.html\'" style="margin-top:14px;background:none;border:none;color:#8B7355;font-size:.85rem;cursor:pointer;font-family:inherit;padding:8px">← Zurück zur App</button>'
             + '</div>';
 
         overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) overlay.remove();
+            if (e.target === overlay) window.location.href = 'app.html';
         });
 
         document.body.appendChild(overlay);
