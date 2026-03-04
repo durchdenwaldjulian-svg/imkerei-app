@@ -1,12 +1,9 @@
-var CACHE_NAME = 'wochenmarkt-v1';
+var CACHE_NAME = 'wochenmarkt-v2';
 var URLS_TO_CACHE = [
   './',
   './index.html',
-  '../config.js',
-  '../fonts/fonts.css',
-  'https://unpkg.com/@supabase/supabase-js@2',
-  'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
-  'https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'
+  './manifest.json',
+  './icon.svg'
 ];
 
 self.addEventListener('install', function(e) {
@@ -33,7 +30,6 @@ self.addEventListener('activate', function(e) {
 self.addEventListener('fetch', function(e) {
   e.respondWith(
     fetch(e.request).then(function(response) {
-      // Erfolgreiche Antwort cachen
       if (response.status === 200) {
         var clone = response.clone();
         caches.open(CACHE_NAME).then(function(cache) {
@@ -42,7 +38,6 @@ self.addEventListener('fetch', function(e) {
       }
       return response;
     }).catch(function() {
-      // Offline: aus Cache laden
       return caches.match(e.request);
     })
   );

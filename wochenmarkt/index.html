@@ -795,13 +795,13 @@ body {
   <div class="header-top">
     <h1>🐝 Wochenmarkt</h1>
     <span class="header-date" id="headerDate"></span>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:.3rem .6rem;font-size:.7rem">🔒</button>
   </div>
   <div class="header-actions">
     <button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>
     <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
     <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
     <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
-    <button class="btn btn-ghost" onclick="logout()" style="margin-left:auto">🔒 Abmelden</button>
   </div>
 </div>
 
@@ -897,13 +897,11 @@ Propolis Tinktur 20ml;1</pre>
   <div class="modal" style="max-width:400px">
     <h3>📲 App installieren</h3>
     <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
-      <p style="font-weight:700;margin-bottom:.5rem">Chrome / Edge:</p>
-      <p>1. Tippe auf <b>⋮</b> (oben rechts)</p>
-      <p>2. Wähle <b>"App installieren"</b></p>
-      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
-      <p style="font-weight:700;margin-bottom:.5rem">Samsung Internet:</p>
-      <p>1. Tippe auf <b>≡</b> (unten rechts)</p>
-      <p>2. Wähle <b>"Seite zum Startbildschirm"</b></p>
+      <p style="font-weight:700;margin-bottom:.5rem;color:var(--forest)">Empfohlen: Google Chrome</p>
+      <p>1. Öffne diese Seite in <b>Chrome</b></p>
+      <p>2. Tippe auf <b>⋮</b> (oben rechts)</p>
+      <p>3. Wähle <b>"App installieren"</b></p>
+      <p style="font-size:.75rem;color:var(--text-soft);margin-top:.3rem">Funktioniert dann auch offline!</p>
       <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
       <p style="font-weight:700;margin-bottom:.5rem">Safari (iPhone):</p>
       <p>1. Tippe auf <b>□↑</b> (Teilen, unten Mitte)</p>
@@ -2013,7 +2011,14 @@ var deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   deferredPrompt = e;
-  document.getElementById('installBanner').style.display = '';
+  // Automatisch Install-Dialog zeigen
+  setTimeout(function() {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() {
+      deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  }, 1000);
 });
 
 function installApp() {
