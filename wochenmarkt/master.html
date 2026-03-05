@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Wochenmarkt | Imkerei Durchdenwald</title>
+<title>Wochenmarkt Master | Imkerei Durchdenwald</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1C1410">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,6 +14,8 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>if(!window.supabase){window.supabase={createClient:function(){return null}};console.warn('Supabase CDN nicht erreichbar – Offline-Modus')}</script>
 <script src="../config.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -729,17 +731,45 @@ body {
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .card-name { font-size: .72rem; }
 }
+/* === PASSWORT GATE === */
+.pw-gate {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--bark), var(--bark-warm));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+.pw-gate.hidden { display: none; }
+.pw-gate h2 { font-family: 'Fraunces', serif; color: var(--honey); font-size: 1.4rem; }
+.pw-gate input { padding: .6rem 1rem; border: 2px solid rgba(255,255,255,.2); border-radius: .5rem; font-size: 1rem; font-family: inherit; background: rgba(255,255,255,.1); color: var(--white); text-align: center; width: 220px; }
+.pw-gate input::placeholder { color: rgba(255,255,255,.4); }
+.pw-gate input:focus { outline: none; border-color: var(--honey); }
+.pw-gate button { padding: .5rem 1.5rem; background: var(--honey); color: var(--bark); border: none; border-radius: .5rem; font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+.pw-gate .pw-error { color: #f87171; font-size: .8rem; min-height: 1.2em; }
 </style>
 </head>
 <body>
 
-<!-- PASSWORT GATE entfernt — offener Zugang für Mitarbeiter -->
+<!-- PASSWORT GATE -->
+<div class="pw-gate" id="pwGate">
+  <div style="font-size:3rem">🔑</div>
+  <h2>Master-Zugang</h2>
+  <input type="password" id="pwInput" placeholder="Master-Passwort..." onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()">Entsperren</button>
+  <div class="pw-error" id="pwError"></div>
+</div>
 
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <h1>🐝 Wochenmarkt</h1>
+    <h1>🔑 Wochenmarkt Master</h1>
     <span class="header-date" id="headerDate"></span>
+    <button class="btn btn-ghost" onclick="logout()" style="padding:.3rem .6rem;font-size:.7rem">🔒</button>
   </div>
   <div class="header-actions">
     <button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>
@@ -771,6 +801,8 @@ body {
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
   <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
+  <button class="tab" onclick="switchTab('karte')">📍 Karte</button>
+  <button class="tab" onclick="switchTab('admin')">📢 Admin</button>
 </div>
 
 <!-- CONTENT -->
@@ -840,6 +872,41 @@ Propolis Tinktur 20ml;1</pre>
       <div id="fotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem">
         <p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Lade...</p>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB: KARTE -->
+  <div class="tab-panel" id="panel-karte">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:.5rem">📍 Live-Standort</h2>
+    <div id="gpsStatus" style="font-size:.8rem;color:var(--text-soft);margin-bottom:.5rem">Standort wird gesucht...</div>
+    <div id="liveMap" style="height:55vh;border-radius:.75rem;border:1.5px solid #E8DFD4;z-index:1"></div>
+    <div id="gpsCoords" style="font-size:.75rem;color:var(--text-soft);margin-top:.5rem;text-align:center"></div>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem">
+      <button class="btn btn-honey" onclick="loadSalesLocations();loadAllLivePositions()" style="flex:1;font-size:.7rem">🔄 Aktualisieren</button>
+      <button class="btn btn-outline" id="bgTrackBtn" onclick="toggleBackgroundTracking()" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem">📡 Hintergrund-Tracking AN</button>
+    </div>
+    <div style="margin-top:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📋 Gespeicherte Verkaufsstandorte</h3>
+      <div id="mapSalesInfo" style="font-size:.8rem;color:var(--text-soft)">Lade...</div>
+    </div>
+  </div>
+
+  <!-- TAB: ADMIN -->
+  <div class="tab-panel" id="panel-admin">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">📢 Admin-Bereich</h2>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📢 Nachricht an alle senden</h3>
+      <textarea id="adminMsgInput" placeholder="Nachricht eingeben..." style="width:100%;min-height:80px;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text);resize:vertical"></textarea>
+      <button class="btn btn-honey" onclick="sendAdminMessage()" style="width:100%;margin-top:.5rem">📢 Nachricht senden</button>
+    </div>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📍 GPS-Freigabe anfordern</h3>
+      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Sendet allen offenen Apps eine Aufforderung, ihren Standort freizugeben.</p>
+      <button class="btn btn-honey" onclick="requestGPSFromAll()" style="width:100%">📍 GPS-Freigabe bei allen anfordern</button>
+    </div>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">📋 Letzte Nachrichten</h3>
+      <div id="adminMsgList"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
     </div>
   </div>
 
@@ -1618,6 +1685,9 @@ async function renderHistory() {
     if (entry.netto !== undefined) {
       html += '<div style="font-size:.75rem;color:var(--text-soft);margin-top:.4rem">Netto: ' + formatPrice(entry.netto) + ' · MwSt: ' + formatPrice(entry.mwst) + '</div>';
     }
+    if (entry.latitude && entry.longitude) {
+      html += '<div style="font-size:.75rem;margin-top:.3rem"><a href="https://www.google.com/maps?q=' + entry.latitude + ',' + entry.longitude + '" target="_blank" rel="noopener" style="color:var(--forest);text-decoration:none">📍 Standort anzeigen</a></div>';
+    }
     html += '<div class="history-actions">'
       + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem" onclick="exportSingleEntry(' + entryId + ')">📤 CSV</button>'
       + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;font-size:.7rem" onclick="loadToSelling(' + entryId + ')">🔄 Laden</button>'
@@ -1972,11 +2042,13 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3 };
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3, 'karte': 4, 'admin': 5 };
   if (tabs[panels[name]]) tabs[panels[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'historie') renderHistory();
   if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
+  if (name === 'karte') initLiveMap();
+  if (name === 'admin') loadAdminMessages();
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -2027,6 +2099,216 @@ function getDeviceId() {
   return id;
 }
 
+
+// ─── PASSWORT & ADMIN ───────────────────────────────────────────────
+var WM_MASTER_HASH = '2976d8da788ff77dae3dd181e33e5a3d357f0d0c342ecbf61639699d827c8f21';
+var WM_PW_KEY = 'wm_master_unlocked';
+
+async function hashPw(pw) {
+  var data = new TextEncoder().encode(pw);
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function checkPw() {
+  var input = document.getElementById('pwInput');
+  var hash = await hashPw(input.value);
+  if (hash === WM_MASTER_HASH) {
+    localStorage.setItem(WM_PW_KEY, hash);
+    document.getElementById('pwGate').classList.add('hidden');
+    initApp();
+  } else {
+    document.getElementById('pwError').textContent = 'Falsches Passwort';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function logout() {
+  localStorage.removeItem(WM_PW_KEY);
+  stopBackgroundGPS();
+  if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  if (liveTrackingChannel) { sb.removeChannel(liveTrackingChannel); liveTrackingChannel = null; }
+  document.getElementById('pwGate').classList.remove('hidden');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwInput').focus();
+  document.getElementById('pwError').textContent = '';
+}
+
+// ─── LIVE GPS KARTE ──────────────────────────────────────────────
+var liveMapInstance = null;
+var liveMarker = null;
+var gpsWatchId = null;
+var salesMarkers = [];
+
+function initLiveMap() {
+  var mapEl = document.getElementById('liveMap');
+  if (!mapEl) return;
+  if (!liveMapInstance) {
+    liveMapInstance = L.map('liveMap').setView([48.8, 9.5], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap', maxZoom: 19
+    }).addTo(liveMapInstance);
+  }
+  setTimeout(function() { liveMapInstance.invalidateSize(); }, 200);
+  loadSalesLocations();
+  loadAllLivePositions();
+  setupLiveTracking();
+}
+
+var MARKER_COLORS = ['#F5A623', '#3D7C47', '#DC2626', '#2563EB', '#9333EA', '#EC4899', '#14B8A6', '#F97316'];
+function getMarkerColor(key) {
+  if (!key) return MARKER_COLORS[0];
+  var hash = 0;
+  for (var i = 0; i < key.length; i++) hash = ((hash << 5) - hash) + key.charCodeAt(i);
+  return MARKER_COLORS[Math.abs(hash) % MARKER_COLORS.length];
+}
+
+async function loadSalesLocations() {
+  var infoEl = document.getElementById('mapSalesInfo');
+  salesMarkers.forEach(function(m) { liveMapInstance.removeLayer(m); });
+  salesMarkers = [];
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.from('wochenmarkt_verkauf')
+      .select('id, datum, mitarbeiter, gesamt_brutto, latitude, longitude, device_id')
+      .not('latitude', 'is', null)
+      .order('created_at', { ascending: false }).limit(50);
+    if (result.error) throw result.error;
+    if (!result.data || result.data.length === 0) {
+      infoEl.textContent = 'Noch keine Standorte gespeichert.';
+      return;
+    }
+    var geraete = {};
+    for (var i = 0; i < result.data.length; i++) {
+      var d = result.data[i];
+      var key = d.mitarbeiter || d.device_id || 'Unbekannt';
+      var color = getMarkerColor(key);
+      if (!geraete[key]) geraete[key] = color;
+      var datum = new Date(d.datum + 'T00:00:00').toLocaleDateString('de-DE');
+      var marker = L.marker([d.latitude, d.longitude], {
+        icon: L.divIcon({ className: '', html: '<div style="width:14px;height:14px;background:' + color + ';border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)"></div>', iconSize: [14, 14], iconAnchor: [7, 7] })
+      }).addTo(liveMapInstance)
+        .bindPopup('📅 ' + datum + '<br>💰 ' + formatPrice(d.gesamt_brutto) + '<br>👤 ' + key);
+      salesMarkers.push(marker);
+    }
+    var legendHtml = result.data.length + ' Standorte<br><div style="margin-top:.4rem">';
+    for (var name in geraete) {
+      legendHtml += '<span style="display:inline-flex;align-items:center;gap:.3rem;margin-right:.8rem;margin-bottom:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:' + geraete[name] + ';display:inline-block"></span> ' + name + '</span>';
+    }
+    infoEl.innerHTML = legendHtml + '</div>';
+  } catch(e) {
+    infoEl.textContent = 'Standorte konnten nicht geladen werden';
+  }
+}
+
+// Live-Tracking anderer Geräte
+var liveOtherMarkers = {};
+var liveTrackingChannel = null;
+
+function setupLiveTracking() {
+  if (!sb || liveTrackingChannel) return;
+  liveTrackingChannel = sb.channel('live-standort')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'wochenmarkt_live_standort' }, function(payload) {
+      var d = payload.new;
+      if (!d || !d.latitude || !d.longitude) return;
+      if (d.device_id === getDeviceId()) return;
+      updateOtherMarker(d);
+    }).subscribe();
+}
+
+function updateOtherMarker(d) {
+  if (!liveMapInstance) return;
+  var name = d.mitarbeiter || d.device_id.substr(0, 10);
+  var color = getMarkerColor(name);
+  var zeit = new Date(d.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (liveOtherMarkers[d.device_id]) {
+    liveOtherMarkers[d.device_id].marker.setLatLng([d.latitude, d.longitude]);
+    liveOtherMarkers[d.device_id].marker.setPopupContent('👤 ' + name + '<br>🕐 ' + zeit + '<br>📍 ' + (d.accuracy ? d.accuracy + 'm' : ''));
+    if (liveOtherMarkers[d.device_id].circle) {
+      liveOtherMarkers[d.device_id].circle.setLatLng([d.latitude, d.longitude]);
+      if (d.accuracy) liveOtherMarkers[d.device_id].circle.setRadius(d.accuracy);
+    }
+  } else {
+    var marker = L.marker([d.latitude, d.longitude], {
+      icon: L.divIcon({ className: '', html: '<div style="width:16px;height:16px;background:' + color + ';border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [16, 16], iconAnchor: [8, 8] })
+    }).addTo(liveMapInstance).bindPopup('👤 ' + name + '<br>🕐 ' + zeit);
+    var circle = d.accuracy ? L.circle([d.latitude, d.longitude], { radius: d.accuracy, color: color, fillOpacity: 0.06, weight: 1 }).addTo(liveMapInstance) : null;
+    liveOtherMarkers[d.device_id] = { marker: marker, circle: circle };
+  }
+}
+
+async function loadAllLivePositions() {
+  if (!sb || !liveMapInstance) return;
+  try {
+    var result = await sb.from('wochenmarkt_live_standort').select('*');
+    if (result.error || !result.data) return;
+    for (var i = 0; i < result.data.length; i++) {
+      var d = result.data[i];
+      if (d.device_id === getDeviceId()) continue;
+      var age = Date.now() - new Date(d.updated_at).getTime();
+      if (age > 2 * 60 * 60 * 1000) continue;
+      updateOtherMarker(d);
+    }
+  } catch(e) {}
+}
+
+function toggleBackgroundTracking() {
+  var btn = document.getElementById('bgTrackBtn');
+  if (btn.dataset.active === 'true') {
+    stopBackgroundGPS();
+    btn.textContent = '📡 Hintergrund-Tracking AN';
+    btn.style.background = '';
+    btn.dataset.active = 'false';
+  } else {
+    startBackgroundGPS();
+    btn.textContent = '📡 Tracking AKTIV';
+    btn.style.background = '#3D7C47';
+    btn.style.color = '#fff';
+    btn.dataset.active = 'true';
+  }
+}
+
+// Admin-Nachrichten
+async function sendAdminMessage() {
+  var input = document.getElementById('adminMsgInput');
+  var text = input.value.trim();
+  if (!text) { showToast('Bitte Nachricht eingeben'); return; }
+  if (!sb) { showToast('Offline'); return; }
+  try {
+    var result = await sb.from('wochenmarkt_nachrichten').insert({ text: text, von: 'Admin' });
+    if (result.error) throw result.error;
+    input.value = '';
+    showToast('Nachricht gesendet');
+    loadAdminMessages();
+  } catch(e) { showToast('Senden fehlgeschlagen'); }
+}
+
+async function loadAdminMessages() {
+  var container = document.getElementById('adminMsgList');
+  if (!container) return;
+  try {
+    if (!sb) throw new Error('offline');
+    var result = await sb.from('wochenmarkt_nachrichten').select('*').order('created_at', { ascending: false }).limit(20);
+    if (result.error) throw result.error;
+    if (!result.data || result.data.length === 0) { container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Noch keine Nachrichten</p>'; return; }
+    var html = '';
+    for (var i = 0; i < result.data.length; i++) {
+      var msg = result.data[i];
+      var zeit = new Date(msg.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      html += '<div style="padding:.5rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem"><div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><strong>' + (msg.von || 'System') + '</strong><span style="color:var(--text-soft);font-size:.7rem">' + zeit + '</span></div><div>' + msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div></div>';
+    }
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Fehler beim Laden</p>'; }
+}
+
+async function requestGPSFromAll() {
+  if (!sb) { showToast('Offline'); return; }
+  try {
+    await sb.from('wochenmarkt_nachrichten').insert({ text: '::GPS_REQUEST::', von: 'Admin' });
+    showToast('GPS-Anfrage gesendet');
+  } catch(e) { showToast('Senden fehlgeschlagen'); }
+}
 
 // ─── KAMERA & FOTOS ─────────────────────────────────────────────────
 var FOTO_BUCKET = 'wochenmarkt-fotos';
@@ -2713,17 +2995,19 @@ async function initApp() {
   await loadMitarbeiter();
   renderProducts();
   updateSummary();
-  // Realtime & Notifications
   setupRealtime();
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
-  // GPS-Pflicht — App blockiert ohne GPS
-  checkGPSPflicht();
 }
 
-// App direkt starten (kein Passwort nötig)
-initApp();
+// Prüfe ob schon entsperrt
+if (localStorage.getItem(WM_PW_KEY) === WM_MASTER_HASH) {
+  document.getElementById('pwGate').classList.add('hidden');
+  initApp();
+} else {
+  document.getElementById('pwInput').focus();
+}
 
 // ─── PWA INSTALL ────────────────────────────────────────────────────
 var deferredPrompt = null;
