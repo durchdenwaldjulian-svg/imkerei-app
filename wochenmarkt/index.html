@@ -880,9 +880,9 @@ Propolis Tinktur 20ml;1</pre>
     <p style="font-size:.85rem;color:var(--text);line-height:1.6;margin-bottom:.75rem">Diese App funktioniert <b>nur mit aktiviertem Standort</b>. Ohne GPS-Freigabe kann die App nicht verwendet werden.</p>
     <p style="font-size:.75rem;color:var(--text-soft);margin-bottom:1rem">Der Standort wird für die korrekte Funktionsweise der App benötigt.</p>
 
-    <!-- Schritt 1: Ein-Klick Freigabe -->
+    <!-- Automatisch Freigabe auslösen -->
     <button class="btn btn-honey" onclick="grantGPSPflicht()" style="width:100%;padding:.75rem;font-size:1rem;font-weight:700" id="gpsPflichtBtn">📍 Standort freigeben</button>
-    <p style="font-size:.7rem;color:var(--text-soft);margin-top:.4rem" id="gpsPflichtHint">Klicke oben und dann im Browser-Popup auf <b>"Erlauben"</b></p>
+    <p style="font-size:.7rem;color:var(--text-soft);margin-top:.4rem" id="gpsPflichtHint">Bitte im Browser-Popup auf <b>"Erlauben"</b> klicken...</p>
 
     <div id="gpsPflichtError" style="color:#DC2626;font-size:.8rem;margin-top:.5rem;min-height:1.2em"></div>
 
@@ -908,6 +908,14 @@ Propolis Tinktur 20ml;1</pre>
       <!-- Android Einstellungen -->
       <div id="androidGpsHelp" style="display:none;margin-bottom:.5rem">
         <p><b>Handy:</b> Einstellungen → Standort → <b>Einschalten</b></p>
+      </div>
+
+      <!-- Inkognito: In normalem Chrome öffnen -->
+      <div id="inkognitoHelp" style="display:none;margin-bottom:.75rem;background:var(--white);padding:.75rem;border-radius:.5rem;border:2px solid var(--honey)">
+        <p style="font-weight:700;color:var(--honey-deep);margin-bottom:.4rem">Inkognito-Modus erkannt!</p>
+        <p style="margin-bottom:.5rem">Im Inkognito-Modus funktioniert GPS nicht. Öffne die Seite im normalen Browser:</p>
+        <a href="intent://www.bienenplan.de/wochenmarkt/#Intent;scheme=https;package=com.android.chrome;end" id="openChromeBtn" class="btn btn-honey" style="width:100%;justify-content:center;padding:.6rem;font-size:.9rem;text-decoration:none;display:flex;font-weight:700">🌐 In Chrome öffnen</a>
+        <p id="desktopInkognitoHint" style="display:none;font-size:.75rem;color:var(--text-soft);margin-top:.4rem">Am Desktop: Schließe das Inkognito-Fenster und öffne die Seite in einem normalen Browser-Fenster (Strg+N)</p>
       </div>
 
       <button class="btn btn-honey" onclick="grantGPSPflicht()" style="width:100%;margin-top:.5rem">🔄 Nochmal versuchen</button>
@@ -2257,7 +2265,12 @@ function showGPSBlockedHelp() {
 }
 
 function checkGPSPflicht() {
-  // Prüfe ob GPS wirklich funktioniert
+  // Schon erlaubt? Direkt starten
+  if (localStorage.getItem('wm_gps_granted') === 'true') {
+    gpsAllowed = true;
+    startBackgroundGPS();
+    return;
+  }
   if (!navigator.geolocation) {
     blockApp('Dein Browser unterstützt kein GPS. Bitte nutze Chrome.');
     return;
@@ -2271,7 +2284,7 @@ function checkGPSPflicht() {
       startBackgroundGPS();
     },
     function(err) {
-      // GPS blockiert oder nicht verfügbar → App sperren
+      // GPS blockiert → Modal mit Anleitung zeigen
       document.getElementById('gpsPflichtModal').classList.add('active');
     },
     { enableHighAccuracy: true, timeout: 5000 }
@@ -2309,20 +2322,45 @@ function grantGPSPflicht() {
       btn.disabled = false;
       if (hint) hint.textContent = '';
 
-      if (err.code === 1) {
-        error.textContent = 'Standort blockiert — folge der Anleitung:';
-        var hilfe = document.getElementById('gpsPflichtHilfe');
-        hilfe.style.display = 'block';
-        // Plattform-spezifische Hilfe anzeigen
-        var isWindows = /Windows/i.test(navigator.userAgent);
-        var isAndroid = /Android/i.test(navigator.userAgent);
+      var hilfe = document.getElementById('gpsPflichtHilfe');
+      hilfe.style.display = 'block';
+      var isWindows = /Windows/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      var isDesktop = !/Mobi|Android|iPhone/i.test(navigator.userAgent);
+
+      // Inkognito erkennen
+      var maybeIncognito = false;
+      try {
+        var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+        if (fs) { fs(0, 0, function(){}, function(){ maybeIncognito = true; }); }
+        if (navigator.storage && navigator.storage.estimate) {
+          navigator.storage.estimate().then(function(est) {
+            if (est.quota && est.quota < 120000000) maybeIncognito = true;
+            showGPSHelp();
+          });
+          return; // warte auf async check
+        }
+      } catch(e) {}
+
+      function showGPSHelp() {
+        if (maybeIncognito || err.code === 1) {
+          document.getElementById('inkognitoHelp').style.display = 'block';
+          if (isDesktop) {
+            document.getElementById('openChromeBtn').style.display = 'none';
+            document.getElementById('desktopInkognitoHint').style.display = 'block';
+          }
+        }
         if (isWindows) document.getElementById('windowsGpsHelp').style.display = 'block';
         if (isAndroid) document.getElementById('androidGpsHelp').style.display = 'block';
+      }
+
+      if (err.code === 1) {
+        error.textContent = 'Standort blockiert — folge der Anleitung:';
+        showGPSHelp();
       } else if (err.code === 2) {
         error.textContent = 'Standort nicht verfügbar — GPS am Gerät aktivieren';
-        document.getElementById('gpsPflichtHilfe').style.display = 'block';
-        if (/Windows/i.test(navigator.userAgent)) document.getElementById('windowsGpsHelp').style.display = 'block';
-        if (/Android/i.test(navigator.userAgent)) document.getElementById('androidGpsHelp').style.display = 'block';
+        if (isWindows) document.getElementById('windowsGpsHelp').style.display = 'block';
+        if (isAndroid) document.getElementById('androidGpsHelp').style.display = 'block';
       } else {
         error.textContent = 'Zeitüberschreitung — nochmal versuchen';
       }
