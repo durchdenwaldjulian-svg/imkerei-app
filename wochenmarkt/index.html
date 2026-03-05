@@ -739,6 +739,7 @@ body {
 <div class="header">
   <div class="header-top">
     <h1>🐝 Wochenmarkt</h1>
+    <span id="onlineStatus" style="font-size:.65rem;padding:.15rem .4rem;border-radius:.3rem;font-weight:700"></span>
     <span class="header-date" id="headerDate"></span>
   </div>
   <div class="header-actions">
@@ -752,7 +753,7 @@ body {
 
 <!-- APP INSTALLIEREN BANNER -->
 <div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
-  <a href="wochenmarkt.apk" download id="apkDownloadBtn" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;display:inline-block;">📲 App herunterladen</a>
+  <a href="https://play.google.com/store/apps/details?id=de.bienenplan.wochenmarkt" target="_blank" id="apkDownloadBtn" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;display:inline-block;">📲 Im Play Store installieren</a>
   <button onclick="installApp()" id="installBtnMain" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App installieren</button>
 </div>
 
@@ -1519,8 +1520,13 @@ async function saveSession() {
     }
   });
 
-  // GPS immer abfragen beim Speichern
+  // GPS immer abfragen beim Speichern — ohne GPS kein Speichern
   var gps = await getGPS();
+  if (!gps) {
+    showToast('Standort nicht verfügbar — bitte GPS freigeben');
+    document.getElementById('gpsPflichtModal').classList.add('active');
+    return;
+  }
 
   var entry = {
     id: Date.now(),
@@ -1546,27 +1552,36 @@ async function saveSession() {
     };
   });
 
-  // Primär in Supabase speichern
+  // Daten für Supabase
+  var insertData = {
+    datum: dateStr(),
+    mitarbeiter: mitarbeiter || null,
+    produkte: produkte,
+    gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
+    gesamt_netto: parseFloat(t.netto.toFixed(2)),
+    gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
+    device_id: getDeviceId()
+  };
+  if (gps) {
+    insertData.latitude = gps.lat;
+    insertData.longitude = gps.lng;
+  }
+
+  // Online: direkt in Supabase speichern / Offline: in Queue
   try {
-    if (sb) {
-      var insertData = {
-        datum: dateStr(),
-        mitarbeiter: mitarbeiter || null,
-        produkte: produkte,
-        gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
-        gesamt_netto: parseFloat(t.netto.toFixed(2)),
-        gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
-        device_id: getDeviceId()
-      };
-      if (gps) {
-        insertData.latitude = gps.lat;
-        insertData.longitude = gps.lng;
-      }
+    if (sb && navigator.onLine) {
       var result = await db.insert('wochenmarkt_verkauf', insertData);
-      if (!result.error) entry.synced = true;
+      if (!result.error) {
+        entry.synced = true;
+      } else {
+        addToOfflineQueue(insertData);
+      }
+    } else {
+      addToOfflineQueue(insertData);
     }
   } catch(e) {
-    console.warn('Supabase Speichern fehlgeschlagen:', e);
+    console.warn('Supabase Speichern fehlgeschlagen, offline gespeichert:', e);
+    addToOfflineQueue(insertData);
   }
 
   // localStorage als Backup
@@ -1579,7 +1594,12 @@ async function saveSession() {
   updateSummary();
   closeDetailPanel();
 
-  showToast('Markttag gespeichert: ' + formatPrice(t.brutto));
+  if (entry.synced) {
+    showToast('Markttag gespeichert: ' + formatPrice(t.brutto));
+  } else {
+    showToast('Offline gespeichert — wird bei Verbindung synchronisiert');
+  }
+  updateOnlineStatus();
 }
 
 function resetSession() {
@@ -2804,7 +2824,80 @@ function setupRealtime() {
     .subscribe();
 }
 
+// ─── OFFLINE ZWISCHENSPEICHER ────────────────────────────────────
+var OFFLINE_QUEUE_KEY = 'wm_offline_queue';
+
+function getOfflineQueue() {
+  return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+}
+
+function addToOfflineQueue(data) {
+  var queue = getOfflineQueue();
+  queue.push(data);
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+}
+
+async function syncOfflineQueue() {
+  if (!sb || !navigator.onLine) return;
+  var queue = getOfflineQueue();
+  if (queue.length === 0) return;
+
+  var remaining = [];
+  for (var i = 0; i < queue.length; i++) {
+    try {
+      var result = await db.insert('wochenmarkt_verkauf', queue[i]);
+      if (result.error) {
+        remaining.push(queue[i]);
+      }
+    } catch(e) {
+      remaining.push(queue[i]);
+    }
+  }
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
+
+  var synced = queue.length - remaining.length;
+  if (synced > 0) {
+    showToast(synced + ' offline gespeicherte Verkäufe synchronisiert');
+    // Synced-Flag in History aktualisieren
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    for (var j = 0; j < history.length; j++) {
+      if (!history[j].synced) history[j].synced = true;
+    }
+    localStorage.setItem('wm_history', JSON.stringify(history));
+  }
+  updateOnlineStatus();
+}
+
+function updateOnlineStatus() {
+  var el = document.getElementById('onlineStatus');
+  var queue = getOfflineQueue();
+  if (navigator.onLine) {
+    if (queue.length > 0) {
+      el.textContent = '⏳ ' + queue.length + ' warten';
+      el.style.background = '#FEF3C7';
+      el.style.color = '#92400E';
+    } else {
+      el.textContent = '● Online';
+      el.style.background = 'var(--forest)';
+      el.style.color = '#fff';
+    }
+  } else {
+    el.textContent = '● Offline';
+    el.style.background = '#FEE2E2';
+    el.style.color = '#DC2626';
+  }
+}
+
+window.addEventListener('online', function() {
+  updateOnlineStatus();
+  syncOfflineQueue();
+});
+window.addEventListener('offline', function() {
+  updateOnlineStatus();
+});
+
 async function initApp() {
+  updateOnlineStatus();
   await loadProductsFromDB();
   await loadMitarbeiter();
   renderProducts();
@@ -2816,6 +2909,8 @@ async function initApp() {
   }
   // GPS-Pflicht — App blockiert ohne GPS
   checkGPSPflicht();
+  // Offline-Queue synchronisieren
+  syncOfflineQueue();
 }
 
 // App direkt starten (kein Passwort nötig)
