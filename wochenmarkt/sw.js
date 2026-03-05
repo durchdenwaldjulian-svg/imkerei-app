@@ -1,9 +1,11 @@
-var CACHE_NAME = 'wochenmarkt-v2';
+var CACHE_NAME = 'wochenmarkt-v3';
 var URLS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', function(e) {
