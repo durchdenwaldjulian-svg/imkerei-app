@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "de.bienenplan.wochenmarkt",
+    "sha256_cert_fingerprints": [
+      "91:09:DB:33:81:63:53:E4:EF:4B:21:7E:01:9F:56:4D:80:37:A4:13:39:47:A5:3B:54:44:47:88:1D:7D:83:00"
+    ]
+  }
+}]
