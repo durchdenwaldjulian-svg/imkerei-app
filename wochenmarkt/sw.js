@@ -1,4 +1,4 @@
-var CACHE_NAME = 'wochenmarkt-v3';
+var CACHE_NAME = 'wochenmarkt-v4';
 var URLS_TO_CACHE = [
   './',
   './index.html',
@@ -30,6 +30,9 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
+  // APK-Downloads nicht abfangen
+  if (e.request.url.endsWith('.apk')) return;
+
   e.respondWith(
     fetch(e.request).then(function(response) {
       if (response.status === 200) {
