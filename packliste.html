@@ -54,6 +54,23 @@
         .schnell-btn.schnell-equipment .schnell-label{color:#fff}
         .info-box{font-size:.85rem;color:#7A6652;padding:.75rem;background:#FFF8EE;border:2px solid #F0D9A0;border-radius:.5rem;margin-bottom:1rem}
 
+        /* CUSTOM ITEM */
+        .custom-badge{display:inline-block;background:#EEF2FF;color:#6366f1;font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:999px;margin-left:.35rem;vertical-align:middle}
+        .btn-add-custom{width:100%;padding:.75rem;background:#fff;border:2px dashed #d1d5db;border-radius:.75rem;cursor:pointer;font-size:.9rem;font-weight:600;color:#7A6652;transition:all .2s;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn-add-custom:hover{border-color:#F5A623;color:#F5A623;background:#FFF8EE}
+
+        /* CUSTOM MODAL */
+        .custom-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem}
+        .custom-modal.active{display:flex}
+        .custom-modal-content{background:#fff;border-radius:1rem;padding:1.5rem;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+        .custom-modal h3{margin:0 0 1rem;font-size:1.1rem}
+        .custom-input{width:100%;padding:.625rem .75rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem;font-family:inherit;margin-bottom:.75rem;box-sizing:border-box}
+        .custom-input:focus{outline:none;border-color:#F5A623}
+        .custom-kat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin-bottom:.75rem}
+        .custom-kat-btn{padding:.4rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.75rem;text-align:center;transition:all .15s;font-family:inherit}
+        .custom-kat-btn:hover{border-color:#F5A623;background:#FFF8EE}
+        .custom-kat-btn.selected{border-color:#F5A623;background:#FFF8EE;font-weight:600;color:#92400E}
+
         /* TOAST */
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
         .toast.show{display:block}
@@ -93,6 +110,23 @@
 <div class="toast" id="toast"></div>
 <div id="app"></div>
 
+<!-- CUSTOM ITEM MODAL -->
+<div class="custom-modal" id="customModal">
+    <div class="custom-modal-content">
+        <h3>✏️ Eigenes Item hinzufügen</h3>
+        <label style="font-size:.8rem;font-weight:600;color:#7A6652;display:block;margin-bottom:.25rem">Name *</label>
+        <input type="text" class="custom-input" id="customName" placeholder="z.B. Sprühflasche, Klebeband...">
+        <label style="font-size:.8rem;font-weight:600;color:#7A6652;display:block;margin-bottom:.25rem">Kategorie</label>
+        <div class="custom-kat-grid" id="customKatGrid"></div>
+        <label style="font-size:.8rem;font-weight:600;color:#7A6652;display:block;margin-bottom:.25rem">Oder neue Kategorie</label>
+        <input type="text" class="custom-input" id="customKat" placeholder="z.B. Wanderung, Transport...">
+        <div style="display:flex;gap:.5rem;margin-top:.5rem">
+            <button style="flex:1;padding:.6rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.9rem" onclick="saveCustomItem()">Hinzufügen</button>
+            <button style="padding:.6rem 1rem;background:#f3f4f6;color:#7A6652;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.9rem" onclick="closeCustomModal()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
 <script src="config.js"></script>
 <script src="plan.js"></script>
 <script src="presence.js" defer></script>
@@ -127,7 +161,7 @@ async function init() {
 
     var res = await sb.from('packliste').select('*').eq('user_id', currentUser.id);
     items = (res.data || []).map(function(r) {
-        return { id: r.id, kategorie: r.kategorie, name: r.name, checked: r.checked, menge: r.menge, istSchnell: r.ist_schnell, schnellTyp: r.schnell_typ };
+        return { id: r.id, kategorie: r.kategorie, name: r.name, checked: r.checked, menge: r.menge, istSchnell: r.ist_schnell, schnellTyp: r.schnell_typ, isCustom: r.is_custom || false };
     });
 
     if (items.length === 0) {
@@ -263,6 +297,62 @@ function getStatistik() {
 }
 
 // ============================================
+// EIGENE ITEMS
+// ============================================
+var _selectedKat = '';
+
+function openCustomModal() {
+    document.getElementById('customName').value = '';
+    document.getElementById('customKat').value = '';
+    _selectedKat = '';
+    // Kategorien aus bestehenden Items + Standard
+    var kats = {};
+    items.forEach(function(i){ kats[i.kategorie] = true; });
+    Object.keys(PACKLISTE_ITEMS).forEach(function(k){ kats[k] = true; });
+    var grid = document.getElementById('customKatGrid');
+    grid.innerHTML = '';
+    Object.keys(kats).sort().forEach(function(k){
+        grid.innerHTML += '<button class="custom-kat-btn" onclick="selectKat(this,\''+k.replace(/'/g,"\\'")+'\')">'+k+'</button>';
+    });
+    document.getElementById('customModal').classList.add('active');
+    setTimeout(function(){ document.getElementById('customName').focus(); }, 100);
+}
+
+function closeCustomModal() {
+    document.getElementById('customModal').classList.remove('active');
+}
+
+function selectKat(btn, kat) {
+    _selectedKat = kat;
+    document.getElementById('customKat').value = '';
+    document.querySelectorAll('.custom-kat-btn').forEach(function(b){ b.classList.remove('selected'); });
+    btn.classList.add('selected');
+}
+
+function saveCustomItem() {
+    var name = document.getElementById('customName').value.trim();
+    var neueKat = document.getElementById('customKat').value.trim();
+    var kategorie = neueKat || _selectedKat;
+    if (!name) { alert('Bitte einen Namen eingeben!'); return; }
+    if (!kategorie) { alert('Bitte eine Kategorie wählen oder eingeben!'); return; }
+    var item = {
+        id: 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        kategorie: kategorie, name: '✏️ ' + name, checked: false, menge: 1,
+        istSchnell: false, schnellTyp: null, isCustom: true
+    };
+    items.push(item);
+    sb.from('packliste').upsert({
+        id: item.id, user_id: currentUser.id,
+        kategorie: item.kategorie, name: item.name,
+        checked: false, menge: 1,
+        ist_schnell: false, schnell_typ: null, is_custom: true
+    });
+    closeCustomModal();
+    render();
+    toast('✅ "'+name+'" hinzugefügt!','success');
+}
+
+// ============================================
 // DRUCKEN
 // ============================================
 function drucken() {
@@ -358,6 +448,7 @@ function render() {
     '<button class="schnell-btn schnell-equipment" onclick="schnellHinzufuegen(\'behandlung_set\')"><div class="schnell-icon">💉</div><div class="schnell-label">Behandlungs-Set</div></button>'+
     '<button class="schnell-btn schnell-equipment" onclick="schnellHinzufuegen(\'futter\')"><div class="schnell-icon">🍯</div><div class="schnell-label">Futter-Set</div></button>'+
     '</div>'+
+    '<button class="btn-add-custom" onclick="openCustomModal()">✏️ Eigenes Item hinzufügen</button>'+
     '<div style="display:flex;gap:.75rem;margin-bottom:1.5rem">'+
     '<button style="flex:1;padding:.6rem;background:#10b981;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer" onclick="alleAbhaken()">✓ Alle abhaken</button>'+
     '<button style="flex:1;padding:.6rem;background:#3b82f6;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer" onclick="alleZuruecksetzen()">↺ Zurücksetzen</button>'+
