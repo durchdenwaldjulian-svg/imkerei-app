@@ -752,8 +752,8 @@ body {
 
 <!-- APP INSTALLIEREN BANNER -->
 <div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
-  <button onclick="installApp()" id="installBtnMain" style="background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App aufs Handy installieren</button>
-  <a id="installChromeLink" href="intent://www.bienenplan.de/wochenmarkt/#Intent;scheme=https;package=com.android.chrome;end" style="display:none;background:var(--forest);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;margin-top:.4rem">🌐 In Chrome öffnen zum Installieren</a>
+  <a href="wochenmarkt.apk" download id="apkDownloadBtn" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;display:inline-block;">📲 App herunterladen</a>
+  <button onclick="installApp()" id="installBtnMain" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App installieren</button>
 </div>
 
 <!-- MITARBEITER BAR -->
@@ -2821,54 +2821,49 @@ async function initApp() {
 // App direkt starten (kein Passwort nötig)
 initApp();
 
-// ─── PWA INSTALL ────────────────────────────────────────────────────
+// ─── APP INSTALL ────────────────────────────────────────────────────
 var deferredPrompt = null;
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+var isTWA = document.referrer.includes('android-app://');
+var isAndroidDevice = /Android/i.test(navigator.userAgent);
+
+// Standalone oder TWA → Banner komplett ausblenden
+if (isStandalone || isTWA) {
+  document.getElementById('installBanner').style.display = 'none';
+} else if (isAndroidDevice) {
+  // Android → APK-Download anzeigen
+  document.getElementById('apkDownloadBtn').style.display = 'inline-block';
+  document.getElementById('installBtnMain').style.display = 'none';
+} else {
+  // Desktop/iOS → PWA-Install Button
+  document.getElementById('apkDownloadBtn').style.display = 'none';
+  document.getElementById('installBtnMain').style.display = 'inline-block';
+}
 
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   deferredPrompt = e;
-  // Automatisch Install-Dialog zeigen
-  setTimeout(function() {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function() {
-      deferredPrompt = null;
-      document.getElementById('installBanner').style.display = 'none';
-    });
-  }, 1000);
 });
 
 function installApp() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function() {
+    deferredPrompt.userChoice.then(function(choice) {
       deferredPrompt = null;
-      document.getElementById('installBanner').style.display = 'none';
+      if (choice.outcome === 'accepted') {
+        document.getElementById('installBanner').style.display = 'none';
+        showToast('App wird installiert...');
+      }
     });
   } else {
-    document.getElementById('installHilfe').style.display = 'flex';
+    alert('Tippe auf die 3 Punkte oben rechts und dann auf "Zum Startbildschirm hinzufügen"');
   }
-}
-
-function closeInstallHilfe() {
-  document.getElementById('installHilfe').style.display = 'none';
 }
 
 window.addEventListener('appinstalled', function() {
   document.getElementById('installBanner').style.display = 'none';
   showToast('App installiert!');
 });
-
-// Banner ausblenden wenn App bereits als Standalone läuft
-if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-  document.getElementById('installBanner').style.display = 'none';
-}
-
-// Bei Nicht-Chrome: Chrome-Link anzeigen (nur Android)
-var isChrome = /Chrome/.test(navigator.userAgent) && !/SamsungBrowser|OPR|Edge/.test(navigator.userAgent);
-var isAndroid = /Android/.test(navigator.userAgent);
-if (!isChrome && isAndroid) {
-  document.getElementById('installChromeLink').style.display = 'inline-block';
-}
 
 // ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
 if ('serviceWorker' in navigator) {
