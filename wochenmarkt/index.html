@@ -910,6 +910,16 @@ Propolis Tinktur 20ml;1</pre>
         <p><b>Handy:</b> Einstellungen → Standort → <b>Einschalten</b></p>
       </div>
 
+      <!-- Safari Hilfe -->
+      <div id="safariGpsHelp" style="display:none;margin-bottom:.75rem;background:var(--white);padding:.75rem;border-radius:.5rem;border:2px solid var(--honey)">
+        <p style="font-weight:700;color:var(--honey-deep);margin-bottom:.4rem">Safari: Standort freigeben</p>
+        <p style="margin-bottom:.3rem"><b>1.</b> Öffne <b>Einstellungen</b> auf dem iPhone</p>
+        <p style="margin-bottom:.3rem"><b>2.</b> Gehe zu <b>Datenschutz → Ortungsdienste</b></p>
+        <p style="margin-bottom:.3rem"><b>3.</b> Stelle sicher dass <b>Ortungsdienste</b> aktiviert ist</p>
+        <p style="margin-bottom:.3rem"><b>4.</b> Scrolle zu <b>Safari</b> → wähle <b>"Beim Verwenden der App"</b></p>
+        <p style="margin-bottom:.3rem"><b>5.</b> Komm zurück und klicke <b>"Nochmal versuchen"</b></p>
+      </div>
+
       <!-- Inkognito: In normalem Chrome öffnen -->
       <div id="inkognitoHelp" style="display:none;margin-bottom:.75rem;background:var(--white);padding:.75rem;border-radius:.5rem;border:2px solid var(--honey)">
         <p style="font-weight:700;color:var(--honey-deep);margin-bottom:.4rem">Inkognito-Modus erkannt!</p>
@@ -2275,16 +2285,21 @@ function checkGPSPflicht() {
     blockApp('Dein Browser unterstützt kein GPS. Bitte nutze Chrome.');
     return;
   }
+  // Safari braucht User-Interaktion für GPS → immer Modal zeigen
+  var isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome|CriOS/i.test(navigator.userAgent);
+  if (isSafari) {
+    document.getElementById('gpsPflichtModal').classList.add('active');
+    return;
+  }
+  // Chrome/andere: automatisch GPS abfragen
   navigator.geolocation.getCurrentPosition(
     function(pos) {
-      // GPS funktioniert → freigeben
       localStorage.setItem('wm_gps_granted', 'true');
       localStorage.setItem('wm_gps_allowed', 'true');
       gpsAllowed = true;
       startBackgroundGPS();
     },
     function(err) {
-      // GPS blockiert → Modal mit Anleitung zeigen
       document.getElementById('gpsPflichtModal').classList.add('active');
     },
     { enableHighAccuracy: true, timeout: 5000 }
@@ -2342,7 +2357,12 @@ function grantGPSPflicht() {
         }
       } catch(e) {}
 
+      var isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome|CriOS/i.test(navigator.userAgent);
+
       function showGPSHelp() {
+        if (isSafari) {
+          document.getElementById('safariGpsHelp').style.display = 'block';
+        }
         if (maybeIncognito || err.code === 1) {
           document.getElementById('inkognitoHelp').style.display = 'block';
           if (isDesktop) {
@@ -2359,6 +2379,7 @@ function grantGPSPflicht() {
         showGPSHelp();
       } else if (err.code === 2) {
         error.textContent = 'Standort nicht verfügbar — GPS am Gerät aktivieren';
+        if (isSafari) document.getElementById('safariGpsHelp').style.display = 'block';
         if (isWindows) document.getElementById('windowsGpsHelp').style.display = 'block';
         if (isAndroid) document.getElementById('androidGpsHelp').style.display = 'block';
       } else {
