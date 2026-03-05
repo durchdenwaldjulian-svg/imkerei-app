@@ -58,8 +58,6 @@
         .custom-badge{display:inline-block;background:#EEF2FF;color:#6366f1;font-size:.6rem;font-weight:700;padding:.1rem .35rem;border-radius:999px;margin-left:.35rem;vertical-align:middle}
         .btn-add-custom{width:100%;padding:.75rem;background:#fff;border:2px dashed #d1d5db;border-radius:.75rem;cursor:pointer;font-size:.9rem;font-weight:600;color:#7A6652;transition:all .2s;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
         .btn-add-custom:hover{border-color:#F5A623;color:#F5A623;background:#FFF8EE}
-
-        /* CUSTOM MODAL */
         .custom-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem}
         .custom-modal.active{display:flex}
         .custom-modal-content{background:#fff;border-radius:1rem;padding:1.5rem;max-width:400px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.2)}
@@ -270,19 +268,25 @@ function schnellHinzufuegen(typ) {
         speichern(); render(); toast('❌ Entfernt','info'); return;
     }
     var sets = {
+        // === BEUTEN KOMPLETT ===
+        'zander': [['Beuten & Zargen','🏠 Zander Beute komplett'],['Beuten & Zargen','  → Boden (Zander)'],['Beuten & Zargen','  → Brutraum (Zander)'],['Beuten & Zargen','  → Honigraum (Zander)'],['Beuten & Zargen','  → Absperrgitter'],['Beuten & Zargen','  → Innendeckel'],['Beuten & Zargen','  → Außendeckel']],
+        'dadant': [['Beuten & Zargen','🏠 Dadant Beute komplett'],['Beuten & Zargen','  → Boden (Dadant)'],['Beuten & Zargen','  → Brutraum (Dadant)'],['Beuten & Zargen','  → Honigraum (Dadant)'],['Beuten & Zargen','  → Absperrgitter'],['Beuten & Zargen','  → Innendeckel'],['Beuten & Zargen','  → Außendeckel']],
+        'dnm': [['Beuten & Zargen','🏠 DNM Beute komplett'],['Beuten & Zargen','  → Boden (DNM)'],['Beuten & Zargen','  → Brutraum (DNM)'],['Beuten & Zargen','  → Honigraum (DNM)'],['Beuten & Zargen','  → Absperrgitter'],['Beuten & Zargen','  → Innendeckel'],['Beuten & Zargen','  → Außendeckel']],
+        'segeberger': [['Beuten & Zargen','🏠 Segeberger Beute komplett'],['Beuten & Zargen','  → Boden (Segeberger)'],['Beuten & Zargen','  → Brutraum (Segeberger)'],['Beuten & Zargen','  → Honigraum (Segeberger)'],['Beuten & Zargen','  → Absperrgitter'],['Beuten & Zargen','  → Innendeckel'],['Beuten & Zargen','  → Außendeckel']],
+        // === EINZELTEILE (Menge über +/- steuerbar) ===
+        'ableger': [['Beuten & Zargen','📦 Ablegerkasten'],['Beuten & Zargen','  → Boden'],['Beuten & Zargen','  → Brutzarge'],['Beuten & Zargen','  → Deckel']],
+        'raehmchen': [['Material','🪵 Rähmchen']],
+        'mittelwaende': [['Material','▭ Mittelwände']],
+        'boden': [['Beuten & Zargen','⬜ Boden']],
+        'zarge': [['Beuten & Zargen','📦 Zarge']],
+        'deckel': [['Beuten & Zargen','🔲 Deckel']],
+        // === EQUIPMENT SETS ===
         'schutz': [['Schutzkleidung','🧥 Schutzausrüstung komplett'],['Schutzkleidung','  → Imkeranzug/Jacke'],['Schutzkleidung','  → Imkerhandschuhe'],['Schutzkleidung','  → Imkerhut mit Schleier']],
         'werkzeug': [['Werkzeuge','🔧 Werkzeug-Set komplett'],['Werkzeuge','  → Stockmeißel'],['Werkzeuge','  → Abkehrbesen'],['Werkzeuge','  → Wabenzange']],
         'smoker': [['Rauchmaterial','💨 Smoker-Paket komplett'],['Werkzeuge','  → Smoker (Raucher)'],['Rauchmaterial','  → Holzspäne/Pellets'],['Rauchmaterial','  → Anzünder']],
         'ernte': [['Ernte','🍯 Ernte-Set komplett'],['Ernte','  → Honigschleuder'],['Ernte','  → Entdeckelungsgeschirr'],['Ernte','  → Sieb (doppelt)'],['Ernte','  → Honigeimer'],['Ernte','  → Gläser & Deckel']],
         'behandlung_set': [['Behandlung','💉 Behandlungs-Set komplett'],['Behandlung','  → Ameisensäure'],['Behandlung','  → Oxalsäure'],['Behandlung','  → Puderzucker'],['Behandlung','  → Schutzhandschuhe']],
-        'futter': [['Futter','🍯 Futter-Set komplett'],['Futter','  → Futterteig'],['Futter','  → Zuckerwasser'],['Futter','  → Futterzarge']],
-        'ableger': [['Material','📦 Ablegerkasten komplett'],['Material','  → Boden'],['Material','  → Brutzarge'],['Material','  → Deckel'],['Material','  → 6 Rähmchen']],
-        'dadant': [['Beuten & Zargen','🏠 Dadant Beute komplett'],['Beuten & Zargen','  → Boden'],['Beuten & Zargen','  → Brutraum'],['Beuten & Zargen','  → Honigraum'],['Beuten & Zargen','  → Deckel']],
-        'raehmchen': [['Material','🪵 10x Rähmchen']],
-        'mittelwaende': [['Material','▭ 10x Mittelwände']],
-        'boden': [['Beuten & Zargen','⬜ Boden']],
-        'deckel': [['Beuten & Zargen','🔲 Deckel']],
-        'zarge': [['Beuten & Zargen','📦 Zarge']]
+        'futter': [['Futter','🍯 Futter-Set komplett'],['Futter','  → Futterteig'],['Futter','  → Zuckerwasser'],['Futter','  → Futterzarge']]
     };
     var setItems = sets[typ] || [];
     setItems.forEach(function(x) {
@@ -300,18 +304,19 @@ function getStatistik() {
 // EIGENE ITEMS
 // ============================================
 var _selectedKat = '';
+var ALLE_KATEGORIEN = ['Schutzkleidung','Werkzeuge','Rauchmaterial','Futter','Behandlung','Material','Ernte','Beuten & Zargen','Sonstiges'];
 
 function openCustomModal() {
     document.getElementById('customName').value = '';
     document.getElementById('customKat').value = '';
     _selectedKat = '';
-    // Kategorien aus bestehenden Items + Standard
-    var kats = {};
-    items.forEach(function(i){ kats[i.kategorie] = true; });
-    Object.keys(PACKLISTE_ITEMS).forEach(function(k){ kats[k] = true; });
     var grid = document.getElementById('customKatGrid');
     grid.innerHTML = '';
-    Object.keys(kats).sort().forEach(function(k){
+    // Alle 9 Kategorien + eventuelle eigene aus Items
+    var kats = {};
+    ALLE_KATEGORIEN.forEach(function(k){ kats[k] = true; });
+    items.forEach(function(i){ kats[i.kategorie] = true; });
+    Object.keys(kats).forEach(function(k){
         grid.innerHTML += '<button class="custom-kat-btn" onclick="selectKat(this,\''+k.replace(/'/g,"\\'")+'\')">'+k+'</button>';
     });
     document.getElementById('customModal').classList.add('active');
@@ -430,16 +435,23 @@ function render() {
     '<h1 style="margin:0 0 .75rem">📋 Imkerei Packliste</h1>'+
     '<div class="info-box">✨ <strong>Vollständige Packliste</strong> - einfach abhaken! Schnell-Buttons fügen ganze Sets hinzu.</div>'+
     '<h2 style="margin-top:0">⚡ Schnell hinzufügen</h2>'+
-    '<h3 style="font-size:.9rem;color:#7A6652;margin-bottom:.75rem">🏠 Beuten & Material</h3>'+
+    '<h3 style="font-size:.9rem;color:#7A6652;margin-bottom:.75rem">🏠 Beuten (komplett)</h3>'+
+    '<div class="schnell-grid">'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'zander\')"><div class="schnell-icon">🏠</div><div class="schnell-label">Zander</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'dadant\')"><div class="schnell-icon">🏠</div><div class="schnell-label">Dadant</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'dnm\')"><div class="schnell-icon">🏠</div><div class="schnell-label">DNM</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'segeberger\')"><div class="schnell-icon">🏠</div><div class="schnell-label">Segeberger</div></button>'+
+    '</div>'+
+    '<h3 style="font-size:.9rem;color:#7A6652;margin:.75rem 0">📦 Einzelteile</h3>'+
     '<div class="schnell-grid">'+
     '<button class="schnell-btn" onclick="schnellHinzufuegen(\'ableger\')"><div class="schnell-icon">📦</div><div class="schnell-label">Ablegerkasten</div></button>'+
-    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'dadant\')"><div class="schnell-icon">🏠</div><div class="schnell-label">Dadant Beute</div></button>'+
-    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'raehmchen\')"><div class="schnell-icon">🪵</div><div class="schnell-label">10 Rähmchen</div></button>'+
-    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'mittelwaende\')"><div class="schnell-icon">▭</div><div class="schnell-label">10 Mittelwände</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'raehmchen\')"><div class="schnell-icon">🪵</div><div class="schnell-label">Rähmchen</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'mittelwaende\')"><div class="schnell-icon">▭</div><div class="schnell-label">Mittelwände</div></button>'+
     '<button class="schnell-btn" onclick="schnellHinzufuegen(\'boden\')"><div class="schnell-icon">⬜</div><div class="schnell-label">Boden</div></button>'+
     '<button class="schnell-btn" onclick="schnellHinzufuegen(\'zarge\')"><div class="schnell-icon">📦</div><div class="schnell-label">Zarge</div></button>'+
+    '<button class="schnell-btn" onclick="schnellHinzufuegen(\'deckel\')"><div class="schnell-icon">🔲</div><div class="schnell-label">Deckel</div></button>'+
     '</div>'+
-    '<h3 style="font-size:.9rem;color:#7A6652;margin:.75rem 0">🔧 Arbeits-Equipment</h3>'+
+    '<h3 style="font-size:.9rem;color:#7A6652;margin:.75rem 0">🔧 Equipment-Sets</h3>'+
     '<div class="schnell-grid">'+
     '<button class="schnell-btn schnell-equipment" onclick="schnellHinzufuegen(\'schutz\')"><div class="schnell-icon">🧥</div><div class="schnell-label">Schutzausrüstung</div></button>'+
     '<button class="schnell-btn schnell-equipment" onclick="schnellHinzufuegen(\'werkzeug\')"><div class="schnell-icon">🔧</div><div class="schnell-label">Werkzeug-Set</div></button>'+
