@@ -200,7 +200,7 @@
             <div class="card" style="overflow-x:auto">
                 <table>
                     <thead>
-                        <tr><th>E-Mail</th><th>Registriert</th><th>Letzter Login</th><th>Aktivität</th><th>Logins</th><th>Daten</th><th>Aktionen</th></tr>
+                        <tr><th>E-Mail</th><th>Registriert</th><th>Letzter Login</th><th>Aktivität</th><th>Plan</th><th>Logins</th><th>Daten</th><th>Aktionen</th></tr>
                     </thead>
                     <tbody id="usersTable"></tbody>
                 </table>
@@ -685,6 +685,9 @@ async function loadAdmin() {
             id: uid,
             email: p.email || '–',
             name: p.name || '',
+            plan: p.plan || 'starter',
+            planValidUntil: p.plan_valid_until || null,
+            trialEndsAt: p.trial_ends_at || null,
             created: p.created_at,
             lastLogin: ll,
             loginCount: (p.login_count || 0) + (loginCounts[uid] || 0),
@@ -793,10 +796,35 @@ function renderStats() {
 }
 
 function renderUsers(users) {
+    var planEmojis = {starter:'🐝',pro:'🍯',meister:'👑',verein:'🏘️'};
+    var planNames = {starter:'Starter',pro:'Pro',meister:'Meister',verein:'Verein'};
+    var planColors = {starter:'#6b7280',pro:'#F5A623',meister:'#D4891C',verein:'#3D7C47'};
     var html = '';
     users.forEach(function(u) {
         var activity = getActivityStatus(u.lastLogin, u.id);
         var safeEmail = (u.email||'').replace(/'/g, "\\'");
+        var pe = planEmojis[u.plan] || '🐝';
+        var pn = planNames[u.plan] || 'Starter';
+        var pc = planColors[u.plan] || '#6b7280';
+        var validInfo = '';
+        if (u.planValidUntil) {
+            var vd = new Date(u.planValidUntil);
+            var now = new Date();
+            if (vd > now) {
+                var days = Math.ceil((vd - now) / 86400000);
+                validInfo = '<div style="font-size:.6rem;color:#059669;margin-top:.15rem">✅ noch '+days+' Tage</div>';
+            } else {
+                validInfo = '<div style="font-size:.6rem;color:#dc2626;margin-top:.15rem">⚠️ abgelaufen</div>';
+            }
+        }
+        if (u.trialEndsAt) {
+            var td = new Date(u.trialEndsAt);
+            if (td > new Date()) {
+                var tdays = Math.ceil((td - new Date()) / 86400000);
+                validInfo += '<div style="font-size:.6rem;color:#3b82f6;margin-top:.1rem">🧪 Trial: '+tdays+' Tage</div>';
+            }
+        }
+
         html += '<tr>'+
             '<td><strong>'+u.email+'</strong>'+(u.name ? '<br><span style="font-size:.75rem;color:#6b7280">'+u.name+'</span>' : '')+
             '<br><span style="font-size:.65rem;color:#9ca3af;font-family:monospace">ID: '+u.id+'</span></td>'+
@@ -808,6 +836,12 @@ function renderUsers(users) {
             '<td>'+
                 '<span class="activity-dot '+activity.cls+'"></span>'+
                 '<span class="badge '+activity.badge+'">'+activity.label+'</span>'+
+            '</td>'+
+            // Plan-Spalte
+            '<td style="text-align:center">'+
+                '<div style="display:inline-block;padding:.25rem .5rem;border-radius:.35rem;font-size:.75rem;font-weight:700;color:#fff;background:'+pc+'">'+pe+' '+pn+'</div>'+
+                validInfo+
+                '<div style="margin-top:.35rem"><button class="btn btn-blue" style="font-size:.65rem;padding:.25rem .5rem" onclick="openGiftModal(\''+u.id+'\',\''+safeEmail+'\',\''+u.plan+'\')">🎁 Schenken</button></div>'+
             '</td>'+
             '<td>'+
                 '<span class="login-count-badge">🔑 '+(u.loginCount||0)+'</span>'+
@@ -821,7 +855,7 @@ function renderUsers(users) {
             '</td>'+
             '</tr>';
     });
-    document.getElementById('usersTable').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:2rem">Keine Benutzer</td></tr>';
+    document.getElementById('usersTable').innerHTML = html || '<tr><td colspan="8" style="text-align:center;color:#6b7280;padding:2rem">Keine Benutzer</td></tr>';
 }
 
 function filterUsers(query) {
@@ -1617,6 +1651,169 @@ async function aufloesungAblehnen(antragId) {
 
     alert('✅ Antrag abgelehnt. Verein bleibt bestehen.');
     loadAufloesungen();
+}
+
+// ============================================
+// 🎁 PLAN SCHENKEN
+// ============================================
+var giftUserId = null;
+var giftUserEmail = '';
+
+function openGiftModal(userId, email, currentPlan) {
+    giftUserId = userId;
+    giftUserEmail = email;
+
+    // Modal erstellen falls noch nicht vorhanden
+    var existing = document.getElementById('giftModal');
+    if (existing) existing.remove();
+
+    var planOptions = [
+        {value:'starter', label:'🐝 Starter (kostenlos)', color:'#6b7280'},
+        {value:'pro', label:'🍯 Imker Pro', color:'#F5A623'},
+        {value:'meister', label:'👑 Imkermeister', color:'#D4891C'},
+        {value:'verein', label:'🏘️ Verein', color:'#3D7C47'}
+    ];
+
+    var optionsHtml = '';
+    planOptions.forEach(function(p) {
+        optionsHtml += '<option value="'+p.value+'"'+(p.value===currentPlan?' selected':'')+'>'+p.label+'</option>';
+    });
+
+    var modal = document.createElement('div');
+    modal.id = 'giftModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    modal.innerHTML = '<div style="background:#fff;border-radius:1rem;padding:1.5rem;max-width:420px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,.2)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+        '<h3 style="margin:0;font-size:1.1rem">🎁 Plan schenken</h3>'+
+        '<button onclick="closeGiftModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280">✕</button></div>'+
+
+        '<div style="background:#f9fafb;padding:.75rem;border-radius:.5rem;margin-bottom:1rem;font-size:.85rem">'+
+        '<strong>Benutzer:</strong> '+email+'<br>'+
+        '<strong>Aktueller Plan:</strong> '+currentPlan+'</div>'+
+
+        '<div style="margin-bottom:1rem">'+
+        '<label style="display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:.375rem">Neuer Plan</label>'+
+        '<select id="giftPlan" style="width:100%;padding:.6rem;border:2px solid #e5e7eb;border-radius:.5rem;font-size:.9rem" onchange="updateGiftPreview()">'+optionsHtml+'</select></div>'+
+
+        '<div style="margin-bottom:1rem">'+
+        '<label style="display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:.375rem">Laufzeit</label>'+
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem" id="giftDuration">'+
+        '<button class="gift-dur-btn" onclick="selectDuration(30)" data-days="30" style="padding:.5rem;border:2px solid #e5e7eb;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.85rem;font-weight:500">30 Tage</button>'+
+        '<button class="gift-dur-btn" onclick="selectDuration(90)" data-days="90" style="padding:.5rem;border:2px solid #e5e7eb;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.85rem;font-weight:500">90 Tage</button>'+
+        '<button class="gift-dur-btn" onclick="selectDuration(365)" data-days="365" style="padding:.5rem;border:2px solid #e5e7eb;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.85rem;font-weight:500">1 Jahr</button>'+
+        '<button class="gift-dur-btn selected" onclick="selectDuration(0)" data-days="0" style="padding:.5rem;border:2px solid #FFC107;border-radius:.5rem;background:#fef3c7;cursor:pointer;font-size:.85rem;font-weight:600">♾️ Unbegrenzt</button>'+
+        '</div></div>'+
+
+        '<div id="giftPreview" style="background:#f0fdf4;border:1px solid #bbf7d0;padding:.75rem;border-radius:.5rem;margin-bottom:1rem;font-size:.85rem;color:#166534"></div>'+
+
+        '<button onclick="executeGift()" style="width:100%;padding:.75rem;background:#FFC107;color:#1f2937;border:none;border-radius:.5rem;font-weight:700;cursor:pointer;font-size:.95rem">🎁 Plan jetzt schenken</button>'+
+        '</div>';
+
+    modal.addEventListener('click', function(e) { if (e.target === modal) closeGiftModal(); });
+    document.body.appendChild(modal);
+
+    selectedGiftDays = 0; // default unbegrenzt
+    updateGiftPreview();
+}
+
+var selectedGiftDays = 0;
+
+function selectDuration(days) {
+    selectedGiftDays = days;
+    document.querySelectorAll('.gift-dur-btn').forEach(function(btn) {
+        var d = parseInt(btn.getAttribute('data-days'));
+        if (d === days) {
+            btn.style.borderColor = '#FFC107';
+            btn.style.background = '#fef3c7';
+            btn.style.fontWeight = '600';
+            btn.classList.add('selected');
+        } else {
+            btn.style.borderColor = '#e5e7eb';
+            btn.style.background = '#fff';
+            btn.style.fontWeight = '500';
+            btn.classList.remove('selected');
+        }
+    });
+    updateGiftPreview();
+}
+
+function updateGiftPreview() {
+    var plan = document.getElementById('giftPlan').value;
+    var planNames = {starter:'Starter',pro:'Imker Pro',meister:'Imkermeister',verein:'Verein'};
+    var planEmojis = {starter:'🐝',pro:'🍯',meister:'👑',verein:'🏘️'};
+    var el = document.getElementById('giftPreview');
+
+    var durationText = selectedGiftDays === 0 ? 'unbegrenzt' : selectedGiftDays + ' Tage';
+    var expiryText = '';
+    if (selectedGiftDays > 0) {
+        var expiry = new Date(Date.now() + selectedGiftDays * 86400000);
+        expiryText = ' (bis ' + expiry.toLocaleDateString('de-DE') + ')';
+    }
+
+    if (plan === 'starter') {
+        el.innerHTML = '⚠️ <strong>Achtung:</strong> Auf Starter setzen entfernt alle Premium-Features.';
+        el.style.background = '#fef3c7';
+        el.style.borderColor = '#fde68a';
+        el.style.color = '#92400e';
+    } else {
+        el.innerHTML = planEmojis[plan] + ' <strong>' + giftUserEmail + '</strong> bekommt <strong>' + planNames[plan] + '</strong> für <strong>' + durationText + '</strong>' + expiryText;
+        el.style.background = '#f0fdf4';
+        el.style.borderColor = '#bbf7d0';
+        el.style.color = '#166534';
+    }
+}
+
+function closeGiftModal() {
+    var m = document.getElementById('giftModal');
+    if (m) m.remove();
+    giftUserId = null;
+    giftUserEmail = '';
+}
+
+async function executeGift() {
+    if (!giftUserId) return;
+    var plan = document.getElementById('giftPlan').value;
+    var planNames = {starter:'Starter',pro:'Imker Pro',meister:'Imkermeister',verein:'Verein'};
+
+    var durationText = selectedGiftDays === 0 ? 'unbegrenzt' : selectedGiftDays + ' Tage';
+    if (!confirm('🎁 Bestätigung:\n\n' + giftUserEmail + '\n→ ' + planNames[plan] + ' (' + durationText + ')\n\nJetzt schenken?')) return;
+
+    var updateData = { plan: plan };
+
+    if (plan === 'starter') {
+        updateData.plan_valid_until = null;
+        updateData.trial_ends_at = null;
+    } else if (selectedGiftDays > 0) {
+        var expiry = new Date(Date.now() + selectedGiftDays * 86400000);
+        updateData.plan_valid_until = expiry.toISOString();
+        updateData.trial_ends_at = null; // Geschenk = kein Trial
+    } else {
+        // Unbegrenzt: weit in die Zukunft
+        updateData.plan_valid_until = new Date('2099-12-31').toISOString();
+        updateData.trial_ends_at = null;
+    }
+
+    try {
+        // adminSb verwenden falls vorhanden, sonst normales sb
+        var client = typeof adminSb !== 'undefined' ? adminSb : sb;
+        var res = await client.from('profiles').update(updateData).eq('id', giftUserId);
+        if (res.error) throw res.error;
+
+        alert('✅ Geschafft!\n\n' + giftUserEmail + ' hat jetzt ' + planNames[plan] + ' (' + durationText + ')');
+        closeGiftModal();
+
+        // User-Daten lokal aktualisieren und neu rendern
+        var user = allUsers.find(function(u) { return u.id === giftUserId; });
+        if (user) {
+            user.plan = plan;
+            user.planValidUntil = updateData.plan_valid_until;
+            user.trialEndsAt = null;
+        }
+        renderUsers(allUsers);
+    } catch(e) {
+        alert('❌ Fehler: ' + (e.message || e));
+        console.error('Gift Error:', e);
+    }
 }
 
 </script>
