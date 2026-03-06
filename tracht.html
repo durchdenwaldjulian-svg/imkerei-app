@@ -63,6 +63,25 @@
         .info-box{font-size:.8rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin:.5rem 0}
 
         /* TRACHTKARTE FEATURE CARD */
+
+        /* GTS Styles */
+        .gts-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem}
+        .gts-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+        .gts-value{font-size:2rem;font-weight:700;font-family:'DM Serif Display',serif}
+        .gts-bar-container{background:#E8DFD4;border-radius:999px;height:.75rem;overflow:hidden;margin-bottom:.5rem}
+        .gts-bar{height:100%;border-radius:999px;transition:width .8s ease}
+        .gts-milestones{display:flex;justify-content:space-between;font-size:.7rem;color:#A69580;margin-bottom:.75rem}
+        .gts-next-tracht{background:#FFF8EE;border-radius:.5rem;padding:.625rem .75rem;font-size:.85rem;display:flex;align-items:center;gap:.5rem}
+        .gts-selector{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding:.75rem 1rem;background:#fff;border:2px solid #E8DFD4;border-radius:.75rem}
+        .gts-selector label{font-weight:600;font-size:.85rem;color:#7A6652;white-space:nowrap}
+        .gts-selector select{flex:1;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.5rem;background:#FFFBF0;font-family:'Outfit',sans-serif;font-size:.85rem;color:#1C1410}
+        .tracht-ampel{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:600;padding:.15rem .5rem;border-radius:999px}
+        .tracht-ampel.rot{background:#FEE2E2;color:#DC2626}
+        .tracht-ampel.gelb{background:#FEF3C7;color:#D97706}
+        .tracht-ampel.gruen{background:#D1FAE5;color:#059669}
+        .timeline-gts-tag{font-size:.65rem;color:#A69580;background:#FFF8EE;padding:.1rem .35rem;border-radius:.25rem;border:1px solid #E8DFD4;white-space:nowrap;margin-left:.25rem}
+        .tracht-gts-inline{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.5rem .625rem;background:#FFFBF0;border-radius:.35rem;font-size:.8rem;border:1px solid #E8DFD4}
+
         .trachtkarte-card{
             background:linear-gradient(135deg,#1e40af 0%,#3b82f6 50%,#60a5fa 100%);
             border-radius:1rem;padding:1.25rem;margin-bottom:1.25rem;
@@ -126,8 +145,12 @@
             .nav-item.active{border-left:none;border-bottom-color:#F5A623}
             .timeline-header-row,.timeline-row{grid-template-columns:130px 1fr}
             .timeline-row-label{padding:.5rem;font-size:.75rem}
+            .timeline-gts-tag{font-size:.55rem;padding:.05rem .2rem}
+            .tracht-ampel{font-size:.6rem;padding:.1rem .35rem}
             .timeline-month{padding:.5rem .1rem;font-size:.65rem}
             .timeline-bar{height:1.8rem;font-size:.9rem}
+            .gts-selector{flex-direction:column;align-items:stretch;gap:.5rem}
+            .gts-milestones{font-size:.6rem}
         }
     </style>
 </head>
@@ -269,6 +292,176 @@ var trachten = [];
 var ausgeblendete = [];
 var kalenderOffen = false;
 var _editId = null;
+var aktuelleGTS = null; // aktueller GTS-Wert für gewählten Standort
+
+// ============================================
+// GTS MODULE
+// ============================================
+var GTS_SCHWELLEN = {
+    'Schneeglöckchen':50,'Haselnuss':80,'Erle':90,'Huflattich':100,'Krokus':100,
+    'Weide':130,'Kornelkirsche':130,'Schlehe':150,'Pflaume':190,
+    'Kirsche':200,'Löwenzahn':200,'Obstblüte':200,'Birne':210,'Apfel':220,
+    'Raps':250,'Flieder':280,'Rosskastanie':280,'Weißdorn':300,
+    'Himbeere':320,'Akazie (Robinie)':350,'Klee (Weiß)':350,
+    'Brombeere':400,'Klee (Rot)':400,'Fichte (Honigtau)':400,'Kornblume':400,
+    'Eiche (Honigtau)':420,'Phacelia':450,'Edelkastanie':450,
+    'Linde (Sommer)':500,'Lavendel':500,'Goldrute':500,
+    'Springkraut (Indisches)':550,'Linde (Winter)':550,'Sonnenblume':550,
+    'Heide':700,'Herbstastern':700,'Efeu':900
+};
+
+function berechneGTS(temperaturen) {
+    var summe = 0;
+    temperaturen.forEach(function(t) {
+        if (t.temp <= 0) return;
+        var monat = parseInt(t.date.split('-')[1]);
+        var faktor = monat === 1 ? 0.5 : (monat === 2 ? 0.75 : 1.0);
+        summe += t.temp * faktor;
+    });
+    return Math.round(summe * 10) / 10;
+}
+
+async function ladeGTS(lat, lng) {
+    var key = lat.toFixed(2) + '_' + lng.toFixed(2);
+    var heute = new Date().toISOString().split('T')[0];
+    var cacheKey = 'gts_' + key + '_' + heute;
+    try {
+        var cached = localStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached);
+    } catch(e) {}
+    var jahr = new Date().getFullYear();
+    var startDate = jahr + '-01-01';
+    var gestern = new Date(Date.now() - 86400000);
+    var endDate = gestern.toISOString().split('T')[0];
+    try {
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng +
+            '&daily=temperature_2m_mean&start_date=' + startDate + '&end_date=' + endDate + '&timezone=Europe/Berlin';
+        var resp = await fetch(url);
+        if (!resp.ok) throw new Error('API Fehler');
+        var data = await resp.json();
+        if (!data.daily || !data.daily.time) throw new Error('Keine Daten');
+        var temperaturen = data.daily.time.map(function(d, i) {
+            return { date: d, temp: data.daily.temperature_2m_mean[i] };
+        });
+        var gts = berechneGTS(temperaturen);
+        var result = { gts: gts, datum: heute, lat: lat, lng: lng };
+        try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e) {}
+        return result;
+    } catch(e) {
+        console.warn('GTS Laden fehlgeschlagen:', e);
+        return null;
+    }
+}
+
+function getGtsColor(gts) {
+    if (gts < 100) return '#EF4444';
+    if (gts < 200) return '#F59E0B';
+    return '#10B981';
+}
+
+function getGtsStatus(gts) {
+    if (gts < 100) return { text: 'Winter / Vorfrühling', emoji: '❄️' };
+    if (gts < 200) return { text: 'Frühling beginnt', emoji: '🌱' };
+    if (gts < 350) return { text: 'Vegetation aktiv', emoji: '🌿' };
+    if (gts < 500) return { text: 'Vollfrühling/Sommer', emoji: '☀️' };
+    return { text: 'Hochsommer', emoji: '🌻' };
+}
+
+function getNextTracht(gts) {
+    var sorted = Object.entries(GTS_SCHWELLEN).sort(function(a,b){ return a[1]-b[1]; });
+    for (var i = 0; i < sorted.length; i++) {
+        if (sorted[i][1] > gts) return { name: sorted[i][0], gts: sorted[i][1], diff: Math.round(sorted[i][1] - gts) };
+    }
+    return null;
+}
+
+function getTrachtAmpel(trachtName, gts) {
+    if (gts === null || gts === undefined) return null;
+    var schwelle = GTS_SCHWELLEN[trachtName];
+    if (!schwelle) return null;
+    if (gts >= schwelle) return { klasse:'gruen', text:'🟢 Blüht', detail:'GTS '+Math.round(gts)+'°C ≥ '+schwelle+'°C' };
+    if (gts >= schwelle * 0.85) return { klasse:'gelb', text:'🟡 Bald', detail:'Noch '+Math.round(schwelle-gts)+'°C bis '+schwelle+'°C' };
+    return { klasse:'rot', text:'🔴 Noch nicht', detail:'Noch '+Math.round(schwelle-gts)+'°C bis '+schwelle+'°C' };
+}
+
+async function wechsleGtsStandort() {
+    var sel = document.getElementById('gtsStandortSelect');
+    if (!sel) return;
+    var sid = sel.value;
+    var s = standorte.find(function(x){ return x.id === sid; });
+    if (s && s.lat && s.lng) {
+        var gtsEl = document.getElementById('gtsCardContainer');
+        if (gtsEl) gtsEl.innerHTML = '<div style="text-align:center;padding:1rem;color:#7A6652">🌡️ GTS wird geladen...</div>';
+        var result = await ladeGTS(s.lat, s.lng);
+        aktuelleGTS = result ? result.gts : null;
+    } else {
+        aktuelleGTS = null;
+    }
+    renderGtsCard();
+    renderKalenderGTS();
+    renderTrachtenGTS();
+}
+
+function renderGtsCard() {
+    var el = document.getElementById('gtsCardContainer');
+    if (!el) return;
+    if (aktuelleGTS === null) {
+        el.innerHTML = '<div style="padding:.75rem;background:#FFF8EE;border-radius:.5rem;font-size:.85rem;color:#A69580;margin-bottom:1rem">🌡️ Kein Standort mit Koordinaten gewählt – GTS nicht verfügbar</div>';
+        return;
+    }
+    var gts = aktuelleGTS;
+    var color = getGtsColor(gts);
+    var status = getGtsStatus(gts);
+    var next = getNextTracht(gts);
+    var pct = Math.min(100, (gts / 600) * 100);
+
+    var html = '<div class="gts-card">' +
+        '<div class="gts-header">' +
+        '<div><div style="font-size:.8rem;color:#7A6652;margin-bottom:.25rem">Grünlandtemperatursumme ' + new Date().getFullYear() + '</div>' +
+        '<div class="gts-value" style="color:' + color + '">' + Math.round(gts) + '°C</div></div>' +
+        '<div style="text-align:right"><div style="font-size:1.5rem">' + status.emoji + '</div>' +
+        '<div style="font-size:.8rem;color:#7A6652">' + status.text + '</div></div></div>' +
+        '<div class="gts-bar-container"><div class="gts-bar" style="width:' + pct + '%;background:linear-gradient(90deg,#EF4444 0%,#F59E0B 33%,#10B981 60%,#059669 100%)"></div></div>' +
+        '<div class="gts-milestones"><span>0°C</span><span>100°C</span><span style="font-weight:600;color:#059669">200°C Veg.beginn</span><span>400°C</span><span>600°C</span></div>';
+    if (next) {
+        html += '<div class="gts-next-tracht">🌡️ <strong>Nächste Tracht:</strong> ' + next.name + ' – noch ~' + next.diff + '°C (ab ' + next.gts + '°C)</div>';
+    } else {
+        html += '<div class="gts-next-tracht" style="color:#059669">✅ Alle Haupttrachten erreicht</div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+function renderKalenderGTS() {
+    // Aktualisiert die Ampeln im Kalender
+    document.querySelectorAll('[data-gts-tracht]').forEach(function(el) {
+        var name = el.getAttribute('data-gts-tracht');
+        if (aktuelleGTS !== null) {
+            var ampel = getTrachtAmpel(name, aktuelleGTS);
+            el.innerHTML = ampel ? '<span class="tracht-ampel '+ampel.klasse+'">'+ampel.text+'</span>' : '';
+        } else {
+            el.innerHTML = '';
+        }
+    });
+}
+
+function renderTrachtenGTS() {
+    // Aktualisiert die GTS-Inline-Anzeige bei den Trachten
+    document.querySelectorAll('[data-gts-tracht-item]').forEach(function(el) {
+        var name = el.getAttribute('data-gts-tracht-item');
+        if (aktuelleGTS !== null) {
+            var ampel = getTrachtAmpel(name, aktuelleGTS);
+            if (ampel) {
+                el.innerHTML = '<span class="tracht-ampel '+ampel.klasse+'">'+ampel.text+'</span> <span style="color:#7A6652">'+ampel.detail+'</span>';
+                el.style.display = 'flex';
+            } else {
+                el.style.display = 'none';
+            }
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
 
 // ============================================
 // INIT
@@ -323,7 +516,22 @@ function render() {
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
     '<h1 style="margin:0">🌸 Tracht</h1>'+
     '<button onclick="openModal()" style="padding:.4rem .8rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.8rem">+ Tracht</button>'+
-    '</div>'+
+    '</div>';
+
+    // GTS Standort-Selector
+    var standorteMitKoord = standorte.filter(function(s){ return s.lat && s.lng; });
+    if (standorteMitKoord.length > 0) {
+        html += '<div class="gts-selector"><label>🌡️ GTS für:</label><select id="gtsStandortSelect" onchange="wechsleGtsStandort()">';
+        standorteMitKoord.forEach(function(s) {
+            html += '<option value="'+s.id+'">📍 '+s.name+'</option>';
+        });
+        html += '</select></div>';
+    }
+
+    // GTS Card Platzhalter
+    html += '<div id="gtsCardContainer"></div>';
+
+    html +=
 
     // === TRACHTKARTE FEATURE CARD ===
     '<a href="trachtkarte.html" target="_blank" class="trachtkarte-card" onclick="event.stopPropagation()">'+
@@ -378,6 +586,8 @@ function render() {
                       :'<button onclick="unshareTracht(\''+t.id+'\')" style="padding:.25rem .5rem;background:#E8DFD4;border:1.5px solid #D4C5B3;border-radius:.35rem;cursor:pointer;font-size:.75rem" title="Entfernen">✕🗺️</button>')+
             '<button onclick="deleteTracht(\''+t.id+'\')" style="padding:.25rem .5rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem" title="Löschen">🗑️</button>'+
             '</div></div>'+
+            // GTS Ampel Inline
+            '<div class="tracht-gts-inline" data-gts-tracht-item="'+t.typ+'" style="display:none"></div>'+
             '<div style="font-size:.85rem;color:#7A6652;margin-top:.5rem">'+
             '🌸 '+fd(t.beginn)+' '+(t.ende?'→ '+fd(t.ende):'')+'<br>'+
             (t.ertrag?'🍯 Ertrag: '+t.ertrag.toFixed(1)+' kg<br>':'')+
@@ -396,6 +606,26 @@ function render() {
     html += renderKalender();
     html += '</div>';
     document.getElementById('app').innerHTML = html;
+
+    // GTS laden für den ersten Standort mit Koordinaten
+    if (aktuelleGTS === null) {
+        var standorteMitKoord = standorte.filter(function(s){ return s.lat && s.lng; });
+        if (standorteMitKoord.length > 0) {
+            var erster = standorteMitKoord[0];
+            ladeGTS(erster.lat, erster.lng).then(function(result) {
+                aktuelleGTS = result ? result.gts : null;
+                renderGtsCard();
+                renderKalenderGTS();
+                renderTrachtenGTS();
+            });
+        } else {
+            renderGtsCard();
+        }
+    } else {
+        renderGtsCard();
+        renderKalenderGTS();
+        renderTrachtenGTS();
+    }
 }
 
 // ============================================
@@ -414,7 +644,7 @@ function renderKalender() {
                 barsHtml += '<div class="timeline-bar" style="background:'+data.farbe+';grid-column:'+i+'">'+data.emoji+'</div>';
             }
         }
-        timelineHtml += '<div class="timeline-row" style="cursor:pointer" onclick="event.stopPropagation();toggleTracht(\''+name.replace(/'/g,"\\\'")+'\')"><div class="timeline-row-label"><span style="font-size:1.3rem">'+data.emoji+'</span><span>'+name+'</span></div><div class="timeline-row-bars">'+barsHtml+'</div></div>';
+        timelineHtml += '<div class="timeline-row" style="cursor:pointer" onclick="event.stopPropagation();toggleTracht(\''+name.replace(/'/g,"\\\'")+'\')"><div class="timeline-row-label"><span style="font-size:1.3rem">'+data.emoji+'</span><span style="flex:1">'+name+'</span>'+(GTS_SCHWELLEN[name]?'<span class="timeline-gts-tag">'+GTS_SCHWELLEN[name]+'°C</span>':'')+'<span data-gts-tracht="'+name+'"></span></div><div class="timeline-row-bars">'+barsHtml+'</div></div>';
     });
 
     var ausgeblendetHtml = '';
