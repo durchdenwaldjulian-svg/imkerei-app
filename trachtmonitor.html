@@ -21,7 +21,7 @@
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         #radarMap{height:100vh;width:100%}
 
-        .radar-controls{position:absolute;top:10px;left:10px;z-index:1000;display:flex;flex-direction:column;gap:.5rem;max-width:320px}
+        .radar-controls{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:.5rem;max-width:420px;width:90%}
         .radar-panel{background:#fff;border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 2px 12px rgba(0,0,0,.15)}
         .gts-thermo-value{font-size:1.4rem;font-weight:700;font-family:'DM Serif Display',serif}
         .gts-thermo-bar{background:#E8DFD4;border-radius:999px;height:.4rem;overflow:hidden;margin-top:.35rem}
@@ -69,7 +69,7 @@
             body{padding-left:0;padding-bottom:0;overflow:hidden}
             .nav{display:none}
             #radarMap{height:calc(100vh - 68px)}
-            .radar-controls{top:5px;left:5px;right:5px;max-width:none}
+            .radar-controls{top:5px;left:50%;transform:translateX(-50%);right:auto;max-width:95%;width:95%}
             .radar-panel{padding:.5rem .75rem}
             .gts-thermo-value{font-size:1.1rem}
             .radar-legend{bottom:80px;right:5px;padding:.5rem .75rem;font-size:.7rem}
