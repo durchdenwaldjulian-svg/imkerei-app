@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🗺️ Tracht-Radar – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="/fonts/fonts.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:0;margin:0;overflow:hidden;height:100vh}
+        .container{position:relative;height:100vh;display:flex;flex-direction:column}
+
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        #map{flex:1;width:100%;z-index:1}
+
+        /* Top Bar */
+        .radar-topbar{
+            position:absolute;top:12px;left:12px;right:12px;z-index:1000;
+            display:flex;gap:.5rem;align-items:stretch;flex-wrap:wrap;
+            pointer-events:none;
+        }
+        .radar-topbar > *{pointer-events:auto}
+
+        .radar-panel{
+            background:#FFFBF0;border:2px solid #E8DFD4;border-radius:.75rem;
+            box-shadow:0 4px 16px rgba(28,20,16,.1);
+            padding:.75rem 1rem;font-size:.85rem;
+        }
+
+        .gts-thermo{display:flex;align-items:center;gap:.75rem;min-width:280px}
+        .gts-thermo-value{font-family:'DM Serif Display',serif;font-size:1.5rem;font-weight:700;line-height:1}
+        .gts-thermo-bar{flex:1;height:.5rem;background:#E8DFD4;border-radius:999px;overflow:hidden}
+        .gts-thermo-fill{height:100%;border-radius:999px;transition:width .8s ease}
+        .gts-thermo-info{font-size:.72rem;color:#7A6652;margin-top:.2rem}
+
+        .radar-add-btn{
+            background:#F5A623;color:#fff;border:none;border-radius:.75rem;
+            padding:.6rem 1rem;font-weight:700;font-size:.85rem;cursor:pointer;
+            display:flex;align-items:center;gap:.5rem;
+            box-shadow:0 4px 16px rgba(245,166,35,.3);transition:all .2s;
+            white-space:nowrap;font-family:'Outfit',sans-serif;
+        }
+        .radar-add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.4)}
+
+        .radar-legend{
+            position:absolute;bottom:20px;right:12px;z-index:1000;
+            background:#FFFBF0;border:2px solid #E8DFD4;border-radius:.75rem;
+            box-shadow:0 4px 16px rgba(28,20,16,.1);padding:.75rem 1rem;font-size:.75rem;max-width:220px;
+        }
+        .legend-title{font-weight:700;font-size:.8rem;margin-bottom:.5rem;color:#1C1410}
+        .legend-item{display:flex;align-items:center;gap:.5rem;padding:.2rem 0}
+        .legend-dot{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);flex-shrink:0}
+
+        .gts-info-box{
+            position:absolute;bottom:20px;left:12px;z-index:1000;
+            background:#FFFBF0;border:2px solid #E8DFD4;border-radius:.75rem;
+            box-shadow:0 4px 16px rgba(28,20,16,.1);padding:.75rem 1rem;font-size:.8rem;max-width:320px;
+        }
+        .gts-info-next{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.5rem;background:#FFF8EE;border-radius:.5rem;font-size:.82rem}
+
+        .ampel{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:600;padding:.2rem .5rem;border-radius:999px}
+        .ampel-rot{background:#FEE2E2;color:#DC2626}
+        .ampel-orange{background:#FFEDD5;color:#EA580C}
+        .ampel-gelb{background:#FEF3C7;color:#D97706}
+        .ampel-gruen{background:#D1FAE5;color:#059669}
+        .ampel-blau{background:#DBEAFE;color:#2563EB}
+
+        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:10000;overflow-y:auto;padding:1rem}
+        .modal.active{display:flex;align-items:center;justify-content:center}
+        .modal-content{background:#FFFBF0;border-radius:1rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;margin:auto;position:relative;z-index:10001}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
+        .modal-header h2{margin:0;font-size:1.1rem;font-family:'DM Serif Display',serif}
+        .modal-body{padding:1.25rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom:.375rem}
+        .info-box{font-size:.8rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin:.5rem 0}
+
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:99999;display:none;animation:fadeIn .3s}
+        .toast.show{display:block}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+        .toast.info{background:#3B82F6}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
+        .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .radar-popup h3{margin:0 0 .25rem;font-family:'DM Serif Display',serif;font-size:1rem}
+        .radar-popup .popup-row{font-size:.82rem;color:#7A6652;margin:.2rem 0}
+        .radar-popup .popup-ampel{margin-top:.5rem}
+        .radar-popup .popup-actions{margin-top:.75rem;display:flex;gap:.375rem}
+        .radar-popup .popup-btn-del{padding:.3rem .6rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.72rem;font-weight:600;color:#DC2626}
+
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:0}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden;z-index:2000}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .radar-topbar{top:8px;left:8px;right:8px;flex-direction:column}
+            .gts-thermo{min-width:auto}
+            .radar-legend{bottom:75px;right:8px;padding:.5rem .75rem}
+            .gts-info-box{bottom:75px;left:8px;max-width:calc(100vw - 240px)}
+            .legend-item{font-size:.7rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color:#7A6652;font-size:.85rem">Tracht-Radar laden...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+    <div class="radar-topbar">
+        <div class="radar-panel gts-thermo" id="gtsThermo">
+            <div>
+                <div class="gts-thermo-value" id="gtsValue">🌡️ ...</div>
+                <div class="gts-thermo-info" id="gtsStatus">GTS wird geladen...</div>
+            </div>
+            <div style="flex:1">
+                <div class="gts-thermo-bar"><div class="gts-thermo-fill" id="gtsBar" style="width:0%"></div></div>
+            </div>
+        </div>
+        <select class="radar-panel" id="standortSelect" onchange="wechsleStandort()" style="cursor:pointer;font-family:'Outfit',sans-serif;font-size:.85rem;color:#1C1410;min-width:180px">
+        </select>
+        <button class="radar-add-btn" onclick="startTrachtHinzufuegen()">+ 🌾 Trachtquelle</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="gts-info-box" id="gtsInfoBox">
+        <div style="font-weight:700;margin-bottom:.25rem">🌡️ Grünlandtemperatursumme <span id="gtsJahr"></span></div>
+        <div id="gtsNextInfo">Wird geladen...</div>
+    </div>
+
+    <div class="radar-legend">
+        <div class="legend-title">Legende</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F5A623"></div> 🐝 Bienenstand</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div> 🟢 Blüht</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div> 🟡 Bald</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#EA580C"></div> 🟠 Dauert noch</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#EF4444"></div> 🔴 Noch nicht</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div> 🔵 Vorbei</div>
+    </div>
+</div>
+
+<!-- Trachtquelle Modal -->
+<div id="trachtModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="trachtModalTitle">🌾 Trachtquelle eintragen</h2>
+            <button class="close-btn" onclick="closeTrachtModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-box">📍 Klicke auf die Karte um die Position zu markieren.</div>
+            <div class="form-group">
+                <label class="form-label">Tracht-Typ *</label>
+                <select id="trachtTypSelect" class="input" onchange="updateTrachtInfo()">
+                    <option value="">-- Bitte wählen --</option>
+                    <optgroup label="Frühjahr">
+                        <option value="Haselnuss">🌰 Haselnuss</option>
+                        <option value="Weide">🌿 Weide</option>
+                        <option value="Kirsche">🍒 Kirsche</option>
+                        <option value="Löwenzahn">🌼 Löwenzahn</option>
+                        <option value="Raps">🌾 Raps</option>
+                        <option value="Obstblüte">🌸 Obstblüte</option>
+                    </optgroup>
+                    <optgroup label="Sommer">
+                        <option value="Akazie (Robinie)">🌳 Akazie/Robinie</option>
+                        <option value="Linde (Sommer)">🍃 Linde</option>
+                        <option value="Phacelia">💜 Phacelia</option>
+                        <option value="Sonnenblume">🌻 Sonnenblume</option>
+                    </optgroup>
+                    <optgroup label="Waldtracht">
+                        <option value="Fichte (Honigtau)">🌲 Fichte</option>
+                        <option value="Tanne (Honigtau)">🌲 Tanne</option>
+                    </optgroup>
+                    <optgroup label="Herbst">
+                        <option value="Heide">🌸 Heide</option>
+                        <option value="Efeu">🌿 Efeu</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div id="trachtGtsInfo" style="display:none" class="info-box"></div>
+            <div class="form-group">
+                <label class="form-label">Beschreibung (optional)</label>
+                <input type="text" id="trachtBeschreibung" class="input" placeholder="z.B. Großes Rapsfeld Richtung Süden">
+            </div>
+            <div class="form-group">
+                <label class="form-label">📍 Position</label>
+                <div id="positionStatus" style="font-size:.82rem;color:#A69580">Noch keine Position gewählt</div>
+                <input type="hidden" id="trachtLat">
+                <input type="hidden" id="trachtLng">
+            </div>
+            <button style="width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem;font-family:'Outfit',sans-serif" onclick="saveTrachtquelle()">Trachtquelle speichern</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="plan.js"></script>
+<script src="presence.js" defer></script>
+<script>
+// ============================================
+// TRACHT-RADAR
+// ============================================
+var standorte = [];
+var voelker = [];
+var trachtquellen = [];
+var map = null;
+var bienenMarkers = L.layerGroup();
+var trachtMarkers = L.layerGroup();
+var aktuelleGTS = null;
+var placingMode = false;
+var placingMarker = null;
+
+// ============================================
+// GTS MODULE
+// ============================================
+var GTS_SCHWELLEN = {
+    'Schneeglöckchen':50,'Haselnuss':80,'Erle':90,'Huflattich':100,'Krokus':100,
+    'Weide':130,'Kornelkirsche':130,'Schlehe':150,'Pflaume':190,
+    'Kirsche':200,'Löwenzahn':200,'Obstblüte':200,'Birne':210,'Apfel':220,
+    'Raps':250,'Flieder':280,'Rosskastanie':280,'Weißdorn':300,
+    'Himbeere':320,'Akazie (Robinie)':350,'Klee (Weiß)':350,
+    'Brombeere':400,'Klee (Rot)':400,'Fichte (Honigtau)':400,'Kornblume':400,
+    'Eiche (Honigtau)':420,'Phacelia':450,'Edelkastanie':450,
+    'Linde (Sommer)':500,'Lavendel':500,'Goldrute':500,
+    'Springkraut (Indisches)':550,'Linde (Winter)':550,'Sonnenblume':550,
+    'Heide':700,'Herbstastern':700,'Efeu':900
+};
+
+var TRACHT_EMOJIS = {
+    'Haselnuss':'🌰','Weide':'🌿','Kirsche':'🍒','Löwenzahn':'🌼',
+    'Raps':'🌾','Obstblüte':'🌸','Akazie (Robinie)':'🌳',
+    'Linde (Sommer)':'🍃','Phacelia':'💜','Sonnenblume':'🌻',
+    'Fichte (Honigtau)':'🌲','Tanne (Honigtau)':'🌲',
+    'Heide':'🌸','Efeu':'🌿','Schlehe':'🌸'
+};
+
+function berechneGTS(temperaturen) {
+    var summe = 0;
+    temperaturen.forEach(function(t) {
+        if (t.temp <= 0) return;
+        var monat = parseInt(t.date.split('-')[1]);
+        var faktor = monat === 1 ? 0.5 : (monat === 2 ? 0.75 : 1.0);
+        summe += t.temp * faktor;
+    });
+    return Math.round(summe * 10) / 10;
+}
+
+async function ladeGTS(lat, lng) {
+    var key = lat.toFixed(2) + '_' + lng.toFixed(2);
+    var heute = new Date().toISOString().split('T')[0];
+    var cacheKey = 'gts_' + key + '_' + heute;
+    try { var cached = localStorage.getItem(cacheKey); if (cached) return JSON.parse(cached); } catch(e) {}
+    var jahr = new Date().getFullYear();
+    var endDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    try {
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+'&daily=temperature_2m_mean&start_date='+jahr+'-01-01&end_date='+endDate+'&timezone=Europe/Berlin';
+        var resp = await fetch(url);
+        if (!resp.ok) throw new Error('API Fehler');
+        var data = await resp.json();
+        if (!data.daily || !data.daily.time) throw new Error('Keine Daten');
+        var temps = data.daily.time.map(function(d,i){ return {date:d,temp:data.daily.temperature_2m_mean[i]}; });
+        var gts = berechneGTS(temps);
+        var result = {gts:gts,datum:heute};
+        try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e) {}
+        return result;
+    } catch(e) { console.warn('GTS Fehler:', e); return null; }
+}
+
+function getGtsColor(g){ if(g<100)return'#EF4444';if(g<200)return'#F59E0B';return'#10B981'; }
+function getGtsStatus(g){ if(g<100)return{text:'Winter / Vorfrühling',emoji:'❄️'};if(g<200)return{text:'Frühling beginnt',emoji:'🌱'};if(g<350)return{text:'Vegetation aktiv',emoji:'🌿'};if(g<500)return{text:'Vollfrühling/Sommer',emoji:'☀️'};return{text:'Hochsommer',emoji:'🌻'}; }
+function getNextTracht(g){ var s=Object.entries(GTS_SCHWELLEN).sort(function(a,b){return a[1]-b[1];});for(var i=0;i<s.length;i++){if(s[i][1]>g)return{name:s[i][0],gts:s[i][1],diff:Math.round(s[i][1]-g),emoji:TRACHT_EMOJIS[s[i][0]]||'🌺'};}return null; }
+
+function getTrachtAmpel(typ, gts) {
+    if (gts===null||gts===undefined) return {klasse:'ampel-blau',text:'❓ Unbekannt',color:'#6b7280'};
+    var schwelle = GTS_SCHWELLEN[typ];
+    if (!schwelle) return {klasse:'ampel-blau',text:'❓',color:'#6b7280'};
+    if (gts > schwelle + 250) return {klasse:'ampel-blau',text:'🔵 Vorbei',color:'#3B82F6'};
+    if (gts >= schwelle) return {klasse:'ampel-gruen',text:'🟢 Blüht',color:'#10B981'};
+    if (gts >= schwelle * 0.9) return {klasse:'ampel-gelb',text:'🟡 Bald',color:'#F59E0B'};
+    if (gts >= schwelle * 0.75) return {klasse:'ampel-orange',text:'🟠 Dauert noch',color:'#EA580C'};
+    return {klasse:'ampel-rot',text:'🔴 Noch nicht',color:'#EF4444'};
+}
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'app.html'; return; }
+    currentUser = session.user;
+    await planManager.load();
+
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id)
+    ]);
+
+    standorte = (results[0].data||[]).map(function(r){ return {id:r.id,name:r.name,notizen:r.notizen,lat:r.lat,lng:r.lng}; });
+    voelker = (results[1].data||[]).map(function(r){ return {id:r.id,standortId:r.standort_id,name:r.name}; });
+
+    // Trachtquellen laden (graceful – Tabelle existiert evtl. noch nicht)
+    try {
+        var tqRes = await sb.from('trachtquellen').select('*').eq('user_id', currentUser.id);
+        if (tqRes.data) {
+            trachtquellen = tqRes.data.map(function(r){ return {id:r.id,typ:r.typ,beschreibung:r.beschreibung||'',lat:r.lat,lng:r.lng,created:r.created_at}; });
+        }
+    } catch(e) { console.warn('Trachtquellen-Tabelle nicht gefunden – wird beim ersten Speichern erstellt.'); }
+
+    // Standort-Dropdown
+    var sel = document.getElementById('standortSelect');
+    var mitKoord = standorte.filter(function(s){ return s.lat && s.lng; });
+    if (mitKoord.length === 0) {
+        sel.innerHTML = '<option value="">Kein Standort mit Position</option>';
+    } else {
+        sel.innerHTML = '';
+        mitKoord.forEach(function(s) {
+            var vc = voelker.filter(function(v){ return v.standortId===s.id; }).length;
+            sel.innerHTML += '<option value="'+s.id+'">📍 '+s.name+' ('+vc+' Völker)</option>';
+        });
+    }
+
+    initMap();
+
+    if (mitKoord.length > 0) {
+        await wechsleStandort();
+    } else {
+        document.getElementById('gtsValue').textContent = '🌡️ –';
+        document.getElementById('gtsStatus').textContent = 'Standort ohne Position';
+        document.getElementById('gtsNextInfo').textContent = 'Erstelle einen Standort mit Position für GTS.';
+    }
+
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('gtsJahr').textContent = new Date().getFullYear();
+}
+
+// ============================================
+// MAP
+// ============================================
+function initMap() {
+    var startLat = 49.0, startLng = 10.0, startZoom = 7;
+    var erster = standorte.find(function(s){ return s.lat && s.lng; });
+    if (erster) { startLat = erster.lat; startLng = erster.lng; startZoom = 12; }
+
+    map = L.map('map', {zoomControl:true}).setView([startLat, startLng], startZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM',maxZoom:19}).addTo(map);
+    bienenMarkers.addTo(map);
+    trachtMarkers.addTo(map);
+
+    map.on('click', function(e) {
+        if (placingMode) {
+            document.getElementById('trachtLat').value = e.latlng.lat;
+            document.getElementById('trachtLng').value = e.latlng.lng;
+            document.getElementById('positionStatus').innerHTML = '<span style="color:#10b981">✅ '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4)+'</span>';
+            if (placingMarker) map.removeLayer(placingMarker);
+            placingMarker = L.marker([e.latlng.lat, e.latlng.lng], {
+                icon: L.divIcon({html:'<div style="background:#F5A623;width:24px;height:24px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>',className:'',iconSize:[24,24],iconAnchor:[12,12]})
+            }).addTo(map);
+        }
+    });
+
+    renderBienenstandorte();
+    renderTrachtquellen();
+}
+
+function renderBienenstandorte() {
+    bienenMarkers.clearLayers();
+    standorte.forEach(function(s) {
+        if (!s.lat || !s.lng) return;
+        var vc = voelker.filter(function(v){ return v.standortId===s.id; }).length;
+        var icon = L.divIcon({
+            html:'<div style="position:relative;background:#F5A623;width:36px;height:36px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(245,166,35,.4);display:flex;align-items:center;justify-content:center;font-size:18px">🐝<div style="position:absolute;top:-6px;right:-6px;background:#1C1410;color:#fff;font-size:.6rem;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff">'+vc+'</div></div>',
+            className:'',iconSize:[36,36],iconAnchor:[18,18],popupAnchor:[0,-20]
+        });
+        var popup = '<div class="radar-popup"><h3>🐝 '+s.name+'</h3><div class="popup-row">'+vc+' Völker</div>'+(s.notizen?'<div class="popup-row">'+s.notizen+'</div>':'')+'</div>';
+        L.marker([s.lat,s.lng],{icon:icon}).bindPopup(popup).addTo(bienenMarkers);
+    });
+}
+
+function renderTrachtquellen() {
+    trachtMarkers.clearLayers();
+    trachtquellen.forEach(function(tq) {
+        if (!tq.lat || !tq.lng) return;
+        var ampel = getTrachtAmpel(tq.typ, aktuelleGTS);
+        var emoji = TRACHT_EMOJIS[tq.typ] || '🌺';
+        var schwelle = GTS_SCHWELLEN[tq.typ];
+        var icon = L.divIcon({
+            html:'<div style="background:'+ampel.color+';width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-size:15px">'+emoji+'</div>',
+            className:'',iconSize:[30,30],iconAnchor:[15,15],popupAnchor:[0,-18]
+        });
+        var popup = '<div class="radar-popup"><h3>'+emoji+' '+tq.typ+'</h3>'+
+            (tq.beschreibung?'<div class="popup-row">'+tq.beschreibung+'</div>':'')+
+            '<div class="popup-ampel"><span class="ampel '+ampel.klasse+'">'+ampel.text+'</span></div>'+
+            (schwelle?'<div class="popup-row" style="margin-top:.35rem">Blüht ab ~'+schwelle+'°C'+(aktuelleGTS!==null?' (aktuell: '+Math.round(aktuelleGTS)+'°C)':'')+'</div>':'')+
+            '<div class="popup-actions"><button class="popup-btn-del" onclick="deleteTrachtquelle(\''+tq.id+'\')">🗑️ Löschen</button></div></div>';
+        L.marker([tq.lat,tq.lng],{icon:icon}).bindPopup(popup).addTo(trachtMarkers);
+    });
+}
+
+// ============================================
+// GTS UI
+// ============================================
+async function wechsleStandort() {
+    var sid = document.getElementById('standortSelect').value;
+    var s = standorte.find(function(x){ return x.id===sid; });
+    if (!s||!s.lat||!s.lng) return;
+    document.getElementById('gtsValue').textContent = '🌡️ ...';
+    document.getElementById('gtsStatus').textContent = 'Wird geladen...';
+    var result = await ladeGTS(s.lat, s.lng);
+    if (result) {
+        aktuelleGTS = result.gts;
+        var color = getGtsColor(aktuelleGTS);
+        var status = getGtsStatus(aktuelleGTS);
+        var pct = Math.min(100,(aktuelleGTS/600)*100);
+        document.getElementById('gtsValue').innerHTML = '🌡️ '+Math.round(aktuelleGTS)+'°C';
+        document.getElementById('gtsValue').style.color = color;
+        document.getElementById('gtsStatus').textContent = status.emoji+' '+status.text;
+        document.getElementById('gtsBar').style.width = pct+'%';
+        document.getElementById('gtsBar').style.background = 'linear-gradient(90deg,#EF4444 0%,#F59E0B 33%,#10B981 60%,#059669 100%)';
+        var next = getNextTracht(aktuelleGTS);
+        if (next) {
+            document.getElementById('gtsNextInfo').innerHTML = '<div class="gts-info-next">'+next.emoji+' <strong>Nächste Tracht:</strong>&nbsp;'+next.name+' – noch ~'+next.diff+'°C</div>';
+        } else {
+            document.getElementById('gtsNextInfo').innerHTML = '<div class="gts-info-next" style="color:#059669">✅ Alle Haupttrachten erreicht</div>';
+        }
+        map.setView([s.lat,s.lng], 13);
+        renderTrachtquellen();
+    } else {
+        aktuelleGTS = null;
+        document.getElementById('gtsValue').textContent = '🌡️ –';
+        document.getElementById('gtsStatus').textContent = 'Laden fehlgeschlagen';
+        document.getElementById('gtsNextInfo').textContent = 'GTS konnte nicht berechnet werden.';
+    }
+}
+
+// ============================================
+// TRACHTQUELLE CRUD
+// ============================================
+function startTrachtHinzufuegen() {
+    placingMode = true;
+    document.getElementById('trachtTypSelect').value = '';
+    document.getElementById('trachtBeschreibung').value = '';
+    document.getElementById('trachtLat').value = '';
+    document.getElementById('trachtLng').value = '';
+    document.getElementById('positionStatus').textContent = 'Klicke auf die Karte...';
+    document.getElementById('trachtGtsInfo').style.display = 'none';
+    document.getElementById('trachtModal').classList.add('active');
+    toast('📍 Klicke auf die Karte um die Trachtquelle zu platzieren','info');
+}
+
+function closeTrachtModal() {
+    document.getElementById('trachtModal').classList.remove('active');
+    placingMode = false;
+    if (placingMarker) { map.removeLayer(placingMarker); placingMarker = null; }
+}
+
+function updateTrachtInfo() {
+    var typ = document.getElementById('trachtTypSelect').value;
+    var el = document.getElementById('trachtGtsInfo');
+    if (!typ || !GTS_SCHWELLEN[typ]) { el.style.display='none'; return; }
+    var schwelle = GTS_SCHWELLEN[typ];
+    var ampel = getTrachtAmpel(typ, aktuelleGTS);
+    var emoji = TRACHT_EMOJIS[typ]||'🌺';
+    el.style.display = 'block';
+    el.innerHTML = emoji+' <strong>'+typ+'</strong> blüht ab ~'+schwelle+'°C GTS<br><span class="ampel '+ampel.klasse+'" style="margin-top:.35rem;display:inline-flex">'+ampel.text+'</span>'+(aktuelleGTS!==null?' <span style="color:#7A6652">(Aktuell: '+Math.round(aktuelleGTS)+'°C)</span>':'');
+}
+
+async function saveTrachtquelle() {
+    var typ = document.getElementById('trachtTypSelect').value;
+    var beschreibung = document.getElementById('trachtBeschreibung').value.trim();
+    var lat = parseFloat(document.getElementById('trachtLat').value);
+    var lng = parseFloat(document.getElementById('trachtLng').value);
+    if (!typ) { alert('Bitte Tracht-Typ wählen!'); return; }
+    if (!lat || !lng) { alert('Bitte Position auf der Karte wählen!'); return; }
+
+    var id = 'tq_'+Date.now().toString(36)+Math.random().toString(36).substr(2,5);
+    try {
+        await sb.from('trachtquellen').upsert({id:id,user_id:currentUser.id,typ:typ,beschreibung:beschreibung,lat:lat,lng:lng,created_at:Date.now()});
+    } catch(e) { console.warn('DB:', e); }
+
+    trachtquellen.push({id:id,typ:typ,beschreibung:beschreibung,lat:lat,lng:lng,created:Date.now()});
+    closeTrachtModal();
+    renderTrachtquellen();
+    toast('✅ Trachtquelle eingetragen!','success');
+}
+
+async function deleteTrachtquelle(id) {
+    if (!confirm('Trachtquelle löschen?')) return;
+    trachtquellen = trachtquellen.filter(function(t){return t.id!==id;});
+    try { await sb.from('trachtquellen').delete().eq('id',id); } catch(e) {}
+    renderTrachtquellen();
+    map.closePopup();
+    toast('🗑️ Gelöscht','info');
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function toast(msg,type) {
+    type=type||'success';var el=document.getElementById('toast');el.textContent=msg;
+    el.className='toast '+type+' show';clearTimeout(window._tt);
+    window._tt=setTimeout(function(){el.classList.remove('show');},2500);
+}
+
+// ============================================
+// START
+// ============================================
+init();
+window.addEventListener('pagehide',function(){document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='hidden';});});
+window.addEventListener('pageshow',function(e){if(e.persisted){document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='visible';});if(map)map.invalidateSize();}});
+</script>
+</body>
+</html>

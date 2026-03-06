@@ -25,6 +25,7 @@
         { title: 'Ernte & Planung', items: [
             { href: 'ernte.html', icon: '🍯', label: 'Honigernte' },
             { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
+            { href: 'trachtmonitor.html', icon: '🗺️', label: 'Tracht-Radar' },
             { href: 'packliste.html', icon: '📦', label: 'Packliste' }
         ]},
         { title: 'Community', items: [
@@ -136,6 +137,7 @@
             ]},
             { title: 'Ernte & Planung', items: [
                 { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
+                { href: 'trachtmonitor.html', icon: '🗺️', label: 'Tracht-Radar' },
                 { href: 'packliste.html', icon: '📦', label: 'Packliste' },
                 { page: 'kosten', icon: '💰', label: 'Kosten' }
             ]},
