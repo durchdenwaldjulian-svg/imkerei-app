@@ -20,47 +20,51 @@
         .nav-item:hover{background:rgba(245,166,35,0.06)}
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         #radarMap{height:100vh;width:100%}
+
         .radar-controls{position:absolute;top:10px;left:10px;z-index:1000;display:flex;flex-direction:column;gap:.5rem;max-width:320px}
         .radar-panel{background:#fff;border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 2px 12px rgba(0,0,0,.15)}
         .gts-thermo-value{font-size:1.4rem;font-weight:700;font-family:'DM Serif Display',serif}
         .gts-thermo-bar{background:#E8DFD4;border-radius:999px;height:.4rem;overflow:hidden;margin-top:.35rem}
         .gts-thermo-fill{height:100%;border-radius:999px;transition:width .8s ease}
-        .radar-btn{padding:.45rem .75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.8rem;transition:all .15s;font-family:'Outfit',sans-serif}
+        .radar-btn{padding:.45rem .75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.8rem;font-family:'Outfit',sans-serif}
         .radar-btn:hover{background:#D4930D}
-        .radar-btn.cancel{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}
+
         .radar-legend{position:absolute;bottom:20px;right:10px;z-index:1000;background:#fff;border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 2px 12px rgba(0,0,0,.15);font-size:.78rem}
         .legend-row{display:flex;align-items:center;gap:.5rem;padding:.15rem 0}
         .legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+
         .ampel{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:600;padding:.15rem .5rem;border-radius:999px}
         .ampel-rot{background:#FEE2E2;color:#DC2626}
         .ampel-orange{background:#FFEDD5;color:#EA580C}
         .ampel-gelb{background:#FEF3C7;color:#D97706}
         .ampel-gruen{background:#D1FAE5;color:#059669}
         .ampel-blau{background:#DBEAFE;color:#2563EB}
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:10001;display:none}
+
+        /* Toast – klein, unten rechts, NICHT mittig */
+        .toast{position:fixed;bottom:2rem;right:2rem;background:#1C1410;color:#fff;padding:.6rem 1.25rem;border-radius:.5rem;font-size:.82rem;z-index:10001;display:none;max-width:300px}
         .toast.show{display:block;animation:toastIn .3s ease}
-        .toast.success{background:#2D8A4E}.toast.error{background:#DC2626}.toast.info{background:#3B82F6}
-        @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+        .toast.info{background:#3B82F6}
+        @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
         .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
         .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .crosshair-mode,.crosshair-mode .leaflet-container{cursor:crosshair!important}
-        .add-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:800;background:rgba(245,166,35,.92);color:#fff;padding:.65rem 1.25rem;border-radius:999px;font-weight:600;font-size:.85rem;pointer-events:none;box-shadow:0 4px 16px rgba(245,166,35,.4);display:none}
-        .add-hint.visible{display:block}
-        .radar-modal-bg{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:10000;align-items:center;justify-content:center}
-        .radar-modal-bg.open{display:flex}
-        .radar-modal{background:#FFFBF0;border-radius:1rem;width:92%;max-width:420px;max-height:90vh;overflow-y:auto}
-        .radar-modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
-        .radar-modal-header h2{margin:0;font-size:1.1rem;font-family:'DM Serif Display',serif}
-        .radar-modal-body{padding:1.25rem}
-        .rm-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
-        .rm-group{margin-bottom:1rem}
-        .rm-label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom:.375rem}
-        .rm-input{width:100%;padding:.65rem .75rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem;font-family:'Outfit',sans-serif;background:#fff;outline:none}
-        .rm-input:focus{border-color:#F5A623}
-        .rm-info{font-size:.8rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin:.5rem 0;line-height:1.5}
-        .rm-save{width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem;font-family:'Outfit',sans-serif}
-        .rm-save:hover{background:#D4930D}
+
+        /* Modal – wie bei standorte.html */
+        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:10000;overflow-y:auto;padding:1rem}
+        .modal.active{display:flex;align-items:center;justify-content:center}
+        .modal-content{background:#FFFBF0;border-radius:1rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:auto;position:relative;z-index:10001}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
+        .modal-header h2{margin:0;font-size:1.1rem;font-family:'DM Serif Display',serif}
+        .modal-body{padding:1.25rem}
+        .close-btn{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:500;font-size:.85rem;color:#7A6652;margin-bottom:.375rem}
+        .info-box{font-size:.8rem;color:#7A6652;padding:.5rem;background:#FFF8EE;border-radius:.35rem;margin:.5rem 0}
+        .gts-hint{font-size:.82rem;color:#7A6652;padding:.5rem .75rem;background:#FFF8EE;border-radius:.35rem;margin-bottom:1rem;line-height:1.5;display:none}
+
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:0;overflow:hidden}
             .nav{display:none}
@@ -69,6 +73,8 @@
             .radar-panel{padding:.5rem .75rem}
             .gts-thermo-value{font-size:1.1rem}
             .radar-legend{bottom:80px;right:5px;padding:.5rem .75rem;font-size:.7rem}
+            .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
+            .toast{right:1rem;bottom:5rem;max-width:250px;font-size:.78rem}
         }
     </style>
 </head>
@@ -77,9 +83,14 @@
 <div class="mobile-nav" id="mobileNavBar"></div>
 <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 <script src="nav.js"></script>
+
 <div class="loading-screen" id="loadingScreen"><div class="spinner"></div><div style="color:#7A6652;font-size:.85rem">Tracht-Radar laden...</div></div>
 <div class="toast" id="toast"></div>
+
+<!-- Hauptkarte -->
 <div id="radarMap"></div>
+
+<!-- Controls oben links -->
 <div class="radar-controls">
     <div class="radar-panel">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -91,11 +102,11 @@
     </div>
     <div class="radar-panel" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
         <select id="filterTracht" onchange="renderMarkers()" style="padding:.35rem .5rem;border:1.5px solid #E8DFD4;border-radius:.35rem;font-size:.78rem;background:#FFFBF0;font-family:'Outfit',sans-serif;flex:1;min-width:100px"><option value="">Alle Trachten</option></select>
-        <button class="radar-btn" id="btnAdd" onclick="startAdd()">+ Trachtquelle</button>
-        <button class="radar-btn cancel" id="btnCancel" onclick="cancelAdd()" style="display:none">✕ Abbrechen</button>
+        <button class="radar-btn" onclick="openAddModal()">+ Trachtquelle</button>
     </div>
 </div>
-<div class="add-hint" id="addHint">📍 Klicke auf die Karte wo die Tracht wächst</div>
+
+<!-- Legende -->
 <div class="radar-legend">
     <div style="font-weight:600;margin-bottom:.35rem">Legende</div>
     <div class="legend-row"><div class="legend-dot" style="background:#F5A623"></div> 🐝 Bienenstand</div>
@@ -105,12 +116,18 @@
     <div class="legend-row"><div class="legend-dot" style="background:#059669"></div> Blüht wahrsch.</div>
     <div class="legend-row"><div class="legend-dot" style="background:#2563EB"></div> Blüte vorbei</div>
 </div>
-<div class="radar-modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
-    <div class="radar-modal">
-        <div class="radar-modal-header"><h2>🌾 Trachtquelle eintragen</h2><button class="rm-close" onclick="closeModal()">✕</button></div>
-        <div class="radar-modal-body">
-            <div class="rm-group"><label class="rm-label">Tracht-Typ *</label>
-                <select id="mTyp" class="rm-input" onchange="showGtsHint()">
+
+<!-- Modal: Trachtquelle hinzufügen (mit eigener Karte drin!) -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>🌾 Trachtquelle eintragen</h2>
+            <button class="close-btn" onclick="closeAddModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Tracht-Typ *</label>
+                <select id="mTyp" class="input" onchange="showGtsHint()">
                     <option value="">-- Bitte wählen --</option>
                     <optgroup label="Frühjahr"><option value="Haselnuss">🌰 Haselnuss</option><option value="Weide">🌿 Weide</option><option value="Kirsche">🍒 Kirsche</option><option value="Löwenzahn">🌼 Löwenzahn</option><option value="Raps">🌾 Raps</option><option value="Obstblüte">🌸 Obstblüte</option></optgroup>
                     <optgroup label="Sommer"><option value="Akazie (Robinie)">🌳 Akazie/Robinie</option><option value="Linde (Sommer)">🍃 Linde</option><option value="Phacelia">💜 Phacelia</option><option value="Sonnenblume">🌻 Sonnenblume</option></optgroup>
@@ -118,30 +135,61 @@
                     <optgroup label="Herbst"><option value="Heide">🌸 Heide</option><option value="Efeu">🌿 Efeu</option></optgroup>
                 </select>
             </div>
-            <div id="mGtsHint" class="rm-info" style="display:none"></div>
-            <div class="rm-group"><label class="rm-label">Bezeichnung (optional)</label><input type="text" id="mName" class="rm-input" placeholder="z.B. Rapsfeld Bauer Müller"></div>
-            <div class="rm-group"><label class="rm-label">Notizen (optional)</label><textarea id="mNotizen" class="rm-input" style="min-height:55px;resize:vertical" placeholder="z.B. ca. 5 Hektar, jährlich"></textarea></div>
-            <div id="mKoord" style="font-size:.8rem;color:#10b981;margin-bottom:.75rem"></div>
-            <button class="rm-save" onclick="saveQuelle()">Trachtquelle speichern</button>
+            <div id="mGtsHint" class="gts-hint"></div>
+            <div class="form-group">
+                <label class="form-label">Bezeichnung (optional)</label>
+                <input type="text" id="mName" class="input" placeholder="z.B. Rapsfeld Bauer Müller">
+            </div>
+            <div class="form-group">
+                <label class="form-label">📍 Position auf Karte wählen *</label>
+                <div id="modalMapPicker" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;position:relative;z-index:1001"></div>
+                <input type="hidden" id="mLat" value="">
+                <input type="hidden" id="mLng" value="">
+                <div id="mKoordStatus" style="font-size:.8rem;color:#7A6652"></div>
+                <div class="info-box">💡 Klicke auf die Karte um die Position der Trachtquelle zu setzen.</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notizen (optional)</label>
+                <textarea id="mNotizen" class="input" style="min-height:55px" placeholder="z.B. ca. 5 Hektar, jährlich"></textarea>
+            </div>
+            <button style="width:100%;padding:.75rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.95rem" onclick="saveQuelle()">Trachtquelle speichern</button>
         </div>
     </div>
 </div>
+
 <script src="config.js"></script>
 <script src="plan.js"></script>
 <script src="presence.js" defer></script>
 <script>
-var standorte=[],trachtquellen=[],radarMap=null,markersLayer=null,isAddMode=false,clickLatLng=null,aktuelleGTS=null;
+var standorte=[],trachtquellen=[],radarMap=null,markersLayer=null,aktuelleGTS=null;
+
+// GTS
 var GTS_SCHWELLEN={'Schneeglöckchen':50,'Haselnuss':80,'Erle':90,'Huflattich':100,'Krokus':100,'Weide':130,'Kornelkirsche':130,'Schlehe':150,'Pflaume':190,'Kirsche':200,'Löwenzahn':200,'Obstblüte':200,'Birne':210,'Apfel':220,'Raps':250,'Flieder':280,'Rosskastanie':280,'Weißdorn':300,'Himbeere':320,'Akazie (Robinie)':350,'Klee (Weiß)':350,'Brombeere':400,'Klee (Rot)':400,'Fichte (Honigtau)':400,'Kornblume':400,'Eiche (Honigtau)':420,'Phacelia':450,'Edelkastanie':450,'Linde (Sommer)':500,'Lavendel':500,'Goldrute':500,'Linde (Winter)':550,'Sonnenblume':550,'Heide':700,'Herbstastern':700,'Efeu':900};
 var EMOJIS={'Haselnuss':'🌰','Weide':'🌿','Kirsche':'🍒','Löwenzahn':'🌼','Raps':'🌾','Obstblüte':'🌸','Akazie (Robinie)':'🌳','Linde (Sommer)':'🍃','Phacelia':'💜','Sonnenblume':'🌻','Fichte (Honigtau)':'🌲','Tanne (Honigtau)':'🌲','Heide':'🌸','Efeu':'🌿'};
 
 function berechneGTS(t){var s=0;t.forEach(function(x){if(x.temp<=0)return;var m=parseInt(x.date.split('-')[1]);s+=x.temp*(m===1?0.5:m===2?0.75:1.0);});return Math.round(s*10)/10;}
-async function ladeGTS(lat,lng){var k=lat.toFixed(2)+'_'+lng.toFixed(2),h=new Date().toISOString().split('T')[0],ck='gts_'+k+'_'+h;try{var c=localStorage.getItem(ck);if(c)return JSON.parse(c);}catch(e){}var j=new Date().getFullYear(),end=new Date(Date.now()-86400000).toISOString().split('T')[0];try{var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+'&daily=temperature_2m_mean&start_date='+j+'-01-01&end_date='+end+'&timezone=Europe/Berlin');if(!r.ok)throw 0;var d=await r.json();if(!d.daily)throw 0;var temps=d.daily.time.map(function(dt,i){return{date:dt,temp:d.daily.temperature_2m_mean[i]};});var gts=berechneGTS(temps);var res={gts:gts,datum:h};try{localStorage.setItem(ck,JSON.stringify(res));}catch(e){}return res;}catch(e){return null;}}
+
+async function ladeGTS(lat,lng){
+    var k=lat.toFixed(2)+'_'+lng.toFixed(2),h=new Date().toISOString().split('T')[0],ck='gts_'+k+'_'+h;
+    try{var c=localStorage.getItem(ck);if(c)return JSON.parse(c);}catch(e){}
+    var j=new Date().getFullYear(),end=new Date(Date.now()-86400000).toISOString().split('T')[0];
+    try{
+        var r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+'&daily=temperature_2m_mean&start_date='+j+'-01-01&end_date='+end+'&timezone=Europe/Berlin');
+        if(!r.ok)throw 0;var d=await r.json();if(!d.daily)throw 0;
+        var temps=d.daily.time.map(function(dt,i){return{date:dt,temp:d.daily.temperature_2m_mean[i]};});
+        var gts=berechneGTS(temps);var res={gts:gts,datum:h};
+        try{localStorage.setItem(ck,JSON.stringify(res));}catch(e){}return res;
+    }catch(e){return null;}
+}
+
 function gtsColor(g){return g<100?'#EF4444':g<200?'#F59E0B':'#10B981';}
 function gtsStatus(g){if(g<100)return'❄️ Winter/Vorfrühling';if(g<200)return'🌱 Frühling beginnt';if(g<350)return'🌿 Vegetation aktiv';if(g<500)return'☀️ Vollfrühling';return'🌻 Hochsommer';}
 function nextTracht(g){var s=Object.entries(GTS_SCHWELLEN).sort(function(a,b){return a[1]-b[1];});for(var i=0;i<s.length;i++){if(s[i][1]>g)return{name:s[i][0],gts:s[i][1],diff:Math.round(s[i][1]-g)};}return null;}
 function ampel(typ,g){var sw=GTS_SCHWELLEN[typ];if(!sw||g===null)return{cl:'',color:'#9CA3AF',text:'?',label:'Keine GTS'};var r=g/sw;if(r>=1.3)return{cl:'ampel-blau',color:'#2563EB',text:'🔵',label:'Blüte vorbei'};if(r>=1.0)return{cl:'ampel-gruen',color:'#059669',text:'🟢',label:'Blüht wahrsch.'};if(r>=0.85)return{cl:'ampel-gelb',color:'#D97706',text:'🟡',label:'Bald soweit'};if(r>=0.65)return{cl:'ampel-orange',color:'#EA580C',text:'🟠',label:'Dauert noch'};return{cl:'ampel-rot',color:'#DC2626',text:'🔴',label:'Noch weit weg'};}
+
 function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast '+(type||'success')+' show';clearTimeout(window._tt);window._tt=setTimeout(function(){el.classList.remove('show');},2500);}
 
+// INIT
 async function init(){
     var ses=await sb.auth.getSession();if(!ses.data.session){window.location.href='app.html';return;}
     currentUser=ses.data.session.user;await planManager.load();
@@ -156,6 +204,7 @@ async function init(){
     renderMarkers();
 }
 
+// KARTE
 function initRadarMap(){
     var center=[49.0,10.0],zoom=7;
     var mitK=standorte.filter(function(s){return s.lat&&s.lng;});
@@ -164,9 +213,9 @@ function initRadarMap(){
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(radarMap);
     markersLayer=L.layerGroup().addTo(radarMap);
     if(mitK.length>1){var bounds=L.latLngBounds(mitK.map(function(s){return[s.lat,s.lng];}));trachtquellen.forEach(function(t){if(t.lat&&t.lng)bounds.extend([t.lat,t.lng]);});radarMap.fitBounds(bounds.pad(0.15));}
-    radarMap.on('click',function(e){if(!isAddMode)return;clickLatLng=e.latlng;document.getElementById('mKoord').innerHTML='✅ Position: '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4);openModal();});
 }
 
+// MARKERS
 function renderMarkers(){
     markersLayer.clearLayers();var ft=document.getElementById('filterTracht').value;
     standorte.forEach(function(s){if(!s.lat||!s.lng)return;
@@ -186,18 +235,101 @@ function updateThermo(g){document.getElementById('gtsValue').textContent=Math.ro
 function buildStandortSelect(){var sel=document.getElementById('gtsStandortSelect');sel.innerHTML='';var mitK=standorte.filter(function(s){return s.lat&&s.lng;});if(!mitK.length){sel.innerHTML='<option>Keine Standorte</option>';return;}mitK.forEach(function(s){sel.innerHTML+='<option value="'+s.id+'">📍 '+s.name+'</option>';});}
 async function wechsleStandort(){var sid=document.getElementById('gtsStandortSelect').value;var s=standorte.find(function(x){return x.id===sid;});if(!s||!s.lat||!s.lng)return;var g=await ladeGTS(s.lat,s.lng);if(g){aktuelleGTS=g.gts;updateThermo(g.gts);renderMarkers();}}
 function buildFilter(){var sel=document.getElementById('filterTracht');var typen=[...new Set(trachtquellen.map(function(t){return t.typ;}))].sort();typen.forEach(function(typ){var o=document.createElement('option');o.value=typ;o.textContent=(EMOJIS[typ]||'🌺')+' '+typ;sel.appendChild(o);});}
-function startAdd(){isAddMode=true;clickLatLng=null;document.getElementById('addHint').classList.add('visible');document.getElementById('btnAdd').style.display='none';document.getElementById('btnCancel').style.display='';document.getElementById('radarMap').classList.add('crosshair-mode');}
-function cancelAdd(){isAddMode=false;clickLatLng=null;document.getElementById('addHint').classList.remove('visible');document.getElementById('btnAdd').style.display='';document.getElementById('btnCancel').style.display='none';document.getElementById('radarMap').classList.remove('crosshair-mode');}
-function openModal(){document.getElementById('addHint').classList.remove('visible');document.getElementById('modalBg').classList.add('open');}
-function closeModal(){document.getElementById('modalBg').classList.remove('open');}
-function showGtsHint(){var typ=document.getElementById('mTyp').value;var el=document.getElementById('mGtsHint');if(!typ||!GTS_SCHWELLEN[typ]){el.style.display='none';return;}var sw=GTS_SCHWELLEN[typ];var a=ampel(typ,aktuelleGTS);el.style.display='block';el.innerHTML=(EMOJIS[typ]||'🌺')+' <strong>'+typ+'</strong> blüht ab ~'+sw+'°C GTS<br>'+(aktuelleGTS!==null?'Aktuell: '+Math.round(aktuelleGTS)+'°C → <span class="ampel '+a.cl+'">'+a.text+' '+a.label+'</span>':'GTS nicht verfügbar');}
 
-async function saveQuelle(){var typ=document.getElementById('mTyp').value;if(!typ){alert('Bitte Tracht-Typ wählen!');return;}if(!clickLatLng){alert('Keine Position gewählt!');return;}var id='tq_'+Date.now(),name=document.getElementById('mName').value.trim(),notizen=document.getElementById('mNotizen').value.trim();var tq={id:id,typ:typ,name:name,lat:clickLatLng.lat,lng:clickLatLng.lng,notizen:notizen};
-try{var r=await sb.from('trachtquellen').insert({id:id,user_id:currentUser.id,typ:typ,name:name,lat:clickLatLng.lat,lng:clickLatLng.lng,notizen:notizen,created_at:Date.now()});if(r.error)throw r.error;}catch(e){var local=JSON.parse(localStorage.getItem('tq_local')||'[]');local.push(tq);localStorage.setItem('tq_local',JSON.stringify(local));}
-trachtquellen.push(tq);closeModal();cancelAdd();document.getElementById('mTyp').value='';document.getElementById('mName').value='';document.getElementById('mNotizen').value='';document.getElementById('mKoord').innerHTML='';document.getElementById('mGtsHint').style.display='none';var sel=document.getElementById('filterTracht');sel.innerHTML='<option value="">Alle Trachten</option>';buildFilter();renderMarkers();toast('✅ Trachtquelle eingetragen!','success');}
+// ============================================
+// MODAL MIT KARTE (wie standorte.html)
+// ============================================
+function openAddModal(){
+    // Reset
+    document.getElementById('mTyp').value='';
+    document.getElementById('mName').value='';
+    document.getElementById('mNotizen').value='';
+    document.getElementById('mLat').value='';
+    document.getElementById('mLng').value='';
+    document.getElementById('mKoordStatus').innerHTML='';
+    document.getElementById('mGtsHint').style.display='none';
 
-async function delQuelle(id){if(!confirm('Trachtquelle löschen?'))return;trachtquellen=trachtquellen.filter(function(t){return t.id!==id;});try{await sb.from('trachtquellen').delete().eq('id',id);}catch(e){var local=JSON.parse(localStorage.getItem('tq_local')||'[]');localStorage.setItem('tq_local',JSON.stringify(local.filter(function(t){return t.id!==id;})));}renderMarkers();toast('🗑️ Trachtquelle entfernt','info');}
+    // Leaflet z-index unterdrücken (wie in standorte.html)
+    document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex='0'; });
+    document.getElementById('addModal').classList.add('active');
 
+    // Karte im Modal initialisieren (nach kurzer Verzögerung damit Modal sichtbar ist)
+    setTimeout(function(){ initModalMap(); }, 300);
+}
+
+function closeAddModal(){
+    document.getElementById('addModal').classList.remove('active');
+    document.querySelectorAll('.leaflet-container').forEach(function(el){ el.style.zIndex=''; });
+}
+
+function initModalMap(){
+    var container = document.getElementById('modalMapPicker');
+    if (!container) return;
+    // Bestehende Karte entfernen
+    if (container._mapInstance) { container._mapInstance.remove(); container._mapInstance = null; }
+    container.innerHTML = '';
+
+    // Startposition: Erster Standort oder Deutschland-Mitte
+    var mitK = standorte.filter(function(s){return s.lat && s.lng;});
+    var startLat = mitK.length ? mitK[0].lat : 49.0;
+    var startLng = mitK.length ? mitK[0].lng : 10.0;
+    var startZoom = mitK.length ? 12 : 6;
+
+    var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
+    container._mapInstance = map;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(map);
+
+    var marker = null;
+    map.on('click', function(e){
+        document.getElementById('mLat').value = e.latlng.lat;
+        document.getElementById('mLng').value = e.latlng.lng;
+        document.getElementById('mKoordStatus').innerHTML = '<span style="color:#10b981">✅ Position: '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4)+'</span>';
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+    });
+
+    // invalidateSize damit Leaflet die Größe korrekt berechnet
+    setTimeout(function(){ map.invalidateSize(); }, 100);
+    setTimeout(function(){ map.invalidateSize(); }, 500);
+}
+
+function showGtsHint(){
+    var typ=document.getElementById('mTyp').value;
+    var el=document.getElementById('mGtsHint');
+    if(!typ||!GTS_SCHWELLEN[typ]){el.style.display='none';return;}
+    var sw=GTS_SCHWELLEN[typ];var a=ampel(typ,aktuelleGTS);
+    el.style.display='block';
+    el.innerHTML=(EMOJIS[typ]||'🌺')+' <strong>'+typ+'</strong> blüht ab ~'+sw+'°C GTS<br>'+(aktuelleGTS!==null?'Aktuell: '+Math.round(aktuelleGTS)+'°C → <span class="ampel '+a.cl+'">'+a.text+' '+a.label+'</span>':'GTS nicht verfügbar');
+}
+
+// SPEICHERN / LÖSCHEN
+async function saveQuelle(){
+    var typ=document.getElementById('mTyp').value;
+    if(!typ){alert('Bitte Tracht-Typ wählen!');return;}
+    var lat=parseFloat(document.getElementById('mLat').value);
+    var lng=parseFloat(document.getElementById('mLng').value);
+    if(!lat||!lng){alert('Bitte Position auf der Karte wählen!');return;}
+
+    var id='tq_'+Date.now(),name=document.getElementById('mName').value.trim(),notizen=document.getElementById('mNotizen').value.trim();
+    var tq={id:id,typ:typ,name:name,lat:lat,lng:lng,notizen:notizen};
+
+    try{var r=await sb.from('trachtquellen').insert({id:id,user_id:currentUser.id,typ:typ,name:name,lat:lat,lng:lng,notizen:notizen,created_at:Date.now()});if(r.error)throw r.error;}catch(e){var local=JSON.parse(localStorage.getItem('tq_local')||'[]');local.push(tq);localStorage.setItem('tq_local',JSON.stringify(local));}
+
+    trachtquellen.push(tq);
+    closeAddModal();
+    var sel=document.getElementById('filterTracht');sel.innerHTML='<option value="">Alle Trachten</option>';buildFilter();
+    renderMarkers();
+    toast('✅ Trachtquelle eingetragen!','success');
+}
+
+async function delQuelle(id){
+    if(!confirm('Trachtquelle löschen?'))return;
+    trachtquellen=trachtquellen.filter(function(t){return t.id!==id;});
+    try{await sb.from('trachtquellen').delete().eq('id',id);}catch(e){var local=JSON.parse(localStorage.getItem('tq_local')||'[]');localStorage.setItem('tq_local',JSON.stringify(local.filter(function(t){return t.id!==id;})));}
+    renderMarkers();toast('🗑️ Trachtquelle entfernt','info');
+}
+
+// START
 init();
 window.addEventListener('pagehide',function(){document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='hidden';});});
 window.addEventListener('pageshow',function(e){if(e.persisted)document.querySelectorAll('.leaflet-container').forEach(function(el){el.style.visibility='visible';});});
