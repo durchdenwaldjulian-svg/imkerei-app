@@ -93,6 +93,20 @@
         .btn-outline{background:transparent;border:2px solid #E8DFD4;color:#7A6652}
         .btn-outline:hover{border-color:#F5A623;background:#FFF8EE}
         
+        /* === ACCORDION SEKTIONEN === */
+        .acc-section{margin-bottom:.75rem;border:1px solid rgba(245,166,35,0.12);border-radius:.75rem;overflow:hidden;background:#fff}
+        .acc-header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;cursor:pointer;background:#FFFBF0;transition:background .15s;user-select:none}
+        .acc-header:hover{background:#FFF8EE}
+        .acc-header h4{font-size:.9rem;font-weight:600;color:#1C1410;margin:0;display:flex;align-items:center;gap:.4rem}
+        .acc-header .acc-arrow{font-size:.7rem;color:#7A6652;transition:transform .2s;display:inline-block}
+        .acc-header .acc-badge{font-size:.7rem;color:#7A6652;font-weight:400}
+        .acc-body{padding:1rem;display:none}
+        .acc-section.open .acc-body{display:block}
+        .acc-section.open .acc-arrow{transform:rotate(90deg)}
+        .acc-section.has-data .acc-header{border-left:3px solid #10b981}
+        
+        .modal-footer-sticky{position:sticky;bottom:0;background:#fff;padding:1rem 1.5rem;border-top:2px solid rgba(245,166,35,0.12);box-shadow:0 -4px 12px rgba(28,20,16,0.06)}
+        
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
             .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
@@ -121,14 +135,17 @@
 <div id="app" style="display:none"></div>
 <div id="toast" class="toast"></div>
 
-<!-- Durchsicht Modal (mehrstufig) -->
+<!-- Durchsicht Modal (Accordion-Sektionen, kein Wizard) -->
 <div id="durchsichtModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content" style="display:flex;flex-direction:column">
         <div class="modal-header">
             <h2 id="modalTitle">📋 Neue Durchsicht</h2>
             <button class="close-btn" onclick="closeModal()">✕</button>
         </div>
-        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-body" id="modalBody" style="flex:1;overflow-y:auto"></div>
+        <div class="modal-footer-sticky">
+            <button class="btn btn-success" style="width:100%" onclick="saveDurchsicht()">💾 Speichern</button>
+        </div>
     </div>
 </div>
 
@@ -738,9 +755,19 @@ function renderHistorie() {
     return html;
 }
 
+
 // ============================================
-// DURCHSICHT MODAL (4-Schritte-Wizard)
+// DURCHSICHT MODAL
+// Klickbare Stepper-Punkte oben, Speichern jederzeit
 // ============================================
+var MODAL_STEPS = [
+    {key:'volk', label:'Volk', icon:'🐝'},
+    {key:'taetigkeit', label:'Tätigkeit', icon:'🔧'},
+    {key:'bewertung', label:'Bewertung', icon:'⭐'},
+    {key:'varroa', label:'Varroa', icon:'🔬'},
+    {key:'koenigin', label:'Königin', icon:'👑'}
+];
+
 function openDurchsicht(id, volkId) {
     editDurchsicht = id || null;
     modalStep = 0;
@@ -772,7 +799,6 @@ function openDurchsicht(id, volkId) {
         document.getElementById('modalTitle').textContent = '📋 Neue Durchsicht';
     }
     
-    // Königin-Daten laden
     var vId = formData.volkId || volkId;
     if (vId && koeniginnen[vId]) {
         formData.koenigin = Object.assign({}, koeniginnen[vId]);
@@ -788,38 +814,65 @@ function closeModal() {
     document.body.classList.remove('modal-open');
 }
 
+function goToStep(idx) {
+    if (idx > 0 && !formData.volkId) {
+        toast('Bitte zuerst ein Volk wählen!');
+        return;
+    }
+    modalStep = idx;
+    renderModal();
+    document.getElementById('modalBody').scrollTop = 0;
+}
+
+function stepHasData(key) {
+    if (key === 'volk') return !!formData.volkId;
+    if (key === 'taetigkeit') return formData.taetigkeiten.length > 0;
+    if (key === 'bewertung') return Object.keys(formData.kriterien).some(function(k){return formData.kriterien[k] !== 3;});
+    if (key === 'varroa') return parseInt(formData.varroa.milben) > 0;
+    if (key === 'koenigin') return !!formData.koenigin.begattung;
+    return false;
+}
+
 function renderModal() {
     var html = '';
-    var steps = ['Volk & Tätigkeiten','Bewertung','Varroa & Königin','Zusammenfassung'];
-    html += '<div style="display:flex;gap:.25rem;margin-bottom:1.5rem">';
-    steps.forEach(function(s,i) {
+    
+    // === STEPPER PUNKTE (klickbar) ===
+    html += '<div style="display:flex;gap:.15rem;margin-bottom:1.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem">';
+    MODAL_STEPS.forEach(function(s, i) {
         var active = i === modalStep;
-        var done = i < modalStep;
-        var bg = active ? '#F5A623' : (done ? '#10b981' : '#E8DFD4');
-        var color = active||done ? '#fff' : '#7A6652';
-        html += '<div style="flex:1;text-align:center">';
-        html += '<div style="width:28px;height:28px;border-radius:50%;background:' + bg + ';color:' + color + ';display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">' + (done?'✓':(i+1)) + '</div>';
-        html += '<div style="font-size:.65rem;color:' + (active?'#1C1410':'#7A6652') + ';margin-top:.25rem;font-weight:' + (active?'600':'400') + '">' + s + '</div>';
-        html += '</div>';
+        var hasData = stepHasData(s.key);
+        var bg = active ? '#fff' : 'transparent';
+        var color = active ? '#1C1410' : '#7A6652';
+        var fw = active ? '600' : '400';
+        var shadow = active ? 'box-shadow:0 1px 3px rgba(0,0,0,.1);' : '';
+        var dot = hasData && !active ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10b981;margin-left:3px;vertical-align:middle"></span>' : '';
+        html += '<div onclick="goToStep(' + i + ')" style="flex:1;text-align:center;padding:.45rem .25rem;border-radius:.5rem;cursor:pointer;background:' + bg + ';color:' + color + ';font-weight:' + fw + ';font-size:.72rem;transition:all .15s;' + shadow + '">';
+        html += s.icon + '<br>' + s.label + dot + '</div>';
     });
     html += '</div>';
     
-    if (modalStep === 0) html += renderStep1();
-    else if (modalStep === 1) html += renderStep2();
-    else if (modalStep === 2) html += renderStep3();
-    else html += renderStep4();
+    // === AKTIVE SEKTION ===
+    var stepKey = MODAL_STEPS[modalStep].key;
+    if (stepKey === 'volk') html += renderStepVolk();
+    else if (stepKey === 'taetigkeit') html += renderStepTaetigkeit();
+    else if (stepKey === 'bewertung') html += renderStepBewertung();
+    else if (stepKey === 'varroa') html += renderStepVarroa();
+    else if (stepKey === 'koenigin') html += renderStepKoenigin();
     
-    html += '<div style="display:flex;gap:.5rem;margin-top:1.5rem">';
-    if (modalStep > 0) html += '<button class="btn btn-outline" style="flex:1" onclick="modalStep--;renderModal()">← Zurück</button>';
-    if (modalStep < 3) html += '<button class="btn btn-primary" style="flex:1" onclick="nextStep()">Weiter →</button>';
-    if (modalStep === 3) html += '<button class="btn btn-success" style="flex:1" onclick="saveDurchsicht()">💾 Speichern</button>';
-    html += '</div>';
+    // === NOTIZEN (immer sichtbar) ===
+    html += '<div style="margin-top:1.25rem;padding-top:.75rem;border-top:1px solid #E8DFD4">';
+    html += '<div class="form-group" style="margin-bottom:0">';
+    html += '<label class="form-label" style="font-size:.85rem">📝 Notizen</label>';
+    html += '<textarea class="input" rows="2" placeholder="Besonderheiten, Beobachtungen..." onchange="formData.notizen=this.value">' + (formData.notizen||'') + '</textarea>';
+    html += '</div></div>';
     
     document.getElementById('modalBody').innerHTML = html;
 }
 
-// STEP 1: Volk + Tätigkeiten
-function renderStep1() {
+// ============================================
+// STEP: VOLK & DATUM
+// ============================================
+function renderStepVolk() {
     var html = '';
     html += '<div class="form-group">';
     html += '<label class="form-label">Volk</label>';
@@ -841,7 +894,14 @@ function renderStep1() {
     html += '<input type="date" class="input" value="' + formData.datum + '" onchange="formData.datum=this.value">';
     html += '</div>';
     
-    html += '<div class="section-divider">Tätigkeiten</div>';
+    return html;
+}
+
+// ============================================
+// STEP: TÄTIGKEITEN
+// ============================================
+function renderStepTaetigkeit() {
+    var html = '';
     html += '<div class="taetig-grid">';
     TAETIGKEITEN.forEach(function(t) {
         var sel = formData.taetigkeiten.find(function(x){return x.key===t.key;});
@@ -855,7 +915,7 @@ function renderStep1() {
         if (!def) return;
         if (def.subs && def.subs.length) {
             html += '<div class="sub-options">';
-            html += '<div style="font-size:.8rem;font-weight:600;margin-bottom:.35rem">' + def.icon + ' ' + def.label + ' – Details:</div>';
+            html += '<div style="font-size:.8rem;font-weight:600;margin-bottom:.35rem">' + def.icon + ' ' + def.label + ':</div>';
             def.subs.forEach(function(sub) {
                 var isSel = (sel.subs||[]).indexOf(sub) > -1;
                 html += '<span class="sub-chip ' + (isSel?'selected':'') + '" onclick="toggleSub(\'' + sel.key + '\',\'' + sub + '\')">' + sub + '</span>';
@@ -873,12 +933,17 @@ function renderStep1() {
     return html;
 }
 
-// STEP 2: Bewertung
-function renderStep2() {
+// ============================================
+// STEP: BEWERTUNG
+// ============================================
+function renderStepBewertung() {
     var html = '';
-    html += '<div class="section-divider">Bestehende Kriterien</div>';
+    html += '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.75rem">Nur ausfüllen was sich geändert hat – Rest bleibt bei 3/5.</div>';
+    
+    html += '<div style="font-size:.7rem;font-weight:600;color:#A69580;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Zucht-Kriterien</div>';
     KRITERIEN_ALT.forEach(function(k){ html += renderKriteriumRow(k); });
-    html += '<div class="section-divider">Neue Kriterien</div>';
+    
+    html += '<div style="font-size:.7rem;font-weight:600;color:#A69580;text-transform:uppercase;letter-spacing:.06em;margin:1rem 0 .5rem">Bestandsführung</div>';
     KRITERIEN_NEU.forEach(function(k){ html += renderKriteriumRow(k); });
     return html;
 }
@@ -898,13 +963,11 @@ function renderKriteriumRow(k) {
     return html;
 }
 
-// STEP 3: Varroa + Königin
-function renderStep3() {
+// ============================================
+// STEP: VARROA
+// ============================================
+function renderStepVarroa() {
     var html = '';
-    
-    // Varroa
-    html += '<div class="varroa-calc">';
-    html += '<h4 style="font-size:.95rem;margin-bottom:.75rem">🔬 Varroa-Diagnose</h4>';
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">';
     html += '<div class="form-group" style="margin:0"><label class="form-label" style="font-size:.82rem">Milben gezählt</label>';
     html += '<input type="number" class="input" value="' + (formData.varroa.milben||'') + '" placeholder="0" onchange="formData.varroa.milben=parseInt(this.value)||0;renderModal()"></div>';
@@ -927,10 +990,15 @@ function renderStep3() {
         html += '<div class="varroa-result ' + cls + '">' + mProTag + ' Milben/Tag</div>';
         html += '<div style="text-align:center;font-size:.8rem;color:#7A6652">' + label + '</div>';
     }
-    html += '</div>';
     
-    // Königin
-    html += '<div class="koenigin-section"><h4>👑 Königinnen-Info</h4>';
+    return html;
+}
+
+// ============================================
+// STEP: KÖNIGIN
+// ============================================
+function renderStepKoenigin() {
+    var html = '';
     html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Art der Begattung</label>';
     html += '<select class="input" onchange="formData.koenigin.begattung=this.value"><option value="">-- wählen --</option>';
     ['Standbegattung','Belegstelle','Besamung'].forEach(function(b) {
@@ -967,66 +1035,13 @@ function renderStep3() {
         });
         html += '</div></div>';
     }
-    html += '</div>';
     
-    return html;
-}
-
-// STEP 4: Zusammenfassung
-function renderStep4() {
-    var v = voelker.find(function(x){return x.id===formData.volkId;});
-    var schnitt = durchschnittKriterien(formData.kriterien);
-    
-    var html = '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff)">';
-    html += '<h3 style="margin-bottom:1rem">✅ Zusammenfassung</h3>';
-    html += '<div style="font-size:.9rem;margin-bottom:.75rem"><strong>🐝 Volk:</strong> ' + (v?v.name:'–') + '</div>';
-    html += '<div style="font-size:.9rem;margin-bottom:.75rem"><strong>📅 Datum:</strong> ' + fmtDate(formData.datum) + '</div>';
-    
-    if (formData.taetigkeiten.length) {
-        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>🔧 Tätigkeiten:</strong></div>';
-        html += '<div class="historie-tags" style="margin-bottom:.75rem">';
-        formData.taetigkeiten.forEach(function(t) {
-            var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
-            var label = def ? def.icon + ' ' + def.label : t.key;
-            if (t.subs && t.subs.length) label += ' (' + t.subs.join(', ') + ')';
-            if (t.menge) label += ' – ' + t.menge + (def&&def.mengeUnit?' '+def.mengeUnit:'');
-            html += '<span class="historie-tag">' + label + '</span>';
-        });
-        html += '</div>';
-    }
-    
-    html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>⭐ Bewertung:</strong> ' + schnitt.toFixed(1) + '/5.0 ' + renderMiniStars(schnitt) + '</div>';
-    
-    var milben = parseInt(formData.varroa.milben) || 0;
-    if (milben > 0) {
-        var mProTag = (milben / (parseInt(formData.varroa.tage)||1)).toFixed(1);
-        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>🔬 Varroa:</strong> ' + mProTag + ' Milben/Tag (' + formData.varroa.methode + ')</div>';
-    }
-    
-    if (formData.koenigin.begattung) {
-        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>👑 Königin:</strong> ' + formData.koenigin.begattung;
-        if (formData.koenigin.markiert) html += ' · ' + getColorDot(formData.koenigin.farbe);
-        html += '</div>';
-    }
-    
-    html += '<div class="form-group" style="margin-top:1rem;margin-bottom:0">';
-    html += '<label class="form-label">Notizen</label>';
-    html += '<textarea class="input" rows="2" placeholder="Besonderheiten..." onchange="formData.notizen=this.value">' + (formData.notizen||'') + '</textarea>';
-    html += '</div></div>';
     return html;
 }
 
 // ============================================
 // MODAL HELPERS
 // ============================================
-function nextStep() {
-    if (modalStep === 0 && !formData.volkId) {
-        toast('Bitte ein Volk auswählen!'); return;
-    }
-    modalStep++;
-    renderModal();
-}
-
 function toggleTaetigkeit(key) {
     var idx = formData.taetigkeiten.findIndex(function(x){return x.key===key;});
     if (idx > -1) formData.taetigkeiten.splice(idx, 1);
