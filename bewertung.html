@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>⭐ Völker-Bewertung – Imkerei Tagesplaner</title>
+    <title>📋 Stockkarte – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
@@ -12,6 +12,7 @@
     <style>
         /* === BEWERTUNG-SPECIFIC STYLES === */
         body{padding-left:220px;padding-bottom:2rem}
+        body.modal-open{overflow:hidden}
         
         .container{max-width:800px;margin:0 auto;padding:1rem}
         
@@ -24,11 +25,73 @@
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         
         .stars{display:flex;gap:2px;cursor:pointer}
-        .stars .star{font-size:1.5rem;color:#E8DFD4;transition:color .15s;user-select:none}
+        .stars .star{font-size:1.4rem;color:#E8DFD4;transition:color .15s;user-select:none}
         .stars .star.active{color:#F5A623}
         .stars .star:hover{color:#f7bc5e}
-        .radar-wrap{position:relative;width:100%;max-width:320px;margin:0 auto}
+        
         .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        
+        /* === TÄTIGKEITEN KACHELN === */
+        .taetig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:.5rem;margin:.75rem 0}
+        .taetig-chip{
+            padding:.6rem .5rem;border:2px solid #E8DFD4;border-radius:.625rem;background:#fff;
+            cursor:pointer;transition:all .2s;text-align:center;font-size:.78rem;font-weight:500;
+            display:flex;flex-direction:column;align-items:center;gap:.25rem;
+        }
+        .taetig-chip:hover{border-color:#F5A623;background:#FFF8EE;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.15)}
+        .taetig-chip.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
+        .taetig-chip .tc-icon{font-size:1.4rem;line-height:1}
+        
+        .sub-options{margin-top:.5rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.15)}
+        .sub-chip{display:inline-block;padding:.35rem .6rem;border:1.5px solid #E8DFD4;border-radius:999px;font-size:.72rem;margin:.2rem;cursor:pointer;background:#fff;transition:all .15s}
+        .sub-chip:hover{border-color:#F5A623;background:#FFF8EE}
+        .sub-chip.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:600}
+        
+        .menge-row{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.5rem .75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.15)}
+        .menge-input{width:80px;padding:.4rem .6rem;border:2px solid #d1d5db;border-radius:.5rem;font-size:.9rem;font-family:inherit;outline:none;text-align:center}
+        .menge-input:focus{border-color:#F5A623}
+        .menge-label{font-size:.8rem;color:#7A6652}
+        
+        /* === KÖNIGIN === */
+        .koenigin-section{background:#FFFBF0;border-radius:.75rem;padding:1rem;border:1px solid rgba(245,166,35,0.15);margin-bottom:1rem}
+        .koenigin-section h4{font-size:.9rem;margin-bottom:.75rem;color:#92400E;display:flex;align-items:center;gap:.35rem}
+        .color-pills{display:flex;gap:.5rem;flex-wrap:wrap}
+        .color-pill{width:32px;height:32px;border-radius:50%;border:3px solid #E8DFD4;cursor:pointer;transition:all .15s}
+        .color-pill:hover{transform:scale(1.15)}
+        .color-pill.selected{border-color:#1C1410;box-shadow:0 0 0 2px #F5A623;transform:scale(1.15)}
+        .color-pill.c-weiss{background:#fff;border-color:#ccc}
+        .color-pill.c-gelb{background:#facc15}
+        .color-pill.c-rot{background:#ef4444}
+        .color-pill.c-gruen{background:#22c55e}
+        .color-pill.c-blau{background:#3b82f6}
+        
+        /* === VARROA === */
+        .varroa-calc{background:linear-gradient(135deg,#fef3c7,#fff);border:1px solid #f59e0b;border-radius:.75rem;padding:1rem;margin-bottom:1rem}
+        .varroa-result{font-size:1.5rem;font-weight:700;text-align:center;margin:.75rem 0 .25rem}
+        .varroa-result.low{color:#10b981}
+        .varroa-result.medium{color:#f59e0b}
+        .varroa-result.high{color:#ef4444}
+        .varroa-result.critical{color:#991b1b}
+        
+        /* === HISTORIE === */
+        .historie-entry{padding:.75rem;border-bottom:1px solid #f5f0eb;transition:background .15s}
+        .historie-entry:last-child{border-bottom:none}
+        .historie-entry:hover{background:#FFFBF0}
+        .historie-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.35rem}
+        .historie-tag{font-size:.65rem;padding:.15rem .4rem;border-radius:.25rem;background:#f5f0eb;color:#7A6652}
+        
+        /* === SECTION DIVIDER === */
+        .section-divider{display:flex;align-items:center;gap:.75rem;margin:1.5rem 0 1rem;color:#A69580;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+        .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:#E8DFD4}
+        
+        /* === VOLK DETAIL VIEW === */
+        .volk-detail{background:#FFFBF0;border-radius:.5rem;padding:.75rem;margin-top:.5rem;border:1px solid rgba(245,166,35,0.2);animation:slideDown .2s ease}
+        @keyframes slideDown{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+        .volk-row-clickable{cursor:pointer;border-radius:.5rem;padding:.75rem;margin:0 -.25rem;transition:background .15s}
+        .volk-row-clickable:hover{background:rgba(245,166,35,0.06)}
+        
+        .btn-outline{background:transparent;border:2px solid #E8DFD4;color:#7A6652}
+        .btn-outline:hover{border-color:#F5A623;background:#FFF8EE}
         
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
@@ -36,6 +99,8 @@
             .nav-brand,.nav-section{display:none}
             .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
             .nav-item.active{border-left:none;border-bottom-color:#F5A623}
+            .taetig-grid{grid-template-columns:repeat(3,1fr);gap:.4rem}
+            .taetig-chip{font-size:.72rem;padding:.5rem .35rem}
         }
     </style>
 </head>
@@ -48,41 +113,22 @@
 
 <div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
     <div style="text-align:center;color:#7A6652">
-        <div style="font-size:3rem;margin-bottom:1rem">⭐</div>
-        <div>Lade Bewertungen...</div>
+        <div style="font-size:3rem;margin-bottom:1rem">📋</div>
+        <div>Lade Stockkarte...</div>
     </div>
 </div>
 
 <div id="app" style="display:none"></div>
 <div id="toast" class="toast"></div>
 
-<!-- Bewertung Modal -->
-<div id="bewertungModal" class="modal">
+<!-- Durchsicht Modal (mehrstufig) -->
+<div id="durchsichtModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="bewertungModalTitle">⭐ Volk bewerten</h2>
+            <h2 id="modalTitle">📋 Neue Durchsicht</h2>
             <button class="close-btn" onclick="closeModal()">✕</button>
         </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Volk</label>
-                <select id="bewVolk" class="input">
-                    <option value="">-- Volk wählen --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Datum</label>
-                <input type="date" id="bewDatum" class="input">
-            </div>
-            
-            <div id="kriterienContainer"></div>
-            
-            <div class="form-group">
-                <label class="form-label">Notizen</label>
-                <textarea id="bewNotizen" class="input" rows="2" placeholder="Besonderheiten, Zuchtempfehlung..."></textarea>
-            </div>
-            <button class="btn btn-primary" style="width:100%" onclick="saveBewertung()">💾 Bewertung speichern</button>
-        </div>
+        <div class="modal-body" id="modalBody"></div>
     </div>
 </div>
 
@@ -91,10 +137,11 @@
 <script src="presence.js" defer></script>
 <script>
 // ============================================
-// BEWERTUNG MODULE
+// STOCKKARTE / DURCHSICHTPROTOKOLL MODULE
 // ============================================
 
-const KRITERIEN = [
+// Bestehende Kriterien (abwärtskompatibel)
+var KRITERIEN_ALT = [
     {key:'sanftmut', label:'🤲 Sanftmut', desc:'Stechverhalten, Aggressivität'},
     {key:'wabensitz', label:'🪵 Wabensitz', desc:'Bleiben die Bienen auf der Wabe?'},
     {key:'schwarmtrieb', label:'🐝 Schwarmtrieb', desc:'5 = kein Schwarmtrieb'},
@@ -105,12 +152,43 @@ const KRITERIEN = [
     {key:'honigfleiss', label:'🍯 Honigfleiß', desc:'Sammeleifer, Ertrag'}
 ];
 
+// Neue Kriterien
+var KRITERIEN_NEU = [
+    {key:'raumreserve', label:'📦 Raumreserve', desc:'Platz im Volk, Erweiterungsbedarf'},
+    {key:'weiselrichtigkeit', label:'👑 Weiselrichtigkeit', desc:'Königin vorhanden, Stifte sichtbar'},
+    {key:'futterversorgung', label:'🍬 Futterversorgung', desc:'Futtervorrat, Nachschub nötig?'},
+    {key:'gesundheit', label:'🏥 Gesundheit', desc:'Allgemeinzustand, Krankheitsanzeichen'},
+    {key:'varroa_beurteilung', label:'🔬 Varroa-Beurteilung', desc:'Geschätzte Varroabelastung'}
+];
+
+var KRITERIEN = KRITERIEN_ALT.concat(KRITERIEN_NEU);
+
+// Tätigkeiten-Definitionen
+var TAETIGKEITEN = [
+    {key:'honigernte', label:'Honigernte', icon:'🍯', subs:[]},
+    {key:'varroa_bio', label:'Varroa Biotechnik', icon:'🐝', subs:['Drohnenbrut schneiden','Bannwabe','Brutentnahme','Fangwabe']},
+    {key:'raummanagement', label:'Raum-Management', icon:'📦', subs:['Honigraum erweitert','Zarge aufgesetzt','Zarge entnommen','Absperrgitter','Flugling erstellt']},
+    {key:'varroa_medikamente', label:'Varroa Medikamente', icon:'💊', subs:['Oxalsäure','Ameisensäure','Thymol','Bayvarol','Apistan'], menge:true, mengeUnit:'ml'},
+    {key:'futtergabe', label:'Futtergabe', icon:'🍬', subs:['Zuckersirup','Futterteig','Honig'], menge:true, mengeUnit:'kg'},
+    {key:'umweiselung', label:'Umweiselung', icon:'👑', subs:[]},
+    {key:'varroa_diagnose', label:'Varroa-Diagnose', icon:'🔍', subs:[]},
+    {key:'sonstiges', label:'Sonstiges', icon:'📝', subs:[]}
+];
+
+// ============================================
+// STATE
+// ============================================
 var standorte = [];
 var voelker = [];
-var bewertungen = [];
-var editId = null;
-var activeTab = 'bewerten';
-var bewertungWerte = {};
+var bewertungen = []; // Legacy-Bewertungen (alte Tabelle)
+var durchsichten = []; // Neue Durchsichten
+var koeniginnen = {}; // Königinnen-Info pro volkId
+var activeTab = 'durchsicht';
+var openVolkDetail = null;
+var modalStep = 0;
+var editDurchsicht = null;
+var formData = {};
+var selectedVerlaufVolk = '';
 var collapsedStandorte = [];
 
 // ============================================
@@ -130,7 +208,8 @@ async function init() {
         sb.from('standorte').select('*').eq('user_id', currentUser.id),
         sb.from('voelker').select('*').eq('user_id', currentUser.id),
         sb.from('bewertungen').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false}),
-        sb.from('profiles').select('bewertung_collapsed').eq('id', currentUser.id).single()
+        sb.from('profiles').select('bewertung_collapsed').eq('id', currentUser.id).single(),
+        sb.from('durchsichten').select('*').eq('user_id', currentUser.id).order('datum', {ascending: false})
     ]);
     
     standorte = (results[0].data || []).map(function(r){
@@ -139,6 +218,8 @@ async function init() {
     voelker = (results[1].data || []).map(function(r){
         return {id:r.id, standortId:r.standort_id, name:r.name, status:r.status};
     });
+    
+    // Legacy-Bewertungen laden
     bewertungen = (results[2].data || []).map(function(r){
         return {
             id:r.id, volkId:r.volk_id, volkName:r.volk_name, standortName:r.standort_name, datum:r.datum,
@@ -148,9 +229,31 @@ async function init() {
         };
     });
     
-    // Einklapp-Zustand laden
     if (results[3].data && results[3].data.bewertung_collapsed) {
         collapsedStandorte = results[3].data.bewertung_collapsed;
+    }
+    
+    // Neue Durchsichten laden
+    durchsichten = (results[4].data || []).map(function(r){
+        return {
+            id: r.id,
+            volkId: r.volk_id,
+            datum: r.datum,
+            taetigkeiten: r.taetigkeiten || [],
+            kriterien: r.kriterien || {},
+            varroa: r.varroa || null,
+            notizen: r.notizen || '',
+            created: r.created_at
+        };
+    });
+    
+    // Königinnen-Info aus Völkern laden (aus voelker-Tabelle oder eigene Tabelle)
+    // Versuche koeniginnen-Daten zu laden
+    var kResult = await sb.from('voelker').select('id, koenigin_info').eq('user_id', currentUser.id);
+    if (kResult.data) {
+        kResult.data.forEach(function(r){
+            if (r.koenigin_info) koeniginnen[r.id] = r.koenigin_info;
+        });
     }
     
     document.getElementById('loadingOverlay').style.display = 'none';
@@ -165,89 +268,282 @@ function render() {
     var html = '<div class="container">';
     
     html += '<div class="tab-bar">';
-    html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="activeTab=\'bewerten\';render()">⭐ Bewerten</button>';
-    html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="activeTab=\'ranking\';render()">🏆 Ranking</button>';
-    html += '<button class="tab-btn '+(activeTab==='verlauf'?'active':'')+'" onclick="activeTab=\'verlauf\';render()">📈 Verlauf</button>';
+    html += '<button class="tab-btn '+(activeTab==='durchsicht'?'active':'')+'" onclick="switchTab(\'durchsicht\')">📋 Durchsicht</button>';
+    html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="switchTab(\'bewerten\')">⭐ Bewertung</button>';
+    html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="switchTab(\'ranking\')">🏆 Ranking</button>';
+    html += '<button class="tab-btn '+(activeTab==='historie'?'active':'')+'" onclick="switchTab(\'historie\')">📜 Historie</button>';
     html += '</div>';
     
-    if (activeTab === 'bewerten') html += renderBewerten();
+    if (activeTab === 'durchsicht') html += renderDurchsicht();
+    else if (activeTab === 'bewerten') html += renderBewerten();
     else if (activeTab === 'ranking') html += renderRanking();
-    else html += renderVerlauf();
+    else if (activeTab === 'historie') html += renderHistorie();
     
     html += '</div>';
     document.getElementById('app').innerHTML = html;
 }
 
+function switchTab(tab) {
+    activeTab = tab;
+    render();
+}
+
 // ============================================
-// TAB: BEWERTEN
+// TAB: DURCHSICHT
 // ============================================
-function renderBewerten() {
+function renderDurchsicht() {
     var html = '';
     
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">';
-    html += '<h2 style="font-size:1.1rem">Völker bewerten</h2>';
-    html += '<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neue Bewertung</button>';
+    html += '<h2 style="margin:0;font-size:1.1rem">📋 Durchsichtprotokoll</h2>';
+    html += '<button class="btn btn-primary btn-sm" onclick="openDurchsicht()">+ Neue Durchsicht</button>';
     html += '</div>';
     
-    // Nach Standort gruppiert
-    standorte.forEach(function(s){
+    standorte.forEach(function(s) {
         var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
-        if (sVoelker.length === 0) return;
-        
-        var isCollapsed = collapsedStandorte.indexOf(s.id) > -1;
-        var pfeil = isCollapsed ? '▶' : '▼';
+        if (!sVoelker.length) return;
         
         html += '<div class="card">';
-        html += '<h3 style="margin-bottom:.75rem;cursor:pointer;user-select:none;display:flex;align-items:center;gap:.5rem" onclick="toggleStandort(\''+s.id+'\')">';
-        html += '<span style="font-size:.8rem;color:#7A6652;width:1rem;text-align:center">'+pfeil+'</span>';
-        html += '📍 '+s.name+' <span style="font-size:.75rem;color:#7A6652;font-weight:400">('+sVoelker.length+' Völker)</span>';
+        html += '<h3 style="margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">';
+        html += '📍 ' + s.name + ' <span style="font-size:.75rem;color:#7A6652;font-weight:400">(' + sVoelker.length + ' Völker)</span>';
         html += '</h3>';
         
-        if (!isCollapsed) {
-        sVoelker.forEach(function(v){
-            // Letzte Bewertung für dieses Volk
-            var letzte = bewertungen.find(function(b){return b.volkId===v.id;});
-            var schnitt = letzte ? durchschnitt(letzte) : null;
-            var schnittBadge = schnitt ? getBadge(schnitt) : '';
+        sVoelker.forEach(function(v) {
+            var volkDs = getDurchsichtenFuerVolk(v.id);
+            var letzte = volkDs.length ? volkDs[0] : null;
+            var kInfo = koeniginnen[v.id];
+            var isOpen = openVolkDetail === v.id;
             
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid #FFFBF0">';
-            html += '<div>';
-            html += '<div style="font-weight:600">🐝 '+v.name+'</div>';
-            if (letzte) {
-                var datum = new Date(letzte.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
-                html += '<div style="font-size:.75rem;color:#7A6652">Letzte: '+datum+' · '+renderMiniStars(schnitt)+'</div>';
-            } else {
-                html += '<div style="font-size:.75rem;color:#94a3b8">Noch nicht bewertet</div>';
+            html += '<div style="border-bottom:1px solid #f5f0eb">';
+            html += '<div class="volk-row-clickable" onclick="toggleVolkDetail(\'' + v.id + '\')">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+            html += '<div style="flex:1">';
+            html += '<div style="font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.35rem">🐝 ' + v.name;
+            html += ' <span style="font-size:.7rem;color:#7A6652;transform:rotate(' + (isOpen?'90':'0') + 'deg);transition:transform .2s;display:inline-block">▶</span>';
+            html += '</div>';
+            
+            if (kInfo) {
+                var farbeIcon = kInfo.markiert ? getColorDot(kInfo.farbe) : '';
+                html += '<div style="font-size:.72rem;color:#7A6652;margin-top:.15rem">';
+                html += '👑 ' + (kInfo.jahrgang || '–') + ' · ' + (kInfo.begattung||'–');
+                if (farbeIcon) html += ' · ' + farbeIcon;
+                html += '</div>';
             }
+            
+            if (letzte) {
+                var datum = fmtDate(letzte.datum);
+                var schnitt = durchschnittKriterien(letzte.kriterien);
+                var tags = (letzte.taetigkeiten||[]).map(function(t){
+                    var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+                    return def ? def.icon : '📋';
+                }).join(' ');
+                html += '<div style="font-size:.75rem;color:#7A6652;margin-top:.2rem">';
+                html += 'Letzte: ' + datum + ' · ' + renderMiniStars(schnitt) + ' ' + tags;
+                if (letzte.varroa && letzte.varroa.milben) {
+                    var mProTag = letzte.varroa.tage > 0 ? (letzte.varroa.milben / letzte.varroa.tage).toFixed(1) : '–';
+                    html += ' · 🔬 ' + mProTag + ' M/Tag';
+                }
+                html += '</div>';
+            } else {
+                // Fallback: alte Bewertung anzeigen
+                var alteBew = bewertungen.find(function(b){return b.volkId===v.id;});
+                if (alteBew) {
+                    html += '<div style="font-size:.75rem;color:#7A6652;margin-top:.2rem">Letzte Bewertung: ' + fmtDate(alteBew.datum) + '</div>';
+                } else {
+                    html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.2rem">Noch keine Durchsicht</div>';
+                }
+            }
+            
             html += '</div>';
-            html += '<div style="display:flex;gap:.25rem">';
-            html += '<button class="btn btn-primary btn-xs" onclick="openModal(null,\''+v.id+'\')">⭐</button>';
-            if (letzte) html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+letzte.id+'\')">✏️</button>';
+            html += '<div style="display:flex;gap:.25rem;flex-shrink:0;margin-left:.5rem" onclick="event.stopPropagation()">';
+            html += '<button class="btn btn-primary btn-xs" onclick="openDurchsicht(null,\'' + v.id + '\')">📋</button>';
+            if (letzte) html += '<button class="btn btn-blue btn-xs" onclick="openDurchsicht(\'' + letzte.id + '\')">✏️</button>';
             html += '</div>';
+            html += '</div></div>';
+            
+            // Volk Detail View
+            if (isOpen) {
+                html += renderVolkDetail(v, volkDs, kInfo);
+            }
+            
             html += '</div>';
         });
-        }
         
         html += '</div>';
     });
     
-    // Letzte Bewertungen
-    if (bewertungen.length > 0) {
+    // Letzte Durchsichten
+    if (durchsichten.length) {
+        var sorted = durchsichten.slice().sort(function(a,b){return new Date(b.datum)-new Date(a.datum);});
         html += '<div class="card">';
-        html += '<h3 style="margin-bottom:.75rem">📋 Letzte Bewertungen</h3>';
-        bewertungen.slice(0,10).forEach(function(b){
-            var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
-            var schnitt = durchschnitt(b);
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
-            html += '<div>';
-            html += '<div style="font-weight:500;font-size:.9rem">🐝 '+b.volkName+' '+renderMiniStars(schnitt)+'</div>';
-            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+(b.standortName?' · 📍 '+b.standortName:'')+'</div>';
-            if (b.notizen) html += '<div style="font-size:.75rem;color:#94a3b8">'+b.notizen+'</div>';
+        html += '<h3 style="margin-bottom:.75rem">📋 Letzte Durchsichten</h3>';
+        sorted.slice(0,8).forEach(function(d) {
+            var v = voelker.find(function(x){return x.id===d.volkId;});
+            var tags = (d.taetigkeiten||[]).map(function(t){
+                var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+                return '<span class="historie-tag">' + (def?def.icon+' '+def.label:'📋') + '</span>';
+            }).join('');
+            
+            html += '<div class="historie-entry">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+            html += '<div><div style="font-weight:500;font-size:.9rem">🐝 ' + (v?v.name:'–') + '</div>';
+            html += '<div style="font-size:.72rem;color:#7A6652">' + fmtDate(d.datum) + '</div>';
+            html += '<div class="historie-tags">' + tags + '</div>';
+            if (d.notizen) html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.25rem">' + d.notizen + '</div>';
             html += '</div>';
             html += '<div style="display:flex;gap:.25rem">';
-            html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+b.id+'\')">✏️</button>';
-            html += '<button class="btn btn-danger btn-xs" onclick="deleteBewertung(\''+b.id+'\')">🗑️</button>';
+            html += '<button class="btn btn-blue btn-xs" onclick="openDurchsicht(\'' + d.id + '\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteDurchsicht(\'' + d.id + '\')">🗑️</button>';
+            html += '</div></div></div>';
+        });
+        html += '</div>';
+    }
+    
+    return html;
+}
+
+// ============================================
+// VOLK DETAIL (inline aufklappbar)
+// ============================================
+function toggleVolkDetail(volkId) {
+    openVolkDetail = openVolkDetail === volkId ? null : volkId;
+    render();
+}
+
+function renderVolkDetail(v, volkDs, kInfo) {
+    var html = '<div class="volk-detail">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">';
+    html += '<span style="font-size:.85rem;font-weight:600;color:#92400E">📖 Stockkarte: ' + v.name + '</span>';
+    html += '</div>';
+    
+    // Königinnen-Info
+    if (kInfo) {
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem .75rem;font-size:.78rem;margin-bottom:.75rem;padding:.6rem;background:#fff;border-radius:.5rem">';
+        html += '<div><span style="color:#7A6652">👑 Begattung:</span> <strong>' + (kInfo.begattung||'–') + '</strong></div>';
+        html += '<div><span style="color:#7A6652">Herkunft:</span> <strong>' + formatHerkunft(kInfo.herkunft) + '</strong></div>';
+        html += '<div><span style="color:#7A6652">Jahrgang:</span> <strong>' + (kInfo.jahrgang||'–') + '</strong></div>';
+        html += '<div><span style="color:#7A6652">Markiert:</span> <strong>' + (kInfo.markiert?'Ja '+getColorDot(kInfo.farbe):'Nein') + '</strong></div>';
+        if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
+        if (kInfo.nummer) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Nummer:</span> <strong>' + kInfo.nummer + '</strong></div>';
+        html += '</div>';
+    }
+    
+    // Mini-Verlaufschart
+    var sorted = volkDs.slice().sort(function(a,b){return new Date(a.datum)-new Date(b.datum);});
+    if (sorted.length > 1) {
+        html += '<div style="margin-bottom:.75rem;padding:.6rem;background:#fff;border-radius:.5rem">';
+        html += '<div style="font-size:.75rem;font-weight:600;color:#7A6652;margin-bottom:.35rem">📈 Verlauf</div>';
+        var maxH = 60;
+        html += '<div style="display:flex;align-items:end;gap:4px;height:' + maxH + 'px">';
+        sorted.forEach(function(d) {
+            var schnitt = durchschnittKriterien(d.kriterien);
+            var h = Math.max(4, (schnitt/5)*maxH);
+            var c = schnitt>=4?'#10b981':(schnitt>=3?'#F5A623':'#ef4444');
+            html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">';
+            html += '<div style="font-size:.55rem;font-weight:600;color:#1C1410">' + schnitt.toFixed(1) + '</div>';
+            html += '<div style="width:100%;height:' + h + 'px;background:' + c + ';border-radius:3px 3px 0 0"></div>';
+            html += '<div style="font-size:.5rem;color:#7A6652">' + fmtDateShort(d.datum) + '</div>';
+            html += '</div>';
+        });
+        html += '</div></div>';
+    }
+    
+    // Alle Durchsichten
+    var absteigend = volkDs.slice().sort(function(a,b){return new Date(b.datum)-new Date(a.datum);});
+    if (!absteigend.length) {
+        html += '<div style="text-align:center;padding:.75rem;color:#94a3b8;font-size:.85rem">Noch keine Durchsichten vorhanden.</div>';
+    } else {
+        html += '<div style="font-size:.75rem;font-weight:600;color:#7A6652;margin-bottom:.35rem">📋 Durchsichten (' + absteigend.length + ')</div>';
+        absteigend.forEach(function(d) {
+            var schnitt = durchschnittKriterien(d.kriterien);
+            var tags = (d.taetigkeiten||[]).map(function(t) {
+                var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+                var label = def ? def.icon + ' ' + def.label : t.key;
+                if (t.subs && t.subs.length) label += ' (' + t.subs.join(', ') + ')';
+                if (t.menge) label += ' ' + t.menge + (def&&def.mengeUnit?' '+def.mengeUnit:'');
+                return '<span class="historie-tag">' + label + '</span>';
+            }).join('');
+            
+            html += '<div style="padding:.5rem;background:#fff;border-radius:.5rem;margin-bottom:.35rem">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+            html += '<div style="flex:1">';
+            html += '<div style="font-weight:600;font-size:.82rem">' + fmtDate(d.datum) + ' ' + renderMiniStars(schnitt) + ' <span style="color:#7A6652;font-size:.75rem">(' + schnitt.toFixed(1) + ')</span></div>';
+            html += '<div class="historie-tags" style="margin-top:.2rem">' + tags + '</div>';
+            if (d.varroa && d.varroa.milben) {
+                var mProTag = d.varroa.tage > 0 ? (d.varroa.milben / d.varroa.tage).toFixed(1) : '–';
+                var vClass = mProTag <= 3 ? 'badge-green' : (mProTag <= 10 ? 'badge-yellow' : 'badge-red');
+                html += '<div style="margin-top:.2rem"><span class="badge ' + vClass + '" style="font-size:.6rem">🔬 ' + mProTag + ' M/Tag (' + d.varroa.methode + ')</span></div>';
+            }
+            if (d.notizen) html += '<div style="font-size:.72rem;color:#94a3b8;margin-top:.2rem">' + d.notizen + '</div>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:.2rem;flex-shrink:0;margin-left:.35rem" onclick="event.stopPropagation()">';
+            html += '<button class="btn btn-blue btn-xs" style="padding:.3rem .5rem;font-size:.7rem" onclick="openDurchsicht(\'' + d.id + '\')">✏️</button>';
+            html += '<button class="btn btn-danger btn-xs" style="padding:.3rem .5rem;font-size:.7rem" onclick="deleteDurchsicht(\'' + d.id + '\')">🗑️</button>';
+            html += '</div></div></div>';
+        });
+    }
+    
+    html += '<button class="btn btn-primary btn-sm" style="width:100%;margin-top:.5rem" onclick="event.stopPropagation();openDurchsicht(null,\'' + v.id + '\')">+ Neue Durchsicht</button>';
+    html += '</div>';
+    return html;
+}
+
+// ============================================
+// TAB: BEWERTUNG (Zusammenfassung)
+// ============================================
+function renderBewerten() {
+    var html = '';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">';
+    html += '<h2 style="margin:0;font-size:1.1rem">⭐ Völker bewerten</h2>';
+    html += '<button class="btn btn-primary btn-sm" onclick="openDurchsicht()">+ Neue Durchsicht</button>';
+    html += '</div>';
+    
+    html += '<div class="card" style="background:#dbeafe;border:1px solid #93c5fd;font-size:.8rem;color:#1e40af;padding:.75rem">';
+    html += 'ℹ️ Bewertungen werden jetzt als Teil der Durchsicht gespeichert. Alte Bewertungen bleiben erhalten.';
+    html += '</div>';
+    
+    standorte.forEach(function(s) {
+        var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
+        if (!sVoelker.length) return;
+        
+        html += '<div class="card">';
+        html += '<h3>📍 ' + s.name + '</h3>';
+        
+        sVoelker.forEach(function(v) {
+            var volkDs = getDurchsichtenFuerVolk(v.id);
+            var letzte = volkDs.length ? volkDs[0] : null;
+            var schnitt = letzte ? durchschnittKriterien(letzte.kriterien) : null;
+            
+            html += '<div style="padding:.5rem 0;border-bottom:1px solid #f5f0eb">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+            html += '<div>';
+            html += '<div style="font-weight:600">🐝 ' + v.name + '</div>';
+            if (schnitt !== null) {
+                html += '<div style="font-size:.75rem;color:#7A6652">' + fmtDate(letzte.datum) + ' · ' + renderMiniStars(schnitt) + ' <span style="font-weight:600">' + schnitt.toFixed(1) + '</span></div>';
+            } else {
+                html += '<div style="font-size:.75rem;color:#94a3b8">Noch nicht bewertet</div>';
+            }
+            html += '</div>';
+            html += getBadgeFromSchnitt(schnitt);
             html += '</div></div>';
+        });
+        html += '</div>';
+    });
+    
+    // Legacy-Bewertungen
+    if (bewertungen.length > 0) {
+        html += '<div class="card">';
+        html += '<h3 style="margin-bottom:.75rem">📋 Alte Bewertungen (Legacy)</h3>';
+        bewertungen.slice(0,10).forEach(function(b) {
+            var datum = fmtDate(b.datum);
+            var schnitt = durchschnittAlt(b);
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #f5f0eb">';
+            html += '<div><div style="font-weight:500;font-size:.9rem">🐝 ' + b.volkName + ' ' + renderMiniStars(schnitt) + '</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">' + datum + (b.standortName?' · 📍 '+b.standortName:'') + '</div>';
+            if (b.notizen) html += '<div style="font-size:.75rem;color:#94a3b8">' + b.notizen + '</div>';
+            html += '</div>';
+            html += '<button class="btn btn-danger btn-xs" onclick="deleteLegacyBewertung(\'' + b.id + '\')">🗑️</button>';
+            html += '</div>';
         });
         html += '</div>';
     }
@@ -259,350 +555,632 @@ function renderBewerten() {
 // TAB: RANKING
 // ============================================
 function renderRanking() {
-    var html = '';
-    
-    // Für jedes Volk die letzte Bewertung nehmen und ranken
     var volkRanking = [];
-    voelker.forEach(function(v){
-        var bews = bewertungen.filter(function(b){return b.volkId===v.id;});
-        if (bews.length === 0) return;
-        var letzte = bews[0]; // bereits nach Datum sortiert
-        var schnitt = durchschnitt(letzte);
-        var sName = '';
+    voelker.forEach(function(v) {
+        var volkDs = getDurchsichtenFuerVolk(v.id);
+        if (!volkDs.length) return;
+        var letzte = volkDs[0];
+        var schnitt = durchschnittKriterien(letzte.kriterien);
         var s = standorte.find(function(x){return x.id===v.standortId;});
-        if (s) sName = s.name;
-        volkRanking.push({volk:v, bewertung:letzte, schnitt:schnitt, standortName:sName});
+        volkRanking.push({volk:v, durchsicht:letzte, schnitt:schnitt, standortName:s?s.name:''});
     });
+    volkRanking.sort(function(a,b){return b.schnitt-a.schnitt;});
     
-    volkRanking.sort(function(a,b){return b.schnitt - a.schnitt;});
+    var html = '<div class="card">';
+    html += '<h3 style="margin-bottom:1rem;text-align:center">🏆 Zucht-Ranking</h3>';
     
-    if (volkRanking.length === 0) {
-        html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">';
-        html += '<div style="font-size:3rem;margin-bottom:.5rem">🏆</div>';
-        html += '<p>Noch keine Bewertungen vorhanden.</p>';
-        html += '<button class="btn btn-primary" style="margin-top:1rem" onclick="activeTab=\'bewerten\';render()">Erste Bewertung erstellen</button>';
+    if (!volkRanking.length) {
+        html += '<div style="text-align:center;padding:2rem;color:#7A6652"><div style="font-size:3rem;margin-bottom:.5rem">🏆</div>';
+        html += '<p>Noch keine Durchsichten vorhanden.</p>';
+        html += '<button class="btn btn-primary" style="margin-top:1rem" onclick="switchTab(\'durchsicht\')">Erste Durchsicht erstellen</button></div>';
         html += '</div>';
         return html;
     }
     
-    // Top 3
-    html += '<div class="card">';
-    html += '<h3 style="margin-bottom:1rem;text-align:center">🏆 Zucht-Ranking</h3>';
-    
-    volkRanking.forEach(function(item, i){
-        var medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i+1)+'.'));
-        var b = item.bewertung;
-        var barWidth = (item.schnitt / 5 * 100);
-        var barColor = item.schnitt >= 4 ? '#10b981' : (item.schnitt >= 3 ? '#F5A623' : (item.schnitt >= 2 ? '#f59e0b' : '#ef4444'));
+    volkRanking.forEach(function(item, i) {
+        var medal = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)+'.'));
+        var barColor = item.schnitt>=4?'#10b981':(item.schnitt>=3?'#F5A623':'#ef4444');
         
-        html += '<div style="padding:.75rem 0;border-bottom:1px solid #FFFBF0">';
+        html += '<div style="padding:.75rem 0;border-bottom:1px solid #f5f0eb">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.375rem">';
         html += '<div style="display:flex;align-items:center;gap:.5rem">';
-        html += '<span style="font-size:1.25rem;width:2rem;text-align:center">'+medal+'</span>';
-        html += '<div><div style="font-weight:600">'+item.volk.name+'</div>';
-        html += '<div style="font-size:.75rem;color:#7A6652">📍 '+item.standortName+'</div></div>';
+        html += '<span style="font-size:1.25rem;width:2rem;text-align:center">' + medal + '</span>';
+        html += '<div><div style="font-weight:600">' + item.volk.name + '</div>';
+        html += '<div style="font-size:.75rem;color:#7A6652">📍 ' + item.standortName + '</div></div>';
         html += '</div>';
-        html += '<div style="font-size:1.25rem;font-weight:bold;color:'+barColor+'">'+item.schnitt.toFixed(1)+'</div>';
+        html += '<div style="font-size:1.25rem;font-weight:bold;color:' + barColor + '">' + item.schnitt.toFixed(1) + '</div>';
         html += '</div>';
         
-        // Mini-Balken pro Kriterium
         html += '<div style="display:flex;gap:3px;margin-left:2.5rem">';
-        KRITERIEN.forEach(function(k){
-            var val = b[k.key] || 3;
+        KRITERIEN.forEach(function(k) {
+            var val = (item.durchsicht.kriterien[k.key]) || 3;
             var w = (val/5*100);
-            var c = val >= 4 ? '#10b981' : (val >= 3 ? '#F5A623' : '#ef4444');
-            html += '<div style="flex:1;height:6px;background:#E8DFD4;border-radius:3px" title="'+k.label+': '+val+'/5"><div style="height:100%;border-radius:3px;background:'+c+';width:'+w+'%"></div></div>';
+            var c = val>=4?'#10b981':(val>=3?'#F5A623':'#ef4444');
+            html += '<div style="flex:1;height:6px;background:#E8DFD4;border-radius:3px" title="' + k.label + ': ' + val + '/5"><div style="height:100%;border-radius:3px;background:' + c + ';width:' + w + '%"></div></div>';
         });
         html += '</div>';
         
-        // Stärken/Schwächen
-        var staerken = KRITERIEN.filter(function(k){return (b[k.key]||3) >= 4;}).map(function(k){return k.label.split(' ')[0];});
-        var schwaechen = KRITERIEN.filter(function(k){return (b[k.key]||3) <= 2;}).map(function(k){return k.label.split(' ')[0];});
+        var staerken = KRITERIEN.filter(function(k){return (item.durchsicht.kriterien[k.key]||3)>=4;}).map(function(k){return k.label.split(' ')[0];});
+        var schwaechen = KRITERIEN.filter(function(k){return (item.durchsicht.kriterien[k.key]||3)<=2;}).map(function(k){return k.label.split(' ')[0];});
         if (staerken.length || schwaechen.length) {
             html += '<div style="margin-left:2.5rem;margin-top:.25rem;font-size:.7rem">';
-            if (staerken.length) html += '<span style="color:#10b981">▲ '+staerken.join(' ')+'</span> ';
-            if (schwaechen.length) html += '<span style="color:#ef4444">▼ '+schwaechen.join(' ')+'</span>';
+            if (staerken.length) html += '<span style="color:#10b981">▲ ' + staerken.join(' ') + '</span> ';
+            if (schwaechen.length) html += '<span style="color:#ef4444">▼ ' + schwaechen.join(' ') + '</span>';
             html += '</div>';
         }
-        
         html += '</div>';
     });
-    
     html += '</div>';
     
-    // Empfehlung
     if (volkRanking.length >= 2) {
         var beste = volkRanking[0];
         html += '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">';
         html += '<h3 style="margin-bottom:.5rem">👑 Zuchtempfehlung</h3>';
-        html += '<p style="font-size:.9rem;color:#7A6652"><strong>'+beste.volk.name+'</strong> (📍 '+beste.standortName+') hat mit <strong>'+beste.schnitt.toFixed(1)+'/5.0</strong> die beste Gesamtbewertung. ';
-        var topKrit = KRITERIEN.slice().sort(function(a,b){return (beste.bewertung[b.key]||3)-(beste.bewertung[a.key]||3);}).slice(0,3);
-        html += 'Besonders stark bei: '+topKrit.map(function(k){return k.label;}).join(', ')+'.';
-        html += '</p></div>';
+        html += '<p style="font-size:.9rem;color:#7A6652"><strong>' + beste.volk.name + '</strong> (📍 ' + beste.standortName + ') hat mit <strong>' + beste.schnitt.toFixed(1) + '/5.0</strong> die beste Gesamtbewertung.</p>';
+        html += '</div>';
     }
     
     return html;
 }
 
 // ============================================
-// TAB: VERLAUF
+// TAB: HISTORIE
 // ============================================
-function renderVerlauf() {
+function renderHistorie() {
     var html = '';
     
-    // Volk-Auswahl
     html += '<div class="card">';
-    html += '<h3 style="margin-bottom:.75rem">📈 Bewertungsverlauf</h3>';
-    html += '<select class="input" onchange="selectedVerlaufVolk=this.value;render()" id="verlaufVolk">';
+    html += '<h3 style="margin-bottom:.75rem">📜 Durchsicht-Historie</h3>';
+    html += '<select class="input" onchange="selectedVerlaufVolk=this.value;render()">';
     html += '<option value="">-- Volk wählen --</option>';
-    voelker.forEach(function(v){
+    voelker.forEach(function(v) {
         var s = standorte.find(function(x){return x.id===v.standortId;});
-        var sName = s ? s.name : '';
-        var count = bewertungen.filter(function(b){return b.volkId===v.id;}).length;
-        if (count > 0) html += '<option value="'+v.id+'"'+(selectedVerlaufVolk===v.id?' selected':'')+'>'+v.name+' ('+sName+') – '+count+' Bewertungen</option>';
+        var count = durchsichten.filter(function(d){return d.volkId===v.id;}).length;
+        html += '<option value="' + v.id + '"' + (selectedVerlaufVolk===v.id?' selected':'') + '>' + v.name + ' (' + (s?s.name:'') + ') – ' + count + ' Einträge</option>';
     });
-    html += '</select>';
-    html += '</div>';
+    html += '</select></div>';
     
-    if (typeof selectedVerlaufVolk !== 'undefined' && selectedVerlaufVolk) {
-        var bews = bewertungen.filter(function(b){return b.volkId===selectedVerlaufVolk;}).reverse();
+    if (selectedVerlaufVolk) {
+        var kInfo = koeniginnen[selectedVerlaufVolk];
+        var volkDs = getDurchsichtenFuerVolk(selectedVerlaufVolk);
         
-        if (bews.length > 0) {
-            // Durchschnitt über Zeit
+        // Königin-Karte
+        if (kInfo) {
+            html += '<div class="card koenigin-section">';
+            html += '<h4>👑 Königinnen-Info</h4>';
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.85rem">';
+            html += '<div><span style="color:#7A6652">Begattung:</span> <strong>' + (kInfo.begattung||'–') + '</strong></div>';
+            html += '<div><span style="color:#7A6652">Herkunft:</span> <strong>' + formatHerkunft(kInfo.herkunft) + '</strong></div>';
+            html += '<div><span style="color:#7A6652">Jahrgang:</span> <strong>' + (kInfo.jahrgang||'–') + '</strong></div>';
+            html += '<div><span style="color:#7A6652">Markiert:</span> <strong>' + (kInfo.markiert?'Ja '+getColorDot(kInfo.farbe):'Nein') + '</strong></div>';
+            if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
+            if (kInfo.nummer) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Nummer:</span> <strong>' + kInfo.nummer + '</strong></div>';
+            html += '</div></div>';
+        }
+        
+        // Verlaufsgrafik
+        if (volkDs.length > 0) {
+            var bews = volkDs.slice().reverse();
             html += '<div class="card">';
-            html += '<h3 style="margin-bottom:.75rem">Gesamtentwicklung</h3>';
+            html += '<h3 style="margin-bottom:.75rem">📈 Bewertungsverlauf</h3>';
             var maxH = 120;
-            html += '<div style="display:flex;align-items:end;gap:8px;height:'+maxH+'px;padding:0 .5rem">';
-            bews.forEach(function(b){
-                var schnitt = durchschnitt(b);
+            html += '<div style="display:flex;align-items:end;gap:8px;height:' + maxH + 'px;padding:0 .5rem">';
+            bews.forEach(function(d) {
+                var schnitt = durchschnittKriterien(d.kriterien);
                 var h = Math.max(8, (schnitt/5)*maxH);
-                var c = schnitt >= 4 ? '#10b981' : (schnitt >= 3 ? '#F5A623' : '#ef4444');
-                var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
+                var c = schnitt>=4?'#10b981':(schnitt>=3?'#F5A623':'#ef4444');
                 html += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">';
-                html += '<div style="font-size:.65rem;font-weight:600;color:#1C1410">'+schnitt.toFixed(1)+'</div>';
-                html += '<div style="width:100%;height:'+h+'px;background:'+c+';border-radius:4px 4px 0 0"></div>';
-                html += '<div style="font-size:.6rem;color:#7A6652">'+datum+'</div>';
+                html += '<div style="font-size:.65rem;font-weight:600;color:#1C1410">' + schnitt.toFixed(1) + '</div>';
+                html += '<div style="width:100%;height:' + h + 'px;background:' + c + ';border-radius:4px 4px 0 0"></div>';
+                html += '<div style="font-size:.6rem;color:#7A6652">' + fmtDateShort(d.datum) + '</div>';
                 html += '</div>';
             });
             html += '</div></div>';
             
-            // Pro Kriterium
+            // Kriterien-Übersicht
             html += '<div class="card">';
             html += '<h3 style="margin-bottom:.75rem">Nach Kriterium</h3>';
-            var letzte = bews[bews.length-1];
-            var erste = bews[0];
-            KRITERIEN.forEach(function(k){
-                var val = letzte[k.key] || 3;
-                var altVal = erste[k.key] || 3;
+            var letzte = volkDs[0];
+            var erste = volkDs[volkDs.length-1];
+            KRITERIEN.forEach(function(k) {
+                var val = letzte.kriterien[k.key] || 3;
+                var altVal = erste.kriterien[k.key] || 3;
                 var diff = val - altVal;
-                var trend = diff > 0 ? '<span style="color:#10b981">▲+'+diff+'</span>' : (diff < 0 ? '<span style="color:#ef4444">▼'+diff+'</span>' : '<span style="color:#94a3b8">→</span>');
+                var trend = volkDs.length > 1 ? (diff > 0 ? '<span style="color:#10b981">▲+'+diff+'</span>' : (diff < 0 ? '<span style="color:#ef4444">▼'+diff+'</span>' : '<span style="color:#94a3b8">→</span>')) : '';
                 var barColor = val >= 4 ? '#10b981' : (val >= 3 ? '#F5A623' : '#ef4444');
                 
                 html += '<div style="margin-bottom:.75rem">';
                 html += '<div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.25rem">';
-                html += '<span>'+k.label+'</span>';
-                html += '<span><strong>'+val+'/5</strong> '+(bews.length>1?trend:'')+'</span>';
+                html += '<span>' + k.label + '</span>';
+                html += '<span><strong>' + val + '/5</strong> ' + trend + '</span>';
                 html += '</div>';
-                html += '<div style="background:#E8DFD4;height:.5rem;border-radius:.25rem"><div style="background:'+barColor+';height:100%;border-radius:.25rem;width:'+(val/5*100)+'%;transition:width .3s"></div></div>';
+                html += '<div style="background:#E8DFD4;height:.5rem;border-radius:.25rem"><div style="background:' + barColor + ';height:100%;border-radius:.25rem;width:' + (val/5*100) + '%;transition:width .3s"></div></div>';
                 html += '</div>';
             });
             html += '</div>';
             
-            // Alle Bewertungen
+            // Alle Durchsichten
             html += '<div class="card">';
-            html += '<h3 style="margin-bottom:.75rem">Alle Bewertungen</h3>';
-            bews.reverse().forEach(function(b){
-                var datum = new Date(b.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
-                var schnitt = durchschnitt(b);
-                html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
-                html += '<div><div style="font-weight:500;font-size:.9rem">'+datum+' · '+renderMiniStars(schnitt)+' <span style="font-size:.8rem;color:#7A6652">('+schnitt.toFixed(1)+')</span></div>';
-                if (b.notizen) html += '<div style="font-size:.75rem;color:#94a3b8">'+b.notizen+'</div>';
+            html += '<h3 style="margin-bottom:.75rem">Alle Durchsichten</h3>';
+            volkDs.forEach(function(d) {
+                var schnitt = durchschnittKriterien(d.kriterien);
+                var tags = (d.taetigkeiten||[]).map(function(t) {
+                    var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+                    var label = def ? def.icon + ' ' + def.label : t.key;
+                    if (t.subs && t.subs.length) label += ' (' + t.subs.join(', ') + ')';
+                    if (t.menge) label += ' – ' + t.menge + (def&&def.mengeUnit?' '+def.mengeUnit:'');
+                    return '<span class="historie-tag">' + label + '</span>';
+                }).join('');
+                
+                html += '<div class="historie-entry">';
+                html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+                html += '<div style="flex:1">';
+                html += '<div style="font-weight:600;font-size:.9rem">' + fmtDate(d.datum) + ' · ' + renderMiniStars(schnitt) + ' (' + schnitt.toFixed(1) + ')</div>';
+                html += '<div class="historie-tags">' + tags + '</div>';
+                if (d.varroa && d.varroa.milben) {
+                    var mProTag = d.varroa.tage > 0 ? (d.varroa.milben / d.varroa.tage).toFixed(1) : '–';
+                    var vClass = mProTag <= 3 ? 'badge-green' : (mProTag <= 10 ? 'badge-yellow' : 'badge-red');
+                    html += '<div style="margin-top:.25rem"><span class="badge ' + vClass + '">🔬 ' + mProTag + ' Milben/Tag (' + d.varroa.methode + ')</span></div>';
+                }
+                if (d.notizen) html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.25rem">' + d.notizen + '</div>';
                 html += '</div>';
                 html += '<div style="display:flex;gap:.25rem">';
-                html += '<button class="btn btn-blue btn-xs" onclick="openModal(\''+b.id+'\')">✏️</button>';
-                html += '<button class="btn btn-danger btn-xs" onclick="deleteBewertung(\''+b.id+'\')">🗑️</button>';
-                html += '</div></div>';
+                html += '<button class="btn btn-blue btn-xs" onclick="openDurchsicht(\'' + d.id + '\')">✏️</button>';
+                html += '<button class="btn btn-danger btn-xs" onclick="deleteDurchsicht(\'' + d.id + '\')">🗑️</button>';
+                html += '</div></div></div>';
             });
             html += '</div>';
         }
     } else {
-        html += '<div class="card" style="text-align:center;padding:1.5rem;color:#7A6652">';
-        html += '<p>Wähle ein Volk um den Bewertungsverlauf zu sehen.</p></div>';
+        html += '<div class="card" style="text-align:center;padding:1.5rem;color:#7A6652"><p>Wähle ein Volk um die Historie zu sehen.</p></div>';
     }
     
     return html;
 }
 
-var selectedVerlaufVolk = '';
-
 // ============================================
-// HELPERS
+// DURCHSICHT MODAL (4-Schritte-Wizard)
 // ============================================
-function durchschnitt(b) {
-    var sum = 0;
-    KRITERIEN.forEach(function(k){ sum += (b[k.key] || 3); });
-    return sum / KRITERIEN.length;
-}
-
-function getBadge(schnitt) {
-    if (schnitt >= 4) return '<span class="badge badge-green">Sehr gut</span>';
-    if (schnitt >= 3) return '<span class="badge badge-yellow">Gut</span>';
-    return '<span class="badge badge-red">Schwach</span>';
-}
-
-function renderMiniStars(schnitt) {
-    var full = Math.round(schnitt);
-    var html = '';
-    for (var i = 1; i <= 5; i++) {
-        html += '<span style="color:'+(i<=full?'#F5A623':'#E8DFD4')+';font-size:.85rem">★</span>';
-    }
-    return html;
-}
-
-// ============================================
-// MODAL
-// ============================================
-function openModal(id, volkId) {
-    editId = id || null;
+function openDurchsicht(id, volkId) {
+    editDurchsicht = id || null;
+    modalStep = 0;
     
-    // Volk-Dropdown füllen
-    var sel = document.getElementById('bewVolk');
-    sel.innerHTML = '<option value="">-- Volk wählen --</option>';
-    standorte.forEach(function(s){
-        var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
-        if (sVoelker.length === 0) return;
-        var group = document.createElement('optgroup');
-        group.label = '📍 '+s.name;
-        sVoelker.forEach(function(v){
-            var opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = v.name;
-            group.appendChild(opt);
-        });
-        sel.appendChild(group);
-    });
-    
-    // Defaults
-    document.getElementById('bewDatum').value = new Date().toISOString().slice(0,10);
-    document.getElementById('bewNotizen').value = '';
-    bewertungWerte = {};
-    KRITERIEN.forEach(function(k){ bewertungWerte[k.key] = 3; });
-    document.getElementById('bewertungModalTitle').textContent = '⭐ Volk bewerten';
-    
-    if (volkId) {
-        sel.value = volkId;
-    }
+    formData = {
+        volkId: volkId || '',
+        datum: new Date().toISOString().slice(0,10),
+        taetigkeiten: [],
+        kriterien: {},
+        varroa: {milben:'', tage:'1', methode:'Puderzucker'},
+        koenigin: {begattung:'', herkunft:'', belegstelle:'', nummer:'', markiert:false, farbe:'', jahrgang:new Date().getFullYear()},
+        notizen: ''
+    };
+    KRITERIEN.forEach(function(k){ formData.kriterien[k.key] = 3; });
     
     if (id) {
-        var b = bewertungen.find(function(x){return x.id===id;});
-        if (b) {
-            document.getElementById('bewertungModalTitle').textContent = '✏️ Bewertung bearbeiten';
-            sel.value = b.volkId;
-            document.getElementById('bewDatum').value = b.datum;
-            document.getElementById('bewNotizen').value = b.notizen;
-            KRITERIEN.forEach(function(k){ bewertungWerte[k.key] = b[k.key] || 3; });
+        var d = durchsichten.find(function(x){return x.id===id;});
+        if (d) {
+            formData.volkId = d.volkId;
+            formData.datum = d.datum;
+            formData.taetigkeiten = JSON.parse(JSON.stringify(d.taetigkeiten || []));
+            formData.kriterien = Object.assign({}, d.kriterien);
+            KRITERIEN.forEach(function(k){ if(!formData.kriterien[k.key]) formData.kriterien[k.key] = 3; });
+            if (d.varroa) formData.varroa = Object.assign({}, d.varroa);
+            formData.notizen = d.notizen || '';
         }
+        document.getElementById('modalTitle').textContent = '✏️ Durchsicht bearbeiten';
+    } else {
+        document.getElementById('modalTitle').textContent = '📋 Neue Durchsicht';
     }
     
-    renderKriterien();
-    document.getElementById('bewertungModal').classList.add('active');
+    // Königin-Daten laden
+    var vId = formData.volkId || volkId;
+    if (vId && koeniginnen[vId]) {
+        formData.koenigin = Object.assign({}, koeniginnen[vId]);
+    }
+    
+    renderModal();
+    document.getElementById('durchsichtModal').classList.add('active');
+    document.body.classList.add('modal-open');
 }
 
 function closeModal() {
-    document.getElementById('bewertungModal').classList.remove('active');
-    editId = null;
+    document.getElementById('durchsichtModal').classList.remove('active');
+    document.body.classList.remove('modal-open');
 }
 
-function renderKriterien() {
-    var container = document.getElementById('kriterienContainer');
+function renderModal() {
     var html = '';
-    KRITERIEN.forEach(function(k){
-        var val = bewertungWerte[k.key] || 3;
-        html += '<div class="form-group" style="margin-bottom:.75rem">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<label class="form-label" style="margin:0">'+k.label+'</label>';
-        html += '<span style="font-size:.75rem;color:#7A6652">'+val+'/5</span>';
-        html += '</div>';
-        html += '<div style="font-size:.7rem;color:#94a3b8;margin-bottom:.25rem">'+k.desc+'</div>';
-        html += '<div class="stars" id="stars_'+k.key+'">';
-        for (var i = 1; i <= 5; i++) {
-            html += '<span class="star '+(i<=val?'active':'')+'" onclick="setStar(\''+k.key+'\','+i+')">★</span>';
-        }
-        html += '</div>';
+    var steps = ['Volk & Tätigkeiten','Bewertung','Varroa & Königin','Zusammenfassung'];
+    html += '<div style="display:flex;gap:.25rem;margin-bottom:1.5rem">';
+    steps.forEach(function(s,i) {
+        var active = i === modalStep;
+        var done = i < modalStep;
+        var bg = active ? '#F5A623' : (done ? '#10b981' : '#E8DFD4');
+        var color = active||done ? '#fff' : '#7A6652';
+        html += '<div style="flex:1;text-align:center">';
+        html += '<div style="width:28px;height:28px;border-radius:50%;background:' + bg + ';color:' + color + ';display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">' + (done?'✓':(i+1)) + '</div>';
+        html += '<div style="font-size:.65rem;color:' + (active?'#1C1410':'#7A6652') + ';margin-top:.25rem;font-weight:' + (active?'600':'400') + '">' + s + '</div>';
         html += '</div>';
     });
-    container.innerHTML = html;
+    html += '</div>';
+    
+    if (modalStep === 0) html += renderStep1();
+    else if (modalStep === 1) html += renderStep2();
+    else if (modalStep === 2) html += renderStep3();
+    else html += renderStep4();
+    
+    html += '<div style="display:flex;gap:.5rem;margin-top:1.5rem">';
+    if (modalStep > 0) html += '<button class="btn btn-outline" style="flex:1" onclick="modalStep--;renderModal()">← Zurück</button>';
+    if (modalStep < 3) html += '<button class="btn btn-primary" style="flex:1" onclick="nextStep()">Weiter →</button>';
+    if (modalStep === 3) html += '<button class="btn btn-success" style="flex:1" onclick="saveDurchsicht()">💾 Speichern</button>';
+    html += '</div>';
+    
+    document.getElementById('modalBody').innerHTML = html;
 }
 
-function setStar(key, val) {
-    bewertungWerte[key] = val;
-    renderKriterien();
+// STEP 1: Volk + Tätigkeiten
+function renderStep1() {
+    var html = '';
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Volk</label>';
+    html += '<select class="input" onchange="formData.volkId=this.value;if(koeniginnen[this.value])formData.koenigin=Object.assign({},koeniginnen[this.value])">';
+    html += '<option value="">-- Volk wählen --</option>';
+    standorte.forEach(function(s) {
+        var sV = voelker.filter(function(v){return v.standortId===s.id;});
+        if (!sV.length) return;
+        html += '<optgroup label="📍 ' + s.name + '">';
+        sV.forEach(function(v) {
+            html += '<option value="' + v.id + '"' + (formData.volkId===v.id?' selected':'') + '>' + v.name + '</option>';
+        });
+        html += '</optgroup>';
+    });
+    html += '</select></div>';
+    
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Datum</label>';
+    html += '<input type="date" class="input" value="' + formData.datum + '" onchange="formData.datum=this.value">';
+    html += '</div>';
+    
+    html += '<div class="section-divider">Tätigkeiten</div>';
+    html += '<div class="taetig-grid">';
+    TAETIGKEITEN.forEach(function(t) {
+        var sel = formData.taetigkeiten.find(function(x){return x.key===t.key;});
+        html += '<div class="taetig-chip ' + (sel?'selected':'') + '" onclick="toggleTaetigkeit(\'' + t.key + '\')">';
+        html += '<span class="tc-icon">' + t.icon + '</span>' + t.label + '</div>';
+    });
+    html += '</div>';
+    
+    formData.taetigkeiten.forEach(function(sel) {
+        var def = TAETIGKEITEN.find(function(x){return x.key===sel.key;});
+        if (!def) return;
+        if (def.subs && def.subs.length) {
+            html += '<div class="sub-options">';
+            html += '<div style="font-size:.8rem;font-weight:600;margin-bottom:.35rem">' + def.icon + ' ' + def.label + ' – Details:</div>';
+            def.subs.forEach(function(sub) {
+                var isSel = (sel.subs||[]).indexOf(sub) > -1;
+                html += '<span class="sub-chip ' + (isSel?'selected':'') + '" onclick="toggleSub(\'' + sel.key + '\',\'' + sub + '\')">' + sub + '</span>';
+            });
+            html += '</div>';
+        }
+        if (def.menge) {
+            html += '<div class="menge-row">';
+            html += '<span class="menge-label">' + def.icon + ' Menge:</span>';
+            html += '<input type="number" class="menge-input" value="' + (sel.menge||'') + '" placeholder="0" step="0.1" onchange="setMenge(\'' + sel.key + '\',this.value)">';
+            html += '<span class="menge-label">' + def.mengeUnit + '</span></div>';
+        }
+    });
+    
+    return html;
+}
+
+// STEP 2: Bewertung
+function renderStep2() {
+    var html = '';
+    html += '<div class="section-divider">Bestehende Kriterien</div>';
+    KRITERIEN_ALT.forEach(function(k){ html += renderKriteriumRow(k); });
+    html += '<div class="section-divider">Neue Kriterien</div>';
+    KRITERIEN_NEU.forEach(function(k){ html += renderKriteriumRow(k); });
+    return html;
+}
+
+function renderKriteriumRow(k) {
+    var val = formData.kriterien[k.key] || 3;
+    var html = '<div style="margin-bottom:.75rem">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+    html += '<label style="font-size:.88rem;font-weight:500;color:#3D2E1F">' + k.label + '</label>';
+    html += '<span style="font-size:.75rem;color:#7A6652;font-weight:600">' + val + '/5</span></div>';
+    html += '<div style="font-size:.68rem;color:#94a3b8;margin-bottom:.25rem">' + k.desc + '</div>';
+    html += '<div class="stars">';
+    for (var i = 1; i <= 5; i++) {
+        html += '<span class="star ' + (i<=val?'active':'') + '" onclick="formData.kriterien[\'' + k.key + '\']=' + i + ';renderModal()">★</span>';
+    }
+    html += '</div></div>';
+    return html;
+}
+
+// STEP 3: Varroa + Königin
+function renderStep3() {
+    var html = '';
+    
+    // Varroa
+    html += '<div class="varroa-calc">';
+    html += '<h4 style="font-size:.95rem;margin-bottom:.75rem">🔬 Varroa-Diagnose</h4>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">';
+    html += '<div class="form-group" style="margin:0"><label class="form-label" style="font-size:.82rem">Milben gezählt</label>';
+    html += '<input type="number" class="input" value="' + (formData.varroa.milben||'') + '" placeholder="0" onchange="formData.varroa.milben=parseInt(this.value)||0;renderModal()"></div>';
+    html += '<div class="form-group" style="margin:0"><label class="form-label" style="font-size:.82rem">Tage</label>';
+    html += '<input type="number" class="input" value="' + (formData.varroa.tage||'1') + '" placeholder="1" min="1" onchange="formData.varroa.tage=parseInt(this.value)||1;renderModal()"></div>';
+    html += '</div>';
+    html += '<div class="form-group" style="margin-top:.75rem;margin-bottom:.5rem"><label class="form-label" style="font-size:.82rem">Methode</label>';
+    html += '<select class="input" onchange="formData.varroa.methode=this.value">';
+    ['Puderzucker','Windel','Alkoholwaschung','CO2','Sonstiges'].forEach(function(m) {
+        html += '<option' + (formData.varroa.methode===m?' selected':'') + '>' + m + '</option>';
+    });
+    html += '</select></div>';
+    
+    var milben = parseInt(formData.varroa.milben) || 0;
+    var tage = parseInt(formData.varroa.tage) || 1;
+    if (milben > 0) {
+        var mProTag = (milben / tage).toFixed(1);
+        var cls = mProTag <= 3 ? 'low' : (mProTag <= 10 ? 'medium' : (mProTag <= 20 ? 'high' : 'critical'));
+        var label = mProTag <= 3 ? '🟢 Gering' : (mProTag <= 10 ? '🟡 Mittel' : (mProTag <= 20 ? '🟠 Hoch – behandeln!' : '🔴 Kritisch!'));
+        html += '<div class="varroa-result ' + cls + '">' + mProTag + ' Milben/Tag</div>';
+        html += '<div style="text-align:center;font-size:.8rem;color:#7A6652">' + label + '</div>';
+    }
+    html += '</div>';
+    
+    // Königin
+    html += '<div class="koenigin-section"><h4>👑 Königinnen-Info</h4>';
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Art der Begattung</label>';
+    html += '<select class="input" onchange="formData.koenigin.begattung=this.value"><option value="">-- wählen --</option>';
+    ['Standbegattung','Belegstelle','Besamung'].forEach(function(b) {
+        html += '<option' + (formData.koenigin.begattung===b?' selected':'') + '>' + b + '</option>';
+    });
+    html += '</select></div>';
+    
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Herkunft</label>';
+    html += '<select class="input" onchange="formData.koenigin.herkunft=this.value;renderModal()"><option value="">-- wählen --</option>';
+    [{v:'eigene_aktiv',l:'Eigene Königin (aktives Volk)'},{v:'eigene_aufgeloest',l:'Eigene Königin (aufgelöstes Volk)'},{v:'fremde',l:'Fremde Königin'}].forEach(function(o) {
+        html += '<option value="' + o.v + '"' + (formData.koenigin.herkunft===o.v?' selected':'') + '>' + o.l + '</option>';
+    });
+    html += '</select></div>';
+    
+    if (formData.koenigin.herkunft === 'fremde') {
+        html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Belegstelle / Quelle</label>';
+        html += '<input type="text" class="input" value="' + (formData.koenigin.belegstelle||'') + '" placeholder="z.B. Gebirgs-Belegstelle..." onchange="formData.koenigin.belegstelle=this.value"></div>';
+        html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Nummer</label>';
+        html += '<input type="text" class="input" value="' + (formData.koenigin.nummer||'') + '" placeholder="z.B. K-2025-12" onchange="formData.koenigin.nummer=this.value"></div>';
+    }
+    
+    html += '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">';
+    html += '<label style="font-size:.85rem;font-weight:500">Königin markiert?</label>';
+    html += '<label style="display:flex;align-items:center;gap:.35rem;cursor:pointer"><input type="checkbox" ' + (formData.koenigin.markiert?'checked':'') + ' onchange="formData.koenigin.markiert=this.checked;renderModal()" style="width:20px;height:20px;accent-color:#F5A623"> <span style="font-size:.85rem">' + (formData.koenigin.markiert?'Ja':'Nein') + '</span></label>';
+    html += '</div>';
+    
+    if (formData.koenigin.markiert) {
+        html += '<div style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Farbe (int. Farbsystem)</label>';
+        html += '<div class="color-pills">';
+        [{key:'weiss',label:'Weiß (1/6)'},{key:'gelb',label:'Gelb (2/7)'},{key:'rot',label:'Rot (3/8)'},{key:'gruen',label:'Grün (4/9)'},{key:'blau',label:'Blau (5/0)'}].forEach(function(c) {
+            html += '<div style="display:flex;flex-direction:column;align-items:center;gap:.2rem">';
+            html += '<div class="color-pill c-' + c.key + ' ' + (formData.koenigin.farbe===c.key?'selected':'') + '" onclick="formData.koenigin.farbe=\'' + c.key + '\';renderModal()"></div>';
+            html += '<span style="font-size:.6rem;color:#7A6652">' + c.label + '</span></div>';
+        });
+        html += '</div></div>';
+    }
+    html += '</div>';
+    
+    return html;
+}
+
+// STEP 4: Zusammenfassung
+function renderStep4() {
+    var v = voelker.find(function(x){return x.id===formData.volkId;});
+    var schnitt = durchschnittKriterien(formData.kriterien);
+    
+    var html = '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff)">';
+    html += '<h3 style="margin-bottom:1rem">✅ Zusammenfassung</h3>';
+    html += '<div style="font-size:.9rem;margin-bottom:.75rem"><strong>🐝 Volk:</strong> ' + (v?v.name:'–') + '</div>';
+    html += '<div style="font-size:.9rem;margin-bottom:.75rem"><strong>📅 Datum:</strong> ' + fmtDate(formData.datum) + '</div>';
+    
+    if (formData.taetigkeiten.length) {
+        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>🔧 Tätigkeiten:</strong></div>';
+        html += '<div class="historie-tags" style="margin-bottom:.75rem">';
+        formData.taetigkeiten.forEach(function(t) {
+            var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+            var label = def ? def.icon + ' ' + def.label : t.key;
+            if (t.subs && t.subs.length) label += ' (' + t.subs.join(', ') + ')';
+            if (t.menge) label += ' – ' + t.menge + (def&&def.mengeUnit?' '+def.mengeUnit:'');
+            html += '<span class="historie-tag">' + label + '</span>';
+        });
+        html += '</div>';
+    }
+    
+    html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>⭐ Bewertung:</strong> ' + schnitt.toFixed(1) + '/5.0 ' + renderMiniStars(schnitt) + '</div>';
+    
+    var milben = parseInt(formData.varroa.milben) || 0;
+    if (milben > 0) {
+        var mProTag = (milben / (parseInt(formData.varroa.tage)||1)).toFixed(1);
+        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>🔬 Varroa:</strong> ' + mProTag + ' Milben/Tag (' + formData.varroa.methode + ')</div>';
+    }
+    
+    if (formData.koenigin.begattung) {
+        html += '<div style="font-size:.9rem;margin-bottom:.35rem"><strong>👑 Königin:</strong> ' + formData.koenigin.begattung;
+        if (formData.koenigin.markiert) html += ' · ' + getColorDot(formData.koenigin.farbe);
+        html += '</div>';
+    }
+    
+    html += '<div class="form-group" style="margin-top:1rem;margin-bottom:0">';
+    html += '<label class="form-label">Notizen</label>';
+    html += '<textarea class="input" rows="2" placeholder="Besonderheiten..." onchange="formData.notizen=this.value">' + (formData.notizen||'') + '</textarea>';
+    html += '</div></div>';
+    return html;
+}
+
+// ============================================
+// MODAL HELPERS
+// ============================================
+function nextStep() {
+    if (modalStep === 0 && !formData.volkId) {
+        toast('Bitte ein Volk auswählen!'); return;
+    }
+    modalStep++;
+    renderModal();
+}
+
+function toggleTaetigkeit(key) {
+    var idx = formData.taetigkeiten.findIndex(function(x){return x.key===key;});
+    if (idx > -1) formData.taetigkeiten.splice(idx, 1);
+    else formData.taetigkeiten.push({key:key, subs:[], menge:null});
+    renderModal();
+}
+
+function toggleSub(tKey, sub) {
+    var t = formData.taetigkeiten.find(function(x){return x.key===tKey;});
+    if (!t) return;
+    if (!t.subs) t.subs = [];
+    var idx = t.subs.indexOf(sub);
+    if (idx > -1) t.subs.splice(idx,1);
+    else t.subs.push(sub);
+    renderModal();
+}
+
+function setMenge(tKey, val) {
+    var t = formData.taetigkeiten.find(function(x){return x.key===tKey;});
+    if (t) t.menge = parseFloat(val) || null;
 }
 
 // ============================================
 // CRUD
 // ============================================
-async function saveBewertung() {
-    var volkId = document.getElementById('bewVolk').value;
-    var datum = document.getElementById('bewDatum').value;
-    var notizen = document.getElementById('bewNotizen').value.trim();
-    
-    if (!volkId || !datum) {
-        alert('Bitte Volk und Datum auswählen!');
-        return;
-    }
-    
-    var v = voelker.find(function(x){return x.id===volkId;});
-    var volkName = v ? v.name : '';
+async function saveDurchsicht() {
+    var v = voelker.find(function(x){return x.id===formData.volkId;});
     var s = v ? standorte.find(function(x){return x.id===v.standortId;}) : null;
-    var standortName = s ? s.name : '';
     
-    var data = {
-        volk_id: volkId,
-        volk_name: volkName,
-        standort_name: standortName,
-        datum: datum,
-        sanftmut: bewertungWerte.sanftmut,
-        wabensitz: bewertungWerte.wabensitz,
-        schwarmtrieb: bewertungWerte.schwarmtrieb,
-        volksstaerke: bewertungWerte.volksstaerke,
-        winterfestigkeit: bewertungWerte.winterfestigkeit,
-        hygiene: bewertungWerte.hygiene,
-        wabenbau: bewertungWerte.wabenbau,
-        honigfleiss: bewertungWerte.honigfleiss,
-        notizen: notizen
+    var dbData = {
+        volk_id: formData.volkId,
+        volk_name: v ? v.name : '',
+        standort_name: s ? s.name : '',
+        datum: formData.datum,
+        taetigkeiten: formData.taetigkeiten,
+        kriterien: formData.kriterien,
+        varroa: (parseInt(formData.varroa.milben) > 0) ? formData.varroa : null,
+        notizen: formData.notizen
     };
     
-    if (editId) {
-        var res = await sb.from('bewertungen').update(data).eq('id', editId);
-        if (res.error) { alert('Fehler: '+res.error.message); return; }
+    if (editDurchsicht) {
+        var res = await sb.from('durchsichten').update(dbData).eq('id', editDurchsicht);
+        if (res.error) { alert('Fehler: ' + res.error.message); return; }
         
-        var idx = bewertungen.findIndex(function(x){return x.id===editId;});
+        var idx = durchsichten.findIndex(function(x){return x.id===editDurchsicht;});
         if (idx > -1) {
-            bewertungen[idx] = Object.assign({id:editId, created:bewertungen[idx].created}, {volkId:volkId, volkName:volkName, standortName:standortName, datum:datum, notizen:notizen}, bewertungWerte);
+            durchsichten[idx] = Object.assign({id:editDurchsicht, created:durchsichten[idx].created}, {
+                volkId: formData.volkId, datum: formData.datum,
+                taetigkeiten: JSON.parse(JSON.stringify(formData.taetigkeiten)),
+                kriterien: Object.assign({}, formData.kriterien),
+                varroa: dbData.varroa ? Object.assign({}, formData.varroa) : null,
+                notizen: formData.notizen
+            });
         }
-        toast('✅ Bewertung aktualisiert');
+        toast('✅ Durchsicht aktualisiert');
     } else {
         var id = crypto.randomUUID();
-        data.id = id;
-        data.user_id = currentUser.id;
-        var res = await sb.from('bewertungen').insert(data);
-        if (res.error) { alert('Fehler: '+res.error.message); return; }
+        dbData.id = id;
+        dbData.user_id = currentUser.id;
+        var res = await sb.from('durchsichten').insert(dbData);
+        if (res.error) { alert('Fehler: ' + res.error.message); return; }
         
-        bewertungen.unshift(Object.assign({id:id, created:new Date().toISOString()}, {volkId:volkId, volkName:volkName, standortName:standortName, datum:datum, notizen:notizen}, bewertungWerte));
-        toast('✅ Bewertung gespeichert');
+        durchsichten.unshift({
+            id:id, volkId:formData.volkId, datum:formData.datum,
+            taetigkeiten: JSON.parse(JSON.stringify(formData.taetigkeiten)),
+            kriterien: Object.assign({}, formData.kriterien),
+            varroa: dbData.varroa ? Object.assign({}, formData.varroa) : null,
+            notizen: formData.notizen, created: new Date().toISOString()
+        });
+        toast('✅ Durchsicht gespeichert');
+    }
+    
+    // Königin-Info speichern (in voelker-Tabelle als JSON)
+    if (formData.koenigin.begattung) {
+        koeniginnen[formData.volkId] = Object.assign({}, formData.koenigin);
+        await sb.from('voelker').update({koenigin_info: formData.koenigin}).eq('id', formData.volkId);
     }
     
     closeModal();
     render();
 }
 
-async function deleteBewertung(id) {
-    if (!confirm('Bewertung wirklich löschen?')) return;
+async function deleteDurchsicht(id) {
+    if (!confirm('Durchsicht wirklich löschen?')) return;
+    await sb.from('durchsichten').delete().eq('id', id);
+    durchsichten = durchsichten.filter(function(d){return d.id!==id;});
+    toast('🗑️ Gelöscht');
+    render();
+}
+
+async function deleteLegacyBewertung(id) {
+    if (!confirm('Alte Bewertung wirklich löschen?')) return;
     await sb.from('bewertungen').delete().eq('id', id);
     bewertungen = bewertungen.filter(function(b){return b.id!==id;});
-    toast('🗑️ Bewertung gelöscht');
+    toast('🗑️ Gelöscht');
     render();
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function getDurchsichtenFuerVolk(volkId) {
+    return durchsichten.filter(function(d){return d.volkId===volkId;}).sort(function(a,b){return new Date(b.datum)-new Date(a.datum);});
+}
+
+function durchschnittKriterien(krit) {
+    if (!krit) return 0;
+    var sum = 0, count = 0;
+    KRITERIEN.forEach(function(k) {
+        if (krit[k.key] !== undefined) { sum += krit[k.key]; count++; }
+    });
+    return count > 0 ? sum / count : 0;
+}
+
+function durchschnittAlt(b) {
+    var sum = 0;
+    KRITERIEN_ALT.forEach(function(k){ sum += (b[k.key] || 3); });
+    return sum / KRITERIEN_ALT.length;
+}
+
+function renderMiniStars(schnitt) {
+    var full = Math.round(schnitt);
+    var html = '';
+    for (var i = 1; i <= 5; i++) {
+        html += '<span style="color:' + (i<=full?'#F5A623':'#E8DFD4') + ';font-size:.8rem">★</span>';
+    }
+    return html;
+}
+
+function getBadgeFromSchnitt(schnitt) {
+    if (schnitt === null) return '<span class="badge badge-gray">–</span>';
+    if (schnitt >= 4) return '<span class="badge badge-green">Sehr gut</span>';
+    if (schnitt >= 3) return '<span class="badge badge-yellow">Gut</span>';
+    return '<span class="badge badge-red">Schwach</span>';
+}
+
+function getColorDot(farbe) {
+    var colors = {weiss:'#fff',gelb:'#facc15',rot:'#ef4444',gruen:'#22c55e',blau:'#3b82f6'};
+    if (!farbe || !colors[farbe]) return '';
+    var border = farbe==='weiss' ? '#ccc' : colors[farbe];
+    return '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + colors[farbe] + ';border:2px solid ' + border + ';vertical-align:middle"></span>';
+}
+
+function formatHerkunft(h) {
+    var map = {eigene_aktiv:'Eigene (aktiv)',eigene_aufgeloest:'Eigene (aufgelöst)',fremde:'Fremde Königin'};
+    return map[h] || h || '–';
+}
+
+function fmtDate(d) {
+    return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function fmtDateShort(d) {
+    return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
 }
 
 function toast(msg) {
@@ -610,19 +1188,6 @@ function toast(msg) {
     el.textContent = msg;
     el.style.display = 'block';
     setTimeout(function(){ el.style.display = 'none'; }, 2500);
-}
-
-function toggleStandort(id) {
-    var idx = collapsedStandorte.indexOf(id);
-    if (idx > -1) {
-        collapsedStandorte.splice(idx, 1);
-    } else {
-        collapsedStandorte.push(id);
-    }
-    // In Supabase speichern
-    sb.from('profiles').update({bewertung_collapsed: collapsedStandorte}).eq('id', currentUser.id)
-        .then(function(res){ if(res.error) console.error('Collapse speichern Fehler:', res.error); });
-    render();
 }
 
 init();
