@@ -76,6 +76,9 @@
             .methoden-grid{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.5rem}
             .methode-btn{padding:.5rem;font-size:.75rem}
             .methode-btn .emoji{font-size:1.25rem;margin-bottom:.25rem}
+            #behandlungModal{padding:.5rem}
+            #behandlungModal .modal-content{margin:.5rem auto;max-width:100%;border-radius:.75rem}
+            #behandlungModal .modal-body{padding:1rem;padding-bottom:6rem}
         }
     </style>
 </head>
@@ -101,13 +104,13 @@
 <!-- ============================================ -->
 <!-- BEHANDLUNG MODAL -->
 <!-- ============================================ -->
-<div id="behandlungModal" class="modal modal-center" style="display:none;position:fixed;inset:0;background:rgba(28,20,16,0.5);z-index:100;align-items:center;justify-content:center">
-    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto;background:#fff;padding:0;position:relative">
-        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4;position:sticky;top:0;background:#fff;z-index:5">
+<div id="behandlungModal" class="modal modal-center" style="display:none;position:fixed;inset:0;background:rgba(28,20,16,0.5);z-index:100;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:1rem">
+    <div class="modal-content" style="max-width:600px;border-radius:1rem;margin:1rem auto;background:#fff;padding:0;position:relative">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4;position:sticky;top:0;background:#fff;z-index:5;border-radius:1rem 1rem 0 0">
             <h2 id="modalTitle" style="margin:0;font-size:1.1rem">💉 Neue Behandlung</h2>
             <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:0;line-height:1">✕</button>
         </div>
-        <div class="modal-body" style="padding:1.25rem">
+        <div class="modal-body" style="padding:1.25rem;padding-bottom:2rem">
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Völker</label>
                 <div style="display:flex;flex-direction:column;gap:.5rem">
