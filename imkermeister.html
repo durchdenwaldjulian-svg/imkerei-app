@@ -607,8 +607,9 @@ function getStandortName(sid) {
 async function loadAdmin() {
     console.log('[Imkermeister] loadAdmin gestartet...');
     
-    // Load users from profiles table
-    var profilesResult = await sb.from('profiles').select('*');
+    // Load users from profiles table (adminSb für volle Sicht)
+    var profileClient = adminSb || sb;
+    var profilesResult = await profileClient.from('profiles').select('*');
     console.log('[Imkermeister] profiles:', profilesResult.data ? profilesResult.data.length + ' Einträge' : 'FEHLER: ' + (profilesResult.error ? profilesResult.error.message : 'null'));
     var profiles = profilesResult.data || [];
     
@@ -1794,8 +1795,8 @@ async function executeGift() {
     }
 
     try {
-        // adminSb verwenden falls vorhanden, sonst normales sb
-        var client = typeof adminSb !== 'undefined' ? adminSb : sb;
+        // adminSb verwenden (hat volle Rechte)
+        var client = adminSb || sb;
         var res = await client.from('profiles').update(updateData).eq('id', giftUserId);
         if (res.error) throw res.error;
 

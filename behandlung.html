@@ -144,7 +144,7 @@
             </div>
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Behandlungsdatum *</label>
-                <input type="date" id="behandlungDatum" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
+                <input type="date" id="behandlungDatum" class="input" onchange="updateTerminVorschau()" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem">
             </div>
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Wiederholung</label>
@@ -154,7 +154,14 @@
                     <option value="2wochen">Alle 2 Wochen</option>
                     <option value="3wochen">Alle 3 Wochen</option>
                     <option value="monatlich">Monatlich</option>
+                    <option value="individuell">Individuell (Tage eingeben)</option>
                 </select>
+            </div>
+            <div class="form-group" id="individTageGruppe" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Abstand in Tagen</label>
+                <input type="number" id="individTage" class="input" value="7" min="1" max="365" style="width:100px;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem" onchange="updateTerminVorschau()">
+                <span style="font-size:.85rem;color:#7A6652;margin-left:.5rem">Tage zwischen Behandlungen</span>
+            </div>
             </div>
             <div class="form-group" id="anzahlGruppe" style="display:none;margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Anzahl Wiederholungen</label>
@@ -163,6 +170,11 @@
                     <div class="counter-value" id="anzahlWiederholungen">3</div>
                     <button class="counter-btn" onclick="changeAnzahl(1)">+</button>
                 </div>
+            </div>
+            <div class="form-group" id="terminVorschauGruppe" style="display:none;margin-bottom:1rem">
+                <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">📅 Termine (einzeln anpassbar)</label>
+                <div id="terminVorschauListe" style="display:flex;flex-direction:column;gap:.35rem"></div>
+                <div style="font-size:.72rem;color:#A69580;margin-top:.35rem">💡 Klicke auf ein Datum um es individuell zu ändern</div>
             </div>
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Notizen</label>
@@ -477,6 +489,9 @@ function closeModal() {
     document.getElementById('behandlungWartezeit').value = '';
     document.getElementById('behandlungBehandler').value = '';
     document.getElementById('anzahlGruppe').style.display = 'none';
+    document.getElementById('individTageGruppe').style.display = 'none';
+    document.getElementById('terminVorschauGruppe').style.display = 'none';
+    document.getElementById('terminVorschauListe').innerHTML = '';
     document.getElementById('andereMethodeGruppe').style.display = 'none';
     document.querySelectorAll('#methodenGrid .methode-btn').forEach(function(b){b.classList.remove('selected');});
     document.getElementById('modalTitle').textContent = '💉 Neue Behandlung';
@@ -541,10 +556,60 @@ function updateStandortInfo() {
 
 function updateWiederholung() {
     var v = document.getElementById('behandlungIntervall').value;
-    document.getElementById('anzahlGruppe').style.display = v !== 'keine' ? 'block' : 'none';
+    var showAnzahl = v !== 'keine';
+    document.getElementById('anzahlGruppe').style.display = showAnzahl ? 'block' : 'none';
+    document.getElementById('individTageGruppe').style.display = v === 'individuell' ? 'block' : 'none';
+    document.getElementById('terminVorschauGruppe').style.display = showAnzahl ? 'block' : 'none';
+    if (showAnzahl) updateTerminVorschau();
 }
 
-function changeAnzahl(d) { anzahl = Math.max(1, Math.min(10, anzahl + d)); document.getElementById('anzahlWiederholungen').textContent = anzahl; }
+function changeAnzahl(d) {
+    anzahl = Math.max(1, Math.min(20, anzahl + d));
+    document.getElementById('anzahlWiederholungen').textContent = anzahl;
+    updateTerminVorschau();
+}
+
+function getIntervallTage() {
+    var v = document.getElementById('behandlungIntervall').value;
+    if (v === 'individuell') return parseInt(document.getElementById('individTage').value) || 7;
+    return {woechentlich:7,'2wochen':14,'3wochen':21,monatlich:30}[v] || 7;
+}
+
+function updateTerminVorschau() {
+    var container = document.getElementById('terminVorschauListe');
+    if (!container) return;
+    var datum = document.getElementById('behandlungDatum').value;
+    if (!datum) { container.innerHTML = '<div style="font-size:.8rem;color:#A69580">Bitte zuerst ein Datum wählen</div>'; return; }
+
+    var intervall = document.getElementById('behandlungIntervall').value;
+    if (intervall === 'keine') { container.innerHTML = ''; document.getElementById('terminVorschauGruppe').style.display = 'none'; return; }
+
+    var tage = getIntervallTage();
+    var html = '';
+    for (var i = 0; i < anzahl; i++) {
+        var d = new Date(datum);
+        d.setDate(d.getDate() + tage * i);
+        var ds = d.toISOString().split('T')[0];
+        var label = i === 0 ? '1. Behandlung' : (i+1) + '. Wiederholung';
+        html += '<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:'+(i===0?'#FFF8EE':'#fff')+';border:1.5px solid #E8DFD4;border-radius:.35rem">' +
+            '<span style="font-size:.78rem;font-weight:600;color:#7A6652;min-width:110px">' + label + '</span>' +
+            '<input type="date" class="termin-datum-input" data-index="' + i + '" value="' + ds + '" style="padding:.3rem .5rem;border:1.5px solid #E8DFD4;border-radius:.35rem;font-size:.82rem;font-family:Outfit,sans-serif;background:#FFFBF0">' +
+            '<span style="font-size:.72rem;color:#A69580">' + d.toLocaleDateString('de-DE',{weekday:'short'}) + '</span>' +
+            '</div>';
+    }
+    container.innerHTML = html;
+}
+
+function getTermineAusVorschau() {
+    var inputs = document.querySelectorAll('.termin-datum-input');
+    if (inputs.length === 0) return null;
+    var termine = [];
+    inputs.forEach(function(input) {
+        var ts = new Date(input.value).getTime();
+        if (!isNaN(ts)) termine.push(ts);
+    });
+    return termine.length > 0 ? termine : null;
+}
 function setMenge(val) { document.getElementById('behandlungMengeWert').value = val; }
 function setLieferant(val) { document.getElementById('behandlungLieferant').value = val; }
 
@@ -569,10 +634,27 @@ function editBehandlung(id) {
     var d = new Date(beh.datum);
     document.getElementById('behandlungDatum').value = d.toISOString().split('T')[0];
     document.getElementById('behandlungIntervall').value = beh.intervall || 'keine';
+    if (beh.intervall === 'individuell') {
+        document.getElementById('individTageGruppe').style.display = 'block';
+    }
     if (beh.termine && beh.termine.length > 1) {
         anzahl = beh.termine.length;
         document.getElementById('anzahlGruppe').style.display = 'block';
         document.getElementById('anzahlWiederholungen').textContent = anzahl;
+        document.getElementById('terminVorschauGruppe').style.display = 'block';
+        // Bestehende Termine in die Vorschau laden
+        var vorschauHtml = '';
+        beh.termine.forEach(function(ts, idx) {
+            var td = new Date(ts);
+            var ds = td.toISOString().split('T')[0];
+            var label = idx === 0 ? '1. Behandlung' : (idx+1) + '. Wiederholung';
+            vorschauHtml += '<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem .6rem;background:'+(idx===0?'#FFF8EE':'#fff')+';border:1.5px solid #E8DFD4;border-radius:.35rem">' +
+                '<span style="font-size:.78rem;font-weight:600;color:#7A6652;min-width:110px">' + label + '</span>' +
+                '<input type="date" class="termin-datum-input" data-index="' + idx + '" value="' + ds + '" style="padding:.3rem .5rem;border:1.5px solid #E8DFD4;border-radius:.35rem;font-size:.82rem;font-family:Outfit,sans-serif;background:#FFFBF0">' +
+                '<span style="font-size:.72rem;color:#A69580">' + td.toLocaleDateString('de-DE',{weekday:'short'}) + '</span>' +
+                '</div>';
+        });
+        document.getElementById('terminVorschauListe').innerHTML = vorschauHtml;
     }
     document.getElementById('behandlungNotizen').value = beh.notizen || '';
 
@@ -641,10 +723,17 @@ async function saveBehandlung() {
     var dTs = new Date(datum).getTime();
     var termine = [dTs];
     if (intervall !== 'keine') {
-        var tage = {woechentlich:7,'2wochen':14,'3wochen':21,monatlich:30}[intervall] || 7;
-        for (var i=1;i<anzahl;i++) { var nd = new Date(datum); nd.setDate(nd.getDate()+tage*i); termine.push(nd.getTime()); }
+        // Termine aus der Vorschau lesen (individuell anpassbar)
+        var vorschauTermine = getTermineAusVorschau();
+        if (vorschauTermine && vorschauTermine.length > 0) {
+            termine = vorschauTermine;
+        } else {
+            // Fallback: berechnen
+            var tage = getIntervallTage();
+            for (var i=1;i<anzahl;i++) { var nd = new Date(datum); nd.setDate(nd.getDate()+tage*i); termine.push(nd.getTime()); }
+        }
     }
-    var labels = {keine:'Einmalig',woechentlich:'Wöchentlich','2wochen':'Alle 2 Wochen','3wochen':'Alle 3 Wochen',monatlich:'Monatlich'};
+    var labels = {keine:'Einmalig',woechentlich:'Wöchentlich','2wochen':'Alle 2 Wochen','3wochen':'Alle 3 Wochen',monatlich:'Monatlich',individuell:'Alle '+getIntervallTage()+' Tage'};
 
     var dbData = {
         user_id: currentUser.id,
