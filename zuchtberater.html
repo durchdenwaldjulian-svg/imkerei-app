@@ -99,21 +99,6 @@ body{padding-left:220px;padding-bottom:2rem}
 .ai-dots::after{content:'';animation:dots 1.5s infinite}
 @keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
 
-/* === CHAT === */
-.chat-box{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;margin-top:1rem;overflow:hidden}
-.chat-msgs{max-height:400px;overflow-y:auto;padding:1rem}
-.chat-msg{margin-bottom:1rem;max-width:90%}
-.chat-msg.user{margin-left:auto;text-align:right}
-.chat-msg.ai{margin-right:auto}
-.chat-bubble{display:inline-block;padding:.75rem 1rem;border-radius:1rem;font-size:.88rem;line-height:1.5;text-align:left}
-.chat-msg.user .chat-bubble{background:#F5A623;color:#1C1410;border-bottom-right-radius:.25rem}
-.chat-msg.ai .chat-bubble{background:#f5f0eb;color:#1C1410;border-bottom-left-radius:.25rem}
-.chat-input-row{display:flex;gap:.5rem;padding:.75rem;border-top:2px solid #E8DFD4}
-.chat-input{flex:1;border:2px solid #E8DFD4;border-radius:.75rem;padding:.65rem .875rem;font-size:.9rem;font-family:inherit;outline:none;resize:none}
-.chat-input:focus{border-color:#F5A623}
-.chat-send{width:42px;height:42px;border:none;background:#F5A623;color:#1C1410;border-radius:.75rem;cursor:pointer;font-size:1.1rem;font-weight:700;transition:all .15s}
-.chat-send:hover{background:#E09000;transform:scale(1.05)}
-
 @media(max-width:768px){
     body{padding-left:0;padding-bottom:90px}
     .nav{display:none!important}
@@ -122,6 +107,8 @@ body{padding-left:220px;padding-bottom:2rem}
     .toggle-row{flex-wrap:wrap}
     .zb-header{padding:1.5rem 1rem}
     .zb-header h1{font-size:1.35rem}
+}
+
 /* === HILFE-TOOLTIP === */
 .help-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#E8DFD4;color:#7A6652;font-size:.7rem;font-weight:700;cursor:pointer;border:none;margin-left:.35rem;vertical-align:middle;transition:all .15s;font-family:inherit;line-height:1}
 .help-btn:hover{background:#F5A623;color:#1C1410;transform:scale(1.1)}
@@ -137,7 +124,6 @@ body{padding-left:220px;padding-bottom:2rem}
 .glossar-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .glossar-term{font-weight:700;font-size:.92rem;color:#1C1410;margin-bottom:.2rem}
 .glossar-def{font-size:.82rem;color:#7A6652;line-height:1.5}
-}
 </style>
 </head>
 <body>
@@ -166,7 +152,7 @@ body{padding-left:220px;padding-bottom:2rem}
 <div class="container">
     <div class="zb-header">
         <h1>🧬 Zuchtberater</h1>
-        <p>Instrumentelle Besamung, Selektion & Linienaufbau – KI-gestützte Strategieplanung für deine Bienenzucht.</p>
+        <p>Instrumentelle Besamung, Selektion & Linienaufbau – Strategieplanung für deine Bienenzucht.</p>
         <div class="zb-badges">
             <span>🔬 SDI & MDI</span>
             <span>📊 Erfolgswahrscheinlichkeit</span>
@@ -180,11 +166,11 @@ body{padding-left:220px;padding-bottom:2rem}
 
 <script>
 // ============================================
-// ZUCHTBERATER – KI-GESTÜTZTE ZUCHTPLANUNG
+// ZUCHTBERATER – ZUCHTPLANUNG
 // ============================================
 
-var step = 0; // 0=Methode, 1=Ressourcen, 2=Analyse, 3=Ergebnis
-var chatHistory = [];
+var step = 0; // 0=Methode, 1=Ressourcen, 2=Berechnung, 3=Ergebnis
+var activeSzenario = null;
 
 // ============================================
 // GLOSSAR – Fachbegriffe erklärt
@@ -312,7 +298,7 @@ var formData = {
     zuchtziel: ''
 };
 
-var zuchtplan = null; // KI-generiertes Ergebnis
+var zuchtplan = null; // Berechnetes Ergebnis
 
 // ============================================
 // RENDER
@@ -321,7 +307,7 @@ function render() {
     var html = '';
     
     // Step Bar
-    var labels = ['Strategie','Ressourcen','KI-Analyse','Zuchtplan'];
+    var labels = ['Strategie','Ressourcen','Berechnung','Zuchtplan'];
     html += '<div class="step-label">';
     labels.forEach(function(l,i){
         html += '<span style="' + (i===step?'color:#F5A623;font-weight:700':'') + '">' + l + '</span>';
@@ -350,7 +336,7 @@ function renderStep0() {
     html += '<h2 style="font-size:1.15rem;margin:0">Zuchtstrategie wählen</h2>';
     html += '<button class="help-btn" style="width:28px;height:28px;font-size:.85rem" onclick="event.stopPropagation();openGlossar()" title="Alle Begriffe erklären">?</button>';
     html += '</div>';
-    html += '<p style="font-size:.85rem;color:#7A6652;margin-bottom:1.25rem">Welche Methode passt zu deinem Zuchtprojekt? Wähle eine Strategie als Ausgangspunkt – der KI-Berater optimiert den Plan anhand deiner Ressourcen.</p>';
+    html += '<p style="font-size:.85rem;color:#7A6652;margin-bottom:1.25rem">Welche Methode passt zu deinem Zuchtprojekt? Wähle eine Strategie als Ausgangspunkt – der Zuchtberater optimiert den Plan anhand deiner Ressourcen.</p>';
     
     var methodeHelpMap = {sdi:'SDI', backcross:'Backcross', brueder:'Drohnenlinie', kombi:'SDI', klassisch:'Belegstelle'};
     
@@ -432,34 +418,41 @@ function renderStep1() {
         html += '</div></div>';
     }
     
-    // Tempo
-    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Gewünschte Geschwindigkeit</label>';
-    html += '<div class="toggle-row">';
-    [{k:'schnell',l:'⚡ Schnell',d:'Max. Fortschritt/Jahr'},{k:'stabil',l:'🎯 Stabil',d:'Sicher & nachhaltig'},{k:'experimentell',l:'🧪 Experimentell',d:'Neue Wege testen'}].forEach(function(t) {
-        html += '<div class="toggle-btn ' + (formData.tempo===t.k?'selected':'') + '" onclick="formData.tempo=\'' + t.k + '\';render()" style="flex-direction:column;gap:.15rem"><span>' + t.l + '</span><span style="font-size:.65rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
+    // Priorität
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Was ist dir am wichtigsten?' + helpBtn('Selektion') + '</label>';
+    html += '<div class="toggle-row" style="flex-wrap:wrap">';
+    [{k:'max_erfolg',l:'🏆 Max. Erfolg',d:'Höchste Wahrscheinlichkeit für stabile Linie'},{k:'schnell',l:'⚡ Schnell',d:'So wenig Jahre wie möglich'},{k:'stabil',l:'🎯 Stabil',d:'Sicher & nachhaltig'},{k:'wenig_aufwand',l:'🧘 Wenig Aufwand',d:'Minimaler Ressourceneinsatz'},{k:'experimentell',l:'🧪 Experimentell',d:'Neue Wege, hohes Risiko'}].forEach(function(t) {
+        html += '<div class="toggle-btn ' + (formData.tempo===t.k?'selected':'') + '" onclick="formData.tempo=\'' + t.k + '\';render()" style="flex-direction:column;gap:.15rem;flex:1;min-width:130px"><span>' + t.l + '</span><span style="font-size:.62rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
     });
     html += '</div></div>';
+    
+    // Info-Box bei "Max. Erfolg"
+    if (formData.tempo === 'max_erfolg') {
+        html += '<div class="card" style="background:#f0fdf4;border:1px solid #6ee7b7;font-size:.82rem;color:#065f46;padding:.75rem">';
+        html += '🏆 <strong>Maximaler Erfolg:</strong> Der Zuchtberater berechnet die optimale Kombination aus Generationenzahl, Selektionsintensität und Zeitrahmen. Deine Ressourcen werden maximal ausgenutzt – auch wenn es länger dauert.';
+        html += '</div>';
+    }
     
     // Zeitziel
     html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">📅 In welchem Zeitraum willst du eine stabile Linie?</label>';
     html += '<div class="toggle-row" style="flex-wrap:wrap">';
-    [{k:1,l:'1 Jahr',d:'Ambitioniert'},{k:2,l:'2 Jahre',d:'Sportlich'},{k:3,l:'3 Jahre',d:'Realistisch'},{k:5,l:'5 Jahre',d:'Solide'},{k:0,l:'Egal',d:'Kein Zeitdruck'}].forEach(function(t) {
+    [{k:1,l:'1 Jahr',d:'Ambitioniert'},{k:2,l:'2 Jahre',d:'Sportlich'},{k:3,l:'3 Jahre',d:'Realistisch'},{k:5,l:'5 Jahre',d:'Solide'},{k:8,l:'8 Jahre',d:'Langfristig'},{k:0,l:'Automatisch',d:'Optimaler Zeitrahmen'}].forEach(function(t) {
         html += '<div class="toggle-btn ' + (formData.zeitziel===t.k?'selected':'') + '" onclick="formData.zeitziel=' + t.k + ';render()" style="flex-direction:column;gap:.15rem;flex:1;min-width:90px"><span style="font-weight:700">' + t.l + '</span><span style="font-size:.62rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
     });
     html += '</div></div>';
     
-    // Bei ambitioniertem Zeitrahmen: Warnung + Info
+    // Bei ambitioniertem Zeitrahmen: Warnung
     if (formData.zeitziel === 1) {
         html += '<div class="card" style="background:#FEF2F2;border:1px solid #FECACA;font-size:.82rem;color:#991B1B;padding:.75rem">';
-        html += '⚠️ <strong>1 Jahr ist extrem ambitioniert.</strong> Das erfordert 2 Generationen pro Jahr (Frühjahrsserie + Spätsommerserie), instrumentelle Besamung und konsequente Selektion. Der KI-Berater erstellt dir einen straffen Kalenderplan.';
+        html += '⚠️ <strong>1 Jahr ist extrem ambitioniert.</strong> Das erfordert mindestens 2 Generationen pro Jahr, instrumentelle Besamung und konsequente Selektion.';
         html += '</div>';
     }
     
     // Generationen pro Jahr
-    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtgenerationen pro Jahr</label>';
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtgenerationen pro Jahr' + helpBtn('F1') + '</label>';
     html += '<div class="toggle-row">';
-    [1,2].forEach(function(n) {
-        html += '<div class="toggle-btn ' + (formData.generationen_pro_jahr===n?'selected':'') + '" onclick="formData.generationen_pro_jahr=' + n + ';render()">' + n + 'x pro Jahr' + (n===2?' (Frühjahr + Spätsommer)':'') + '</div>';
+    [{n:1,l:'1× pro Jahr',d:'Standard – eine Zuchtsaison'},{n:2,l:'2× pro Jahr',d:'Frühjahr + Spätsommer'},{n:0,l:'🔧 Automatisch',d:'Optimal für deine Ressourcen'}].forEach(function(t) {
+        html += '<div class="toggle-btn ' + (formData.generationen_pro_jahr===t.n?'selected':'') + '" onclick="formData.generationen_pro_jahr=' + t.n + ';render()" style="flex-direction:column;gap:.15rem"><span>' + t.l + '</span><span style="font-size:.62rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
     });
     html += '</div></div>';
     
@@ -471,24 +464,24 @@ function renderStep1() {
     html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtziel (optional)</label>';
     html += '<textarea class="input" rows="2" placeholder="z.B. Varroa-Toleranz verbessern, Sanftmut fixieren, VSH-Linie aufbauen..." onchange="formData.zuchtziel=this.value">' + (formData.zuchtziel||'') + '</textarea></div>';
     
-    html += '<button class="btn btn-primary btn-block" style="padding:1rem;font-size:1rem" onclick="startAnalyse()">🧬 KI-Analyse starten</button>';
+    html += '<button class="btn btn-primary btn-block" style="padding:1rem;font-size:1rem" onclick="startAnalyse()">🧬 Zuchtplan berechnen</button>';
     
     return html;
 }
 
 // ============================================
-// STEP 2: KI-ANALYSE (Loading + API Call)
+// STEP 2: BERECHNUNG (Loading)
 // ============================================
 function renderStep2() {
     return '<div class="ai-loading">' +
         '<div class="ai-pulse">🧬</div>' +
-        '<div class="ai-dots" style="margin-top:1.25rem;font-size:.95rem;font-weight:500">Analysiere deine Zuchtparameter</div>' +
-        '<div style="font-size:.78rem;color:#94a3b8;margin-top:.5rem">Claude berechnet den optimalen Zuchtplan...</div>' +
+        '<div class="ai-dots" style="margin-top:1.25rem;font-size:.95rem;font-weight:500">Berechne optimalen Zuchtplan</div>' +
+        '<div style="font-size:.78rem;color:#94a3b8;margin-top:.5rem">Analysiere Ressourcen, Strategie und Zeitrahmen...</div>' +
     '</div>';
 }
 
 // ============================================
-// STEP 3: ERGEBNIS + CHAT
+// STEP 3: ERGEBNIS
 // ============================================
 function renderStep3() {
     if (!zuchtplan) return '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Kein Ergebnis vorhanden. <button class="btn btn-primary btn-sm" onclick="step=0;render()">Neu starten</button></div>';
@@ -558,26 +551,39 @@ function renderStep3() {
         html += '</div>';
     }
     
-    // Rückfragen-Chat
+    // Tipps
     html += '<div class="card">';
-    html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">💬 Rückfragen an den Zuchtberater</h3>';
-    html += '<div class="chat-box">';
-    html += '<div class="chat-msgs" id="chatMsgs">';
-    chatHistory.forEach(function(msg) {
-        html += '<div class="chat-msg ' + msg.role + '"><div class="chat-bubble">' + escHtml(msg.text) + '</div></div>';
+    html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">💡 Tipps zur Umsetzung</h3>';
+    html += '<div style="font-size:.85rem;color:#3D2E1F;line-height:1.6">';
+    html += '• Dokumentiere jede Generation in der <strong>Stockkarte</strong> mit BeeBreed-Zuchtwerten<br>';
+    html += '• Berechne den <strong>COI</strong> im Inzuchtrechner vor jeder Anpaarung<br>';
+    html += '• Selektiere konsequent – Emotion ist der Feind guter Zucht<br>';
+    html += '• Plane immer einen <strong>Plan B</strong> ein (Königin-Verlust, Wetter, Krankheit)<br>';
+    html += '• Tausche dich mit anderen Züchtern aus – Genetik-Vielfalt schützt vor Sackgassen';
+    html += '</div></div>';
+    
+    // Was-wenn-Szenarien
+    html += '<div class="card">';
+    html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">🔀 Was wenn... Szenarien</h3>';
+    html += '<p style="font-size:.8rem;color:#7A6652;margin-bottom:.75rem">Klicke auf ein Szenario um zu sehen, wie sich dein Plan ändert.</p>';
+    
+    var szenarien = buildSzenarien();
+    szenarien.forEach(function(s) {
+        html += '<div style="border:1px solid #E8DFD4;border-radius:.75rem;margin-bottom:.5rem;overflow:hidden">';
+        html += '<div style="padding:.75rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#FFFBF0" onclick="toggleSzenario(\'' + s.id + '\')">';
+        html += '<span style="font-size:.88rem;font-weight:500">' + s.icon + ' ' + s.frage + '</span>';
+        html += '<span style="font-size:.7rem;color:#7A6652;transform:rotate(' + (activeSzenario===s.id?'90':'0') + 'deg);transition:transform .2s">▶</span>';
+        html += '</div>';
+        if (activeSzenario === s.id) {
+            html += '<div style="padding:.75rem 1rem;font-size:.85rem;color:#3D2E1F;line-height:1.6;border-top:1px solid #E8DFD4;background:#fff">' + s.antwort + '</div>';
+        }
+        html += '</div>';
     });
-    if (!chatHistory.length) {
-        html += '<div style="text-align:center;color:#94a3b8;font-size:.82rem;padding:1rem">Stelle Rückfragen zum Zuchtplan – z.B. "Was wenn ich nur 10 Begattungseinheiten habe?" oder "Wie manage ich Inzucht in F3?"</div>';
-    }
     html += '</div>';
-    html += '<div class="chat-input-row">';
-    html += '<textarea class="chat-input" id="chatInput" rows="1" placeholder="Frage stellen..." onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>';
-    html += '<button class="chat-send" onclick="sendChat()">→</button>';
-    html += '</div></div></div>';
     
     // Aktionen
     html += '<div style="display:flex;gap:.5rem;margin-top:1rem">';
-    html += '<button class="btn btn-primary" style="flex:1" onclick="step=0;zuchtplan=null;chatHistory=[];render()">🔄 Neuer Plan</button>';
+    html += '<button class="btn btn-primary" style="flex:1" onclick="step=0;zuchtplan=null;render()">🔄 Neuer Plan</button>';
     html += '<button class="btn btn-outline" style="flex:1" onclick="step=1;render()">✏️ Anpassen</button>';
     html += '</div>';
     
@@ -585,142 +591,40 @@ function renderStep3() {
 }
 
 // ============================================
-// KI-ANALYSE (Claude API)
+// BERECHNUNG (lokal, kein API-Call)
 // ============================================
 async function startAnalyse() {
     step = 2;
     render();
     
-    var m = METHODEN.find(function(x){return x.id===formData.methode;});
-    
-    var prompt = 'Du bist ein spezialisierter Berater für Bienenzucht mit Fokus auf instrumentelle Besamung, Selektion und Linienaufbau.\n\n';
-    prompt += 'Der Imker hat folgende Ressourcen und Einstellungen:\n';
-    prompt += '- Zuchtstrategie: ' + m.title + '\n';
-    prompt += '- Wirtschaftsvölker: ' + formData.voelker + '\n';
-    prompt += '- Drohnenvölker: ' + formData.drohnenvoelker + '\n';
-    prompt += '- Begattungseinheiten: ' + formData.begattungseinheiten + '\n';
-    prompt += '- Königinnen pro Serie: ' + formData.koeniginnen_pro_serie + '\n';
-    prompt += '- Instrumentelle Besamung: ' + (formData.besamung ? 'Ja' : 'Nein') + '\n';
-    prompt += '- SDI möglich: ' + (formData.sdi ? 'Ja' : 'Nein') + '\n';
-    prompt += '- Tempo: ' + formData.tempo + '\n';
-    prompt += '- Zeitziel: ' + (formData.zeitziel > 0 ? formData.zeitziel + ' Jahre' : 'kein Zeitlimit') + '\n';
-    prompt += '- Startdatum: ' + (formData.startdatum || 'sofort') + '\n';
-    prompt += '- Generationen pro Jahr: ' + formData.generationen_pro_jahr + '\n';
-    if (formData.zuchtziel) prompt += '- Zuchtziel: ' + formData.zuchtziel + '\n';
-    
-    prompt += '\nErstelle einen konkreten, praxisnahen Zuchtplan. ';
-    if (formData.zeitziel > 0) {
-        prompt += 'WICHTIG: Der Imker will innerhalb von ' + formData.zeitziel + ' Jahr(en) eine stabile Linie! ';
-        prompt += 'Erstelle einen KONKRETEN KALENDERPLAN mit echten Monaten und Jahren ab ' + (formData.startdatum || 'jetzt') + '. ';
-        prompt += 'Bei den Generationen soll jeder Schritt ein konkretes Datum haben (z.B. "März 2026 – Sammelbrutableger", "Mai 2026 – Umlarven F1"). ';
-        prompt += 'Sage ehrlich ob das Zeitziel realistisch ist. Wenn nicht, erkläre was realistisch wäre und was das Minimum ist. ';
-    }
-    prompt += 'Antworte NUR mit validem JSON (kein Markdown, keine Backticks) in diesem Format:\n';
-    prompt += '{\n';
-    prompt += '  "wahrscheinlichkeit": "65-80%",\n';
-    prompt += '  "wahrscheinlichkeit_text": "für eine stabile Linie nach 4 Generationen",\n';
-    prompt += '  "realistisch": true,\n';
-    prompt += '  "realistisch_text": "Dein Zeitziel von X Jahren ist realistisch/ambitioniert/unrealistisch weil...",\n';
-    prompt += '  "strategie": "Textbeschreibung der empfohlenen Strategie...",\n';
-    prompt += '  "generationen": [\n';
-    prompt += '    {"titel": "März 2026 – Stammkönigin auswählen (F0)", "beschreibung": "Text...", "stats": ["30 Königinnen", "4 Drohnenvölker"]},\n';
-    prompt += '    {"titel": "Mai 2026 – F1 erzeugen", "beschreibung": "Text...", "stats": ["..."]}\n';
-    prompt += '  ],\n';
-    prompt += '  "risiken": "Text zu Risiken und Inzuchtmanagement...",\n';
-    prompt += '  "zusammenfassung": "Kurze Zusammenfassung des Plans..."\n';
-    prompt += '}\n';
-    prompt += '\nWichtig: Antworte komplett auf Deutsch. Gib konkrete Zahlen, Monate und Jahre. Berücksichtige die Bienensaison (Zucht nur ca. April-August möglich). Sei praxisnah und ehrlich bei der Erfolgswahrscheinlichkeit.';
-    
-    try {
-        var response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 2000,
-                messages: [{role: 'user', content: prompt}]
-            })
-        });
-        
-        var data = await response.json();
-        var text = data.content.map(function(c){return c.text||'';}).join('');
-        
-        // JSON parsen
-        var clean = text.replace(/```json|```/g, '').trim();
-        zuchtplan = JSON.parse(clean);
+    // Kurze Animation, dann berechnen
+    setTimeout(function() {
+        zuchtplan = buildZuchtplan();
         step = 3;
-    } catch(err) {
-        console.error('KI-Analyse Fehler:', err);
-        // Fallback
-        zuchtplan = buildFallbackPlan();
-        step = 3;
-    }
-    
-    render();
-    
-    // Chat scrollen
-    setTimeout(function(){
-        var el = document.getElementById('chatMsgs');
-        if (el) el.scrollTop = el.scrollHeight;
-    }, 100);
+        render();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }, 800);
 }
 
 // ============================================
-// CHAT (Rückfragen)
+// ZUCHTPLAN BERECHNEN
 // ============================================
-async function sendChat() {
-    var input = document.getElementById('chatInput');
-    var text = input.value.trim();
-    if (!text) return;
-    
-    chatHistory.push({role:'user', text:text});
-    input.value = '';
-    render();
-    
-    // System-Kontext
-    var sysPrompt = 'Du bist ein Zuchtberater für Bienenzucht (instrumentelle Besamung, SDI, Linienaufbau). ';
-    sysPrompt += 'Der Imker hat folgenden Plan: ' + JSON.stringify(zuchtplan).substring(0, 1500) + '. ';
-    sysPrompt += 'Ressourcen: ' + formData.voelker + ' Völker, ' + formData.drohnenvoelker + ' Drohnenvölker, ' + formData.koeniginnen_pro_serie + ' Königinnen/Serie. ';
-    sysPrompt += 'Antworte auf Deutsch, praxisnah und konkret. Maximal 3-4 Sätze.';
-    
-    var messages = [{role:'user', content: sysPrompt + '\n\nFrage: ' + text}];
-    
-    try {
-        var response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 500,
-                messages: messages
-            })
-        });
-        
-        var data = await response.json();
-        var answer = data.content.map(function(c){return c.text||'';}).join('');
-        chatHistory.push({role:'ai', text:answer});
-    } catch(err) {
-        chatHistory.push({role:'ai', text:'Entschuldigung, es gab einen Fehler. Bitte versuche es nochmal.'});
-    }
-    
-    render();
-    setTimeout(function(){
-        var el = document.getElementById('chatMsgs');
-        if (el) el.scrollTop = el.scrollHeight;
-    }, 100);
-}
-
-// ============================================
-// FALLBACK (wenn API nicht erreichbar)
-// ============================================
-function buildFallbackPlan() {
+function buildZuchtplan() {
     var m = METHODEN.find(function(x){return x.id===formData.methode;});
     var kps = formData.koeniginnen_pro_serie;
     var sel = Math.max(3, Math.round(kps * 0.15));
     var zz = formData.zeitziel || 0;
-    var gpj = formData.generationen_pro_jahr;
+    var gpj = formData.generationen_pro_jahr || 1; // 0 = KI empfehlen → Fallback: 1
+    if (gpj === 0) gpj = kps >= 30 && formData.besamung ? 2 : 1; // Smart-Fallback
     var minGen = parseInt(m.generations);
     var startDate = new Date((formData.startdatum || new Date().toISOString().slice(0,7)) + '-01');
+    
+    // Max-Erfolg: mehr Generationen und härtere Selektion
+    if (formData.tempo === 'max_erfolg') {
+        kps = Math.max(kps, 30);
+        sel = Math.max(3, Math.round(kps * 0.1)); // Härtere Selektion: nur Top 10%
+        minGen = Math.max(minGen, 5); // Mindestens 5 Generationen
+    }
     
     // Kalender-Monate berechnen
     var monate = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -737,6 +641,8 @@ function buildFallbackPlan() {
         } else {
             realistischText = 'Dein Zeitziel von ' + zz + ' Jahren ist realistisch für ' + m.title + '. Mit ' + kps + ' Königinnen pro Serie und ' + gpj + ' Generation(en) pro Jahr passt der Zeitplan.';
         }
+    } else {
+        realistischText = 'Empfohlener Zeitrahmen: ' + noetigeJahre + ' Jahre bei ' + gpj + ' Generation(en) pro Jahr.' + (formData.tempo==='max_erfolg'?' Für maximalen Erfolg wird ein längerer Zeitrahmen mit mehr Generationen und härterer Selektion empfohlen.':'');
     }
     
     // Generationen mit echten Daten
@@ -813,6 +719,66 @@ function formatAIText(text) {
 function escHtml(str) {
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================
+// WAS-WENN SZENARIEN
+// ============================================
+function toggleSzenario(id) {
+    activeSzenario = activeSzenario === id ? null : id;
+    render();
+}
+
+function buildSzenarien() {
+    var m = METHODEN.find(function(x){return x.id===formData.methode;});
+    var kps = formData.koeniginnen_pro_serie;
+    var dv = formData.drohnenvoelker;
+    var ewk = formData.begattungseinheiten;
+    
+    return [
+        {
+            id: 'koenigin_verlust',
+            icon: '💀',
+            frage: 'Meine Stammkönigin stirbt in F1?',
+            antwort: 'Das ist das häufigste Risiko. <strong>Vorsorge:</strong> Ziehe mindestens 2-3 Reserveköniginnen als Backup auf und halte Umlarv-Material zurück. Wenn die Stammkönigin stirbt, kannst du die beste F1-Tochter als neue Stammkönigin einsetzen – der Plan verschiebt sich um eine halbe Generation, bleibt aber machbar. <strong>Profi-Tipp:</strong> Von der Stammkönigin frühzeitig Sperma einlagern lassen (Spermabank).'
+        },
+        {
+            id: 'weniger_ewk',
+            icon: '📦',
+            frage: 'Ich habe weniger als ' + ewk + ' Begattungseinheiten?',
+            antwort: 'Mit weniger EWKs musst du in <strong>2 Serien pro Generation</strong> arbeiten. Beispiel: Statt ' + kps + ' auf einmal, machst du 2× ' + Math.ceil(kps/2) + '. Das verlängert jede Generation um ca. 4-6 Wochen. Alternativ: Mini-Plus-Kästchen sind günstig und platzsparend – investiere in mehr EWKs wenn möglich.'
+        },
+        {
+            id: 'mehr_drohnen',
+            icon: '♂️',
+            frage: 'Reichen ' + dv + ' Drohnenvölker?',
+            antwort: (dv >= 6 ? 'Ja, ' + dv + ' Drohnenvölker sind eine gute Basis. ' : '<strong>' + dv + ' ist knapp.</strong> Empfohlen sind mindestens 6 verschiedene Drohnenvölker. ') + 'Wichtig: Die Drohnenvölker müssen <strong>genetisch verschieden</strong> sein (verschiedene Mütter). Drohnen vom gleichen Bruder-Volk zählen als eine Quelle. <strong>COI-Faustregel:</strong> Je mehr verschiedene Drohnenlinien, desto niedriger der Inzuchtkoeffizient der Nachkommen.'
+        },
+        {
+            id: 'inzucht_f3',
+            icon: '🧬',
+            frage: 'Wie manage ich Inzucht ab F3?',
+            antwort: 'Ab F3 steigt der COI kritisch – besonders bei ' + m.title + '. <strong>Maßnahmen:</strong> 1) COI vor jeder Anpaarung berechnen (Inzuchtrechner). 2) Fremde, unbewandte Drohnenlinien einkreuzen. 3) Niemals Vollgeschwister-Paarung (Mutter × Sohn derselben Königin). 4) Drohnenvölker aus anderem Zuchtprogramm verwenden. <strong>Ziel: COI unter 12.5%</strong> halten.'
+        },
+        {
+            id: 'selektion',
+            icon: '🏆',
+            frage: 'Wie hart soll ich selektieren?',
+            antwort: 'Bei ' + kps + ' Königinnen pro Generation empfehle ich <strong>Top ' + Math.round(Math.max(3, Math.round(kps*0.15))/kps*100) + '% Selektion</strong> (die besten ' + Math.max(3, Math.round(kps*0.15)) + ' weiterzüchten). Weniger als 3 Zuchtmütter = zu hohe Inzuchtgefahr. Mehr als 30% = zu geringe Selektionsintensität. <strong>Priorität bei der Selektion:</strong> 1. Varroa-Toleranz, 2. Sanftmut, 3. Schwarmträgheit, 4. Honigleistung. Tipp: Bewerte mindestens über eine volle Saison bevor du selektierst.'
+        },
+        {
+            id: 'wetter',
+            icon: '🌧️',
+            frage: 'Schlechtes Wetter ruiniert meine Zuchtsaison?',
+            antwort: 'Kaltes/verregnetes Frühjahr = verspätete Drohnenreife, keine Belegstellenflüge, gestörte Besamung. <strong>Gegenmaßnahmen:</strong> 1) Besamungsgerät nutzen (wetterunabhängig). 2) Drohnenreife im Warmraum vorziehen. 3) Notfalls eine Generation überspringen – besser als mit schlechtem Material weiterzüchten. 4) Immer Plan B: Wenn Frühjahr ausfällt, auf Spätsommer-Serie ausweichen.'
+        },
+        {
+            id: 'beschleunigen',
+            icon: '⚡',
+            frage: 'Kann ich den Plan beschleunigen?',
+            antwort: '<strong>Ja, mit:</strong> 1) 2 Generationen pro Jahr (Frühjahr April-Juni + Spätsommer Juli-September). 2) Mehr Königinnen pro Serie = härtere Selektion möglich = schnellerer Fortschritt. 3) SDI statt Belegstelle = direktere genetische Kontrolle. 4) Parallele Linien züchten und die beste behalten. <strong>Warnung:</strong> Zu schnell = höheres Risiko für Inzucht und Fehlselektionen. Qualität geht vor Geschwindigkeit.'
+        }
+    ];
 }
 
 // ============================================
