@@ -1042,24 +1042,29 @@ function renderStepKoenigin() {
         html += '<input type="text" class="input" value="' + (formData.koenigin.nummer||'') + '" placeholder="z.B. K-2025-12" onchange="formData.koenigin.nummer=this.value"></div>';
     }
     
+    // Jahrgang (immer sichtbar – jede Königin hat einen Jahrgang)
+    var currentYear = new Date().getFullYear();
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Jahrgang</label>';
+    html += '<select class="input" onchange="formData.koenigin.jahrgang=parseInt(this.value);autoSetFarbe();renderModal()">';
+    for (var y = currentYear; y >= currentYear - 8; y--) {
+        html += '<option value="' + y + '"' + (formData.koenigin.jahrgang==y?' selected':'') + '>' + y + ' – ' + getFarbeLabel(y) + '</option>';
+    }
+    html += '</select></div>';
+    
+    // Markierung
     html += '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">';
     html += '<label style="font-size:.85rem;font-weight:500">Königin markiert?</label>';
-    html += '<label style="display:flex;align-items:center;gap:.35rem;cursor:pointer"><input type="checkbox" ' + (formData.koenigin.markiert?'checked':'') + ' onchange="formData.koenigin.markiert=this.checked;renderModal()" style="width:20px;height:20px;accent-color:#F5A623"> <span style="font-size:.85rem">' + (formData.koenigin.markiert?'Ja':'Nein') + '</span></label>';
+    html += '<label style="display:flex;align-items:center;gap:.35rem;cursor:pointer"><input type="checkbox" ' + (formData.koenigin.markiert?'checked':'') + ' onchange="formData.koenigin.markiert=this.checked;if(this.checked)autoSetFarbe();renderModal()" style="width:20px;height:20px;accent-color:#F5A623"> <span style="font-size:.85rem">' + (formData.koenigin.markiert?'Ja':'Nein') + '</span></label>';
+    if (formData.koenigin.jahrgang) {
+        var autoFarbe = getFarbeFromJahr(formData.koenigin.jahrgang);
+        html += ' ' + getColorDot(autoFarbe);
+    }
     html += '</div>';
     
     if (formData.koenigin.markiert) {
-        // Jahrgang-Auswahl
-        var currentYear = new Date().getFullYear();
-        html += '<div style="display:flex;gap:1rem;margin-bottom:.75rem;align-items:flex-end;flex-wrap:wrap">';
-        
-        html += '<div style="flex:1;min-width:120px"><label class="form-label" style="font-size:.82rem">Jahrgang</label>';
-        html += '<select class="input" onchange="formData.koenigin.jahrgang=parseInt(this.value);autoSetFarbe();renderModal()">';
-        for (var y = currentYear; y >= currentYear - 6; y--) {
-            html += '<option value="' + y + '"' + (formData.koenigin.jahrgang==y?' selected':'') + '>' + y + '</option>';
-        }
-        html += '</select></div>';
-        
-        html += '<div style="flex:2"><label class="form-label" style="font-size:.82rem">Farbe (int. Farbsystem)</label>';
+        // Farbpunkte (vorausgewählt nach Jahrgang, manuell änderbar)
+        html += '<div style="margin-bottom:.75rem">';
+        html += '<label class="form-label" style="font-size:.82rem">Farbe <span style="font-size:.68rem;color:#94a3b8;font-weight:400">automatisch nach Jahrgang – klick zum Ändern</span></label>';
         html += '<div class="color-pills">';
         [{key:'weiss',label:'Weiß',endziffer:'1/6'},{key:'gelb',label:'Gelb',endziffer:'2/7'},{key:'rot',label:'Rot',endziffer:'3/8'},{key:'gruen',label:'Grün',endziffer:'4/9'},{key:'blau',label:'Blau',endziffer:'5/0'}].forEach(function(c) {
             html += '<div style="display:flex;flex-direction:column;align-items:center;gap:.2rem">';
@@ -1067,7 +1072,6 @@ function renderStepKoenigin() {
             html += '<span style="font-size:.55rem;color:#7A6652">' + c.endziffer + '</span></div>';
         });
         html += '</div></div>';
-        html += '</div>';
     }
     
     // === BeeBreed Zuchtwerte ===
@@ -1112,9 +1116,19 @@ function renderStepKoenigin() {
 function autoSetFarbe() {
     var j = formData.koenigin.jahrgang;
     if (!j) return;
-    var endziffer = j % 10;
+    formData.koenigin.farbe = getFarbeFromJahr(j);
+}
+
+function getFarbeFromJahr(jahr) {
+    if (!jahr) return '';
+    var endziffer = jahr % 10;
     var map = {1:'weiss',6:'weiss',2:'gelb',7:'gelb',3:'rot',8:'rot',4:'gruen',9:'gruen',5:'blau',0:'blau'};
-    formData.koenigin.farbe = map[endziffer] || '';
+    return map[endziffer] || '';
+}
+
+function getFarbeLabel(jahr) {
+    var farben = {weiss:'⬜ Weiß',gelb:'🟡 Gelb',rot:'🔴 Rot',gruen:'🟢 Grün',blau:'🔵 Blau'};
+    return farben[getFarbeFromJahr(jahr)] || '';
 }
 
 function toggleTaetigkeit(key) {
