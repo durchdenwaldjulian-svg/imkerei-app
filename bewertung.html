@@ -1026,14 +1026,26 @@ function renderStepKoenigin() {
     html += '</div>';
     
     if (formData.koenigin.markiert) {
-        html += '<div style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Farbe (int. Farbsystem)</label>';
+        // Jahrgang-Auswahl
+        var currentYear = new Date().getFullYear();
+        html += '<div style="display:flex;gap:1rem;margin-bottom:.75rem;align-items:flex-end;flex-wrap:wrap">';
+        
+        html += '<div style="flex:1;min-width:120px"><label class="form-label" style="font-size:.82rem">Jahrgang</label>';
+        html += '<select class="input" onchange="formData.koenigin.jahrgang=parseInt(this.value);autoSetFarbe();renderModal()">';
+        for (var y = currentYear; y >= currentYear - 6; y--) {
+            html += '<option value="' + y + '"' + (formData.koenigin.jahrgang==y?' selected':'') + '>' + y + '</option>';
+        }
+        html += '</select></div>';
+        
+        html += '<div style="flex:2"><label class="form-label" style="font-size:.82rem">Farbe (int. Farbsystem)</label>';
         html += '<div class="color-pills">';
-        [{key:'weiss',label:'Weiß (1/6)'},{key:'gelb',label:'Gelb (2/7)'},{key:'rot',label:'Rot (3/8)'},{key:'gruen',label:'Grün (4/9)'},{key:'blau',label:'Blau (5/0)'}].forEach(function(c) {
+        [{key:'weiss',label:'Weiß',endziffer:'1/6'},{key:'gelb',label:'Gelb',endziffer:'2/7'},{key:'rot',label:'Rot',endziffer:'3/8'},{key:'gruen',label:'Grün',endziffer:'4/9'},{key:'blau',label:'Blau',endziffer:'5/0'}].forEach(function(c) {
             html += '<div style="display:flex;flex-direction:column;align-items:center;gap:.2rem">';
             html += '<div class="color-pill c-' + c.key + ' ' + (formData.koenigin.farbe===c.key?'selected':'') + '" onclick="formData.koenigin.farbe=\'' + c.key + '\';renderModal()"></div>';
-            html += '<span style="font-size:.6rem;color:#7A6652">' + c.label + '</span></div>';
+            html += '<span style="font-size:.55rem;color:#7A6652">' + c.endziffer + '</span></div>';
         });
         html += '</div></div>';
+        html += '</div>';
     }
     
     return html;
@@ -1042,6 +1054,14 @@ function renderStepKoenigin() {
 // ============================================
 // MODAL HELPERS
 // ============================================
+function autoSetFarbe() {
+    var j = formData.koenigin.jahrgang;
+    if (!j) return;
+    var endziffer = j % 10;
+    var map = {1:'weiss',6:'weiss',2:'gelb',7:'gelb',3:'rot',8:'rot',4:'gruen',9:'gruen',5:'blau',0:'blau'};
+    formData.koenigin.farbe = map[endziffer] || '';
+}
+
 function toggleTaetigkeit(key) {
     var idx = formData.taetigkeiten.findIndex(function(x){return x.key===key;});
     if (idx > -1) formData.taetigkeiten.splice(idx, 1);
