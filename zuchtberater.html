@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🧬 Zuchtberater – bienenplan.de</title>
+<meta name="theme-color" content="#F5A623">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="shared-styles.css">
+<style>
+body{padding-left:220px;padding-bottom:2rem}
+.nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+.container{max-width:860px;margin:0 auto;padding:1rem}
+
+/* === HEADER === */
+.zb-header{background:linear-gradient(135deg,#1C1410 0%,#2D1F15 50%,#1a2332 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.zb-header::before{content:'';position:absolute;top:-40%;right:-5%;width:280px;height:280px;background:radial-gradient(circle,rgba(139,92,246,0.12) 0%,transparent 70%);border-radius:50%}
+.zb-header::after{content:'';position:absolute;bottom:-30%;left:10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 70%);border-radius:50%}
+.zb-header h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.35rem;position:relative}
+.zb-header p{color:#C4A882;font-size:.88rem;position:relative;line-height:1.5}
+.zb-badges{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;position:relative}
+.zb-badges span{font-size:.68rem;padding:.25rem .6rem;border-radius:999px;background:rgba(245,166,35,0.12);color:#F5A623;font-weight:600}
+
+/* === METHODEN-KARTEN === */
+.methoden-grid{display:grid;grid-template-columns:1fr;gap:.75rem;margin-bottom:1.5rem}
+.methode-card{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;padding:1.25rem;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.methode-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,166,35,0.12)}
+.methode-card.selected{border-color:#F5A623;background:linear-gradient(135deg,#FFF8EE,#fff);box-shadow:0 0 0 3px rgba(245,166,35,0.15)}
+.methode-card.selected::after{content:'✓';position:absolute;top:.75rem;right:.75rem;width:28px;height:28px;background:#F5A623;color:#1C1410;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+.methode-icon{font-size:1.8rem;margin-bottom:.5rem}
+.methode-title{font-family:'DM Serif Display',serif;font-size:1.05rem;color:#1C1410;margin-bottom:.25rem}
+.methode-desc{font-size:.8rem;color:#7A6652;line-height:1.45;margin-bottom:.5rem}
+.methode-tags{display:flex;gap:.35rem;flex-wrap:wrap}
+.methode-tag{font-size:.65rem;padding:.15rem .45rem;border-radius:.25rem;font-weight:600}
+.methode-tag.green{background:#d1fae5;color:#065f46}
+.methode-tag.yellow{background:#FFF3D6;color:#92400e}
+.methode-tag.red{background:#fee2e2;color:#991b1b}
+.methode-tag.blue{background:#dbeafe;color:#1e40af}
+
+/* === WIZARD STEPS === */
+.step-bar{display:flex;gap:.5rem;margin-bottom:1.5rem}
+.step-dot{flex:1;height:5px;border-radius:3px;background:#E8DFD4;transition:all .3s;cursor:pointer}
+.step-dot.done{background:#10b981}
+.step-dot.current{background:#F5A623}
+.step-dot:hover{opacity:.8}
+
+.step-label{display:flex;justify-content:space-between;margin-bottom:1rem;font-size:.7rem;color:#7A6652}
+
+/* === RESOURCE INPUTS === */
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.res-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;text-align:center;transition:all .15s}
+.res-card:focus-within{border-color:#F5A623}
+.res-icon{font-size:1.5rem;margin-bottom:.35rem}
+.res-label{font-size:.78rem;color:#7A6652;margin-bottom:.4rem;font-weight:500}
+.res-input{width:100%;text-align:center;border:none;background:#f5f0eb;border-radius:.5rem;padding:.6rem;font-size:1.1rem;font-weight:700;font-family:inherit;color:#1C1410;outline:none}
+.res-input:focus{background:#FFF8EE;box-shadow:0 0 0 2px rgba(245,166,35,0.2)}
+
+/* === TOGGLE BUTTONS === */
+.toggle-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+.toggle-btn{flex:1;padding:.75rem;border:2px solid #E8DFD4;border-radius:.75rem;background:#fff;cursor:pointer;text-align:center;font-size:.85rem;font-weight:500;transition:all .15s;font-family:inherit}
+.toggle-btn:hover{border-color:#F5A623;background:#FFF8EE}
+.toggle-btn.selected{border-color:#F5A623;background:#F5A623;color:#1C1410;font-weight:700}
+
+/* === GENERATION TIMELINE === */
+.gen-timeline{position:relative;padding-left:2rem;margin:1rem 0}
+.gen-timeline::before{content:'';position:absolute;left:.85rem;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#F5A623,#10b981)}
+.gen-item{position:relative;padding:.75rem 0 .75rem 1.5rem;margin-bottom:.5rem}
+.gen-item::before{content:'';position:absolute;left:-1.2rem;top:1rem;width:14px;height:14px;border-radius:50%;background:#F5A623;border:3px solid #fff;box-shadow:0 0 0 2px #F5A623;z-index:1}
+.gen-item.done::before{background:#10b981;box-shadow:0 0 0 2px #10b981}
+.gen-card{background:#fff;border:1px solid rgba(245,166,35,0.15);border-radius:.75rem;padding:1rem;box-shadow:0 2px 8px rgba(28,20,16,0.04)}
+.gen-title{font-family:'DM Serif Display',serif;font-size:1rem;color:#1C1410;margin-bottom:.25rem}
+.gen-sub{font-size:.8rem;color:#7A6652;line-height:1.5}
+.gen-stats{display:flex;gap:.75rem;margin-top:.5rem;flex-wrap:wrap}
+.gen-stat{font-size:.72rem;padding:.2rem .5rem;border-radius:.25rem;background:#f5f0eb;color:#7A6652;font-weight:500}
+
+/* === ERGEBNIS === */
+.result-hero{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #6ee7b7;border-radius:1rem;padding:1.5rem;text-align:center;margin-bottom:1rem}
+.result-pct{font-family:'DM Serif Display',serif;font-size:3rem;color:#059669;margin:.5rem 0}
+.result-label{font-size:.85rem;color:#065f46;font-weight:500}
+
+.prob-bar{height:12px;background:#E8DFD4;border-radius:6px;overflow:hidden;margin:.75rem 0}
+.prob-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);transition:width .8s ease}
+
+/* === AI LOADING === */
+.ai-loading{text-align:center;padding:3rem 1rem}
+.ai-pulse{display:inline-block;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#F5A623,#f7bc5e);animation:aiPulse 1.5s ease infinite}
+@keyframes aiPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.7}}
+.ai-dots{margin-top:1rem;font-size:.9rem;color:#7A6652}
+.ai-dots::after{content:'';animation:dots 1.5s infinite}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+
+/* === CHAT === */
+.chat-box{background:#fff;border:2px solid #E8DFD4;border-radius:1rem;margin-top:1rem;overflow:hidden}
+.chat-msgs{max-height:400px;overflow-y:auto;padding:1rem}
+.chat-msg{margin-bottom:1rem;max-width:90%}
+.chat-msg.user{margin-left:auto;text-align:right}
+.chat-msg.ai{margin-right:auto}
+.chat-bubble{display:inline-block;padding:.75rem 1rem;border-radius:1rem;font-size:.88rem;line-height:1.5;text-align:left}
+.chat-msg.user .chat-bubble{background:#F5A623;color:#1C1410;border-bottom-right-radius:.25rem}
+.chat-msg.ai .chat-bubble{background:#f5f0eb;color:#1C1410;border-bottom-left-radius:.25rem}
+.chat-input-row{display:flex;gap:.5rem;padding:.75rem;border-top:2px solid #E8DFD4}
+.chat-input{flex:1;border:2px solid #E8DFD4;border-radius:.75rem;padding:.65rem .875rem;font-size:.9rem;font-family:inherit;outline:none;resize:none}
+.chat-input:focus{border-color:#F5A623}
+.chat-send{width:42px;height:42px;border:none;background:#F5A623;color:#1C1410;border-radius:.75rem;cursor:pointer;font-size:1.1rem;font-weight:700;transition:all .15s}
+.chat-send:hover{background:#E09000;transform:scale(1.05)}
+
+@media(max-width:768px){
+    body{padding-left:0;padding-bottom:90px}
+    .res-grid{grid-template-columns:1fr 1fr}
+    .methoden-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+<script src="config.js"></script>
+<script src="plan.js"></script>
+<script src="presence.js" defer></script>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+    <div class="zb-header">
+        <h1>🧬 Zuchtberater</h1>
+        <p>Instrumentelle Besamung, Selektion & Linienaufbau – KI-gestützte Strategieplanung für deine Bienenzucht.</p>
+        <div class="zb-badges">
+            <span>🔬 SDI & MDI</span>
+            <span>📊 Erfolgswahrscheinlichkeit</span>
+            <span>🧬 Generationsplanung</span>
+            <span>👑 Linienaufbau</span>
+        </div>
+    </div>
+    
+    <div id="app"></div>
+</div>
+
+<script>
+// ============================================
+// ZUCHTBERATER – KI-GESTÜTZTE ZUCHTPLANUNG
+// ============================================
+
+var step = 0; // 0=Methode, 1=Ressourcen, 2=Analyse, 3=Ergebnis
+var chatHistory = [];
+
+var METHODEN = [
+    {
+        id:'sdi',
+        icon:'🔬',
+        title:'Single Drone Insemination (SDI)',
+        desc:'Maximale genetische Kontrolle durch Besamung mit einem einzelnen Drohn. Ideal für Forschung und präzisen Linienaufbau.',
+        tags:[{t:'Höchste Kontrolle',c:'green'},{t:'Langsam',c:'yellow'},{t:'Besamungsgerät nötig',c:'blue'}],
+        generations:'4–6',
+        stability:'Sehr hoch',
+        inbreeding:'Hoch – aktiv managen',
+        speed:'Langsam (4–6 Jahre)'
+    },
+    {
+        id:'backcross',
+        icon:'🔄',
+        title:'Rückkreuzung (Backcross)',
+        desc:'Töchter werden mit Drohnen der Stammkönigin-Linie zurückgekreuzt. Fixiert gewünschte Eigenschaften schrittweise.',
+        tags:[{t:'Eigenschafts-Fixierung',c:'green'},{t:'Mittleres Tempo',c:'yellow'},{t:'Inzucht beachten',c:'red'}],
+        generations:'3–5',
+        stability:'Hoch',
+        inbreeding:'Mittel – steigt pro Generation',
+        speed:'Mittel (3–5 Jahre)'
+    },
+    {
+        id:'brueder',
+        icon:'👨‍👩‍👦‍👦',
+        title:'Brüderdrohnen-Besamung',
+        desc:'Königinnen werden mit Drohnen von Schwestern der gleichen Linie besamt. Guter Kompromiss zwischen Kontrolle und Diversität.',
+        tags:[{t:'Gute Balance',c:'green'},{t:'Mittlere Kontrolle',c:'yellow'},{t:'Praxistauglich',c:'blue'}],
+        generations:'3–4',
+        stability:'Mittel-Hoch',
+        inbreeding:'Mittel',
+        speed:'Mittel (3–4 Jahre)'
+    },
+    {
+        id:'kombi',
+        icon:'⚡',
+        title:'SDI + Brüderdrohnen Kombi',
+        desc:'Erst SDI zur Linienfindung (F1-F2), dann Brüderdrohnen zur Stabilisierung. Profi-Strategie für ernsthafte Züchter.',
+        tags:[{t:'Profi-Strategie',c:'green'},{t:'Flexibel',c:'blue'},{t:'Erfahrung nötig',c:'yellow'}],
+        generations:'4–5',
+        stability:'Sehr hoch',
+        inbreeding:'Kontrollierbar',
+        speed:'Mittel-Schnell (3–5 Jahre)'
+    },
+    {
+        id:'klassisch',
+        icon:'🏔️',
+        title:'Klassische Selektion (Belegstelle)',
+        desc:'Kontrollierte Paarung auf Belegstelle. Keine Besamung nötig. Standard im Vereinswesen, langsamer aber bewährt.',
+        tags:[{t:'Keine Besamung nötig',c:'green'},{t:'Langsamer',c:'yellow'},{t:'Bewährt',c:'blue'}],
+        generations:'5–8',
+        stability:'Mittel',
+        inbreeding:'Gering',
+        speed:'Langsam (5–8 Jahre)'
+    }
+];
+
+var formData = {
+    methode: '',
+    voelker: 20,
+    drohnenvoelker: 4,
+    begattungseinheiten: 15,
+    koeniginnen_pro_serie: 30,
+    besamung: true,
+    sdi: false,
+    tempo: 'stabil',
+    generationen_pro_jahr: 1,
+    zuchtziel: ''
+};
+
+var zuchtplan = null; // KI-generiertes Ergebnis
+
+// ============================================
+// RENDER
+// ============================================
+function render() {
+    var html = '';
+    
+    // Step Bar
+    var labels = ['Strategie','Ressourcen','KI-Analyse','Zuchtplan'];
+    html += '<div class="step-label">';
+    labels.forEach(function(l,i){
+        html += '<span style="' + (i===step?'color:#F5A623;font-weight:700':'') + '">' + l + '</span>';
+    });
+    html += '</div>';
+    html += '<div class="step-bar">';
+    for (var i = 0; i < 4; i++) {
+        var cls = i < step ? 'done' : (i === step ? 'current' : '');
+        html += '<div class="step-dot ' + cls + '" onclick="' + (i<step?'step='+i+';render()':'') + '"></div>';
+    }
+    html += '</div>';
+    
+    if (step === 0) html += renderStep0();
+    else if (step === 1) html += renderStep1();
+    else if (step === 2) html += renderStep2();
+    else html += renderStep3();
+    
+    document.getElementById('app').innerHTML = html;
+}
+
+// ============================================
+// STEP 0: STRATEGIE WÄHLEN
+// ============================================
+function renderStep0() {
+    var html = '<h2 style="font-size:1.15rem;margin-bottom:.75rem">Zuchtstrategie wählen</h2>';
+    html += '<p style="font-size:.85rem;color:#7A6652;margin-bottom:1.25rem">Welche Methode passt zu deinem Zuchtprojekt? Wähle eine Strategie als Ausgangspunkt – der KI-Berater optimiert den Plan anhand deiner Ressourcen.</p>';
+    
+    html += '<div class="methoden-grid">';
+    METHODEN.forEach(function(m) {
+        var sel = formData.methode === m.id;
+        html += '<div class="methode-card ' + (sel?'selected':'') + '" onclick="formData.methode=\'' + m.id + '\';render()">';
+        html += '<div style="display:flex;gap:1rem;align-items:flex-start">';
+        html += '<div class="methode-icon">' + m.icon + '</div>';
+        html += '<div style="flex:1">';
+        html += '<div class="methode-title">' + m.title + '</div>';
+        html += '<div class="methode-desc">' + m.desc + '</div>';
+        html += '<div class="methode-tags">';
+        m.tags.forEach(function(t){ html += '<span class="methode-tag ' + t.c + '">' + t.t + '</span>'; });
+        html += '</div>';
+        
+        // Kurzinfo
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .75rem;margin-top:.5rem;font-size:.72rem;color:#7A6652">';
+        html += '<div>⏱️ ' + m.speed + '</div>';
+        html += '<div>🧬 Generationen: ' + m.generations + '</div>';
+        html += '<div>🎯 Stabilität: ' + m.stability + '</div>';
+        html += '<div>⚠️ Inzucht: ' + m.inbreeding + '</div>';
+        html += '</div>';
+        
+        html += '</div></div></div>';
+    });
+    html += '</div>';
+    
+    html += '<button class="btn btn-primary btn-block" style="padding:1rem;font-size:1rem" onclick="nextStep()" ' + (formData.methode?'':'disabled style="opacity:.5;cursor:default;padding:1rem;font-size:1rem"') + '>Weiter → Ressourcen eingeben</button>';
+    
+    return html;
+}
+
+// ============================================
+// STEP 1: RESSOURCEN
+// ============================================
+function renderStep1() {
+    var html = '<button style="border:none;background:none;color:#7A6652;cursor:pointer;font-size:.85rem;font-family:inherit;margin-bottom:1rem" onclick="step=0;render()">← Zurück zur Strategiewahl</button>';
+    
+    var m = METHODEN.find(function(x){return x.id===formData.methode;});
+    html += '<div class="card" style="background:#FFF8EE;border-color:rgba(245,166,35,0.2);margin-bottom:1rem">';
+    html += '<div style="display:flex;align-items:center;gap:.75rem">';
+    html += '<span style="font-size:1.5rem">' + m.icon + '</span>';
+    html += '<div><div style="font-weight:700;font-size:.95rem">' + m.title + '</div>';
+    html += '<div style="font-size:.78rem;color:#7A6652">' + m.speed + '</div></div>';
+    html += '</div></div>';
+    
+    html += '<h2 style="font-size:1.15rem;margin-bottom:.25rem">Deine Ressourcen</h2>';
+    html += '<p style="font-size:.82rem;color:#7A6652;margin-bottom:1rem">Je genauer die Angaben, desto besser die Empfehlung.</p>';
+    
+    html += '<div class="res-grid">';
+    var fields = [
+        {key:'voelker', icon:'🐝', label:'Wirtschaftsvölker', val:formData.voelker},
+        {key:'drohnenvoelker', icon:'♂️', label:'Drohnenvölker', val:formData.drohnenvoelker},
+        {key:'begattungseinheiten', icon:'📦', label:'Begattungseinheiten', val:formData.begattungseinheiten},
+        {key:'koeniginnen_pro_serie', icon:'👑', label:'Königinnen/Serie', val:formData.koeniginnen_pro_serie}
+    ];
+    fields.forEach(function(f) {
+        html += '<div class="res-card">';
+        html += '<div class="res-icon">' + f.icon + '</div>';
+        html += '<div class="res-label">' + f.label + '</div>';
+        html += '<input type="number" class="res-input" value="' + f.val + '" min="1" onchange="formData[\'' + f.key + '\']=parseInt(this.value)||0">';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    // Besamung
+    html += '<div class="form-group" style="margin-top:1.25rem"><label class="form-label" style="font-size:.88rem">Instrumentelle Besamung möglich?</label>';
+    html += '<div class="toggle-row">';
+    html += '<div class="toggle-btn ' + (formData.besamung?'selected':'') + '" onclick="formData.besamung=true;render()">✅ Ja</div>';
+    html += '<div class="toggle-btn ' + (!formData.besamung?'selected':'') + '" onclick="formData.besamung=false;formData.sdi=false;render()">❌ Nein</div>';
+    html += '</div></div>';
+    
+    if (formData.besamung) {
+        html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Single-Drone Insemination (SDI)?</label>';
+        html += '<div class="toggle-row">';
+        html += '<div class="toggle-btn ' + (formData.sdi?'selected':'') + '" onclick="formData.sdi=true;render()">🔬 Ja, SDI</div>';
+        html += '<div class="toggle-btn ' + (!formData.sdi?'selected':'') + '" onclick="formData.sdi=false;render()">💉 Nein, MDI</div>';
+        html += '</div></div>';
+    }
+    
+    // Tempo
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Gewünschte Geschwindigkeit</label>';
+    html += '<div class="toggle-row">';
+    [{k:'schnell',l:'⚡ Schnell',d:'Max. Fortschritt/Jahr'},{k:'stabil',l:'🎯 Stabil',d:'Sicher & nachhaltig'},{k:'experimentell',l:'🧪 Experimentell',d:'Neue Wege testen'}].forEach(function(t) {
+        html += '<div class="toggle-btn ' + (formData.tempo===t.k?'selected':'') + '" onclick="formData.tempo=\'' + t.k + '\';render()" style="flex-direction:column;gap:.15rem"><span>' + t.l + '</span><span style="font-size:.65rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
+    });
+    html += '</div></div>';
+    
+    // Generationen pro Jahr
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtgenerationen pro Jahr</label>';
+    html += '<div class="toggle-row">';
+    [1,2].forEach(function(n) {
+        html += '<div class="toggle-btn ' + (formData.generationen_pro_jahr===n?'selected':'') + '" onclick="formData.generationen_pro_jahr=' + n + ';render()">' + n + 'x pro Jahr</div>';
+    });
+    html += '</div></div>';
+    
+    // Zuchtziel
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtziel (optional)</label>';
+    html += '<textarea class="input" rows="2" placeholder="z.B. Varroa-Toleranz verbessern, Sanftmut fixieren, VSH-Linie aufbauen..." onchange="formData.zuchtziel=this.value">' + (formData.zuchtziel||'') + '</textarea></div>';
+    
+    html += '<button class="btn btn-primary btn-block" style="padding:1rem;font-size:1rem" onclick="startAnalyse()">🧬 KI-Analyse starten</button>';
+    
+    return html;
+}
+
+// ============================================
+// STEP 2: KI-ANALYSE (Loading + API Call)
+// ============================================
+function renderStep2() {
+    return '<div class="ai-loading">' +
+        '<div class="ai-pulse">🧬</div>' +
+        '<div class="ai-dots" style="margin-top:1.25rem;font-size:.95rem;font-weight:500">Analysiere deine Zuchtparameter</div>' +
+        '<div style="font-size:.78rem;color:#94a3b8;margin-top:.5rem">Claude berechnet den optimalen Zuchtplan...</div>' +
+    '</div>';
+}
+
+// ============================================
+// STEP 3: ERGEBNIS + CHAT
+// ============================================
+function renderStep3() {
+    if (!zuchtplan) return '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Kein Ergebnis vorhanden. <button class="btn btn-primary btn-sm" onclick="step=0;render()">Neu starten</button></div>';
+    
+    var html = '<button style="border:none;background:none;color:#7A6652;cursor:pointer;font-size:.85rem;font-family:inherit;margin-bottom:1rem" onclick="step=1;render()">← Ressourcen anpassen</button>';
+    
+    var zp = zuchtplan;
+    
+    // Erfolgswahrscheinlichkeit
+    html += '<div class="result-hero">';
+    html += '<div style="font-size:.85rem;color:#065f46;font-weight:600">Geschätzte Erfolgswahrscheinlichkeit</div>';
+    html += '<div class="result-pct">' + (zp.wahrscheinlichkeit || '–') + '</div>';
+    html += '<div class="result-label">' + (zp.wahrscheinlichkeit_text || 'für eine stabile Linie nach dem empfohlenen Zuchtplan') + '</div>';
+    html += '<div class="prob-bar"><div class="prob-fill" style="width:' + (parseInt(zp.wahrscheinlichkeit)||50) + '%"></div></div>';
+    html += '</div>';
+    
+    // Empfohlene Strategie
+    html += '<div class="card">';
+    html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">📋 Empfohlene Strategie</h3>';
+    html += '<div style="font-size:.9rem;line-height:1.6;color:#3D2E1F">' + formatAIText(zp.strategie || '') + '</div>';
+    html += '</div>';
+    
+    // Generationsplan
+    if (zp.generationen && zp.generationen.length) {
+        html += '<div class="card">';
+        html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">🧬 Generationsplan</h3>';
+        html += '<div class="gen-timeline">';
+        zp.generationen.forEach(function(g, i) {
+            html += '<div class="gen-item">';
+            html += '<div class="gen-card">';
+            html += '<div class="gen-title">' + (g.titel || 'Generation ' + i) + '</div>';
+            html += '<div class="gen-sub">' + formatAIText(g.beschreibung || '') + '</div>';
+            if (g.stats) {
+                html += '<div class="gen-stats">';
+                g.stats.forEach(function(s){ html += '<span class="gen-stat">' + s + '</span>'; });
+                html += '</div>';
+            }
+            html += '</div></div>';
+        });
+        html += '</div></div>';
+    }
+    
+    // Risikoanalyse
+    if (zp.risiken) {
+        html += '<div class="card" style="border-left:4px solid #f59e0b">';
+        html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">⚠️ Risiken & Hinweise</h3>';
+        html += '<div style="font-size:.88rem;line-height:1.6;color:#92400e">' + formatAIText(zp.risiken) + '</div>';
+        html += '</div>';
+    }
+    
+    // Zusammenfassung
+    if (zp.zusammenfassung) {
+        html += '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff);border-color:rgba(245,166,35,0.2)">';
+        html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">✅ Zusammenfassung</h3>';
+        html += '<div style="font-size:.88rem;line-height:1.6;color:#3D2E1F">' + formatAIText(zp.zusammenfassung) + '</div>';
+        html += '</div>';
+    }
+    
+    // Rückfragen-Chat
+    html += '<div class="card">';
+    html += '<h3 style="font-family:\'DM Serif Display\',serif;font-size:1.1rem;margin-bottom:.75rem">💬 Rückfragen an den Zuchtberater</h3>';
+    html += '<div class="chat-box">';
+    html += '<div class="chat-msgs" id="chatMsgs">';
+    chatHistory.forEach(function(msg) {
+        html += '<div class="chat-msg ' + msg.role + '"><div class="chat-bubble">' + escHtml(msg.text) + '</div></div>';
+    });
+    if (!chatHistory.length) {
+        html += '<div style="text-align:center;color:#94a3b8;font-size:.82rem;padding:1rem">Stelle Rückfragen zum Zuchtplan – z.B. "Was wenn ich nur 10 Begattungseinheiten habe?" oder "Wie manage ich Inzucht in F3?"</div>';
+    }
+    html += '</div>';
+    html += '<div class="chat-input-row">';
+    html += '<textarea class="chat-input" id="chatInput" rows="1" placeholder="Frage stellen..." onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>';
+    html += '<button class="chat-send" onclick="sendChat()">→</button>';
+    html += '</div></div></div>';
+    
+    // Aktionen
+    html += '<div style="display:flex;gap:.5rem;margin-top:1rem">';
+    html += '<button class="btn btn-primary" style="flex:1" onclick="step=0;zuchtplan=null;chatHistory=[];render()">🔄 Neuer Plan</button>';
+    html += '<button class="btn btn-outline" style="flex:1" onclick="step=1;render()">✏️ Anpassen</button>';
+    html += '</div>';
+    
+    return html;
+}
+
+// ============================================
+// KI-ANALYSE (Claude API)
+// ============================================
+async function startAnalyse() {
+    step = 2;
+    render();
+    
+    var m = METHODEN.find(function(x){return x.id===formData.methode;});
+    
+    var prompt = 'Du bist ein spezialisierter Berater für Bienenzucht mit Fokus auf instrumentelle Besamung, Selektion und Linienaufbau.\n\n';
+    prompt += 'Der Imker hat folgende Ressourcen und Einstellungen:\n';
+    prompt += '- Zuchtstrategie: ' + m.title + '\n';
+    prompt += '- Wirtschaftsvölker: ' + formData.voelker + '\n';
+    prompt += '- Drohnenvölker: ' + formData.drohnenvoelker + '\n';
+    prompt += '- Begattungseinheiten: ' + formData.begattungseinheiten + '\n';
+    prompt += '- Königinnen pro Serie: ' + formData.koeniginnen_pro_serie + '\n';
+    prompt += '- Instrumentelle Besamung: ' + (formData.besamung ? 'Ja' : 'Nein') + '\n';
+    prompt += '- SDI möglich: ' + (formData.sdi ? 'Ja' : 'Nein') + '\n';
+    prompt += '- Tempo: ' + formData.tempo + '\n';
+    prompt += '- Generationen pro Jahr: ' + formData.generationen_pro_jahr + '\n';
+    if (formData.zuchtziel) prompt += '- Zuchtziel: ' + formData.zuchtziel + '\n';
+    
+    prompt += '\nErstelle einen konkreten, praxisnahen Zuchtplan. Antworte NUR mit validem JSON (kein Markdown, keine Backticks) in diesem Format:\n';
+    prompt += '{\n';
+    prompt += '  "wahrscheinlichkeit": "65-80%",\n';
+    prompt += '  "wahrscheinlichkeit_text": "für eine stabile Linie nach 4 Generationen",\n';
+    prompt += '  "strategie": "Textbeschreibung der empfohlenen Strategie...",\n';
+    prompt += '  "generationen": [\n';
+    prompt += '    {"titel": "Generation 0 – Stammkönigin", "beschreibung": "Text...", "stats": ["30 Königinnen", "4 Drohnenvölker"]},\n';
+    prompt += '    {"titel": "Generation 1 – F1", "beschreibung": "Text...", "stats": ["..."]}\n';
+    prompt += '  ],\n';
+    prompt += '  "risiken": "Text zu Risiken und Inzuchtmanagement...",\n';
+    prompt += '  "zusammenfassung": "Kurze Zusammenfassung des Plans..."\n';
+    prompt += '}\n';
+    prompt += '\nWichtig: Antworte komplett auf Deutsch. Gib konkrete Zahlen und Zeitangaben. Berücksichtige die realen Ressourcen des Imkers. Sei praxisnah und ehrlich bei der Erfolgswahrscheinlichkeit.';
+    
+    try {
+        var response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 2000,
+                messages: [{role: 'user', content: prompt}]
+            })
+        });
+        
+        var data = await response.json();
+        var text = data.content.map(function(c){return c.text||'';}).join('');
+        
+        // JSON parsen
+        var clean = text.replace(/```json|```/g, '').trim();
+        zuchtplan = JSON.parse(clean);
+        step = 3;
+    } catch(err) {
+        console.error('KI-Analyse Fehler:', err);
+        // Fallback
+        zuchtplan = buildFallbackPlan();
+        step = 3;
+    }
+    
+    render();
+    
+    // Chat scrollen
+    setTimeout(function(){
+        var el = document.getElementById('chatMsgs');
+        if (el) el.scrollTop = el.scrollHeight;
+    }, 100);
+}
+
+// ============================================
+// CHAT (Rückfragen)
+// ============================================
+async function sendChat() {
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if (!text) return;
+    
+    chatHistory.push({role:'user', text:text});
+    input.value = '';
+    render();
+    
+    // System-Kontext
+    var sysPrompt = 'Du bist ein Zuchtberater für Bienenzucht (instrumentelle Besamung, SDI, Linienaufbau). ';
+    sysPrompt += 'Der Imker hat folgenden Plan: ' + JSON.stringify(zuchtplan).substring(0, 1500) + '. ';
+    sysPrompt += 'Ressourcen: ' + formData.voelker + ' Völker, ' + formData.drohnenvoelker + ' Drohnenvölker, ' + formData.koeniginnen_pro_serie + ' Königinnen/Serie. ';
+    sysPrompt += 'Antworte auf Deutsch, praxisnah und konkret. Maximal 3-4 Sätze.';
+    
+    var messages = [{role:'user', content: sysPrompt + '\n\nFrage: ' + text}];
+    
+    try {
+        var response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 500,
+                messages: messages
+            })
+        });
+        
+        var data = await response.json();
+        var answer = data.content.map(function(c){return c.text||'';}).join('');
+        chatHistory.push({role:'ai', text:answer});
+    } catch(err) {
+        chatHistory.push({role:'ai', text:'Entschuldigung, es gab einen Fehler. Bitte versuche es nochmal.'});
+    }
+    
+    render();
+    setTimeout(function(){
+        var el = document.getElementById('chatMsgs');
+        if (el) el.scrollTop = el.scrollHeight;
+    }, 100);
+}
+
+// ============================================
+// FALLBACK (wenn API nicht erreichbar)
+// ============================================
+function buildFallbackPlan() {
+    var m = METHODEN.find(function(x){return x.id===formData.methode;});
+    var kps = formData.koeniginnen_pro_serie;
+    var sel = Math.max(3, Math.round(kps * 0.15));
+    
+    return {
+        wahrscheinlichkeit: formData.tempo === 'schnell' ? '50-65%' : (kps >= 30 ? '65-80%' : '45-60%'),
+        wahrscheinlichkeit_text: 'für eine stabile Linie mit ' + m.title,
+        strategie: 'Basierend auf deinen ' + formData.voelker + ' Wirtschaftsvölkern und ' + formData.drohnenvoelker + ' Drohnenvölkern empfehle ich den Linienaufbau mit ' + m.title + '. Pro Generation werden ' + kps + ' Königinnen erzeugt und die besten ' + sel + ' selektiert. Bei ' + formData.generationen_pro_jahr + ' Generation(en) pro Jahr dauert der Aufbau einer stabilen Linie ca. ' + m.generations + ' Generationen.',
+        generationen: [
+            {titel:'Generation 0 – Stammkönigin (F0)', beschreibung:'Auswahl der besten Stammkönigin aus deinen ' + formData.voelker + ' Völkern. Kriterien: Honigleistung, Sanftmut, Varroa-Toleranz, Schwarmträgheit. Idealerweise mit BeeBreed-Zuchtwerten dokumentiert.', stats:['1 Stammkönigin','Prüfung über 1 Saison']},
+            {titel:'Generation 1 – F1 Erzeugung', beschreibung:kps + ' Töchter der Stammkönigin erzeugen. ' + (formData.besamung ? 'Besamung mit ' + (formData.sdi?'SDI (Einzeldrohn)':'MDI (Mehrfachdrohnen)') + ' von ' + formData.drohnenvoelker + ' ausgewählten Drohnenvölkern.' : 'Belegstellenbegattung mit kontrollierten Drohnen.') + ' Alle Königinnen über die Saison prüfen.', stats:[kps + ' Königinnen', formData.drohnenvoelker + ' Drohnenvölker', formData.begattungseinheiten + ' EWKs']},
+            {titel:'Generation 2 – Selektion F2', beschreibung:'Die besten ' + sel + ' F1-Königinnen als Zuchtmütter auswählen. Kriterien: Volksentwicklung, Honigleistung, Krankheitsresistenz. Von diesen ' + sel + ' Linien jeweils ' + Math.round(kps/sel) + ' Töchter erzeugen.', stats:[sel + ' Zuchtmütter', (sel * Math.round(kps/sel)) + ' F2-Königinnen']},
+            {titel:'Generation 3 – Linienfixierung', beschreibung:'Beste Linien durch ' + (formData.sdi ? 'kontrollierte SDI-Besamung' : 'gezielte Anpaarung') + ' stabilisieren. Inzuchtkoeffizient überwachen (Ziel: unter 12.5%). Schwache Linien konsequent ausscheiden.', stats:['2-3 stabile Linien', 'COI < 12.5%']},
+            {titel:'Generation 4+ – Konsolidierung', beschreibung:'Stabile Linie in die Praxis überführen. Leistungsprüfung unter Normalbedingungen. Bei Bedarf Fremdblut einkreuzen zur genetischen Auffrischung.', stats:['1-2 Praxis-Linien', 'Laufende Selektion']}
+        ],
+        risiken: 'Hauptrisiko: Inzuchtdepression ab F3. Mit ' + formData.drohnenvoelker + ' Drohnenvölkern ist die genetische Basis ' + (formData.drohnenvoelker >= 6 ? 'ausreichend' : 'knapp – mindestens 6 verschiedene Drohnenvölker empfohlen') + '. Jede Generation COI berechnen und dokumentieren. Bei SDI steigt der Inzuchtkoeffizient schneller – Fremdblut-Einkreuzung alle 3-4 Generationen einplanen.',
+        zusammenfassung: 'Plan: ' + m.title + ' mit ' + kps + ' Königinnen pro Generation, ' + sel + ' Linien selektiert, über ' + m.generations + ' Generationen (' + (parseInt(m.generations)*1/formData.generationen_pro_jahr).toFixed(0) + '-' + (parseInt(m.generations.split('–')[1] || m.generations)*1/formData.generationen_pro_jahr).toFixed(0) + ' Jahre). Erfolgswahrscheinlichkeit: ' + (kps >= 30 ? '65-80%' : '45-60%') + '. Wichtig: Inzucht aktiv managen, konsequent selektieren, Ergebnisse dokumentieren.'
+    };
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function nextStep() {
+    if (step === 0 && !formData.methode) return;
+    step++;
+    render();
+}
+
+function formatAIText(text) {
+    if (!text) return '';
+    return escHtml(text).replace(/\n/g, '<br>');
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    var user = await checkAuth();
+    if (!user) return;
+    await planManager.load();
+    // Zuchtberater könnte auf Pro beschränkt sein:
+    // if (!planManager.can('zuchtberater')) { planManager.showUpgradeHint('zuchtberater'); return; }
+    render();
+}
+
+init();
+</script>
+</body>
+</html>

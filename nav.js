@@ -20,6 +20,7 @@
             { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
             { href: 'bewertung.html', icon: '⭐', label: 'Völker-Bewertung' },
             { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
+            { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
             { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
         ]},
         { title: 'Ernte & Planung', items: [
