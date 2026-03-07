@@ -11,7 +11,15 @@
 <link rel="stylesheet" href="shared-styles.css">
 <style>
 body{padding-left:220px;padding-bottom:2rem}
+
+/* === NAV (gleiche Sidebar wie app.html) === */
 .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+.nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+.nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+.nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+.nav-item:hover{background:rgba(245,166,35,0.06)}
+.nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
 .container{max-width:860px;margin:0 auto;padding:1rem}
 
 /* === HEADER === */
@@ -108,8 +116,27 @@ body{padding-left:220px;padding-bottom:2rem}
 
 @media(max-width:768px){
     body{padding-left:0;padding-bottom:90px}
+    .nav{display:none!important}
     .res-grid{grid-template-columns:1fr 1fr}
     .methoden-grid{grid-template-columns:1fr}
+    .toggle-row{flex-wrap:wrap}
+    .zb-header{padding:1.5rem 1rem}
+    .zb-header h1{font-size:1.35rem}
+/* === HILFE-TOOLTIP === */
+.help-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#E8DFD4;color:#7A6652;font-size:.7rem;font-weight:700;cursor:pointer;border:none;margin-left:.35rem;vertical-align:middle;transition:all .15s;font-family:inherit;line-height:1}
+.help-btn:hover{background:#F5A623;color:#1C1410;transform:scale(1.1)}
+
+.glossar-overlay{display:none;position:fixed;inset:0;background:rgba(28,20,16,0.5);z-index:500;align-items:center;justify-content:center}
+.glossar-overlay.active{display:flex}
+.glossar-box{background:#fff;border-radius:1rem;max-width:440px;width:92%;max-height:80vh;overflow-y:auto;padding:0;box-shadow:0 12px 40px rgba(28,20,16,0.25);animation:glossarIn .2s ease}
+@keyframes glossarIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.glossar-header{padding:1.25rem;border-bottom:2px solid rgba(245,166,35,0.12);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;border-radius:1rem 1rem 0 0;z-index:1}
+.glossar-header h3{margin:0;font-size:1.1rem;font-family:'DM Serif Display',serif}
+.glossar-body{padding:1.25rem}
+.glossar-item{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #f5f0eb}
+.glossar-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.glossar-term{font-weight:700;font-size:.92rem;color:#1C1410;margin-bottom:.2rem}
+.glossar-def{font-size:.82rem;color:#7A6652;line-height:1.5}
 }
 </style>
 </head>
@@ -124,6 +151,17 @@ body{padding-left:220px;padding-bottom:2rem}
 <script src="presence.js" defer></script>
 
 <div id="toast" class="toast"></div>
+
+<!-- GLOSSAR OVERLAY -->
+<div class="glossar-overlay" id="glossarOverlay" onclick="if(event.target===this)closeGlossar()">
+    <div class="glossar-box">
+        <div class="glossar-header">
+            <h3>📖 Glossar – Zuchtbegriffe</h3>
+            <button style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#7A6652" onclick="closeGlossar()">✕</button>
+        </div>
+        <div class="glossar-body" id="glossarBody"></div>
+    </div>
+</div>
 
 <div class="container">
     <div class="zb-header">
@@ -147,6 +185,59 @@ body{padding-left:220px;padding-bottom:2rem}
 
 var step = 0; // 0=Methode, 1=Ressourcen, 2=Analyse, 3=Ergebnis
 var chatHistory = [];
+
+// ============================================
+// GLOSSAR – Fachbegriffe erklärt
+// ============================================
+var GLOSSAR = {
+    'SDI': {term:'SDI – Single Drone Insemination', def:'Besamung einer Königin mit dem Sperma eines einzigen Drohns. Ergibt genetisch einheitliche Arbeiterinnen (Supersisters). Höchste genetische Kontrolle, aber reduzierte genetische Vielfalt im Volk.'},
+    'MDI': {term:'MDI – Multi Drone Insemination', def:'Besamung mit Sperma mehrerer Drohnen (üblich 8-12). Natürlicher als SDI, aber weniger genetische Kontrolle. Standard bei instrumenteller Besamung.'},
+    'F0': {term:'F0 – Stammkönigin / Parentalgeneration', def:'Die Ausgangskönigin, von der die Zuchtlinie abstammt. Wird aufgrund herausragender Eigenschaften als Zuchtmutter ausgewählt.'},
+    'F1': {term:'F1 – Erste Filialgeneration', def:'Direkte Töchter der Stammkönigin (F0). Zeigen oft Heterosis (Kreuzungsvitalität). Werden geprüft und selektiert.'},
+    'F2': {term:'F2 – Zweite Filialgeneration', def:'Töchter der F1-Königinnen. Hier spalten die Eigenschaften auf (Mendelsche Regeln). Entscheidende Generation für die Selektion.'},
+    'COI': {term:'COI – Coefficient of Inbreeding', def:'Inzuchtkoeffizient. Gibt die Wahrscheinlichkeit an, dass zwei Allele identisch durch Abstammung sind. Unter 5% = gut, 5-12% = akzeptabel, über 12% = kritisch.'},
+    'EWK': {term:'EWK – Einwabenkästchen', def:'Kleine Begattungseinheit mit nur einer Wabe. Wird für die kontrollierte Begattung von Jungköniginnen verwendet. Auch "Mini Plus" oder "Apidea" genannt.'},
+    'Backcross': {term:'Backcross – Rückkreuzung', def:'Kreuzung einer Tochter mit Drohnen der mütterlichen Linie. Fixiert gewünschte Eigenschaften, erhöht aber den Inzuchtkoeffizienten.'},
+    'Heterosis': {term:'Heterosis – Kreuzungsvitalität', def:'Nachkommen von genetisch verschiedenen Eltern zeigen oft bessere Leistung als beide Elternteile. Besonders stark in der F1-Generation.'},
+    'VSH': {term:'VSH – Varroa Sensitive Hygiene', def:'Verhalten, bei dem Bienen Varroamilben in verdeckelten Brutzellen erkennen und die befallene Brut entfernen. Genetisch selektierbares Merkmal.'},
+    'SMR': {term:'SMR – Suppressed Mite Reproduction', def:'Unterdrückte Milbenvermehrung. Die Varroamilben können sich in Brutzellen dieser Bienen nicht normal vermehren. Eng verwandt mit VSH.'},
+    'Belegstelle': {term:'Belegstelle', def:'Isolierter Standort (meist auf Inseln oder in Gebirgstälern) mit kontrollierten Drohnenvölkern. Ermöglicht kontrollierte natürliche Paarung ohne instrumentelle Besamung.'},
+    'Drohnenlinie': {term:'Drohnenlinie / Drohnenvolk', def:'Volk, dessen Königin gezielt Drohnen zur Begattung produziert. Die Drohnen tragen die Gene ihrer Mutter (haploid). Entscheidend für die genetische Qualität der Nachkommen.'},
+    'Selektion': {term:'Selektion', def:'Gezielte Auswahl der besten Königinnen für die Weiterzucht. Basiert auf Leistungsprüfung (Honig, Sanftmut, Varroa-Toleranz, Schwarmträgheit). Selektionsintensität = wie streng ausgewählt wird.'},
+    'Linienzucht': {term:'Linienzucht', def:'Zucht innerhalb einer definierten Abstammungslinie über mehrere Generationen. Ziel: Einheitliche, vorhersagbare Eigenschaften. Gegenteil: Kreuzungszucht.'},
+    'Zuchtwert': {term:'Zuchtwert (BeeBreed)', def:'Statistisch geschätzter genetischer Wert einer Königin. 100 = Populationsdurchschnitt. Werte über 100 sind überdurchschnittlich. Berechnet aus eigener Leistung + Verwandtenleistung.'}
+};
+
+function helpBtn(key) {
+    return '<button class="help-btn" onclick="event.stopPropagation();openGlossar(\'' + key + '\')" title="Was ist ' + key + '?">?</button>';
+}
+
+function openGlossar(focusKey) {
+    var html = '';
+    // Fokussierter Begriff zuerst
+    if (focusKey && GLOSSAR[focusKey]) {
+        var g = GLOSSAR[focusKey];
+        html += '<div class="glossar-item" style="background:#FFF8EE;padding:1rem;border-radius:.5rem;margin-bottom:1rem">';
+        html += '<div class="glossar-term">' + g.term + '</div>';
+        html += '<div class="glossar-def">' + g.def + '</div>';
+        html += '</div>';
+    }
+    // Alle anderen
+    Object.keys(GLOSSAR).forEach(function(key) {
+        if (key === focusKey) return;
+        var g = GLOSSAR[key];
+        html += '<div class="glossar-item">';
+        html += '<div class="glossar-term">' + g.term + '</div>';
+        html += '<div class="glossar-def">' + g.def + '</div>';
+        html += '</div>';
+    });
+    document.getElementById('glossarBody').innerHTML = html;
+    document.getElementById('glossarOverlay').classList.add('active');
+}
+
+function closeGlossar() {
+    document.getElementById('glossarOverlay').classList.remove('active');
+}
 
 var METHODEN = [
     {
@@ -215,7 +306,9 @@ var formData = {
     besamung: true,
     sdi: false,
     tempo: 'stabil',
+    zeitziel: 3,
     generationen_pro_jahr: 1,
+    startdatum: new Date().toISOString().slice(0,7),
     zuchtziel: ''
 };
 
@@ -253,8 +346,13 @@ function render() {
 // STEP 0: STRATEGIE WÄHLEN
 // ============================================
 function renderStep0() {
-    var html = '<h2 style="font-size:1.15rem;margin-bottom:.75rem">Zuchtstrategie wählen</h2>';
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">';
+    html += '<h2 style="font-size:1.15rem;margin:0">Zuchtstrategie wählen</h2>';
+    html += '<button class="help-btn" style="width:28px;height:28px;font-size:.85rem" onclick="event.stopPropagation();openGlossar()" title="Alle Begriffe erklären">?</button>';
+    html += '</div>';
     html += '<p style="font-size:.85rem;color:#7A6652;margin-bottom:1.25rem">Welche Methode passt zu deinem Zuchtprojekt? Wähle eine Strategie als Ausgangspunkt – der KI-Berater optimiert den Plan anhand deiner Ressourcen.</p>';
+    
+    var methodeHelpMap = {sdi:'SDI', backcross:'Backcross', brueder:'Drohnenlinie', kombi:'SDI', klassisch:'Belegstelle'};
     
     html += '<div class="methoden-grid">';
     METHODEN.forEach(function(m) {
@@ -263,7 +361,7 @@ function renderStep0() {
         html += '<div style="display:flex;gap:1rem;align-items:flex-start">';
         html += '<div class="methode-icon">' + m.icon + '</div>';
         html += '<div style="flex:1">';
-        html += '<div class="methode-title">' + m.title + '</div>';
+        html += '<div class="methode-title">' + m.title + (methodeHelpMap[m.id] ? helpBtn(methodeHelpMap[m.id]) : '') + '</div>';
         html += '<div class="methode-desc">' + m.desc + '</div>';
         html += '<div class="methode-tags">';
         m.tags.forEach(function(t){ html += '<span class="methode-tag ' + t.c + '">' + t.t + '</span>'; });
@@ -305,29 +403,29 @@ function renderStep1() {
     
     html += '<div class="res-grid">';
     var fields = [
-        {key:'voelker', icon:'🐝', label:'Wirtschaftsvölker', val:formData.voelker},
-        {key:'drohnenvoelker', icon:'♂️', label:'Drohnenvölker', val:formData.drohnenvoelker},
-        {key:'begattungseinheiten', icon:'📦', label:'Begattungseinheiten', val:formData.begattungseinheiten},
-        {key:'koeniginnen_pro_serie', icon:'👑', label:'Königinnen/Serie', val:formData.koeniginnen_pro_serie}
+        {key:'voelker', icon:'🐝', label:'Wirtschaftsvölker', val:formData.voelker, help:''},
+        {key:'drohnenvoelker', icon:'♂️', label:'Drohnenvölker', val:formData.drohnenvoelker, help:'Drohnenlinie'},
+        {key:'begattungseinheiten', icon:'📦', label:'Begattungseinheiten', val:formData.begattungseinheiten, help:'EWK'},
+        {key:'koeniginnen_pro_serie', icon:'👑', label:'Königinnen/Serie', val:formData.koeniginnen_pro_serie, help:'Selektion'}
     ];
     fields.forEach(function(f) {
         html += '<div class="res-card">';
         html += '<div class="res-icon">' + f.icon + '</div>';
-        html += '<div class="res-label">' + f.label + '</div>';
+        html += '<div class="res-label">' + f.label + (f.help ? helpBtn(f.help) : '') + '</div>';
         html += '<input type="number" class="res-input" value="' + f.val + '" min="1" onchange="formData[\'' + f.key + '\']=parseInt(this.value)||0">';
         html += '</div>';
     });
     html += '</div>';
     
     // Besamung
-    html += '<div class="form-group" style="margin-top:1.25rem"><label class="form-label" style="font-size:.88rem">Instrumentelle Besamung möglich?</label>';
+    html += '<div class="form-group" style="margin-top:1.25rem"><label class="form-label" style="font-size:.88rem">Instrumentelle Besamung möglich?' + helpBtn('MDI') + '</label>';
     html += '<div class="toggle-row">';
     html += '<div class="toggle-btn ' + (formData.besamung?'selected':'') + '" onclick="formData.besamung=true;render()">✅ Ja</div>';
     html += '<div class="toggle-btn ' + (!formData.besamung?'selected':'') + '" onclick="formData.besamung=false;formData.sdi=false;render()">❌ Nein</div>';
     html += '</div></div>';
     
     if (formData.besamung) {
-        html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Single-Drone Insemination (SDI)?</label>';
+        html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Single-Drone Insemination?' + helpBtn('SDI') + '</label>';
         html += '<div class="toggle-row">';
         html += '<div class="toggle-btn ' + (formData.sdi?'selected':'') + '" onclick="formData.sdi=true;render()">🔬 Ja, SDI</div>';
         html += '<div class="toggle-btn ' + (!formData.sdi?'selected':'') + '" onclick="formData.sdi=false;render()">💉 Nein, MDI</div>';
@@ -342,13 +440,32 @@ function renderStep1() {
     });
     html += '</div></div>';
     
+    // Zeitziel
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">📅 In welchem Zeitraum willst du eine stabile Linie?</label>';
+    html += '<div class="toggle-row" style="flex-wrap:wrap">';
+    [{k:1,l:'1 Jahr',d:'Ambitioniert'},{k:2,l:'2 Jahre',d:'Sportlich'},{k:3,l:'3 Jahre',d:'Realistisch'},{k:5,l:'5 Jahre',d:'Solide'},{k:0,l:'Egal',d:'Kein Zeitdruck'}].forEach(function(t) {
+        html += '<div class="toggle-btn ' + (formData.zeitziel===t.k?'selected':'') + '" onclick="formData.zeitziel=' + t.k + ';render()" style="flex-direction:column;gap:.15rem;flex:1;min-width:90px"><span style="font-weight:700">' + t.l + '</span><span style="font-size:.62rem;font-weight:400;color:#7A6652">' + t.d + '</span></div>';
+    });
+    html += '</div></div>';
+    
+    // Bei ambitioniertem Zeitrahmen: Warnung + Info
+    if (formData.zeitziel === 1) {
+        html += '<div class="card" style="background:#FEF2F2;border:1px solid #FECACA;font-size:.82rem;color:#991B1B;padding:.75rem">';
+        html += '⚠️ <strong>1 Jahr ist extrem ambitioniert.</strong> Das erfordert 2 Generationen pro Jahr (Frühjahrsserie + Spätsommerserie), instrumentelle Besamung und konsequente Selektion. Der KI-Berater erstellt dir einen straffen Kalenderplan.';
+        html += '</div>';
+    }
+    
     // Generationen pro Jahr
     html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtgenerationen pro Jahr</label>';
     html += '<div class="toggle-row">';
     [1,2].forEach(function(n) {
-        html += '<div class="toggle-btn ' + (formData.generationen_pro_jahr===n?'selected':'') + '" onclick="formData.generationen_pro_jahr=' + n + ';render()">' + n + 'x pro Jahr</div>';
+        html += '<div class="toggle-btn ' + (formData.generationen_pro_jahr===n?'selected':'') + '" onclick="formData.generationen_pro_jahr=' + n + ';render()">' + n + 'x pro Jahr' + (n===2?' (Frühjahr + Spätsommer)':'') + '</div>';
     });
     html += '</div></div>';
+    
+    // Startdatum
+    html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">🗓️ Wann willst du starten?</label>';
+    html += '<input type="month" class="input" value="' + (formData.startdatum || new Date().toISOString().slice(0,7)) + '" onchange="formData.startdatum=this.value"></div>';
     
     // Zuchtziel
     html += '<div class="form-group"><label class="form-label" style="font-size:.88rem">Zuchtziel (optional)</label>';
@@ -387,6 +504,17 @@ function renderStep3() {
     html += '<div class="result-label">' + (zp.wahrscheinlichkeit_text || 'für eine stabile Linie nach dem empfohlenen Zuchtplan') + '</div>';
     html += '<div class="prob-bar"><div class="prob-fill" style="width:' + (parseInt(zp.wahrscheinlichkeit)||50) + '%"></div></div>';
     html += '</div>';
+    
+    // Realismus-Einschätzung zum Zeitziel
+    if (zp.realistisch_text) {
+        var rColor = zp.realistisch ? '#065f46' : '#991b1b';
+        var rBg = zp.realistisch ? '#ECFDF5' : '#FEF2F2';
+        var rBorder = zp.realistisch ? '#6EE7B7' : '#FECACA';
+        var rIcon = zp.realistisch ? '✅' : '⚠️';
+        html += '<div class="card" style="background:' + rBg + ';border:1px solid ' + rBorder + ';color:' + rColor + ';font-size:.88rem;line-height:1.5">';
+        html += rIcon + ' <strong>Zeitziel-Einschätzung:</strong> ' + escHtml(zp.realistisch_text);
+        html += '</div>';
+    }
     
     // Empfohlene Strategie
     html += '<div class="card">';
@@ -475,22 +603,33 @@ async function startAnalyse() {
     prompt += '- Instrumentelle Besamung: ' + (formData.besamung ? 'Ja' : 'Nein') + '\n';
     prompt += '- SDI möglich: ' + (formData.sdi ? 'Ja' : 'Nein') + '\n';
     prompt += '- Tempo: ' + formData.tempo + '\n';
+    prompt += '- Zeitziel: ' + (formData.zeitziel > 0 ? formData.zeitziel + ' Jahre' : 'kein Zeitlimit') + '\n';
+    prompt += '- Startdatum: ' + (formData.startdatum || 'sofort') + '\n';
     prompt += '- Generationen pro Jahr: ' + formData.generationen_pro_jahr + '\n';
     if (formData.zuchtziel) prompt += '- Zuchtziel: ' + formData.zuchtziel + '\n';
     
-    prompt += '\nErstelle einen konkreten, praxisnahen Zuchtplan. Antworte NUR mit validem JSON (kein Markdown, keine Backticks) in diesem Format:\n';
+    prompt += '\nErstelle einen konkreten, praxisnahen Zuchtplan. ';
+    if (formData.zeitziel > 0) {
+        prompt += 'WICHTIG: Der Imker will innerhalb von ' + formData.zeitziel + ' Jahr(en) eine stabile Linie! ';
+        prompt += 'Erstelle einen KONKRETEN KALENDERPLAN mit echten Monaten und Jahren ab ' + (formData.startdatum || 'jetzt') + '. ';
+        prompt += 'Bei den Generationen soll jeder Schritt ein konkretes Datum haben (z.B. "März 2026 – Sammelbrutableger", "Mai 2026 – Umlarven F1"). ';
+        prompt += 'Sage ehrlich ob das Zeitziel realistisch ist. Wenn nicht, erkläre was realistisch wäre und was das Minimum ist. ';
+    }
+    prompt += 'Antworte NUR mit validem JSON (kein Markdown, keine Backticks) in diesem Format:\n';
     prompt += '{\n';
     prompt += '  "wahrscheinlichkeit": "65-80%",\n';
     prompt += '  "wahrscheinlichkeit_text": "für eine stabile Linie nach 4 Generationen",\n';
+    prompt += '  "realistisch": true,\n';
+    prompt += '  "realistisch_text": "Dein Zeitziel von X Jahren ist realistisch/ambitioniert/unrealistisch weil...",\n';
     prompt += '  "strategie": "Textbeschreibung der empfohlenen Strategie...",\n';
     prompt += '  "generationen": [\n';
-    prompt += '    {"titel": "Generation 0 – Stammkönigin", "beschreibung": "Text...", "stats": ["30 Königinnen", "4 Drohnenvölker"]},\n';
-    prompt += '    {"titel": "Generation 1 – F1", "beschreibung": "Text...", "stats": ["..."]}\n';
+    prompt += '    {"titel": "März 2026 – Stammkönigin auswählen (F0)", "beschreibung": "Text...", "stats": ["30 Königinnen", "4 Drohnenvölker"]},\n';
+    prompt += '    {"titel": "Mai 2026 – F1 erzeugen", "beschreibung": "Text...", "stats": ["..."]}\n';
     prompt += '  ],\n';
     prompt += '  "risiken": "Text zu Risiken und Inzuchtmanagement...",\n';
     prompt += '  "zusammenfassung": "Kurze Zusammenfassung des Plans..."\n';
     prompt += '}\n';
-    prompt += '\nWichtig: Antworte komplett auf Deutsch. Gib konkrete Zahlen und Zeitangaben. Berücksichtige die realen Ressourcen des Imkers. Sei praxisnah und ehrlich bei der Erfolgswahrscheinlichkeit.';
+    prompt += '\nWichtig: Antworte komplett auf Deutsch. Gib konkrete Zahlen, Monate und Jahre. Berücksichtige die Bienensaison (Zucht nur ca. April-August möglich). Sei praxisnah und ehrlich bei der Erfolgswahrscheinlichkeit.';
     
     try {
         var response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -578,20 +717,82 @@ function buildFallbackPlan() {
     var m = METHODEN.find(function(x){return x.id===formData.methode;});
     var kps = formData.koeniginnen_pro_serie;
     var sel = Math.max(3, Math.round(kps * 0.15));
+    var zz = formData.zeitziel || 0;
+    var gpj = formData.generationen_pro_jahr;
+    var minGen = parseInt(m.generations);
+    var startDate = new Date((formData.startdatum || new Date().toISOString().slice(0,7)) + '-01');
+    
+    // Kalender-Monate berechnen
+    var monate = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    function addMonths(d, n) { var r = new Date(d); r.setMonth(r.getMonth()+n); return r; }
+    function fmtMonat(d) { return monate[d.getMonth()] + ' ' + d.getFullYear(); }
+    
+    // Realismus-Check
+    var noetigeJahre = Math.ceil(minGen / gpj);
+    var realistisch = zz === 0 || zz >= noetigeJahre;
+    var realistischText = '';
+    if (zz > 0) {
+        if (zz < noetigeJahre) {
+            realistischText = 'Dein Zeitziel von ' + zz + ' Jahr(en) ist sehr ambitioniert. Für ' + m.title + ' braucht man mindestens ' + minGen + ' Generationen. Bei ' + gpj + ' Generation(en) pro Jahr wären das realistisch ca. ' + noetigeJahre + ' Jahre. Du kannst das beschleunigen durch: 2 Serien pro Jahr (Frühjahr + Spätsommer), mehr Königinnen pro Serie, härtere Selektion.';
+        } else {
+            realistischText = 'Dein Zeitziel von ' + zz + ' Jahren ist realistisch für ' + m.title + '. Mit ' + kps + ' Königinnen pro Serie und ' + gpj + ' Generation(en) pro Jahr passt der Zeitplan.';
+        }
+    }
+    
+    // Generationen mit echten Daten
+    var gens = [];
+    var d = new Date(startDate);
+    
+    // F0: Stammkönigin
+    gens.push({
+        titel: fmtMonat(d) + ' – Stammkönigin auswählen (F0)',
+        beschreibung: 'Auswahl der besten Stammkönigin aus deinen ' + formData.voelker + ' Völkern. Kriterien: Honigleistung, Sanftmut, Varroa-Toleranz, Schwarmträgheit. BeeBreed-Zuchtwerte beachten.',
+        stats: ['1 Stammkönigin', 'Leistungsprüfung über Saison']
+    });
+    
+    // F1
+    var f1Start = d.getMonth() < 3 ? new Date(d.getFullYear(), 3, 1) : addMonths(d, 1);
+    var f1Umlarven = addMonths(f1Start, 1);
+    var f1Besamung = addMonths(f1Umlarven, 1);
+    gens.push({
+        titel: fmtMonat(f1Start) + ' – F1 erzeugen (' + kps + ' Königinnen)',
+        beschreibung: fmtMonat(f1Start) + ': Sammelbrutableger erstellen. ' + fmtMonat(f1Umlarven) + ': Umlarven von Stammkönigin. ' + fmtMonat(f1Besamung) + ': ' + (formData.besamung ? (formData.sdi ? 'SDI-Besamung' : 'MDI-Besamung') : 'Belegstellenbegattung') + ' mit ' + formData.drohnenvoelker + ' Drohnenvölkern. Sommer: Leistungsprüfung aller F1.',
+        stats: [kps + ' Königinnen', formData.drohnenvoelker + ' Drohnenvölker', formData.begattungseinheiten + ' EWKs']
+    });
+    
+    // F2
+    var f2Start = gpj >= 2 ? addMonths(f1Besamung, 3) : new Date(f1Start.getFullYear()+1, 3, 1);
+    gens.push({
+        titel: fmtMonat(f2Start) + ' – Selektion & F2 (' + sel + ' Zuchtmütter)',
+        beschreibung: 'Die besten ' + sel + ' F1-Königinnen als Zuchtmütter auswählen. Pro Linie ' + Math.round(kps/sel) + ' Töchter erzeugen. Volksentwicklung, Honigleistung und Krankheitsresistenz bewerten.',
+        stats: [sel + ' Zuchtmütter', (sel * Math.round(kps/sel)) + ' F2-Königinnen', 'Selektion: Top ' + Math.round(sel/kps*100) + '%']
+    });
+    
+    // F3
+    var f3Start = gpj >= 2 ? addMonths(f2Start, 5) : new Date(f2Start.getFullYear()+1, 3, 1);
+    gens.push({
+        titel: fmtMonat(f3Start) + ' – Linienfixierung (F3)',
+        beschreibung: 'Beste Linien durch ' + (formData.sdi ? 'kontrollierte SDI-Besamung' : 'gezielte Anpaarung') + ' stabilisieren. COI berechnen und überwachen (Ziel: unter 12.5%). Schwache Linien konsequent ausscheiden.',
+        stats: ['2-3 stabile Linien', 'COI-Kontrolle', 'Harte Selektion']
+    });
+    
+    // F4+
+    var f4Start = gpj >= 2 ? addMonths(f3Start, 5) : new Date(f3Start.getFullYear()+1, 3, 1);
+    gens.push({
+        titel: fmtMonat(f4Start) + ' – Konsolidierung & Praxis (F4+)',
+        beschreibung: 'Stabile Linie in Wirtschaftsvölker überführen. Leistungsprüfung unter Normalbedingungen. Bei Bedarf Fremdblut einkreuzen. Linie an Zuchtverband melden.',
+        stats: ['1-2 Praxis-Linien', 'Laufende Selektion', 'Zuchtbuch-Eintragung']
+    });
     
     return {
-        wahrscheinlichkeit: formData.tempo === 'schnell' ? '50-65%' : (kps >= 30 ? '65-80%' : '45-60%'),
-        wahrscheinlichkeit_text: 'für eine stabile Linie mit ' + m.title,
-        strategie: 'Basierend auf deinen ' + formData.voelker + ' Wirtschaftsvölkern und ' + formData.drohnenvoelker + ' Drohnenvölkern empfehle ich den Linienaufbau mit ' + m.title + '. Pro Generation werden ' + kps + ' Königinnen erzeugt und die besten ' + sel + ' selektiert. Bei ' + formData.generationen_pro_jahr + ' Generation(en) pro Jahr dauert der Aufbau einer stabilen Linie ca. ' + m.generations + ' Generationen.',
-        generationen: [
-            {titel:'Generation 0 – Stammkönigin (F0)', beschreibung:'Auswahl der besten Stammkönigin aus deinen ' + formData.voelker + ' Völkern. Kriterien: Honigleistung, Sanftmut, Varroa-Toleranz, Schwarmträgheit. Idealerweise mit BeeBreed-Zuchtwerten dokumentiert.', stats:['1 Stammkönigin','Prüfung über 1 Saison']},
-            {titel:'Generation 1 – F1 Erzeugung', beschreibung:kps + ' Töchter der Stammkönigin erzeugen. ' + (formData.besamung ? 'Besamung mit ' + (formData.sdi?'SDI (Einzeldrohn)':'MDI (Mehrfachdrohnen)') + ' von ' + formData.drohnenvoelker + ' ausgewählten Drohnenvölkern.' : 'Belegstellenbegattung mit kontrollierten Drohnen.') + ' Alle Königinnen über die Saison prüfen.', stats:[kps + ' Königinnen', formData.drohnenvoelker + ' Drohnenvölker', formData.begattungseinheiten + ' EWKs']},
-            {titel:'Generation 2 – Selektion F2', beschreibung:'Die besten ' + sel + ' F1-Königinnen als Zuchtmütter auswählen. Kriterien: Volksentwicklung, Honigleistung, Krankheitsresistenz. Von diesen ' + sel + ' Linien jeweils ' + Math.round(kps/sel) + ' Töchter erzeugen.', stats:[sel + ' Zuchtmütter', (sel * Math.round(kps/sel)) + ' F2-Königinnen']},
-            {titel:'Generation 3 – Linienfixierung', beschreibung:'Beste Linien durch ' + (formData.sdi ? 'kontrollierte SDI-Besamung' : 'gezielte Anpaarung') + ' stabilisieren. Inzuchtkoeffizient überwachen (Ziel: unter 12.5%). Schwache Linien konsequent ausscheiden.', stats:['2-3 stabile Linien', 'COI < 12.5%']},
-            {titel:'Generation 4+ – Konsolidierung', beschreibung:'Stabile Linie in die Praxis überführen. Leistungsprüfung unter Normalbedingungen. Bei Bedarf Fremdblut einkreuzen zur genetischen Auffrischung.', stats:['1-2 Praxis-Linien', 'Laufende Selektion']}
-        ],
-        risiken: 'Hauptrisiko: Inzuchtdepression ab F3. Mit ' + formData.drohnenvoelker + ' Drohnenvölkern ist die genetische Basis ' + (formData.drohnenvoelker >= 6 ? 'ausreichend' : 'knapp – mindestens 6 verschiedene Drohnenvölker empfohlen') + '. Jede Generation COI berechnen und dokumentieren. Bei SDI steigt der Inzuchtkoeffizient schneller – Fremdblut-Einkreuzung alle 3-4 Generationen einplanen.',
-        zusammenfassung: 'Plan: ' + m.title + ' mit ' + kps + ' Königinnen pro Generation, ' + sel + ' Linien selektiert, über ' + m.generations + ' Generationen (' + (parseInt(m.generations)*1/formData.generationen_pro_jahr).toFixed(0) + '-' + (parseInt(m.generations.split('–')[1] || m.generations)*1/formData.generationen_pro_jahr).toFixed(0) + ' Jahre). Erfolgswahrscheinlichkeit: ' + (kps >= 30 ? '65-80%' : '45-60%') + '. Wichtig: Inzucht aktiv managen, konsequent selektieren, Ergebnisse dokumentieren.'
+        wahrscheinlichkeit: (zz === 1 ? '30-45%' : (formData.tempo === 'schnell' ? '50-65%' : (kps >= 30 ? '65-80%' : '45-60%'))),
+        wahrscheinlichkeit_text: 'für eine stabile Linie ' + (zz > 0 ? 'innerhalb von ' + zz + ' Jahr(en)' : 'mit ' + m.title),
+        realistisch: realistisch,
+        realistisch_text: realistischText,
+        strategie: 'Basierend auf deinen ' + formData.voelker + ' Wirtschaftsvölkern und ' + formData.drohnenvoelker + ' Drohnenvölkern empfehle ich den Linienaufbau mit ' + m.title + '. Pro Generation werden ' + kps + ' Königinnen erzeugt und die besten ' + sel + ' selektiert. ' + (zz > 0 ? 'Zeitziel: ' + zz + ' Jahr(e). Start: ' + fmtMonat(startDate) + '.' : '') + ' Bei ' + gpj + ' Generation(en) pro Jahr dauert der Aufbau ca. ' + noetigeJahre + ' Jahre.',
+        generationen: gens,
+        risiken: 'Hauptrisiko: Inzuchtdepression ab F3. Mit ' + formData.drohnenvoelker + ' Drohnenvölkern ist die genetische Basis ' + (formData.drohnenvoelker >= 6 ? 'ausreichend' : 'knapp – mindestens 6 verschiedene Drohnenvölker empfohlen') + '. ' + (zz === 1 ? 'Bei nur 1 Jahr Zeitziel besteht hohes Risiko: Zu wenig Zeit für Leistungsprüfung, Selektion unter Zeitdruck, Wetterfaktoren können eine ganze Serie zunichte machen. Plan B einplanen!' : 'Jede Generation COI berechnen und dokumentieren.') + ' Bei SDI steigt der COI schneller – Fremdblut-Einkreuzung alle 3-4 Generationen einplanen.',
+        zusammenfassung: 'Plan: ' + m.title + ' · ' + kps + ' Königinnen/Generation · ' + sel + ' Linien selektiert · ' + gens.length + ' Schritte von ' + fmtMonat(startDate) + ' bis ' + fmtMonat(f4Start) + '. ' + (realistisch ? '✅ Zeitziel realistisch.' : '⚠️ Zeitziel ambitioniert – Plan B empfohlen.')
     };
 }
 
