@@ -16,11 +16,11 @@
         ]},
         { title: 'Völker', items: [
             { href: 'zuchtplan.html', icon: '👑', label: 'Königinnenzucht' },
-            { href: 'inzuchtrechner.html', icon: '🧬', label: 'Inzuchtrechner' },
+            { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
+            { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzuchtrechner' },
             { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
             { href: 'bewertung.html', icon: '⭐', label: 'Völker-Bewertung' },
             { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
-            { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
             { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
         ]},
         { title: 'Ernte & Planung', items: [
@@ -127,7 +127,8 @@
             ]},
             { title: 'Völker', items: [
                 { href: 'zuchtplan.html', icon: '👑', label: 'Zucht' },
-                { href: 'inzuchtrechner.html', icon: '🧬', label: 'Inzucht' },
+                { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
+                { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzucht' },
                 { href: 'behandlung.html', icon: '💉', label: 'Behandlung' },
                 { href: 'bewertung.html', icon: '⭐', label: 'Bewertung' }
             ]},
