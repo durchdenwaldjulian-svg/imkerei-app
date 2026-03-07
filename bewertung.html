@@ -93,6 +93,18 @@
         .btn-outline{background:transparent;border:2px solid #E8DFD4;color:#7A6652}
         .btn-outline:hover{border-color:#F5A623;background:#FFF8EE}
         
+        /* === ZUCHTWERTKARTE (BeeBreed) === */
+        .zw-card{background:linear-gradient(135deg,#fff,#FFFBF0);border:1px solid rgba(245,166,35,0.2);border-radius:.75rem;padding:.75rem;margin-bottom:.75rem}
+        .zw-card h4{font-size:.85rem;color:#92400E;margin-bottom:.5rem;display:flex;align-items:center;gap:.35rem}
+        .zw-nr{font-family:monospace;font-size:.78rem;color:#3b82f6;font-weight:600;background:#dbeafe;padding:.15rem .5rem;border-radius:.25rem;display:inline-block;margin-bottom:.5rem}
+        .zw-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;font-size:.78rem}
+        .zw-label{width:95px;color:#7A6652;flex-shrink:0}
+        .zw-value{width:32px;text-align:right;font-weight:700;font-size:.8rem}
+        .zw-bar-bg{flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden}
+        .zw-bar-fill{height:100%;border-radius:5px;transition:width .4s ease}
+        .zw-bar-ref{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3}
+        .zw-sicher{width:28px;text-align:right;font-size:.65rem;color:#94a3b8}
+        
         /* === ACCORDION SEKTIONEN === */
         .acc-section{margin-bottom:.75rem;border:1px solid rgba(245,166,35,0.12);border-radius:.75rem;overflow:hidden;background:#fff}
         .acc-header{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;cursor:pointer;background:#FFFBF0;transition:background .15s;user-select:none}
@@ -443,6 +455,11 @@ function renderVolkDetail(v, volkDs, kInfo) {
         if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
         if (kInfo.nummer) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Nummer:</span> <strong>' + kInfo.nummer + '</strong></div>';
         html += '</div>';
+        
+        // BeeBreed Zuchtwertkarte
+        if (kInfo.zuchtwerte && kInfo.zuchtbuchNr) {
+            html += renderZuchtwertkarte(kInfo);
+        }
     }
     
     // Mini-Verlaufschart
@@ -673,6 +690,11 @@ function renderHistorie() {
             if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
             if (kInfo.nummer) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Nummer:</span> <strong>' + kInfo.nummer + '</strong></div>';
             html += '</div></div>';
+            
+            // BeeBreed Zuchtwertkarte
+            if (kInfo.zuchtwerte && kInfo.zuchtbuchNr) {
+                html += renderZuchtwertkarte(kInfo);
+            }
         }
         
         // Verlaufsgrafik
@@ -778,7 +800,7 @@ function openDurchsicht(id, volkId) {
         taetigkeiten: [],
         kriterien: {},
         varroa: {milben:'', tage:'1', methode:'Puderzucker'},
-        koenigin: {begattung:'', herkunft:'', belegstelle:'', nummer:'', markiert:false, farbe:'', jahrgang:new Date().getFullYear()},
+        koenigin: {begattung:'', herkunft:'', belegstelle:'', nummer:'', markiert:false, farbe:'', jahrgang:new Date().getFullYear(), zuchtbuchNr:'', zuchtwerte:{}},
         notizen: ''
     };
     KRITERIEN.forEach(function(k){ formData.kriterien[k.key] = 3; });
@@ -829,7 +851,7 @@ function stepHasData(key) {
     if (key === 'taetigkeit') return formData.taetigkeiten.length > 0;
     if (key === 'bewertung') return Object.keys(formData.kriterien).some(function(k){return formData.kriterien[k] !== 3;});
     if (key === 'varroa') return parseInt(formData.varroa.milben) > 0;
-    if (key === 'koenigin') return !!formData.koenigin.begattung;
+    if (key === 'koenigin') return !!formData.koenigin.begattung || !!formData.koenigin.zuchtbuchNr;
     return false;
 }
 
@@ -1048,6 +1070,39 @@ function renderStepKoenigin() {
         html += '</div>';
     }
     
+    // === BeeBreed Zuchtwerte ===
+    html += '<div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid #E8DFD4">';
+    html += '<h4 style="font-size:.88rem;color:#92400E;margin-bottom:.75rem;display:flex;align-items:center;gap:.35rem">📊 BeeBreed Zuchtwerte <span style="font-size:.65rem;color:#94a3b8;font-weight:400">optional</span></h4>';
+    
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Zuchtbuchnummer</label>';
+    html += '<input type="text" class="input" style="font-family:monospace" value="' + (formData.koenigin.zuchtbuchNr||'') + '" placeholder="z.B. DE-19-240-1-2024" onchange="formData.koenigin.zuchtbuchNr=this.value"></div>';
+    
+    // Zuchtwerte-Tabelle
+    var ZUCHTWERTE = [
+        {key:'honig', label:'Honigleistung', icon:'🍯'},
+        {key:'sanftmut', label:'Sanftmut', icon:'🤲'},
+        {key:'wabensitz', label:'Wabensitz', icon:'🪵'},
+        {key:'schwarm', label:'Schwarmneigung', icon:'🐝'},
+        {key:'varroa', label:'Varroa-Index', icon:'🔬'},
+        {key:'gesamt', label:'Gesamtzuchtwert', icon:'⭐'}
+    ];
+    
+    if (!formData.koenigin.zuchtwerte) formData.koenigin.zuchtwerte = {};
+    
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">';
+    ZUCHTWERTE.forEach(function(zw) {
+        var val = formData.koenigin.zuchtwerte[zw.key] || '';
+        var isGesamt = zw.key === 'gesamt';
+        html += '<div class="form-group" style="margin-bottom:.35rem' + (isGesamt?';grid-column:1/-1':'') + '">';
+        html += '<label style="font-size:.75rem;color:#7A6652;display:block;margin-bottom:.2rem">' + zw.icon + ' ' + zw.label + '</label>';
+        html += '<input type="number" class="input" style="padding:.5rem .75rem;font-size:.88rem' + (isGesamt?';font-weight:700;border-color:#F5A623':'') + '" value="' + val + '" placeholder="100" onchange="if(!formData.koenigin.zuchtwerte)formData.koenigin.zuchtwerte={};formData.koenigin.zuchtwerte[\'' + zw.key + '\']=parseInt(this.value)||null">';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    html += '<div style="font-size:.68rem;color:#94a3b8;margin-top:.25rem">100 = Populationsdurchschnitt. Werte aus BeeBreed-Zuchtbuchblatt übernehmen.</div>';
+    html += '</div>';
+    
     return html;
 }
 
@@ -1165,6 +1220,40 @@ async function deleteLegacyBewertung(id) {
 // ============================================
 function getDurchsichtenFuerVolk(volkId) {
     return durchsichten.filter(function(d){return d.volkId===volkId;}).sort(function(a,b){return new Date(b.datum)-new Date(a.datum);});
+}
+
+function renderZuchtwertkarte(kInfo) {
+    var zw = kInfo.zuchtwerte;
+    if (!zw) return '';
+    var html = '<div class="zw-card">';
+    html += '<h4>📊 BeeBreed Zuchtwerte</h4>';
+    if (kInfo.zuchtbuchNr) html += '<div class="zw-nr">' + kInfo.zuchtbuchNr + '</div>';
+    
+    var felder = [
+        {key:'gesamt', label:'Gesamt', icon:'⭐'},
+        {key:'honig', label:'Honig', icon:'🍯'},
+        {key:'sanftmut', label:'Sanftmut', icon:'🤲'},
+        {key:'wabensitz', label:'Wabensitz', icon:'🪵'},
+        {key:'schwarm', label:'Schwarm', icon:'🐝'},
+        {key:'varroa', label:'Varroa', icon:'🔬'}
+    ];
+    
+    felder.forEach(function(f) {
+        var val = zw[f.key];
+        if (!val && val !== 0) return;
+        var pct = Math.max(0, Math.min(100, ((val - 70) / 60) * 100)); // 70-130 range -> 0-100%
+        var color = val >= 110 ? '#10b981' : (val >= 100 ? '#F5A623' : (val >= 90 ? '#f59e0b' : '#ef4444'));
+        var isGesamt = f.key === 'gesamt';
+        
+        html += '<div class="zw-row" style="' + (isGesamt?'font-weight:700;margin-top:.25rem;padding-top:.35rem;border-top:1px solid #E8DFD4':'') + '">';
+        html += '<span class="zw-label">' + f.icon + ' ' + f.label + '</span>';
+        html += '<span class="zw-value" style="color:' + color + '">' + val + '</span>';
+        html += '<div class="zw-bar-bg"><div class="zw-bar-ref"></div><div class="zw-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    return html;
 }
 
 function durchschnittKriterien(krit) {
