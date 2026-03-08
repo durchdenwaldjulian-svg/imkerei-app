@@ -118,6 +118,7 @@ var planManager = (function() {
     var _plan = 'starter';
     var _planData = null;  // Komplettes Profil-Objekt
     var _loaded = false;
+    var _isAdmin = false;
 
     // ============================================
     // LOAD – Plan vom Server laden
@@ -131,7 +132,7 @@ var planManager = (function() {
 
         try {
             var result = await sb.from('profiles')
-                .select('plan, plan_valid_until, trial_ends_at, plan_interval, stripe_customer_id')
+                .select('plan, plan_valid_until, trial_ends_at, plan_interval, stripe_customer_id, role')
                 .eq('id', currentUser.id)
                 .single();
 
@@ -143,6 +144,17 @@ var planManager = (function() {
             }
 
             _planData = result.data;
+            
+            // Admin-Override: Admins haben immer vollen Zugang
+            if (result.data.role === 'admin') {
+                _isAdmin = true;
+                _plan = 'meister';
+                _loaded = true;
+                console.log('[Plan] Admin erkannt – voller Zugang');
+                if (typeof navUpdatePlan === 'function') navUpdatePlan();
+                return _plan;
+            }
+            
             var serverPlan = result.data.plan || 'starter';
 
             // Prüfe ob Plan noch gültig ist
@@ -201,6 +213,7 @@ var planManager = (function() {
     // CAN – Feature erlaubt?
     // ============================================
     function can(feature) {
+        if (_isAdmin) return true;
         var limits = PLAN_LIMITS[_plan] || PLAN_LIMITS.starter;
         return limits.features.indexOf(feature) !== -1;
     }
@@ -209,6 +222,7 @@ var planManager = (function() {
     // LIMIT – Numerisches Limit abfragen
     // ============================================
     function limit(key) {
+        if (_isAdmin) return Infinity;
         var limits = PLAN_LIMITS[_plan] || PLAN_LIMITS.starter;
         return limits[key] !== undefined ? limits[key] : 0;
     }
@@ -218,6 +232,7 @@ var planManager = (function() {
     // true = noch Platz, false = Limit erreicht
     // ============================================
     function checkLimit(key, currentCount) {
+        if (_isAdmin) return true;
         var max = limit(key);
         if (max === Infinity) return true;
         return currentCount < max;
@@ -346,6 +361,7 @@ var planManager = (function() {
         load: load,
         get plan() { return _plan; },
         get loaded() { return _loaded; },
+        get isAdmin() { return _isAdmin; },
         get data() { return _planData; },
         can: can,
         limit: limit,
