@@ -55,7 +55,7 @@
         .counter-value{font-size:1.25rem;font-weight:bold;min-width:30px;text-align:center}
 
         /* === TOAST === */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.5rem 1.25rem;border-radius:999px;font-size:.8rem;z-index:9999;display:none;animation:fadeIn .3s;max-width:90vw;white-space:nowrap;pointer-events:none}
         .toast.show{display:block}
         .toast.success{background:#2D8A4E}
         .toast.error{background:#DC2626}
@@ -130,7 +130,11 @@
             </div>
             <div class="form-group" id="einzelVolkGruppe" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Volk auswählen</label>
-                <select id="behandlungVolk" class="input" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem"><option value="">-- Bitte wählen --</option></select>
+                <input type="hidden" id="behandlungVolk" value="">
+                <div style="position:relative">
+                    <input type="text" id="volkSuchFeld" class="input" placeholder="🔍 Volk suchen oder auswählen..." autocomplete="off" style="width:100%;padding:.6rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem" onfocus="showVolkDropdown()" oninput="filterVolkDropdown(this.value)">
+                    <div id="volkDropdown" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:2px solid #E8DFD4;border-radius:.5rem;max-height:250px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(28,20,16,0.12)"></div>
+                </div>
             </div>
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Behandlungsmethode *</label>
@@ -477,6 +481,9 @@ function openModal() {
 function closeModal() {
     document.getElementById('behandlungModal').style.display = 'none';
     selectedMethode = null; anzahl = 3; volkAuswahlTyp = 'einzeln'; editId = null;
+    document.getElementById('volkSuchFeld').value = '';
+    document.getElementById('behandlungVolk').value = '';
+    document.getElementById('volkDropdown').style.display = 'none';
     document.getElementById('behandlungIntervall').value = 'keine';
     document.getElementById('behandlungNotizen').value = '';
     document.getElementById('behandlungMengeWert').value = '';
@@ -507,19 +514,78 @@ function renderMethodenGrid() {
     grid.innerHTML = html;
 }
 
-function renderVolkSelect() {
-    var select = document.getElementById('behandlungVolk');
-    var html = '<option value="">-- Bitte wählen --</option>';
-    var nachStandort = {};
-    voelker.forEach(function(v) { if (!nachStandort[v.standortId]) nachStandort[v.standortId] = []; nachStandort[v.standortId].push(v); });
-    Object.entries(nachStandort).forEach(function(entry) {
-        var standort = standorte.find(function(s){return s.id === entry[0];});
-        html += '<optgroup label="📍 '+(standort?standort.name:'Unbekannt')+'">';
-        entry[1].forEach(function(v) { html += '<option value="'+v.id+'">🐝 '+v.name+'</option>'; });
-        html += '</optgroup>';
+function getVolkListeSortiert() {
+    // Völker nach Standort gruppieren, dann numerisch sortieren
+    var liste = voelker.map(function(v) {
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        return {id:v.id, name:v.name, standort:s?s.name:'Unbekannt', standortId:v.standortId};
     });
-    select.innerHTML = html;
+    liste.sort(function(a,b) {
+        var sc = a.standort.localeCompare(b.standort);
+        if (sc !== 0) return sc;
+        // Numerisch sortieren: Zahlen aus dem Namen extrahieren
+        var na = parseInt((a.name.match(/\d+/)||['999999'])[0]);
+        var nb = parseInt((b.name.match(/\d+/)||['999999'])[0]);
+        if (na !== nb) return na - nb;
+        return a.name.localeCompare(b.name);
+    });
+    return liste;
 }
+
+function renderVolkSelect() {
+    // Initiales Rendering des Dropdowns
+    filterVolkDropdown('');
+}
+
+function showVolkDropdown() {
+    filterVolkDropdown(document.getElementById('volkSuchFeld').value);
+    document.getElementById('volkDropdown').style.display = 'block';
+}
+
+function filterVolkDropdown(query) {
+    var dd = document.getElementById('volkDropdown');
+    var q = (query||'').toLowerCase().trim();
+    var liste = getVolkListeSortiert();
+    var html = '';
+    var letzterStandort = '';
+
+    var gefiltert = q ? liste.filter(function(v) {
+        return v.name.toLowerCase().indexOf(q) > -1 || v.standort.toLowerCase().indexOf(q) > -1;
+    }) : liste;
+
+    if (!gefiltert.length) {
+        html = '<div style="padding:.75rem;color:#A69580;font-size:.85rem;text-align:center">Kein Volk gefunden</div>';
+    } else {
+        gefiltert.forEach(function(v) {
+            if (v.standort !== letzterStandort) {
+                letzterStandort = v.standort;
+                html += '<div style="padding:.4rem .75rem;font-size:.7rem;font-weight:700;color:#A69580;background:#f5f0eb;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">📍 ' + v.standort + '</div>';
+            }
+            var selected = document.getElementById('behandlungVolk').value === v.id;
+            html += '<div onclick="selectVolk(\'' + v.id + '\',\'' + v.name.replace(/'/g,"\\'") + '\',\'' + v.standort.replace(/'/g,"\\'") + '\')" style="padding:.5rem .75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;' + (selected?'background:#FFF8EE;':'') + '" onmouseover="this.style.background=\'#FFF8EE\'" onmouseout="this.style.background=\'' + (selected?'#FFF8EE':'#fff') + '\'">';
+            html += '<span style="font-weight:500">🐝 ' + v.name + '</span>';
+            html += '<span style="font-size:.72rem;color:#7A6652">' + v.standort + '</span>';
+            html += '</div>';
+        });
+    }
+    dd.innerHTML = html;
+    dd.style.display = 'block';
+}
+
+function selectVolk(id, name, standort) {
+    document.getElementById('behandlungVolk').value = id;
+    document.getElementById('volkSuchFeld').value = name + ' – ' + standort;
+    document.getElementById('volkDropdown').style.display = 'none';
+}
+
+// Dropdown schließen bei Klick außerhalb
+document.addEventListener('click', function(e) {
+    var dd = document.getElementById('volkDropdown');
+    var sf = document.getElementById('volkSuchFeld');
+    if (dd && sf && !dd.contains(e.target) && e.target !== sf) {
+        dd.style.display = 'none';
+    }
+});
 
 function selectMethode(m, btn) {
     selectedMethode = m;
