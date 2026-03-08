@@ -35,7 +35,7 @@ var planManager = (function() {
             features: [
                 'aufgaben', 'packliste', 'behandlung_manuell', 'behandlung_auto',
                 'trachtkarte_voll', 'trachtkarte_teilen',
-                'zucht', 'zuchtberater', 'ernte', 'kosten_unbegrenzt',
+                'zucht', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'datenexport', 'backup'
             ]
@@ -93,7 +93,7 @@ var planManager = (function() {
     // Feature → welcher Plan mindestens nötig
     var FEATURE_MIN_PLAN = {
         zucht: 'pro',
-        zuchtberater: 'pro',
+        zuchtberater: 'meister',
         ernte: 'pro',
         bewertung: 'pro',
         behandlung_auto: 'pro',
