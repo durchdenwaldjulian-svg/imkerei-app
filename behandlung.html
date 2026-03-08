@@ -73,8 +73,8 @@
             .methoden-grid{grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.5rem}
             .methode-btn{padding:.5rem;font-size:.75rem}
             .methode-btn .emoji{font-size:1.25rem;margin-bottom:.25rem}
-            #behandlungModal .modal-content{max-width:100%;max-height:100vh;border-radius:.75rem .75rem 0 0}
-            #behandlungModal .modal-body{padding-bottom:6rem}
+            #behandlungModal{padding:.5rem}
+            #behandlungModal > div{max-width:100%;border-radius:.75rem .75rem 0 0}
         }
     </style>
 </head>
@@ -100,13 +100,13 @@
 <!-- ============================================ -->
 <!-- BEHANDLUNG MODAL -->
 <!-- ============================================ -->
-<div id="behandlungModal" class="modal modal-center" style="display:none">
-    <div class="modal-content" style="max-width:600px;max-height:90vh;overflow-y:auto">
-        <div class="modal-header">
-            <h2 id="modalTitle">💉 Neue Behandlung</h2>
-            <button class="close-btn" onclick="closeModal()">✕</button>
+<div id="behandlungModal" style="display:none;position:fixed;inset:0;background:rgba(28,20,16,0.5);z-index:10000;overflow-y:auto;padding:2rem 1rem">
+    <div style="max-width:600px;margin:auto;border-radius:1rem;background:#fff;box-shadow:0 16px 48px rgba(28,20,16,0.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:2px solid rgba(245,166,35,0.12);background:linear-gradient(to right,#FFF8EE,#fff);border-radius:1rem 1rem 0 0;position:sticky;top:0;z-index:5">
+            <h2 id="modalTitle" style="margin:0;font-size:1.25rem">💉 Neue Behandlung</h2>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem;line-height:1">✕</button>
         </div>
-        <div class="modal-body">
+        <div style="padding:1.5rem">
             <div class="form-group" style="margin-bottom:1rem">
                 <label class="form-label" style="display:block;font-weight:600;font-size:.85rem;color:#1C1410;margin-bottom:.4rem">Völker</label>
                 <div style="display:flex;flex-direction:column;gap:.5rem">
