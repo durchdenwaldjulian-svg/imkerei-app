@@ -67,11 +67,7 @@
         /* Info-Banner */
         .info-banner{position:absolute;bottom:40px;left:8px;right:8px;z-index:1000;max-width:500px;background:rgba(255,255,255,0.95);border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 2px 12px rgba(0,0,0,0.1);font-size:.8rem;color:#7A6652;backdrop-filter:blur(8px);display:none}
 
-        /* Toast */
-        .toast{position:fixed;bottom:3rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.5rem 1.25rem;border-radius:999px;font-size:.8rem;z-index:99999;display:none;max-width:90vw;white-space:nowrap;pointer-events:none}
-        .toast.show{display:block}
-        .toast.success{background:#2D8A4E}
-        .toast.error{background:#DC2626}
+        /* Toast kommt aus shared-styles.css */
 
         @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
@@ -167,6 +163,7 @@
 // ============================================
 var map, markers, meldungen = [], loggedInUserId = null, loggedInEmail = '';
 var meldeFormData = {};
+var melderProfilName = '';
 var standorte = []; // eigene Standorte für Warnradius
 
 var SICHTUNGS_TYPEN = {
@@ -208,18 +205,28 @@ window.onload = async function() {
         }
     });
 
-    // Auth prüfen
-    try {
-        var sess = await sb.auth.getSession();
-        if (sess.data.session) {
-            loggedInUserId = sess.data.session.user.id;
-            loggedInEmail = sess.data.session.user.email || '';
-            document.getElementById('meldeBtn').style.display = '';
-            // Eigene Standorte laden für Warnradius
-            var sRes = await sb.from('standorte').select('id,name,lat,lng').eq('user_id', loggedInUserId);
+    // Auth prüfen mit checkAuth aus config.js
+    var user = await checkAuth({preview: true});
+    if (user) {
+        loggedInUserId = user.id;
+        loggedInEmail = user.email || '';
+        document.getElementById('meldeBtn').style.display = '';
+
+        // Profil laden für Melder-Name
+        try {
+            var profRes = await sb.from('profiles').select('name').eq('id', user.id).single();
+            if (profRes.data && profRes.data.name) melderProfilName = profRes.data.name;
+        } catch(e) {}
+
+        // Eigene Standorte laden für Warnradius
+        try {
+            var sRes = await sb.from('standorte').select('id,name,lat,lng').eq('user_id', user.id);
             standorte = (sRes.data || []).filter(function(s){return s.lat && s.lng;});
-        }
-    } catch(e) { console.warn('Auth:', e); }
+        } catch(e) {}
+    } else {
+        // Nicht eingeloggt: Melde-Button verstecken
+        document.getElementById('meldeBtn').style.opacity = '0.5';
+    }
 
     // Meldungen laden
     await loadMeldungen();
@@ -365,9 +372,20 @@ function updateStats() {
 // ============================================
 function openMeldeModal() {
     if (!loggedInUserId) {
-        toast('Bitte einloggen um zu melden', 'error');
+        toast('Bitte einloggen um Hornissen zu melden', 'error');
         return;
     }
+
+    // Anti-Spam: max 10 Meldungen pro Tag
+    var heute = new Date().toISOString().split('T')[0];
+    var heuteMeldungen = meldungen.filter(function(m) {
+        return m.user_id === loggedInUserId && m.created_at && m.created_at.indexOf(heute) === 0;
+    });
+    if (heuteMeldungen.length >= 10) {
+        toast('Max. 10 Meldungen pro Tag erreicht', 'error');
+        return;
+    }
+
     meldeFormData = {
         typ: '',
         datum: new Date().toISOString().split('T')[0],
@@ -378,7 +396,11 @@ function openMeldeModal() {
         nest_hoehe: '',
         notizen: '',
         foto: null,
-        foto_preview: ''
+        foto_preview: '',
+        melder_name: melderProfilName || loggedInEmail.split('@')[0] || '',
+        melder_telefon: '',
+        melder_ort: '',
+        einverstanden: false
     };
     renderMeldeForm();
     document.getElementById('meldeModal').classList.add('active');
@@ -408,7 +430,27 @@ function renderMeldeForm() {
     html += '<input type="date" class="input" value="' + meldeFormData.datum + '" onchange="meldeFormData.datum=this.value">';
     html += '</div>';
 
-    // 3. Position
+    // 3. Melder-Daten
+    html += '<div style="background:#F5F0EB;border-radius:.75rem;padding:.75rem;border:1px solid #E8DFD4;margin-bottom:1rem">';
+    html += '<label class="form-label">👤 Deine Angaben</label>';
+
+    html += '<div class="form-group" style="margin-bottom:.5rem">';
+    html += '<label style="font-size:.78rem;color:#7A6652;display:block;margin-bottom:.25rem">Name *</label>';
+    html += '<input type="text" class="input" value="' + (meldeFormData.melder_name||'').replace(/"/g,'&quot;') + '" placeholder="Vor- und Nachname" onchange="meldeFormData.melder_name=this.value">';
+    html += '</div>';
+
+    html += '<div class="form-group" style="margin-bottom:.5rem">';
+    html += '<label style="font-size:.78rem;color:#7A6652;display:block;margin-bottom:.25rem">Ort / PLZ</label>';
+    html += '<input type="text" class="input" value="' + (meldeFormData.melder_ort||'').replace(/"/g,'&quot;') + '" placeholder="z.B. 80331 München" onchange="meldeFormData.melder_ort=this.value">';
+    html += '</div>';
+
+    html += '<div class="form-group" style="margin-bottom:0">';
+    html += '<label style="font-size:.78rem;color:#7A6652;display:block;margin-bottom:.25rem">Telefon <span style="font-size:.68rem;color:#A69580">(optional, für Rückfragen)</span></label>';
+    html += '<input type="tel" class="input" value="' + (meldeFormData.melder_telefon||'').replace(/"/g,'&quot;') + '" placeholder="z.B. 0170 1234567" onchange="meldeFormData.melder_telefon=this.value">';
+    html += '</div>';
+    html += '</div>';
+
+    // 4. Position
     html += '<div class="form-group">';
     html += '<label class="form-label">Position * <span style="font-size:.72rem;color:#A69580;font-weight:400">(klicke auf die Karte oder nutze GPS)</span></label>';
     if (meldeFormData.lat && meldeFormData.lng) {
@@ -480,7 +522,16 @@ function renderMeldeForm() {
     html += '<textarea class="input" rows="2" placeholder="Weitere Details, Beschreibung..." onchange="meldeFormData.notizen=this.value">' + (meldeFormData.notizen||'') + '</textarea>';
     html += '</div>';
 
-    // Hinweis
+    // Einverständnis
+    html += '<div style="margin-bottom:1rem">';
+    html += '<label style="display:flex;align-items:flex-start;gap:.5rem;cursor:pointer;padding:.75rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.5rem">';
+    html += '<input type="checkbox" id="einverstaendnis" style="width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:#DC2626"' + (meldeFormData.einverstanden?' checked':'') + ' onchange="meldeFormData.einverstanden=this.checked">';
+    html += '<span style="font-size:.8rem;color:#1C1410;line-height:1.4">';
+    html += 'Ich bin damit einverstanden, dass meine Meldung (Standort, Sichtungsart, Foto) <strong>öffentlich auf der Karte</strong> angezeigt wird, damit andere Imker und Behörden gewarnt werden. ';
+    html += 'Mein Name wird als Melder angezeigt. Meine Telefonnummer ist nur für Rückfragen und wird nicht öffentlich gezeigt.';
+    html += '</span></label></div>';
+
+    // Hinweis Verwechslung
     html += '<div style="font-size:.72rem;color:#7A6652;padding:.5rem;background:#FEF2F2;border-radius:.35rem">';
     html += '⚠️ <strong>Verwechslungsgefahr:</strong> Die heimische Hornisse (Vespa crabro) ist geschützt! Die Asiatische Hornisse ist dunkler, hat eine orange Gesichtsmaske und gelbe Beinenden.';
     html += '</div>';
@@ -531,8 +582,29 @@ function handleFoto(input) {
 // SPEICHERN
 // ============================================
 async function saveMeldung() {
+    // Pflichtfelder prüfen
     if (!meldeFormData.typ) { toast('Bitte Art der Sichtung wählen!', 'error'); return; }
+    if (!meldeFormData.melder_name || meldeFormData.melder_name.trim().length < 2) { toast('Bitte deinen Namen angeben!', 'error'); return; }
     if (!meldeFormData.lat || !meldeFormData.lng) { toast('Bitte Position angeben!', 'error'); return; }
+    if (!meldeFormData.einverstanden) { toast('Bitte Einverständnis bestätigen!', 'error'); return; }
+
+    // Nest-Meldung braucht Foto
+    if (meldeFormData.typ === 'nest' && !meldeFormData.foto) {
+        if (!confirm('Nest-Meldungen ohne Foto können schwer verifiziert werden. Trotzdem absenden?')) return;
+    }
+
+    // Anti-Duplikat: keine Meldung im Umkreis von 100m in letzten 24h vom selben User
+    var doppelt = meldungen.find(function(m) {
+        if (m.user_id !== loggedInUserId) return false;
+        var alter = Date.now() - new Date(m.created_at).getTime();
+        if (alter > 86400000) return false;
+        var dist = getDistanceKm(m.lat, m.lng, meldeFormData.lat, meldeFormData.lng);
+        return dist < 0.1; // 100m
+    });
+    if (doppelt) {
+        toast('Du hast hier bereits in den letzten 24h gemeldet', 'error');
+        return;
+    }
 
     toast('Wird gespeichert...');
 
@@ -551,7 +623,9 @@ async function saveMeldung() {
     var dbData = {
         id: crypto.randomUUID ? crypto.randomUUID() : 'h_' + Date.now(),
         user_id: loggedInUserId,
-        melder_name: loggedInEmail.split('@')[0] || 'Imker',
+        melder_name: meldeFormData.melder_name.trim(),
+        melder_ort: meldeFormData.melder_ort || null,
+        melder_telefon: meldeFormData.melder_telefon || null,
         typ: meldeFormData.typ,
         datum: meldeFormData.datum,
         lat: meldeFormData.lat,
@@ -583,6 +657,13 @@ async function saveMeldung() {
 async function bestaetigeMeldung(id) {
     var m = meldungen.find(function(x){return x.id===id;});
     if (!m) return;
+
+    // Eigene Meldung kann man nicht selbst bestätigen
+    if (m.user_id === loggedInUserId) {
+        toast('Du kannst deine eigene Meldung nicht bestätigen', 'error');
+        return;
+    }
+
     var newCount = (m.bestaetigt_count || 0) + 1;
     var newStatus = newCount >= 2 ? 'bestaetigt' : m.status;
     await sb.from('hornissen_meldungen').update({bestaetigt_count: newCount, status: newStatus}).eq('id', id);

@@ -28,8 +28,8 @@
         .stars .star.active{color:#F5A623}
         .stars .star:hover{color:#f7bc5e}
         
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
-        
+        /* Toast kommt aus shared-styles.css */
+
         /* === TÄTIGKEITEN KACHELN === */
         .taetig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:.5rem;margin:.75rem 0}
         .taetig-chip{
@@ -1910,11 +1910,12 @@ function fmtDateShort(d) {
     return new Date(d).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
 }
 
-function toast(msg) {
+function toast(msg, typ) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.style.display = 'block';
-    setTimeout(function(){ el.style.display = 'none'; }, 2500);
+    el.className = 'toast' + (typ ? ' ' + typ : '') + ' show';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
 }
 
 init();

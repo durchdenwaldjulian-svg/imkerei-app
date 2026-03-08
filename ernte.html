@@ -12,12 +12,21 @@
     <style>
         /* === ERNTE-SPECIFIC STYLES === */
         body{padding-left:220px;padding-bottom:2rem}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         .container{max-width:800px;margin:0 auto;padding:1rem}
         
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        /* Toast kommt aus shared-styles.css */
 
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
+            .nav{display:none}
+            .mobile-nav{display:flex}
         }
     </style>
 </head>
@@ -521,11 +530,12 @@ async function deleteErnte(id) {
 // ============================================
 // HELPERS
 // ============================================
-function toast(msg) {
+function toast(msg, typ) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.style.display = 'block';
-    setTimeout(function(){ el.style.display = 'none'; }, 2500);
+    el.className = 'toast' + (typ ? ' ' + typ : '') + ' show';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
 }
 
 // Start

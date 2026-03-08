@@ -13,6 +13,13 @@
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:2rem}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         .container{max-width:900px;margin:0 auto;padding:1rem}
 
         /* TRACHT */
@@ -40,14 +47,7 @@
         .badge-green{background:#E8F5EC;color:#2D8A4E}
         .badge-blue{background:#EEF2FF;color:#3B82F6}
 
-        /* TOAST */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
-        .toast.show{display:block}
-        .toast.success{background:#2D8A4E}
-        .toast.error{background:#DC2626}
-        .toast.warning{background:#D97706}
-        .toast.info{background:#3B82F6}
-        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        /* Toast kommt aus shared-styles.css */
 
         .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
         .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
@@ -131,6 +131,8 @@
 
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
+            .nav{display:none}
+            .mobile-nav{display:flex}
             .timeline-header-row,.timeline-row{grid-template-columns:130px 1fr}
             .timeline-row-label{padding:.5rem;font-size:.75rem}
             .timeline-gts-tag{font-size:.55rem;padding:.05rem .2rem}
@@ -484,11 +486,10 @@ async function init() {
 // HELPERS
 // ============================================
 function fd(ts) { if (!ts) return '-'; return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
-function toast(msg, type) {
-    type = type || 'success';
+function toast(msg, typ) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'toast ' + type + ' show';
+    el.className = 'toast' + (typ ? ' ' + typ : '') + ' show';
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
 }

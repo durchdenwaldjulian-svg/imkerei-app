@@ -54,12 +54,7 @@
         .counter-btn:hover{border-color:#F5A623;background:#FFF8EE}
         .counter-value{font-size:1.25rem;font-weight:bold;min-width:30px;text-align:center}
 
-        /* === TOAST === */
-        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.5rem 1.25rem;border-radius:999px;font-size:.8rem;z-index:9999;display:none;animation:fadeIn .3s;max-width:90vw;white-space:nowrap;pointer-events:none}
-        .toast.show{display:block}
-        .toast.success{background:#2D8A4E}
-        .toast.error{background:#DC2626}
-        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        /* Toast kommt aus shared-styles.css */
 
         /* === LOADING === */
         .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
@@ -459,11 +454,11 @@ function toggleArchiv() {
     if (pfeil) pfeil.textContent = _archivOffen ? '▼' : '▶';
 }
 
-function toast(msg, type) {
-    type = type || 'success';
+function toast(msg, typ) {
+    typ = typ || 'success';
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'toast ' + type + ' show';
+    el.className = 'toast ' + typ + ' show';
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
 }

@@ -13,6 +13,13 @@
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:0;overflow:hidden}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         #radarMap{height:100vh;width:100%}
 
         .radar-controls{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:.5rem;max-width:420px;width:90%}
@@ -34,13 +41,7 @@
         .ampel-gruen{background:#D1FAE5;color:#059669}
         .ampel-blau{background:#DBEAFE;color:#2563EB}
 
-        /* Toast – klein, unten rechts, NICHT mittig */
-        .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1C1410;color:#fff;padding:.5rem 1rem;border-radius:.5rem;font-size:.78rem;z-index:10001;display:none;max-width:260px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-        .toast.show{display:block;animation:toastIn .3s ease}
-        .toast.success{background:#065f46}
-        .toast.error{background:#991b1b}
-        .toast.info{background:#1e40af}
-        @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        /* Toast kommt aus shared-styles.css */
 
         .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
         .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
@@ -61,13 +62,15 @@
 
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:0;overflow:hidden}
+            .nav{display:none}
+            .mobile-nav{display:flex}
             #radarMap{height:calc(100vh - 68px)}
             .radar-controls{top:5px;left:50%;transform:translateX(-50%);right:auto;max-width:95%;width:95%}
             .radar-panel{padding:.5rem .75rem}
             .gts-thermo-value{font-size:1.1rem}
             .radar-legend{bottom:80px;right:5px;padding:.5rem .75rem;font-size:.7rem}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
-            .toast{right:1rem;bottom:5rem;max-width:220px;font-size:.72rem;padding:.4rem .75rem}
+            /* Toast kommt aus shared-styles.css */
         }
     </style>
 </head>
@@ -180,7 +183,7 @@ function gtsStatus(g){if(g<100)return'❄️ Winter/Vorfrühling';if(g<200)retur
 function nextTracht(g){var s=Object.entries(GTS_SCHWELLEN).sort(function(a,b){return a[1]-b[1];});for(var i=0;i<s.length;i++){if(s[i][1]>g)return{name:s[i][0],gts:s[i][1],diff:Math.round(s[i][1]-g)};}return null;}
 function ampel(typ,g){var sw=GTS_SCHWELLEN[typ];if(!sw||g===null)return{cl:'',color:'#9CA3AF',text:'?',label:'Keine GTS'};var r=g/sw;if(r>=1.3)return{cl:'ampel-blau',color:'#2563EB',text:'🔵',label:'Blüte vorbei'};if(r>=1.0)return{cl:'ampel-gruen',color:'#059669',text:'🟢',label:'Blüht wahrsch.'};if(r>=0.85)return{cl:'ampel-gelb',color:'#D97706',text:'🟡',label:'Bald soweit'};if(r>=0.65)return{cl:'ampel-orange',color:'#EA580C',text:'🟠',label:'Dauert noch'};return{cl:'ampel-rot',color:'#DC2626',text:'🔴',label:'Noch weit weg'};}
 
-function toast(msg,type){var el=document.getElementById('toast');el.textContent=msg;el.className='toast '+(type||'success')+' show';clearTimeout(window._tt);window._tt=setTimeout(function(){el.classList.remove('show');},2500);}
+function toast(msg,typ){var el=document.getElementById('toast');el.textContent=msg;el.className='toast'+(typ?' '+typ:'')+' show';clearTimeout(window._toastTimer);window._toastTimer=setTimeout(function(){el.classList.remove('show');},2500);}
 
 // INIT
 async function init(){
