@@ -119,6 +119,7 @@
 
     // === MOBILE FULLSCREEN MENU ===
     function buildMobileMenu() {
+        var isIndex = (currentFile === 'app.html');
         var groups = [
             { title: 'Übersicht', items: [
                 { page: 'heute', icon: '📅', label: 'Heute' },
@@ -176,7 +177,13 @@
                 } else if (item.id) {
                     h += '<a href="' + item.href + '" class="mobile-menu-item" id="' + item.id + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
                 } else if (item.page) {
-                    h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                    // Auf app.html: Button der app.page setzt
+                    // Auf anderen Seiten: Link zu app.html#page
+                    if (isIndex) {
+                        h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                    } else {
+                        h += '<a href="app.html#' + item.page + '" class="mobile-menu-item"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
+                    }
                 } else {
                     h += '<a href="' + item.href + '" class="mobile-menu-item"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
                 }
