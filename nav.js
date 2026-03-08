@@ -19,7 +19,7 @@
             { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
             { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzuchtrechner' },
             { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
-            { href: 'bewertung.html', icon: '📖', label: 'Stockkarte' },
+            { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' },
             { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
             { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
         ]},
@@ -131,7 +131,7 @@
                 { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
                 { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzucht' },
                 { href: 'behandlung.html', icon: '💉', label: 'Behandlung' },
-                { href: 'bewertung.html', icon: '📖', label: 'Stockkarte' }
+                { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' }
             ]},
             { title: 'Tools', items: [
                 { href: 'assistent.html', icon: '🤖', label: 'Assistent' },

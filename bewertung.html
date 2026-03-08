@@ -12,6 +12,13 @@
     <style>
         /* === BEWERTUNG-SPECIFIC STYLES === */
         body{padding-left:220px;padding-bottom:2rem}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         body.modal-open{overflow:hidden}
         
         .container{max-width:800px;margin:0 auto;padding:1rem}
@@ -112,6 +119,9 @@
         .modal-footer-sticky{position:sticky;bottom:0;background:#fff;padding:1rem 1.5rem;border-top:2px solid rgba(245,166,35,0.12);box-shadow:0 -4px 12px rgba(28,20,16,0.06)}
         
         @media(max-width:768px){
+            body{padding-left:0;padding-bottom:68px}
+            .nav{display:none}
+            .mobile-nav{display:flex}
             .taetig-grid{grid-template-columns:repeat(3,1fr);gap:.4rem}
             .taetig-chip{font-size:.72rem;padding:.5rem .35rem}
         }
@@ -288,12 +298,14 @@ function render() {
     html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="switchTab(\'bewerten\')">⭐ Bewertung</button>';
     html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="switchTab(\'ranking\')">🏆 Ranking</button>';
     html += '<button class="tab-btn '+(activeTab==='historie'?'active':'')+'" onclick="switchTab(\'historie\')">📜 Historie</button>';
+    html += '<button class="tab-btn '+(activeTab==='stammbaum'?'active':'')+'" onclick="switchTab(\'stammbaum\')">🌳 Stammbaum</button>';
     html += '</div>';
-    
+
     if (activeTab === 'durchsicht') html += renderDurchsicht();
     else if (activeTab === 'bewerten') html += renderBewerten();
     else if (activeTab === 'ranking') html += renderRanking();
     else if (activeTab === 'historie') html += renderHistorie();
+    else if (activeTab === 'stammbaum') html += renderStammbaum();
     
     html += '</div>';
     document.getElementById('app').innerHTML = html;
@@ -676,6 +688,14 @@ function renderHistorie() {
             html += '<div><span style="color:#7A6652">Markiert:</span> <strong>' + (kInfo.markiert?'Ja '+getColorDot(kInfo.farbe):'Nein') + '</strong></div>';
             if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
             if (kInfo.nummer) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Nummer:</span> <strong>' + kInfo.nummer + '</strong></div>';
+            if (kInfo.muttervolk_id) {
+                var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
+                if (mv) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">🌳 Muttervolk:</span> <strong>' + mv.name + '</strong></div>';
+            }
+            if (kInfo.drohnenvolk_id) {
+                var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
+                if (dv) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">🌳 Drohnenvolk:</span> <strong>' + dv.name + '</strong></div>';
+            }
             html += '</div></div>';
             
             // BeeBreed Zuchtwertkarte
@@ -787,7 +807,7 @@ function openDurchsicht(id, volkId) {
         taetigkeiten: [],
         kriterien: {},
         varroa: {milben:'', tage:'1', methode:'Puderzucker'},
-        koenigin: {begattung:'', herkunft:'', belegstelle:'', nummer:'', markiert:false, farbe:'', jahrgang:new Date().getFullYear(), zuchtbuchNr:'', zuchtwerte:{}},
+        koenigin: {begattung:'', herkunft:'', belegstelle:'', nummer:'', markiert:false, farbe:'', jahrgang:new Date().getFullYear(), zuchtbuchNr:'', zuchtwerte:{}, muttervolk_id:'', drohnenvolk_id:''},
         notizen: ''
     };
     KRITERIEN.forEach(function(k){ formData.kriterien[k.key] = 3; });
@@ -885,7 +905,7 @@ function renderStepVolk() {
     var html = '';
     html += '<div class="form-group">';
     html += '<label class="form-label">Volk</label>';
-    html += '<select class="input" onchange="formData.volkId=this.value;if(koeniginnen[this.value])formData.koenigin=Object.assign({},koeniginnen[this.value])">';
+    html += '<select class="input" onchange="formData.volkId=this.value;if(koeniginnen[this.value])formData.koenigin=Object.assign({},koeniginnen[this.value]);else{formData.koenigin={begattung:\'\',herkunft:\'\',belegstelle:\'\',nummer:\'\',markiert:false,farbe:\'\',jahrgang:new Date().getFullYear(),zuchtbuchNr:\'\',zuchtwerte:{},muttervolk_id:\'\',drohnenvolk_id:\'\'}}">';
     html += '<option value="">-- Volk wählen --</option>';
     standorte.forEach(function(s) {
         var sV = voelker.filter(function(v){return v.standortId===s.id;});
@@ -1029,6 +1049,29 @@ function renderStepKoenigin() {
         html += '<input type="text" class="input" value="' + (formData.koenigin.nummer||'') + '" placeholder="z.B. K-2025-12" onchange="formData.koenigin.nummer=this.value"></div>';
     }
     
+    // === Abstammung (Muttervolk & Drohnenvolk) ===
+    html += '<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #E8DFD4">';
+    html += '<h4 style="font-size:.88rem;color:#92400E;margin-bottom:.75rem;display:flex;align-items:center;gap:.35rem">🌳 Abstammung <span style="font-size:.65rem;color:#94a3b8;font-weight:400">für Stammbaum</span></h4>';
+
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Muttervolk (Königin stammt von)</label>';
+    html += '<select class="input" onchange="formData.koenigin.muttervolk_id=this.value"><option value="">-- kein Muttervolk --</option>';
+    voelker.forEach(function(v) {
+        if (v.id === formData.volkId) return;
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        html += '<option value="' + v.id + '"' + (formData.koenigin.muttervolk_id===v.id?' selected':'') + '>' + v.name + (s?' ('+s.name+')':'') + '</option>';
+    });
+    html += '</select></div>';
+
+    html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Drohnenvolk (Vater-Seite)</label>';
+    html += '<select class="input" onchange="formData.koenigin.drohnenvolk_id=this.value"><option value="">-- kein Drohnenvolk --</option>';
+    voelker.forEach(function(v) {
+        if (v.id === formData.volkId) return;
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        html += '<option value="' + v.id + '"' + (formData.koenigin.drohnenvolk_id===v.id?' selected':'') + '>' + v.name + (s?' ('+s.name+')':'') + '</option>';
+    });
+    html += '</select></div>';
+    html += '</div>';
+
     // Jahrgang (immer sichtbar – jede Königin hat einen Jahrgang)
     var currentYear = new Date().getFullYear();
     html += '<div class="form-group" style="margin-bottom:.75rem"><label class="form-label" style="font-size:.82rem">Jahrgang</label>';
@@ -1116,6 +1159,160 @@ function getFarbeFromJahr(jahr) {
 function getFarbeLabel(jahr) {
     var farben = {weiss:'⬜ Weiß',gelb:'🟡 Gelb',rot:'🔴 Rot',gruen:'🟢 Grün',blau:'🔵 Blau'};
     return farben[getFarbeFromJahr(jahr)] || '';
+}
+
+// ============================================
+// TAB: STAMMBAUM
+// ============================================
+var selectedStammbaumVolk = '';
+
+function renderStammbaum() {
+    var html = '';
+
+    html += '<div class="card">';
+    html += '<h3 style="margin-bottom:.75rem">🌳 Stammbaum</h3>';
+    html += '<select class="input" onchange="selectedStammbaumVolk=this.value;render()">';
+    html += '<option value="">-- Volk wählen --</option>';
+    voelker.forEach(function(v) {
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        html += '<option value="' + v.id + '"' + (selectedStammbaumVolk===v.id?' selected':'') + '>' + v.name + (s?' ('+s.name+')':'') + '</option>';
+    });
+    html += '</select></div>';
+
+    if (!selectedStammbaumVolk) {
+        html += '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">';
+        html += '<div style="font-size:3rem;margin-bottom:1rem">🌳</div>';
+        html += '<h3>Stammbaum anzeigen</h3>';
+        html += '<p style="margin-top:.5rem">Wähle ein Volk aus, um dessen Abstammung zu sehen.</p>';
+        html += '<p style="font-size:.8rem;margin-top:.5rem;color:#A69580">Tipp: Pflege Mutter- und Drohnenvolk im Durchsicht-Modal unter 👑 Königin → 🌳 Abstammung</p>';
+        html += '</div>';
+        return html;
+    }
+
+    // Stammbaum aufbauen
+    html += '<div id="stammbaumContainer" class="card" style="overflow-x:auto">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">';
+    html += '<h3 style="margin:0">🌳 Abstammungsbaum</h3>';
+    html += '<button class="btn" onclick="exportStammbaumPDF()" style="padding:.4rem .8rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-size:.8rem;font-weight:600;cursor:pointer">📄 PDF Export</button>';
+    html += '</div>';
+    html += renderBaumKnoten(selectedStammbaumVolk, 0);
+    html += '</div>';
+
+    // Legende
+    html += '<div class="card" style="font-size:.8rem;color:#7A6652">';
+    html += '<strong>Legende:</strong> ';
+    html += '<span style="display:inline-flex;align-items:center;gap:.25rem;margin-right:1rem">👑 <span style="color:#D4930D">Muttervolk</span></span>';
+    html += '<span style="display:inline-flex;align-items:center;gap:.25rem">🐝 <span style="color:#3B82F6">Drohnenvolk</span></span>';
+    html += '</div>';
+
+    return html;
+}
+
+function renderBaumKnoten(volkId, tiefe) {
+    if (!volkId || tiefe > 4) return '';
+    var v = voelker.find(function(x){return x.id===volkId;});
+    if (!v) return '<div style="padding:.5rem;color:#A69580;font-size:.8rem;font-style:italic">Volk nicht mehr vorhanden</div>';
+
+    var kInfo = koeniginnen[volkId] || {};
+    var s = standorte.find(function(x){return x.id===v.standortId;});
+    var farbeCSS = '';
+    if (kInfo.farbe) {
+        var fMap = {weiss:'#E5E7EB',gelb:'#FDE047',rot:'#EF4444',gruen:'#22C55E',blau:'#3B82F6'};
+        farbeCSS = 'border-left:4px solid '+(fMap[kInfo.farbe]||'#E8DFD4');
+    }
+
+    var html = '<div style="' + (tiefe > 0 ? 'margin-left:' + Math.min(tiefe * 1.5, 4) + 'rem;' : '') + '">';
+
+    // Knoten-Box
+    html += '<div class="stammbaum-node" style="background:#fff;border:2px solid ' + (tiefe===0?'#F5A623':'#E8DFD4') + ';border-radius:.75rem;padding:.75rem 1rem;margin-bottom:.5rem;' + farbeCSS + '">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+    html += '<div>';
+    html += '<strong style="font-size:' + (tiefe===0?'1.1rem':'.95rem') + '">' + (tiefe===0?'👑 ':'') + v.name + '</strong>';
+    if (s) html += ' <span style="font-size:.75rem;color:#7A6652">📍 ' + s.name + '</span>';
+    html += '</div>';
+    if (kInfo.jahrgang) {
+        html += '<span style="font-size:.75rem;background:#FFF8EE;padding:.15rem .4rem;border-radius:.25rem;color:#92400E">' + kInfo.jahrgang + '</span>';
+    }
+    html += '</div>';
+
+    // Details
+    var details = [];
+    if (kInfo.begattung) details.push(kInfo.begattung);
+    if (kInfo.herkunft) details.push(formatHerkunft(kInfo.herkunft));
+    if (kInfo.zuchtbuchNr) details.push('Nr: ' + kInfo.zuchtbuchNr);
+    if (kInfo.markiert && kInfo.farbe) details.push(getColorDot(kInfo.farbe));
+    if (details.length) {
+        html += '<div style="font-size:.78rem;color:#7A6652;margin-top:.35rem">' + details.join(' · ') + '</div>';
+    }
+
+    // Zuchtwerte kompakt
+    if (kInfo.zuchtwerte && kInfo.zuchtwerte.gesamt) {
+        html += '<div style="font-size:.72rem;margin-top:.25rem;color:#92400E">⭐ Gesamtzuchtwert: <strong>' + kInfo.zuchtwerte.gesamt + '</strong></div>';
+    }
+    html += '</div>';
+
+    // Eltern
+    var hatMutter = kInfo.muttervolk_id && voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
+    var hatDrohne = kInfo.drohnenvolk_id && voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
+
+    if (hatMutter || hatDrohne) {
+        html += '<div style="display:flex;gap:1rem;flex-wrap:wrap">';
+
+        if (hatMutter) {
+            html += '<div style="flex:1;min-width:200px">';
+            html += '<div style="font-size:.72rem;font-weight:700;color:#D4930D;margin-bottom:.25rem;padding-left:' + Math.min((tiefe+1)*1.5, 4) + 'rem">👑 Muttervolk</div>';
+            html += renderBaumKnoten(kInfo.muttervolk_id, tiefe + 1);
+            html += '</div>';
+        }
+
+        if (hatDrohne) {
+            html += '<div style="flex:1;min-width:200px">';
+            html += '<div style="font-size:.72rem;font-weight:700;color:#3B82F6;margin-bottom:.25rem;padding-left:' + Math.min((tiefe+1)*1.5, 4) + 'rem">🐝 Drohnenvolk</div>';
+            html += renderBaumKnoten(kInfo.drohnenvolk_id, tiefe + 1);
+            html += '</div>';
+        }
+
+        html += '</div>';
+    } else if (tiefe === 0) {
+        html += '<div style="padding:.75rem;color:#A69580;font-size:.85rem;background:#FFFBF0;border-radius:.5rem;margin-top:.5rem">';
+        html += '💡 Keine Abstammungsdaten vorhanden. Pflege Mutter- und Drohnenvolk über 📋 Durchsicht → 👑 Königin → 🌳 Abstammung.';
+        html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+// ============================================
+// PDF EXPORT STAMMBAUM
+// ============================================
+function exportStammbaumPDF() {
+    var container = document.getElementById('stammbaumContainer');
+    if (!container) return;
+
+    var v = voelker.find(function(x){return x.id===selectedStammbaumVolk;});
+    var volkName = v ? v.name : 'Unbekannt';
+    var datum = new Date().toLocaleDateString('de-DE');
+
+    var printWin = window.open('', '_blank');
+    printWin.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stammbaum – ' + volkName + '</title>');
+    printWin.document.write('<style>');
+    printWin.document.write('*{margin:0;padding:0;box-sizing:border-box}');
+    printWin.document.write('body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:2rem;color:#1C1410;max-width:900px;margin:auto}');
+    printWin.document.write('.header{text-align:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #F5A623}');
+    printWin.document.write('.header h1{font-size:1.5rem;color:#1C1410;margin-bottom:.25rem}');
+    printWin.document.write('.header p{font-size:.85rem;color:#7A6652}');
+    printWin.document.write('.stammbaum-node{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.75rem 1rem;margin-bottom:.5rem}');
+    printWin.document.write('.legende{margin-top:2rem;padding-top:1rem;border-top:1px solid #E8DFD4;font-size:.8rem;color:#7A6652}');
+    printWin.document.write('@media print{body{padding:.5rem}@page{margin:1.5cm}}');
+    printWin.document.write('</style></head><body>');
+    printWin.document.write('<div class="header"><h1>🌳 Stammbaum – ' + volkName + '</h1>');
+    printWin.document.write('<p>Erstellt am ' + datum + ' · Imkerei Tagesplaner</p></div>');
+    printWin.document.write(container.innerHTML.replace(/<button[^>]*>.*?<\/button>/gi, ''));
+    printWin.document.write('<div class="legende"><strong>Legende:</strong> 👑 Muttervolk (Königin-Linie) · 🐝 Drohnenvolk (Vater-Linie)</div>');
+    printWin.document.write('</body></html>');
+    printWin.document.close();
+    setTimeout(function(){ printWin.print(); }, 500);
 }
 
 function toggleTaetigkeit(key) {
