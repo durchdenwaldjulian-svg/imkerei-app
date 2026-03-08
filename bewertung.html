@@ -404,9 +404,9 @@ function renderStandorteTab() {
     html += '</div>';
 
     // Völker-Grid des gewählten Standorts
-    var filteredVoelker = selectedStandortFilter
+    var filteredVoelker = sortVoelkerNumerisch(selectedStandortFilter
         ? voelker.filter(function(v){return v.standortId===selectedStandortFilter;})
-        : voelker;
+        : voelker);
 
     if (!filteredVoelker.length) {
         html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Keine Völker an diesem Standort.</div>';
@@ -514,14 +514,14 @@ function renderSuchergebnisse() {
 
     html += '<div style="font-size:.8rem;color:#7A6652;margin-bottom:.5rem">' + treffer.length + ' Ergebnis' + (treffer.length>1?'se':'') + ' für "<strong>' + suchBegriff + '</strong>"</div>';
 
-    // Bei genau 1 Treffer oder exaktem Match: Volk-Profil anzeigen
-    var exakt = treffer.find(function(v){return v.name.toLowerCase() === q;});
-    if (treffer.length === 1 || exakt) {
-        html += renderVolkProfil(exakt || treffer[0]);
+    // Bei genau 1 Treffer: Volk-Profil direkt anzeigen
+    if (treffer.length === 1) {
+        html += renderVolkProfil(treffer[0]);
         return html;
     }
 
     // Mehrere Treffer: Karten-Grid
+    treffer = sortVoelkerNumerisch(treffer);
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">';
     treffer.forEach(function(v) {
         html += renderVolkKarte(v);
@@ -642,23 +642,45 @@ function renderVolkProfil(v) {
 // ============================================
 // TAB: DURCHSICHT
 // ============================================
+function sortVoelkerNumerisch(liste) {
+    return liste.slice().sort(function(a, b) {
+        var na = parseInt((a.name.match(/\d+/) || ['999999'])[0]);
+        var nb = parseInt((b.name.match(/\d+/) || ['999999'])[0]);
+        if (na !== nb) return na - nb;
+        return a.name.localeCompare(b.name);
+    });
+}
+
 function renderDurchsicht() {
     var html = '';
-    
+
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">';
     html += '<h2 style="margin:0;font-size:1.1rem">📋 Durchsichtprotokoll</h2>';
     html += '<button class="btn btn-primary btn-sm" onclick="openDurchsicht()">+ Neue Durchsicht</button>';
     html += '</div>';
-    
-    standorte.forEach(function(s) {
-        var sVoelker = voelker.filter(function(v){return v.standortId===s.id;});
+
+    // Standort-Filter übernehmen
+    var anzuzeigende = selectedStandortFilter
+        ? standorte.filter(function(s){return s.id===selectedStandortFilter;})
+        : standorte;
+
+    if (selectedStandortFilter) {
+        var sName = standorte.find(function(s){return s.id===selectedStandortFilter;});
+        html += '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;font-size:.85rem;color:#7A6652">';
+        html += '<span>Filter: 📍 <strong>' + (sName?sName.name:'') + '</strong></span>';
+        html += '<button onclick="selectedStandortFilter=\'\';render()" style="background:none;border:1px solid #E8DFD4;border-radius:.35rem;padding:.15rem .4rem;font-size:.72rem;cursor:pointer;color:#7A6652">✕ Alle zeigen</button>';
+        html += '</div>';
+    }
+
+    anzuzeigende.forEach(function(s) {
+        var sVoelker = sortVoelkerNumerisch(voelker.filter(function(v){return v.standortId===s.id;}));
         if (!sVoelker.length) return;
-        
+
         html += '<div class="card">';
         html += '<h3 style="margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">';
         html += '📍 ' + s.name + ' <span style="font-size:.75rem;color:#7A6652;font-weight:400">(' + sVoelker.length + ' Völker)</span>';
         html += '</h3>';
-        
+
         sVoelker.forEach(function(v) {
             var volkDs = getDurchsichtenFuerVolk(v.id);
             var letzte = volkDs.length ? volkDs[0] : null;
