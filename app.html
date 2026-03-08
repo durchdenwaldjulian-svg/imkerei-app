@@ -32,6 +32,8 @@
         /* Völker-Grid CSS → standorte.html */
         
         @media(max-width:768px){
+            body{padding-left:0;padding-bottom:68px}
+            .footer{display:none}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
             .option-grid{grid-template-columns:repeat(3,1fr)}
         }
@@ -89,6 +91,12 @@
     </style>
 </head>
 <body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+
 <div id="toast" class="toast"></div>
 <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div><div style="margin-top:1rem;color:#7A6652;font-weight:600">Laden...</div></div>
 <div id="saveIndicator" class="save-indicator">💾 Gespeichert</div>
@@ -304,10 +312,6 @@
 <!-- Behandlung Modal -->
 <!-- Behandlung-Modal → behandlung.html -->
 
-<nav class="nav" id="mainNav"></nav>
-<div class="mobile-nav" id="mobileNavBar"></div>
-<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
-<script src="nav.js"></script>
 
 
 
@@ -830,21 +834,9 @@ const app={
     
     initUI(){
         const self=this;
-        
-        // Desktop-Sidebar: <a href="app.html#page"> Links abfangen
-        document.querySelectorAll('.nav .nav-item[href^="app.html#"]').forEach(function(link){
-            link.addEventListener('click',function(e){
-                e.preventDefault();
-                var page = link.getAttribute('href').replace('app.html#','');
-                document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
-                link.classList.add('active');
-                self.page = page;
-                window.location.hash = page;
-                self.render();
-                window.scrollTo(0,0);
-            });
-        });
-        
+
+        // Desktop-Sidebar Click-Handler → nav.js (Zeile 208-222)
+
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('aufgabeDatum').value = today;
         document.getElementById('kostenDatum').value = today;
