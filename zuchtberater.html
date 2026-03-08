@@ -788,8 +788,10 @@ async function init() {
     var user = await checkAuth();
     if (!user) return;
     await planManager.load();
-    // Zuchtberater könnte auf Pro beschränkt sein:
-    // if (!planManager.can('zuchtberater')) { planManager.showUpgradeHint('zuchtberater'); return; }
+    if (!planManager.can('zuchtberater')) {
+        planManager.showUpgradeHint('zuchtberater');
+        return;
+    }
     render();
 }
 

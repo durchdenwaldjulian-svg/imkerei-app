@@ -35,7 +35,7 @@ var planManager = (function() {
             features: [
                 'aufgaben', 'packliste', 'behandlung_manuell', 'behandlung_auto',
                 'trachtkarte_voll', 'trachtkarte_teilen',
-                'zucht', 'ernte', 'kosten_unbegrenzt',
+                'zucht', 'zuchtberater', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'datenexport', 'backup'
             ]
@@ -48,7 +48,7 @@ var planManager = (function() {
             features: [
                 'aufgaben', 'packliste', 'behandlung_manuell', 'behandlung_auto',
                 'trachtkarte_voll', 'trachtkarte_teilen',
-                'zucht', 'ernte', 'kosten_unbegrenzt',
+                'zucht', 'zuchtberater', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
                 'datenexport', 'backup'
@@ -62,7 +62,7 @@ var planManager = (function() {
             features: [
                 'aufgaben', 'packliste', 'behandlung_manuell', 'behandlung_auto',
                 'trachtkarte_voll', 'trachtkarte_teilen', 'trachtkarte_verein',
-                'zucht', 'ernte', 'kosten_unbegrenzt',
+                'zucht', 'zuchtberater', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
                 'mitglieder_codes', 'rollen_management',
@@ -74,8 +74,9 @@ var planManager = (function() {
     // Menschenlesbare Feature-Namen (für Upgrade-Hinweise)
     var FEATURE_NAMES = {
         zucht: 'Königinnenzucht-Planer',
+        zuchtberater: 'Zuchtberater',
         ernte: 'Ernte-Dokumentation',
-        bewertung: 'Völker-Bewertung',
+        bewertung: 'Stockkarte',
         behandlung_auto: 'Auto-Termine Behandlung',
         trachtkarte_voll: 'Trachtkarte (voll)',
         trachtkarte_teilen: 'Trachten teilen',
@@ -92,6 +93,7 @@ var planManager = (function() {
     // Feature → welcher Plan mindestens nötig
     var FEATURE_MIN_PLAN = {
         zucht: 'pro',
+        zuchtberater: 'pro',
         ernte: 'pro',
         bewertung: 'pro',
         behandlung_auto: 'pro',
