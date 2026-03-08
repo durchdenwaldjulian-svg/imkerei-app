@@ -165,6 +165,7 @@ var map, markers, meldungen = [], loggedInUserId = null, loggedInEmail = '';
 var meldeFormData = {};
 var melderProfilName = '';
 var standorte = []; // eigene Standorte für Warnradius
+var warteAufKartenKlick = false; // Modus: User soll auf Karte klicken
 
 var SICHTUNGS_TYPEN = {
     einzeln:  {label:'Einzelne Hornisse', emoji:'🐝', color:'#F59E0B'},
@@ -195,12 +196,14 @@ window.onload = async function() {
     }).addTo(map);
     markers = L.layerGroup().addTo(map);
 
-    // Klick auf Karte = Position wählen (wenn Modal offen)
+    // Klick auf Karte = Position wählen
     map.on('click', function(e) {
-        if (document.getElementById('meldeModal').classList.contains('active')) {
+        if (warteAufKartenKlick) {
             meldeFormData.lat = e.latlng.lat;
             meldeFormData.lng = e.latlng.lng;
+            warteAufKartenKlick = false;
             renderMeldeForm();
+            document.getElementById('meldeModal').classList.add('active');
             toast('📍 Position gesetzt');
         }
     });
@@ -408,7 +411,9 @@ function openMeldeModal() {
 
 function closeMeldeModal() {
     document.getElementById('meldeModal').classList.remove('active');
+    warteAufKartenKlick = false;
 }
+
 
 function renderMeldeForm() {
     var html = '';
@@ -450,20 +455,19 @@ function renderMeldeForm() {
     html += '</div>';
     html += '</div>';
 
-    // 4. Position
+    // 4. Position mit Mini-Karte
     html += '<div class="form-group">';
-    html += '<label class="form-label">Position * <span style="font-size:.72rem;color:#A69580;font-weight:400">(klicke auf die Karte oder nutze GPS)</span></label>';
+    html += '<label class="form-label">Position * <span style="font-size:.72rem;color:#A69580;font-weight:400">(auf Karte tippen oder GPS)</span></label>';
     if (meldeFormData.lat && meldeFormData.lng) {
-        html += '<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:.5rem;font-size:.85rem">';
+        html += '<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:.5rem;font-size:.85rem;margin-bottom:.5rem">';
         html += '<span>📍 ' + meldeFormData.lat.toFixed(5) + ', ' + meldeFormData.lng.toFixed(5) + '</span>';
         html += '<button onclick="meldeFormData.lat=null;meldeFormData.lng=null;renderMeldeForm()" style="background:none;border:none;cursor:pointer;font-size:.9rem">✕</button>';
         html += '</div>';
-    } else {
-        html += '<div style="display:flex;gap:.5rem">';
-        html += '<button onclick="getGPS()" style="flex:1;padding:.6rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.85rem">📡 GPS verwenden</button>';
-        html += '<button onclick="closeMeldeModal();toast(\'Klicke jetzt auf die Karte\')" style="flex:1;padding:.6rem;background:#fff;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.85rem">🗺️ Auf Karte klicken</button>';
-        html += '</div>';
     }
+    html += '<div style="display:flex;gap:.5rem;margin-bottom:.5rem">';
+    html += '<button onclick="getGPS()" style="flex:1;padding:.5rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.8rem">📡 GPS</button>';
+    html += '</div>';
+    html += '<div id="miniMapContainer" style="height:200px;border-radius:.75rem;border:2px solid #E8DFD4;overflow:hidden;position:relative"></div>';
     html += '</div>';
 
     // 4. Verhalten
@@ -537,6 +541,62 @@ function renderMeldeForm() {
     html += '</div>';
 
     document.getElementById('meldeBody').innerHTML = html;
+    initMiniMap();
+}
+
+var miniMap = null, miniMarker = null;
+function initMiniMap() {
+    var container = document.getElementById('miniMapContainer');
+    if (!container) return;
+
+    // Alte Map-Instanz zerstören
+    if (miniMap) { miniMap.remove(); miniMap = null; miniMarker = null; }
+
+    var startLat = meldeFormData.lat || 51.1657;
+    var startLng = meldeFormData.lng || 10.4515;
+    var startZoom = (meldeFormData.lat && meldeFormData.lng) ? 14 : 6;
+
+    miniMap = L.map(container, { zoomControl: false, attributionControl: false }).setView([startLat, startLng], startZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+    L.control.zoom({ position: 'topright' }).addTo(miniMap);
+
+    // Marker setzen falls Position vorhanden
+    if (meldeFormData.lat && meldeFormData.lng) {
+        miniMarker = L.marker([meldeFormData.lat, meldeFormData.lng]).addTo(miniMap);
+    }
+
+    // Klick auf Mini-Karte = Position wählen
+    miniMap.on('click', function(e) {
+        meldeFormData.lat = e.latlng.lat;
+        meldeFormData.lng = e.latlng.lng;
+        if (miniMarker) miniMap.removeLayer(miniMarker);
+        miniMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(miniMap);
+
+        // Koordinaten-Anzeige aktualisieren (ohne komplettes Re-Render, damit Map bleibt)
+        var posBox = document.getElementById('miniPosInfo');
+        if (!posBox) {
+            var label = container.parentElement.querySelector('.form-label');
+            var infoDiv = document.createElement('div');
+            infoDiv.id = 'miniPosInfo';
+            infoDiv.style.cssText = 'display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:.5rem;font-size:.85rem;margin-bottom:.5rem';
+            infoDiv.innerHTML = '<span>📍 ' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5) + '</span><button onclick="clearMiniPos()" style="background:none;border:none;cursor:pointer;font-size:.9rem">✕</button>';
+            label.after(infoDiv);
+        } else {
+            posBox.innerHTML = '<span>📍 ' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5) + '</span><button onclick="clearMiniPos()" style="background:none;border:none;cursor:pointer;font-size:.9rem">✕</button>';
+        }
+        toast('📍 Position gesetzt');
+    });
+
+    // Map braucht kurz um sich korrekt zu rendern im Modal
+    setTimeout(function(){ miniMap.invalidateSize(); }, 200);
+}
+
+function clearMiniPos() {
+    meldeFormData.lat = null;
+    meldeFormData.lng = null;
+    if (miniMarker && miniMap) { miniMap.removeLayer(miniMarker); miniMarker = null; }
+    var posBox = document.getElementById('miniPosInfo');
+    if (posBox) posBox.remove();
 }
 
 // ============================================
