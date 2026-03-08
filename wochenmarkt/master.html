@@ -731,6 +731,45 @@ body {
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .card-name { font-size: .72rem; }
 }
+/* === STOCK BADGE === */
+.card-stock { font-size: .55rem; font-weight: 600; padding: .05rem .3rem; text-align: center; border-radius: .2rem; }
+.card-stock.stock-ok { color: var(--forest); }
+.card-stock.stock-low { color: #92400E; background: #FEF3C7; }
+.card-stock.stock-empty { color: var(--red); background: var(--red-light); }
+.card.out-of-stock { opacity: .5; }
+.card.out-of-stock .card-img, .card.out-of-stock .card-img-placeholder { filter: grayscale(.8); }
+.za-bar { display: flex; align-items: center; gap: .5rem; padding: .4rem 1rem; background: var(--cream-dark); border-bottom: 1px solid rgba(245,166,35,.15); }
+.za-bar label { font-size: 1rem; }
+.za-bar select { padding: .4rem .6rem; border: 1.5px solid #E8DFD4; border-radius: .4rem; font-size: .8rem; font-family: inherit; background: var(--white); color: var(--text); }
+.add-product-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.add-product-row .search-bar { flex: 1; margin-bottom: 0; }
+.btn-add-product { width: 38px; height: 38px; border-radius: .5rem; background: var(--honey); border: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--bark); font-weight: 700; }
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.stat-card { background: var(--white); border: 1.5px solid #E8DFD4; border-radius: .65rem; padding: .6rem .75rem; }
+.stat-label { font-size: .65rem; color: var(--text-soft); }
+.stat-value { font-size: 1.1rem; font-weight: 800; color: var(--bark); margin-top: .1rem; }
+.stat-value.honey { color: var(--honey-deep); }
+.prod-mgmt-row { display: flex; align-items: center; gap: .4rem; padding: .4rem .5rem; border-bottom: 1px solid #F5EDE3; background: var(--white); }
+.prod-mgmt-name { flex: 1; font-size: .78rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-mgmt-input { width: 60px; padding: .15rem .25rem; border: 1.5px solid #E8DFD4; border-radius: .3rem; font-size: .78rem; text-align: center; font-family: inherit; }
+.qty-prompt { position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--white);border-radius:.75rem;padding:1.25rem;box-shadow:0 8px 40px rgba(0,0,0,.3);z-index:1001;text-align:center;min-width:220px }
+.qty-prompt input { width:80px;padding:.5rem;border:2px solid var(--honey);border-radius:.5rem;font-size:1.4rem;text-align:center;font-family:inherit;font-weight:700;margin:.5rem 0 }
+.qty-prompt .qp-btns { display:flex;gap:.5rem;justify-content:center;margin-top:.5rem }
+.offline-banner { background:var(--red);color:var(--white);text-align:center;padding:.3rem;font-size:.7rem;font-weight:600 }
+.lief-card { background:var(--white);border:1.5px solid #E8DFD4;border-radius:.65rem;padding:.75rem;margin-bottom:.5rem }
+.lief-card .lief-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem }
+.lief-card .lief-name { font-weight:700;font-size:.85rem }
+.lief-card .lief-contact { font-size:.72rem;color:var(--text-soft);line-height:1.5 }
+.lief-card .lief-products { font-size:.7rem;color:var(--text-soft);margin-top:.3rem;line-height:1.4 }
+.lief-card .lief-actions { display:flex;gap:.3rem;margin-top:.5rem;flex-wrap:wrap }
+.lief-form-row { display:flex;gap:.4rem;margin-bottom:.4rem }
+.lief-form-row label { font-size:.75rem;font-weight:600;min-width:70px;display:flex;align-items:center }
+.lief-form-row input,.lief-form-row textarea { flex:1;padding:.3rem .5rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;color:var(--text) }
+.nachbestell-group { background:var(--white);border:1.5px solid #E8DFD4;border-radius:.65rem;padding:.75rem;margin-bottom:.75rem }
+.nachbestell-group h4 { font-size:.85rem;font-weight:700;margin-bottom:.4rem }
+.nachbestell-item { display:flex;justify-content:space-between;padding:.2rem 0;font-size:.78rem;border-bottom:1px solid #F5EDE3 }
+.nachbestell-item:last-child { border-bottom:none }
+
 /* === PASSWORT GATE === */
 .pw-gate {
   position: fixed;
@@ -773,10 +812,12 @@ body {
   </div>
   <div class="header-actions">
     <button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>
+    <button class="btn btn-outline" onclick="repeatLastSale()">🔄 Letzte</button>
     <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
     <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
     <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
     <button class="btn btn-outline" onclick="openCamera('produkt')">📷 Foto</button>
+    <span id="syncStatus" style="font-size:.6rem;opacity:.7;display:flex;align-items:center;gap:.2rem" title="Verbindungsstatus">🟢 Online</span>
   </div>
 </div>
 
@@ -794,6 +835,14 @@ body {
   </select>
   <button class="btn-ma-add" onclick="openMitarbeiterModal()" title="Mitarbeiter verwalten">+</button>
 </div>
+<div class="za-bar">
+  <label>💳</label>
+  <select id="zahlungsartSelect">
+    <option value="bar">💵 Bar</option>
+    <option value="karte">💳 Karte</option>
+    <option value="gemischt">💵💳 Gemischt</option>
+  </select>
+</div>
 
 <!-- TABS -->
 <div class="tabs">
@@ -802,6 +851,10 @@ body {
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
   <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
   <button class="tab" onclick="switchTab('karte')">📍 Karte</button>
+  <button class="tab" onclick="switchTab('tagesuebersicht')">📊 Tag</button>
+  <button class="tab" onclick="switchTab('lager')">📦 Lager</button>
+  <button class="tab" onclick="switchTab('lieferanten')">🚚 Liefer.</button>
+  <button class="tab" onclick="switchTab('dashboard')">📈 Stats</button>
   <button class="tab" onclick="switchTab('admin')">📢 Admin</button>
 </div>
 
@@ -810,8 +863,11 @@ body {
 
   <!-- TAB: VERKAUF -->
   <div class="tab-panel active" id="panel-verkauf">
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Produkt suchen..." oninput="filterProducts()">
+    <div class="add-product-row">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Produkt suchen..." oninput="filterProducts()">
+      </div>
+      <button class="btn-add-product" onclick="openNeuesProduktModal()" title="Neues Produkt anlegen">+</button>
     </div>
     <div id="productList"></div>
   </div>
@@ -891,9 +947,123 @@ Propolis Tinktur 20ml;1</pre>
     </div>
   </div>
 
+  <!-- TAB: TAGESÜBERSICHT -->
+  <div class="tab-panel" id="panel-tagesuebersicht">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.4rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Tagesübersicht</h2>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="exportTagesCSV()">📤 CSV</button>
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="generateBonPDF()">🧾 Bon</button>
+        <button class="btn btn-honey" onclick="openTagesabschluss()">💰 Kassensturz</button>
+      </div>
+    </div>
+    <div id="tagesSummary" style="background:linear-gradient(135deg,var(--bark),var(--bark-warm));color:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:.75rem;opacity:.7">Heute</div>
+      <div style="font-size:1.5rem;font-weight:800;color:var(--honey)" id="tagesTotal">0,00 €</div>
+      <div style="font-size:.75rem;opacity:.7;margin-top:.2rem"><span id="tagesNetto">Netto: 0,00 €</span> · <span id="tagesMwst">MwSt: 0,00 €</span></div>
+      <div style="font-size:.75rem;opacity:.7;margin-top:.1rem"><span id="tagesAnzahl">0 Verkäufe</span> · <span id="tagesArtikel">0 Artikel</span></div>
+      <div style="display:flex;gap:1rem;margin-top:.3rem;font-size:.75rem;opacity:.7">
+        <span id="tagesBar">Bar: 0,00 €</span>
+        <span id="tagesKarte">Karte: 0,00 €</span>
+      </div>
+    </div>
+    <div id="tagesVerkaufListe"></div>
+  </div>
+
+  <!-- TAB: LAGER -->
+  <div class="tab-panel" id="panel-lager">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.4rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Lagerverwaltung</h2>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn btn-honey" onclick="saveLager()">💾 Speichern</button>
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="openSmartNachbestellung()">📧 Nachbestellen</button>
+      </div>
+    </div>
+    <div id="lagerWarnungen"></div>
+    <div class="search-bar">
+      <input type="text" id="lagerSearch" placeholder="Produkt suchen..." oninput="renderLager()">
+    </div>
+    <div id="lagerListe"></div>
+  </div>
+
+  <!-- TAB: LIEFERANTEN -->
+  <div class="tab-panel" id="panel-lieferanten">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Lieferanten</h2>
+      <button class="btn btn-honey" onclick="openLieferantForm()">+ Neuer Lieferant</button>
+    </div>
+    <!-- Lieferant-Formular (zunächst hidden) -->
+    <div id="lieferantFormBox" style="display:none;background:var(--cream-dark);border:1.5px solid var(--honey);border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem" id="lieferantFormTitle">Neuer Lieferant</h3>
+      <input type="hidden" id="liefEditIdx" value="-1">
+      <div class="lief-form-row"><label>Firma *</label><input type="text" id="liefName" placeholder="z.B. Bienenwelt GmbH"></div>
+      <div class="lief-form-row"><label>E-Mail</label><input type="email" id="liefEmail" placeholder="bestellung@lieferant.de"></div>
+      <div class="lief-form-row"><label>Telefon</label><input type="tel" id="liefTelefon" placeholder="+49 123 456789"></div>
+      <div class="lief-form-row"><label>WhatsApp</label><input type="tel" id="liefWhatsapp" placeholder="+4917612345678 (mit Ländervorwahl)"></div>
+      <div class="lief-form-row"><label>Ansprech.</label><input type="text" id="liefAnsprech" placeholder="Ansprechpartner"></div>
+      <div class="lief-form-row"><label>Produkte</label><textarea id="liefProdukte" rows="2" placeholder="Produkte kommagetrennt, z.B.: Propolis Tinktur 20ml, Propolis Salbe 30ml" style="resize:vertical"></textarea></div>
+      <div class="lief-form-row"><label>Notizen</label><textarea id="liefNotizen" rows="2" placeholder="Lieferbedingungen, Rabatte, etc." style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:.4rem;margin-top:.5rem">
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeLieferantForm()">Abbrechen</button>
+        <button class="btn btn-honey" onclick="saveLieferant()">Speichern</button>
+      </div>
+    </div>
+    <div id="lieferantenListe"></div>
+  </div>
+
+  <!-- TAB: DASHBOARD -->
+  <div class="tab-panel" id="panel-dashboard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.4rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Dashboard & Statistiken</h2>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="generateReportPDF('week')">📊 Wochenbericht</button>
+        <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="generateReportPDF('month')">📈 Monatsbericht</button>
+      </div>
+    </div>
+    <div class="stat-grid" id="dashKennzahlen"></div>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem">Top-Seller (Heute)</h3>
+      <div id="dashTopSeller"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
+    </div>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem">Umsatz nach Kategorie</h3>
+      <div id="dashKategorie"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
+    </div>
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.85rem;font-weight:700;margin-bottom:.5rem">Umsatz nach Mitarbeiter</h3>
+      <div id="dashMitarbeiter"><p style="color:var(--text-soft);font-size:.8rem">Lade...</p></div>
+    </div>
+  </div>
+
   <!-- TAB: ADMIN -->
   <div class="tab-panel" id="panel-admin">
     <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">📢 Admin-Bereich</h2>
+
+    <!-- E-Mail Einstellungen -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">📧 E-Mail-Einstellungen</h3>
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">E-Mail für Bestellungen (allgemein):</label>
+        <input type="email" id="emailBestellung" placeholder="bestellung@example.com" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;color:var(--text)">
+      </div>
+      <div style="margin-bottom:.75rem">
+        <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Fallback-E-Mail für Nachbestellungen:</label>
+        <input type="email" id="emailNachbestellung" placeholder="lager@example.com" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;color:var(--text)">
+        <div style="font-size:.65rem;color:var(--text-soft);margin-top:.2rem">Wird verwendet wenn ein Produkt keinem Lieferanten zugeordnet ist</div>
+      </div>
+      <button class="btn btn-honey" onclick="saveEmailSettings()" style="width:100%">💾 E-Mail-Einstellungen speichern</button>
+    </div>
+
+    <!-- Produktverwaltung -->
+    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">🛍️ Produktverwaltung</h3>
+      <div class="search-bar" style="margin-bottom:.5rem">
+        <input type="text" id="prodMgmtSearch" placeholder="Produkt suchen..." oninput="renderProdMgmt()">
+      </div>
+      <div id="prodMgmtList" style="max-height:400px;overflow-y:auto;border:1px solid #E8DFD4;border-radius:.5rem"></div>
+      <button class="btn btn-honey" onclick="saveProdMgmt()" style="width:100%;margin-top:.5rem">💾 Produktänderungen speichern</button>
+    </div>
+
     <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
       <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📢 Nachricht an alle senden</h3>
       <textarea id="adminMsgInput" placeholder="Nachricht eingeben..." style="width:100%;min-height:80px;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text);resize:vertical"></textarea>
@@ -1044,6 +1214,55 @@ Propolis Tinktur 20ml;1</pre>
     <div id="maList"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeMitarbeiterModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NEUES PRODUKT -->
+<div class="modal-overlay" id="neuesProduktOverlay" onclick="closeNeuesProduktModal()" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3 style="font-family:'Fraunces',serif;font-size:1rem">Neues Produkt anlegen</h3></div>
+    <div style="padding:1rem;display:flex;flex-direction:column;gap:.75rem">
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Produktname *</label><input type="text" id="npName" placeholder="z.B. Wabenhonig 250g" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit"></div>
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Preis (€) *</label><input type="number" id="npPreis" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit"></div>
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Kategorie</label><select id="npKategorie" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit"><option>Honig</option><option>Met</option><option>Kerzen</option><option>Propolis</option><option>Liköre</option><option>Snacks</option><option>Sonstiges</option></select></div>
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">MwSt-Satz</label><select id="npTax" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit"><option value="0.078">7% (ermäßigt)</option><option value="0.19">19% (regulär)</option></select></div>
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Anfangsbestand</label><input type="number" id="npBestand" min="0" value="0" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeNeuesProduktModal()">Abbrechen</button>
+      <button class="btn btn-honey" onclick="saveNeuesProdukt()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TAGESABSCHLUSS -->
+<div class="modal-overlay" id="tagesabschlussOverlay" onclick="closeTagesabschluss()" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><h3 style="font-family:'Fraunces',serif;font-size:1rem">Tagesabschluss / Kassensturz</h3></div>
+    <div style="padding:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+        <div class="stat-card"><div class="stat-label">Soll (Bar)</div><div class="stat-value" id="taSollBar">0,00 €</div></div>
+        <div class="stat-card"><div class="stat-label">Soll (Karte)</div><div class="stat-value" id="taSollKarte">0,00 €</div></div>
+      </div>
+      <div style="margin-bottom:.75rem"><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Ist-Bestand Kasse (gezählt):</label><input type="number" id="taIstBar" step="0.01" min="0" placeholder="0.00" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.85rem;font-family:inherit" oninput="berechneTaDifferenz()"></div>
+      <div id="taDifferenzBox" style="padding:.5rem .75rem;border-radius:.5rem;font-size:.85rem;font-weight:700;margin-bottom:.75rem;display:none"></div>
+      <div><label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Bemerkungen:</label><textarea id="taBemerkung" placeholder="Optional..." style="width:100%;min-height:60px;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;resize:vertical"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeTagesabschluss()">Abbrechen</button>
+      <button class="btn btn-honey" onclick="saveTagesabschluss()">Abschluss speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NACHBESTELLUNG -->
+<div class="modal-overlay" id="nachbestellOverlay" onclick="closeNachbestellModal()" style="display:none">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-header"><h3 style="font-family:'Fraunces',serif;font-size:1rem">Nachbestellung</h3></div>
+    <div style="padding:1rem" id="nachbestellContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeNachbestellModal()">Schließen</button>
     </div>
   </div>
 </div>
@@ -1233,13 +1452,25 @@ function renderProducts(filter) {
     for (const p of groups[cat]) {
       const qty = quantities[p.index];
       const soldClass = qty > 0 ? ' sold' : '';
+      const inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+      const inv = inventory[p.name];
+      let stockHtml = '';
+      let oosClass = '';
+      if (inv) {
+        const b = inv.bestand || 0;
+        const m = inv.mindest || 0;
+        if (b <= 0) { stockHtml = '<div class="card-stock stock-empty">Leer</div>'; oosClass = ' out-of-stock'; }
+        else if (b <= m) { stockHtml = '<div class="card-stock stock-low">' + b + ' Stk</div>'; }
+        else { stockHtml = '<div class="card-stock stock-ok">' + b + ' Stk</div>'; }
+      }
       const imgHtml = p.img
         ? '<img class="card-img" src="' + IMG_DIR + p.img + '" alt="' + p.name + '" loading="lazy" onerror="this.outerHTML=\'<div class=card-img-placeholder>' + emoji + '</div>\'">'
         : '<div class="card-img-placeholder">' + emoji + '</div>';
 
-      html += '<div class="card' + soldClass + '" id="card-' + p.index + '" onclick="tapCard(' + p.index + ', event)">'
+      html += '<div class="card' + soldClass + oosClass + '" id="card-' + p.index + '" onclick="tapCard(' + p.index + ', event)">'
         + '<button class="card-minus" onclick="minusCard(' + p.index + ', event)">−</button>'
         + '<div class="card-qty">' + qty + '</div>'
+        + stockHtml
         + imgHtml
         + '<div class="card-info"><div class="card-name">' + p.name + '</div><div class="card-price">' + formatPrice(p.price) + '</div></div>'
         + '</div>';
@@ -1533,6 +1764,7 @@ async function saveSession() {
   if (t.items === 0) { showToast('Keine Artikel zum Speichern'); return; }
 
   var mitarbeiter = document.getElementById('mitarbeiterSelect').value;
+  var zahlungsart = document.getElementById('zahlungsartSelect').value;
   var soldItems = [];
   PRODUCTS.forEach(function(p, i) {
     if (quantities[i] > 0) {
@@ -1558,6 +1790,7 @@ async function saveSession() {
     netto: t.netto,
     mwst: t.mwst,
     mitarbeiter: mitarbeiter,
+    zahlungsart: zahlungsart,
     latitude: gps ? gps.lat : null,
     longitude: gps ? gps.lng : null,
     synced: false
@@ -1583,6 +1816,7 @@ async function saveSession() {
         gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
         gesamt_netto: parseFloat(t.netto.toFixed(2)),
         gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
+        zahlungsart: zahlungsart,
         device_id: getDeviceId()
       };
       if (gps) {
@@ -1595,6 +1829,15 @@ async function saveSession() {
   } catch(e) {
     console.warn('Supabase Speichern fehlgeschlagen:', e);
   }
+
+  // Bestand reduzieren
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  soldItems.forEach(function(item) {
+    if (inventory[item.name]) {
+      inventory[item.name].bestand = Math.max(0, (inventory[item.name].bestand || 0) - item.qty);
+    }
+  });
+  localStorage.setItem('wm_inventory', JSON.stringify(inventory));
 
   // localStorage als Backup
   var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
@@ -2042,13 +2285,17 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3, 'karte': 4, 'admin': 5 };
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3, 'karte': 4, 'tagesuebersicht': 5, 'lager': 6, 'lieferanten': 7, 'dashboard': 8, 'admin': 9 };
   if (tabs[panels[name]]) tabs[panels[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'historie') renderHistory();
+  if (name === 'tagesuebersicht') renderTagesuebersicht();
+  if (name === 'lager') renderLager();
+  if (name === 'lieferanten') renderLieferanten();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'admin') { loadEmailSettings(); loadAdminMessages(); renderProdMgmt(); }
   if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
   if (name === 'karte') initLiveMap();
-  if (name === 'admin') loadAdminMessages();
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -2101,7 +2348,7 @@ function getDeviceId() {
 
 
 // ─── PASSWORT & ADMIN ───────────────────────────────────────────────
-var WM_MASTER_HASH = '2976d8da788ff77dae3dd181e33e5a3d357f0d0c342ecbf61639699d827c8f21';
+var WM_MASTER_HASH = '66483caa89cedd7c07f7f00ab8f1687254af77739ae0caf648430e74fd0480d3';
 var WM_PW_KEY = 'wm_master_unlocked';
 
 async function hashPw(pw) {
@@ -2452,6 +2699,905 @@ async function deleteFoto(path) {
   });
 }
 
+
+// ─── TAGESÜBERSICHT ─────────────────────────────────────────────────
+async function renderTagesuebersicht() {
+  var today = dateStr();
+  var container = document.getElementById('tagesVerkaufListe');
+  var entries = [];
+
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*')
+        .eq('datum', today)
+        .order('created_at', { ascending: false });
+      if (!result.error && result.data && result.data.length > 0) {
+        entries = result.data;
+      }
+    }
+  } catch(e) {
+    console.warn('Tagesübersicht laden fehlgeschlagen:', e);
+  }
+
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    var todayShort = new Date().toLocaleDateString('de-DE');
+    entries = history.filter(function(e) { return e.dateShort === todayShort; })
+      .map(function(e) {
+        return {
+          id: e.id,
+          created_at: new Date(e.id).toISOString(),
+          mitarbeiter: e.mitarbeiter,
+          produkte: e.items.map(function(item) {
+            return { name: item.name, anzahl: item.qty, preis: item.price, tax: item.tax, netto_summe: item.netto };
+          }),
+          gesamt_brutto: e.total,
+          gesamt_netto: e.netto,
+          gesamt_mwst: e.mwst
+        };
+      });
+  }
+
+  var dayBrutto = 0, dayNetto = 0, dayMwst = 0, dayArtikel = 0;
+  for (var i = 0; i < entries.length; i++) {
+    dayBrutto += parseFloat(entries[i].gesamt_brutto) || 0;
+    dayNetto += parseFloat(entries[i].gesamt_netto) || 0;
+    dayMwst += parseFloat(entries[i].gesamt_mwst) || 0;
+    var produkte = entries[i].produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      dayArtikel += Math.abs(produkte[j].anzahl || 0);
+    }
+  }
+
+  // Bar/Karte Auswertung
+  var dayBar = 0, dayKarte = 0;
+  for (var k = 0; k < entries.length; k++) {
+    var za = entries[k].zahlungsart || 'Bar';
+    var betrag = parseFloat(entries[k].gesamt_brutto) || 0;
+    if (za === 'Karte') dayKarte += betrag;
+    else if (za === 'Gemischt') { dayBar += betrag / 2; dayKarte += betrag / 2; }
+    else dayBar += betrag;
+  }
+  tagesEntries = entries;
+
+  document.getElementById('tagesTotal').textContent = formatPrice(dayBrutto);
+  document.getElementById('tagesNetto').textContent = 'Netto: ' + formatPrice(dayNetto);
+  document.getElementById('tagesMwst').textContent = 'MwSt: ' + formatPrice(dayMwst);
+  document.getElementById('tagesAnzahl').textContent = entries.length + ' Verkäufe';
+  document.getElementById('tagesArtikel').textContent = dayArtikel + ' Artikel';
+  document.getElementById('tagesBar').textContent = 'Bar: ' + formatPrice(dayBar);
+  document.getElementById('tagesKarte').textContent = 'Karte: ' + formatPrice(dayKarte);
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="no-history"><div style="font-size:2rem;margin-bottom:.5rem">📊</div><p>Heute noch keine Verkäufe</p></div>';
+    return;
+  }
+
+  var html = '';
+  for (var h = 0; h < entries.length; h++) {
+    var entry = entries[h];
+    var zeit = new Date(entry.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    var produkte = entry.produkte || [];
+    var isKorrektur = parseFloat(entry.gesamt_brutto) < 0;
+    var cardStyle = isKorrektur ? 'border-color:var(--red);background:#FFF5F5' : '';
+
+    var itemsHtml = '';
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      var lineTotal = (parseFloat(p.preis) || 0) * (p.anzahl || 0);
+      var korrekturBtn = '';
+      if (!isKorrektur && p.anzahl > 0) {
+        var safeName = p.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        korrekturBtn = ' <button style="padding:.1rem .4rem;font-size:.6rem;background:var(--red-light);color:var(--red);border:1px solid var(--red);border-radius:.3rem;cursor:pointer" onclick="korrekturArtikel(' + entry.id + ',\'' + safeName + '\',' + p.preis + ',' + p.tax + ',' + p.anzahl + ')">↩ Korrektur</button>';
+      }
+      itemsHtml += '<div class="history-item" style="align-items:center"><span>' + p.anzahl + '× ' + p.name + '</span><span style="display:flex;align-items:center;gap:.3rem">' + formatPrice(lineTotal) + korrekturBtn + '</span></div>';
+    }
+
+    var maHtml = entry.mitarbeiter ? '<span class="history-ma">👤 ' + entry.mitarbeiter + '</span>' : '';
+
+    html += '<div class="history-card" style="' + cardStyle + '">'
+      + '<div class="history-header"><div><span class="history-date">' + (isKorrektur ? '↩️ Korrektur' : '🕐 ' + zeit) + '</span>' + maHtml + '</div>'
+      + '<span class="history-total" style="' + (isKorrektur ? 'color:var(--red)' : '') + '">' + formatPrice(parseFloat(entry.gesamt_brutto)) + '</span></div>'
+      + '<div class="history-items">' + itemsHtml + '</div>'
+      + '</div>';
+  }
+  container.innerHTML = html;
+}
+
+async function korrekturArtikel(verkaufId, produktName, preis, tax, maxAnzahl) {
+  var anzahlStr = prompt('Wie viele "' + produktName + '" korrigieren?\n(max ' + maxAnzahl + ')', '1');
+  if (!anzahlStr) return;
+  var anzahl = parseInt(anzahlStr);
+  if (isNaN(anzahl) || anzahl < 1 || anzahl > maxAnzahl) {
+    showToast('Ungültige Anzahl (1-' + maxAnzahl + ')');
+    return;
+  }
+
+  var bruttoLine = preis * anzahl;
+  var nettoLine = bruttoLine / (1 + tax);
+  var mwstLine = bruttoLine - nettoLine;
+
+  var korrektur = {
+    datum: dateStr(),
+    mitarbeiter: document.getElementById('mitarbeiterSelect').value || null,
+    produkte: [{
+      name: produktName,
+      anzahl: -anzahl,
+      preis: preis,
+      tax: tax,
+      netto_summe: parseFloat((-nettoLine).toFixed(2))
+    }],
+    gesamt_brutto: parseFloat((-bruttoLine).toFixed(2)),
+    gesamt_netto: parseFloat((-nettoLine).toFixed(2)),
+    gesamt_mwst: parseFloat((-mwstLine).toFixed(2))
+  };
+
+  try {
+    if (sb) {
+      var result = await db.insert('wochenmarkt_verkauf', korrektur);
+      if (result.error) throw result.error;
+    }
+  } catch(e) {
+    console.warn('Korrektur DB fehlgeschlagen:', e);
+  }
+
+  // Bestand wieder erhöhen
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  if (inventory[produktName]) {
+    inventory[produktName].bestand = (inventory[produktName].bestand || 0) + anzahl;
+    localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+  }
+
+  var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  history.unshift({
+    id: Date.now(),
+    dateShort: new Date().toLocaleDateString('de-DE'),
+    date: new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    items: [{ name: produktName, price: preis, qty: -anzahl, tax: tax, netto: -nettoLine }],
+    total: -bruttoLine,
+    netto: -nettoLine,
+    mwst: -mwstLine,
+    mitarbeiter: korrektur.mitarbeiter,
+    synced: !!sb
+  });
+  localStorage.setItem('wm_history', JSON.stringify(history));
+
+  showToast('Korrektur: -' + anzahl + '× ' + produktName);
+  renderTagesuebersicht();
+}
+
+async function exportTagesCSV() {
+  var today = dateStr();
+  var entries = [];
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').eq('datum', today).order('created_at');
+      if (!result.error && result.data) entries = result.data;
+    }
+  } catch(e) {}
+
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    var todayShort = new Date().toLocaleDateString('de-DE');
+    var localEntries = history.filter(function(e) { return e.dateShort === todayShort; });
+    if (localEntries.length === 0) { showToast('Keine Verkäufe heute'); return; }
+    entries = localEntries.map(function(e) {
+      return {
+        created_at: new Date(e.id).toISOString(),
+        mitarbeiter: e.mitarbeiter,
+        produkte: e.items.map(function(item) {
+          return { name: item.name, anzahl: item.qty, preis: item.price, tax: item.tax };
+        })
+      };
+    });
+  }
+
+  var lines = ['Uhrzeit;Mitarbeiter;Produkt;Anzahl;Einzelpreis;Steuersatz;Netto;MwSt;Brutto'];
+  var grand = 0, grandNetto = 0, grandMwst = 0;
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var zeit = new Date(entry.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    var produkte = entry.produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      var preis = parseFloat(p.preis);
+      var lineBrutto = preis * p.anzahl;
+      var tax = parseFloat(p.tax) || 0.19;
+      var lineNetto = lineBrutto / (1 + tax);
+      var lineMwst = lineBrutto - lineNetto;
+      grand += lineBrutto;
+      grandNetto += lineNetto;
+      grandMwst += lineMwst;
+      var taxPct = (tax * 100).toFixed(1).replace('.', ',') + '%';
+      lines.push(zeit + ';' + (entry.mitarbeiter || '') + ';' + p.name + ';' + p.anzahl + ';' + fmtRaw(preis) + ';' + taxPct + ';' + fmtRaw(lineNetto) + ';' + fmtRaw(lineMwst) + ';' + fmtRaw(lineBrutto));
+    }
+  }
+  lines.push('');
+  lines.push('GESAMT;;;;;;' + fmtRaw(grandNetto) + ';' + fmtRaw(grandMwst) + ';' + fmtRaw(grand));
+  downloadCSV(lines.join('\n'), 'tagesuebersicht_' + dateStr() + '.csv');
+  showToast('Tages-CSV exportiert');
+}
+
+// ─── LAGERVERWALTUNG ────────────────────────────────────────────────
+function renderLager() {
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  var container = document.getElementById('lagerListe');
+  var search = (document.getElementById('lagerSearch').value || '').toLowerCase().trim();
+  var nachbestellen = [];
+
+  var html = '';
+  for (var ci = 0; ci < CAT_ORDER.length; ci++) {
+    var cat = CAT_ORDER[ci];
+    var emoji = CATEGORY_EMOJIS[cat] || '📦';
+    var catProducts = PRODUCTS.filter(function(p) {
+      if (p.category !== cat) return false;
+      if (search && !p.name.toLowerCase().includes(search)) return false;
+      return true;
+    });
+    if (catProducts.length === 0) continue;
+
+    html += '<div style="margin-bottom:1rem"><div style="font-family:\'Fraunces\',serif;font-size:.9rem;font-weight:700;padding:.4rem 0">' + emoji + ' ' + cat + '</div>';
+
+    for (var pi = 0; pi < catProducts.length; pi++) {
+      var p = catProducts[pi];
+      var inv = inventory[p.name] || { bestand: 0, mindest: 0 };
+      var status = '', statusColor = '', statusBg = '';
+
+      if (inv.bestand <= 0) {
+        status = 'Leer'; statusColor = 'var(--red)'; statusBg = 'var(--red-light)';
+        nachbestellen.push({ name: p.name, bestand: inv.bestand, mindest: inv.mindest });
+      } else if (inv.mindest > 0 && inv.bestand <= inv.mindest) {
+        status = 'Niedrig'; statusColor = '#92400E'; statusBg = '#FEF3C7';
+        nachbestellen.push({ name: p.name, bestand: inv.bestand, mindest: inv.mindest });
+      } else {
+        status = 'OK'; statusColor = 'var(--forest)'; statusBg = 'var(--forest-light)';
+      }
+
+      var safeName = p.name.replace(/'/g, "\\'");
+      html += '<div style="display:flex;align-items:center;gap:.4rem;padding:.45rem .5rem;border-bottom:1px solid #F5EDE3;background:var(--white);flex-wrap:wrap">'
+        + '<div style="flex:1;font-size:.78rem;min-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + p.name + '</div>'
+        + '<div style="display:flex;align-items:center;gap:.25rem;flex-shrink:0">'
+        + '<span style="font-size:.65rem;color:var(--text-soft)">Bestand:</span>'
+        + '<input type="number" min="0" value="' + (inv.bestand || 0) + '" style="width:48px;padding:.15rem .25rem;border:1.5px solid #E8DFD4;border-radius:.3rem;font-size:.78rem;text-align:center;font-family:inherit" onchange="updateLagerItem(\'' + safeName + '\',\'bestand\',this.value)">'
+        + '<span style="font-size:.65rem;color:var(--text-soft)">Min:</span>'
+        + '<input type="number" min="0" value="' + (inv.mindest || 0) + '" style="width:48px;padding:.15rem .25rem;border:1.5px solid #E8DFD4;border-radius:.3rem;font-size:.78rem;text-align:center;font-family:inherit" onchange="updateLagerItem(\'' + safeName + '\',\'mindest\',this.value)">'
+        + '<span style="font-size:.6rem;color:' + statusColor + ';background:' + statusBg + ';padding:.1rem .35rem;border-radius:999px;font-weight:600;white-space:nowrap">' + status + '</span>'
+        + '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Warnungen
+  var warnContainer = document.getElementById('lagerWarnungen');
+  if (nachbestellen.length > 0) {
+    var warnList = nachbestellen.map(function(n) { return n.name + ' (Bestand: ' + n.bestand + ')'; }).join(', ');
+    warnContainer.innerHTML = '<div style="background:var(--red-light);border:1.5px solid var(--red);border-radius:.75rem;padding:.75rem 1rem;margin-bottom:1rem">'
+      + '<div style="font-size:.85rem;font-weight:700;color:var(--red);margin-bottom:.3rem">⚠️ ' + nachbestellen.length + ' Produkte müssen aufgefüllt werden</div>'
+      + '<div style="font-size:.72rem;color:var(--text);line-height:1.5">' + warnList + '</div>'
+      + '</div>';
+  } else {
+    warnContainer.innerHTML = '<div style="background:var(--forest-light);border:1.5px solid var(--forest);border-radius:.75rem;padding:.75rem 1rem;margin-bottom:1rem;font-size:.85rem;color:var(--forest);font-weight:600">✅ Alle Bestände OK</div>';
+  }
+}
+
+function updateLagerItem(name, field, value) {
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  if (!inventory[name]) inventory[name] = { bestand: 0, mindest: 0 };
+  inventory[name][field] = parseInt(value) || 0;
+  localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+  // Warnungen aktualisieren
+  renderLager();
+}
+
+function saveLager() {
+  showToast('Lagerbestand gespeichert');
+}
+
+function sendNachbestellung() {
+  var email = localStorage.getItem('wm_email_nachbestellung') || '';
+  if (!email) {
+    showToast('Bitte erst E-Mail im Admin-Bereich eintragen');
+    return;
+  }
+
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  var nachbestellen = [];
+
+  PRODUCTS.forEach(function(p) {
+    var inv = inventory[p.name] || { bestand: 0, mindest: 0 };
+    if (inv.bestand <= 0 || (inv.mindest > 0 && inv.bestand <= inv.mindest)) {
+      nachbestellen.push(p.name + ' (Bestand: ' + inv.bestand + ', Mindest: ' + inv.mindest + ')');
+    }
+  });
+
+  if (nachbestellen.length === 0) {
+    showToast('Alle Produkte sind ausreichend vorhanden');
+    return;
+  }
+
+  var subject = encodeURIComponent('Nachbestellung Wochenmarkt ' + new Date().toLocaleDateString('de-DE'));
+  var body = encodeURIComponent('Folgende Produkte müssen aufgefüllt werden:\n\n' + nachbestellen.join('\n') + '\n\nGesendet am: ' + new Date().toLocaleString('de-DE'));
+
+  window.open('mailto:' + email + '?subject=' + subject + '&body=' + body);
+  showToast('E-Mail wird geöffnet...');
+}
+
+// ─── LIEFERANTEN-VERWALTUNG ──────────────────────────────────────────
+function getLieferanten() {
+  return JSON.parse(localStorage.getItem('wm_lieferanten') || '[]');
+}
+function saveLieferanten(list) {
+  localStorage.setItem('wm_lieferanten', JSON.stringify(list));
+}
+
+function renderLieferanten() {
+  var list = getLieferanten();
+  var container = document.getElementById('lieferantenListe');
+  if (list.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-soft)"><div style="font-size:2rem;margin-bottom:.5rem">🚚</div><p>Noch keine Lieferanten angelegt</p><p style="font-size:.75rem;margin-top:.3rem">Klicke oben auf "+ Neuer Lieferant"</p></div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < list.length; i++) {
+    var l = list[i];
+    var contactParts = [];
+    if (l.email) contactParts.push('📧 ' + l.email);
+    if (l.telefon) contactParts.push('📞 ' + l.telefon);
+    if (l.whatsapp) contactParts.push('💬 WhatsApp: ' + l.whatsapp);
+    if (l.ansprechpartner) contactParts.push('👤 ' + l.ansprechpartner);
+    html += '<div class="lief-card">'
+      + '<div class="lief-header"><span class="lief-name">🚚 ' + l.name + '</span>'
+      + '<div style="display:flex;gap:.3rem"><button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;padding:.2rem .5rem;font-size:.65rem" onclick="editLieferant(' + i + ')">✏️</button>'
+      + '<button class="btn btn-outline" style="color:var(--red);border-color:var(--red);padding:.2rem .5rem;font-size:.65rem" onclick="deleteLieferant(' + i + ')">🗑️</button></div></div>'
+      + '<div class="lief-contact">' + contactParts.join(' · ') + '</div>';
+    if (l.produkte && l.produkte.length > 0) {
+      html += '<div class="lief-products">Produkte: ' + l.produkte.join(', ') + '</div>';
+    }
+    if (l.notizen) {
+      html += '<div style="font-size:.7rem;color:var(--text-soft);margin-top:.2rem;font-style:italic">' + l.notizen + '</div>';
+    }
+    html += '<div class="lief-actions">';
+    if (l.email) {
+      html += '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantEmail(' + i + ')">📧 E-Mail</button>';
+      html += '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantBestellung(' + i + ')">📦 Bestellung</button>';
+    }
+    if (l.whatsapp) {
+      html += '<button class="btn btn-outline" style="color:#25D366;border-color:#25D366;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantWhatsApp(' + i + ')">💬 WhatsApp</button>';
+      html += '<button class="btn btn-outline" style="color:#25D366;border-color:#25D366;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantWhatsAppBestellung(' + i + ')">📦 WA Bestellung</button>';
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+function openLieferantForm(idx) {
+  document.getElementById('lieferantFormBox').style.display = 'block';
+  document.getElementById('lieferantFormTitle').textContent = idx !== undefined ? 'Lieferant bearbeiten' : 'Neuer Lieferant';
+  document.getElementById('liefEditIdx').value = idx !== undefined ? idx : -1;
+  if (idx !== undefined) {
+    var l = getLieferanten()[idx];
+    document.getElementById('liefName').value = l.name || '';
+    document.getElementById('liefEmail').value = l.email || '';
+    document.getElementById('liefTelefon').value = l.telefon || '';
+    document.getElementById('liefWhatsapp').value = l.whatsapp || '';
+    document.getElementById('liefAnsprech').value = l.ansprechpartner || '';
+    document.getElementById('liefProdukte').value = (l.produkte || []).join(', ');
+    document.getElementById('liefNotizen').value = l.notizen || '';
+  } else {
+    document.getElementById('liefName').value = '';
+    document.getElementById('liefEmail').value = '';
+    document.getElementById('liefTelefon').value = '';
+    document.getElementById('liefWhatsapp').value = '';
+    document.getElementById('liefAnsprech').value = '';
+    document.getElementById('liefProdukte').value = '';
+    document.getElementById('liefNotizen').value = '';
+  }
+}
+function closeLieferantForm() {
+  document.getElementById('lieferantFormBox').style.display = 'none';
+}
+function editLieferant(idx) { openLieferantForm(idx); }
+function deleteLieferant(idx) {
+  var list = getLieferanten();
+  if (!confirm('Lieferant "' + list[idx].name + '" wirklich löschen?')) return;
+  list.splice(idx, 1);
+  saveLieferanten(list);
+  renderLieferanten();
+  showToast('Lieferant gelöscht');
+}
+function saveLieferant() {
+  var name = document.getElementById('liefName').value.trim();
+  if (!name) { showToast('Firma ist ein Pflichtfeld'); return; }
+  var produkteText = document.getElementById('liefProdukte').value.trim();
+  var produkte = produkteText ? produkteText.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }) : [];
+  var entry = {
+    name: name,
+    email: document.getElementById('liefEmail').value.trim(),
+    telefon: document.getElementById('liefTelefon').value.trim(),
+    whatsapp: document.getElementById('liefWhatsapp').value.trim(),
+    ansprechpartner: document.getElementById('liefAnsprech').value.trim(),
+    produkte: produkte,
+    notizen: document.getElementById('liefNotizen').value.trim()
+  };
+  var list = getLieferanten();
+  var idx = parseInt(document.getElementById('liefEditIdx').value);
+  if (idx >= 0 && idx < list.length) {
+    list[idx] = entry;
+  } else {
+    list.push(entry);
+  }
+  saveLieferanten(list);
+  closeLieferantForm();
+  renderLieferanten();
+  showToast('Lieferant "' + name + '" gespeichert');
+}
+
+// E-Mail an Lieferant (frei)
+function sendLieferantEmail(idx) {
+  var l = getLieferanten()[idx];
+  if (!l.email) { showToast('Keine E-Mail hinterlegt'); return; }
+  var subject = encodeURIComponent('Anfrage - Imkerei Durchdenwald');
+  var body = encodeURIComponent('Sehr geehrte Damen und Herren,\n\n\n\nMit freundlichen Grüßen\nImkerei Durchdenwald');
+  window.open('mailto:' + l.email + '?subject=' + subject + '&body=' + body);
+}
+
+// Bestellung per E-Mail (Produkte des Lieferanten die unter Mindestbestand sind)
+function sendLieferantBestellung(idx) {
+  var l = getLieferanten()[idx];
+  if (!l.email) { showToast('Keine E-Mail hinterlegt'); return; }
+  var bestellText = buildBestellText(l);
+  var subject = encodeURIComponent('Bestellung - Imkerei Durchdenwald - ' + new Date().toLocaleDateString('de-DE'));
+  var body = encodeURIComponent(bestellText);
+  window.open('mailto:' + l.email + '?subject=' + subject + '&body=' + body);
+  showToast('Bestell-E-Mail wird geöffnet...');
+}
+
+// WhatsApp Nachricht (frei)
+function sendLieferantWhatsApp(idx) {
+  var l = getLieferanten()[idx];
+  if (!l.whatsapp) { showToast('Keine WhatsApp-Nummer hinterlegt'); return; }
+  var nr = l.whatsapp.replace(/[^0-9]/g, '');
+  var text = encodeURIComponent('Hallo ' + (l.ansprechpartner || l.name) + ',\n\nhier ist Julian von der Imkerei Durchdenwald.\n\n');
+  window.open('https://wa.me/' + nr + '?text=' + text, '_blank');
+}
+
+// WhatsApp Bestellung
+function sendLieferantWhatsAppBestellung(idx) {
+  var l = getLieferanten()[idx];
+  if (!l.whatsapp) { showToast('Keine WhatsApp-Nummer hinterlegt'); return; }
+  var nr = l.whatsapp.replace(/[^0-9]/g, '');
+  var bestellText = buildBestellText(l);
+  var text = encodeURIComponent(bestellText);
+  window.open('https://wa.me/' + nr + '?text=' + text, '_blank');
+  showToast('WhatsApp Bestellung wird geöffnet...');
+}
+
+// Bestelltext generieren (basierend auf zugeordneten Produkten + Lagerbestand)
+function buildBestellText(lieferant) {
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  var lines = [];
+  var alleProdukte = lieferant.produkte && lieferant.produkte.length > 0;
+
+  if (alleProdukte) {
+    for (var i = 0; i < lieferant.produkte.length; i++) {
+      var pName = lieferant.produkte[i];
+      var inv = inventory[pName] || { bestand: 0, mindest: 0 };
+      var fehlmenge = Math.max(0, (inv.mindest || 5) - (inv.bestand || 0));
+      if (fehlmenge <= 0) fehlmenge = inv.mindest || 5;
+      lines.push('- ' + pName + ': ' + fehlmenge + ' Stück (Bestand: ' + (inv.bestand || 0) + ')');
+    }
+  } else {
+    // Alle Produkte unter Mindestbestand
+    PRODUCTS.forEach(function(p) {
+      var inv = inventory[p.name] || { bestand: 0, mindest: 0 };
+      if (inv.bestand <= 0 || (inv.mindest > 0 && inv.bestand <= inv.mindest)) {
+        var fehlmenge = Math.max(0, (inv.mindest || 5) - (inv.bestand || 0));
+        if (fehlmenge <= 0) fehlmenge = inv.mindest || 5;
+        lines.push('- ' + p.name + ': ' + fehlmenge + ' Stück (Bestand: ' + (inv.bestand || 0) + ')');
+      }
+    });
+  }
+
+  if (lines.length === 0) {
+    return 'Hallo ' + (lieferant.ansprechpartner || lieferant.name) + ',\n\naktuell sind alle Bestände in Ordnung. Keine Bestellung nötig.\n\nMit freundlichen Grüßen\nImkerei Durchdenwald';
+  }
+
+  return 'Hallo ' + (lieferant.ansprechpartner || lieferant.name) + ',\n\n'
+    + 'ich möchte gerne folgende Produkte bestellen:\n\n'
+    + lines.join('\n')
+    + '\n\nBitte um Bestätigung und voraussichtlichen Liefertermin.'
+    + '\n\nMit freundlichen Grüßen\nImkerei Durchdenwald'
+    + '\n\n(Gesendet am ' + new Date().toLocaleString('de-DE') + ')';
+}
+
+// ─── INTELLIGENTE NACHBESTELLUNG ────────────────────────────────────
+function openSmartNachbestellung() {
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  var lieferanten = getLieferanten();
+  var nachbestellen = [];
+
+  PRODUCTS.forEach(function(p) {
+    var inv = inventory[p.name] || { bestand: 0, mindest: 0 };
+    if (inv.bestand <= 0 || (inv.mindest > 0 && inv.bestand <= inv.mindest)) {
+      nachbestellen.push({ name: p.name, bestand: inv.bestand, mindest: inv.mindest, category: p.category });
+    }
+  });
+
+  if (nachbestellen.length === 0) {
+    showToast('Alle Bestände sind OK - keine Nachbestellung nötig');
+    return;
+  }
+
+  // Gruppieren nach Lieferant
+  var zugeordnet = {};
+  var nichtZugeordnet = [];
+  for (var i = 0; i < nachbestellen.length; i++) {
+    var prod = nachbestellen[i];
+    var gefunden = false;
+    for (var li = 0; li < lieferanten.length; li++) {
+      var lief = lieferanten[li];
+      if (lief.produkte && lief.produkte.indexOf(prod.name) !== -1) {
+        if (!zugeordnet[li]) zugeordnet[li] = { lieferant: lief, produkte: [] };
+        zugeordnet[li].produkte.push(prod);
+        gefunden = true;
+        break;
+      }
+    }
+    if (!gefunden) nichtZugeordnet.push(prod);
+  }
+
+  var html = '<p style="font-size:.8rem;color:var(--text-soft);margin-bottom:1rem">⚠️ <strong>' + nachbestellen.length + ' Produkte</strong> unter Mindestbestand</p>';
+
+  // Pro Lieferant anzeigen
+  for (var key in zugeordnet) {
+    var group = zugeordnet[key];
+    html += '<div class="nachbestell-group">'
+      + '<h4>🚚 ' + group.lieferant.name + '</h4>';
+    for (var pi = 0; pi < group.produkte.length; pi++) {
+      var pr = group.produkte[pi];
+      var fehl = Math.max(0, (pr.mindest || 5) - (pr.bestand || 0));
+      html += '<div class="nachbestell-item"><span>' + pr.name + '</span><span style="color:var(--red);font-weight:600">Bestand: ' + pr.bestand + ' (empf. +' + fehl + ')</span></div>';
+    }
+    html += '<div style="display:flex;gap:.3rem;margin-top:.5rem">';
+    if (group.lieferant.email) {
+      html += '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantBestellung(' + key + ');closeNachbestellModal()">📧 E-Mail senden</button>';
+    }
+    if (group.lieferant.whatsapp) {
+      html += '<button class="btn btn-outline" style="color:#25D366;border-color:#25D366;padding:.25rem .5rem;font-size:.7rem" onclick="sendLieferantWhatsAppBestellung(' + key + ');closeNachbestellModal()">💬 WhatsApp</button>';
+    }
+    html += '</div></div>';
+  }
+
+  // Nicht zugeordnete Produkte
+  if (nichtZugeordnet.length > 0) {
+    html += '<div class="nachbestell-group" style="border-color:#FEF3C7">'
+      + '<h4>❓ Kein Lieferant zugeordnet</h4>';
+    for (var ni = 0; ni < nichtZugeordnet.length; ni++) {
+      var np = nichtZugeordnet[ni];
+      html += '<div class="nachbestell-item"><span>' + np.name + '</span><span style="color:#92400E;font-weight:600">Bestand: ' + np.bestand + '</span></div>';
+    }
+    html += '<div style="margin-top:.4rem;font-size:.7rem;color:var(--text-soft)">Tipp: Ordne diese Produkte einem Lieferanten zu (🚚 Liefer. Tab)</div>';
+    // Fallback: allgemeine E-Mail
+    var emailNach = localStorage.getItem('wm_email_nachbestellung') || '';
+    if (emailNach) {
+      html += '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;padding:.25rem .5rem;font-size:.7rem;margin-top:.3rem" onclick="sendNachbestellung();closeNachbestellModal()">📧 An ' + emailNach + ' senden</button>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('nachbestellContent').innerHTML = html;
+  document.getElementById('nachbestellOverlay').style.display = 'flex';
+}
+
+function closeNachbestellModal() {
+  document.getElementById('nachbestellOverlay').style.display = 'none';
+}
+
+// ─── E-MAIL EINSTELLUNGEN ───────────────────────────────────────────
+function saveEmailSettings() {
+  var emailBest = document.getElementById('emailBestellung').value.trim();
+  var emailNach = document.getElementById('emailNachbestellung').value.trim();
+  localStorage.setItem('wm_email_bestellung', emailBest);
+  localStorage.setItem('wm_email_nachbestellung', emailNach);
+  showToast('E-Mail-Einstellungen gespeichert');
+}
+
+function loadEmailSettings() {
+  var el1 = document.getElementById('emailBestellung');
+  var el2 = document.getElementById('emailNachbestellung');
+  if (el1) el1.value = localStorage.getItem('wm_email_bestellung') || '';
+  if (el2) el2.value = localStorage.getItem('wm_email_nachbestellung') || '';
+}
+
+// ─── TAGES-CACHE ────────────────────────────────────────────────────
+var tagesEntries = [];
+
+// ─── NEUES PRODUKT ──────────────────────────────────────────────────
+function openNeuesProduktModal() {
+  document.getElementById('neuesProduktOverlay').style.display = 'flex';
+}
+function closeNeuesProduktModal() {
+  document.getElementById('neuesProduktOverlay').style.display = 'none';
+}
+function saveNeuesProdukt() {
+  var name = document.getElementById('npName').value.trim();
+  var preis = parseFloat(document.getElementById('npPreis').value);
+  var kat = document.getElementById('npKategorie').value;
+  var tax = parseFloat(document.getElementById('npTax').value);
+  var bestand = parseInt(document.getElementById('npBestand').value) || 0;
+  if (!name || isNaN(preis) || preis <= 0) { showToast('Name und Preis sind Pflichtfelder'); return; }
+  var newProd = { name: name, price: preis, category: kat, img: '', tax: tax };
+  PRODUCTS.push(newProd);
+  quantities.push(0);
+  if (CAT_ORDER.indexOf(kat) === -1) CAT_ORDER.push(kat);
+  var customs = JSON.parse(localStorage.getItem('wm_custom_products') || '[]');
+  customs.push(newProd);
+  localStorage.setItem('wm_custom_products', JSON.stringify(customs));
+  if (bestand > 0) {
+    var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+    inventory[name] = { bestand: bestand, mindest: 0 };
+    localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+  }
+  closeNeuesProduktModal();
+  document.getElementById('npName').value = '';
+  document.getElementById('npPreis').value = '';
+  document.getElementById('npBestand').value = '0';
+  renderProducts();
+  showToast('Produkt "' + name + '" angelegt');
+}
+
+// ─── TAGESABSCHLUSS ─────────────────────────────────────────────────
+function openTagesabschluss() {
+  if (tagesEntries.length === 0) { showToast('Keine Verkäufe heute'); return; }
+  var barSum = 0, karteSum = 0;
+  for (var i = 0; i < tagesEntries.length; i++) {
+    var za = tagesEntries[i].zahlungsart || 'Bar';
+    var betrag = parseFloat(tagesEntries[i].gesamt_brutto) || 0;
+    if (za === 'Karte') karteSum += betrag;
+    else if (za === 'Gemischt') { barSum += betrag / 2; karteSum += betrag / 2; }
+    else barSum += betrag;
+  }
+  document.getElementById('taSollBar').textContent = formatPrice(barSum);
+  document.getElementById('taSollKarte').textContent = formatPrice(karteSum);
+  document.getElementById('taIstBar').value = '';
+  document.getElementById('taBemerkung').value = '';
+  document.getElementById('taDifferenzBox').style.display = 'none';
+  document.getElementById('tagesabschlussOverlay').style.display = 'flex';
+}
+function closeTagesabschluss() {
+  document.getElementById('tagesabschlussOverlay').style.display = 'none';
+}
+function berechneTaDifferenz() {
+  var ist = parseFloat(document.getElementById('taIstBar').value) || 0;
+  var sollText = document.getElementById('taSollBar').textContent.replace(/[^0-9,.-]/g, '').replace(',', '.');
+  var soll = parseFloat(sollText) || 0;
+  var diff = ist - soll;
+  var box = document.getElementById('taDifferenzBox');
+  box.style.display = 'block';
+  if (Math.abs(diff) < 0.01) {
+    box.style.background = 'var(--forest-light)'; box.style.color = 'var(--forest)';
+    box.textContent = 'Kasse stimmt!';
+  } else if (diff > 0) {
+    box.style.background = '#FEF3C7'; box.style.color = '#92400E';
+    box.textContent = 'Überschuss: +' + formatPrice(diff);
+  } else {
+    box.style.background = 'var(--red-light)'; box.style.color = 'var(--red)';
+    box.textContent = 'Differenz: ' + formatPrice(diff);
+  }
+}
+function saveTagesabschluss() {
+  var ist = parseFloat(document.getElementById('taIstBar').value);
+  if (isNaN(ist)) { showToast('Bitte Ist-Bestand eingeben'); return; }
+  var sollText = document.getElementById('taSollBar').textContent.replace(/[^0-9,.-]/g, '').replace(',', '.');
+  var soll = parseFloat(sollText) || 0;
+  var abschluss = {
+    datum: dateStr(),
+    soll_bar: soll,
+    ist_bar: ist,
+    differenz: parseFloat((ist - soll).toFixed(2)),
+    bemerkung: document.getElementById('taBemerkung').value.trim(),
+    mitarbeiter: document.getElementById('mitarbeiterSelect').value || null,
+    verkauefe: tagesEntries.length
+  };
+  var abschluesse = JSON.parse(localStorage.getItem('wm_tagesabschluss') || '[]');
+  abschluesse.push(abschluss);
+  localStorage.setItem('wm_tagesabschluss', JSON.stringify(abschluesse));
+  closeTagesabschluss();
+  showToast('Tagesabschluss gespeichert');
+}
+
+// ─── BON PDF ────────────────────────────────────────────────────────
+function generateBonPDF() {
+  if (tagesEntries.length === 0) { showToast('Keine Verkäufe zum Drucken'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ unit: 'mm', format: [80, 200] });
+  var y = 5;
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+  doc.text('Imkerei Durchdenwald', 40, y, { align: 'center' }); y += 5;
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text('Tagesbericht ' + new Date().toLocaleDateString('de-DE'), 40, y, { align: 'center' }); y += 6;
+  doc.line(5, y, 75, y); y += 3;
+  var productSums = {};
+  for (var i = 0; i < tagesEntries.length; i++) {
+    var produkte = tagesEntries[i].produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      if (!productSums[p.name]) productSums[p.name] = { qty: 0, sum: 0, preis: p.preis };
+      productSums[p.name].qty += p.anzahl;
+      productSums[p.name].sum += (parseFloat(p.preis) || 0) * (p.anzahl || 0);
+    }
+  }
+  doc.setFontSize(7);
+  for (var pn in productSums) {
+    var ps = productSums[pn];
+    if (ps.qty === 0) continue;
+    doc.text(ps.qty + 'x ' + pn, 5, y);
+    doc.text(fmtRaw(ps.sum) + ' EUR', 75, y, { align: 'right' }); y += 3.5;
+    if (y > 185) { doc.addPage([80, 200]); y = 5; }
+  }
+  y += 1; doc.line(5, y, 75, y); y += 4;
+  var dayBrutto = 0, dayNetto = 0, dayMwst = 0;
+  for (var t2 = 0; t2 < tagesEntries.length; t2++) {
+    dayBrutto += parseFloat(tagesEntries[t2].gesamt_brutto) || 0;
+    dayNetto += parseFloat(tagesEntries[t2].gesamt_netto) || 0;
+    dayMwst += parseFloat(tagesEntries[t2].gesamt_mwst) || 0;
+  }
+  doc.setFontSize(8);
+  doc.text('Netto:', 5, y); doc.text(fmtRaw(dayNetto) + ' EUR', 75, y, { align: 'right' }); y += 3.5;
+  doc.text('MwSt:', 5, y); doc.text(fmtRaw(dayMwst) + ' EUR', 75, y, { align: 'right' }); y += 3.5;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('GESAMT:', 5, y); doc.text(fmtRaw(dayBrutto) + ' EUR', 75, y, { align: 'right' }); y += 5;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7);
+  doc.text(tagesEntries.length + ' Verkäufe', 40, y, { align: 'center' }); y += 5;
+  doc.line(5, y, 75, y);
+  doc.save('bon_' + dateStr() + '.pdf');
+  showToast('Bon-PDF erstellt');
+}
+
+// ─── DASHBOARD ──────────────────────────────────────────────────────
+async function renderDashboard() {
+  var today = dateStr();
+  var entries = [];
+  try {
+    if (sb) {
+      var r7 = await sb.from('wochenmarkt_verkauf').select('*')
+        .gte('datum', getWeekStart())
+        .order('created_at', { ascending: false });
+      if (!r7.error && r7.data) entries = r7.data;
+    }
+  } catch(e) { console.warn('Dashboard laden fehlgeschlagen:', e); }
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    entries = history.map(function(e) {
+      return {
+        datum: e.dateShort ? convertDateShort(e.dateShort) : dateStr(),
+        mitarbeiter: e.mitarbeiter,
+        zahlungsart: e.zahlungsart || 'Bar',
+        produkte: (e.items || []).map(function(item) { return { name: item.name, anzahl: item.qty, preis: item.price }; }),
+        gesamt_brutto: e.total
+      };
+    });
+  }
+  var todaySum = 0, weekSum = 0, monthStart = today.substring(0, 8) + '01', monthSum = 0;
+  var todayCount = 0;
+  var productRank = {}, catRank = {}, maRank = {};
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var betrag = parseFloat(e.gesamt_brutto) || 0;
+    weekSum += betrag;
+    if (e.datum === today) { todaySum += betrag; todayCount++; }
+    if (e.datum >= monthStart) monthSum += betrag;
+    var produkte = e.produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var pName = produkte[j].name;
+      var pQty = produkte[j].anzahl || 0;
+      var pSum = (parseFloat(produkte[j].preis) || 0) * pQty;
+      if (!productRank[pName]) productRank[pName] = { qty: 0, sum: 0 };
+      productRank[pName].qty += pQty;
+      productRank[pName].sum += pSum;
+      var cat = findCategory(pName);
+      if (!catRank[cat]) catRank[cat] = 0;
+      catRank[cat] += pSum;
+    }
+    var ma = e.mitarbeiter || 'Unbekannt';
+    if (!maRank[ma]) maRank[ma] = 0;
+    maRank[ma] += betrag;
+  }
+  // Kennzahlen
+  document.getElementById('dashKennzahlen').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Heute</div><div class="stat-value honey">' + formatPrice(todaySum) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Verkäufe heute</div><div class="stat-value">' + todayCount + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Diese Woche</div><div class="stat-value">' + formatPrice(weekSum) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Dieser Monat</div><div class="stat-value">' + formatPrice(monthSum) + '</div></div>';
+  // Top-Seller
+  var topArr = [];
+  for (var pn in productRank) topArr.push({ name: pn, qty: productRank[pn].qty, sum: productRank[pn].sum });
+  topArr.sort(function(a, b) { return b.qty - a.qty; });
+  var topHtml = '';
+  for (var t = 0; t < Math.min(topArr.length, 10); t++) {
+    topHtml += '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem">'
+      + '<span>' + (t + 1) + '. ' + topArr[t].name + ' (' + topArr[t].qty + 'x)</span><span style="font-weight:700">' + formatPrice(topArr[t].sum) + '</span></div>';
+  }
+  document.getElementById('dashTopSeller').innerHTML = topHtml || '<p style="color:var(--text-soft);font-size:.8rem">Keine Daten</p>';
+  // Kategorie
+  var catArr = [];
+  for (var c in catRank) catArr.push({ name: c, sum: catRank[c] });
+  catArr.sort(function(a, b) { return b.sum - a.sum; });
+  var catHtml = '';
+  for (var ci = 0; ci < catArr.length; ci++) {
+    var pct = weekSum > 0 ? Math.round(catArr[ci].sum / weekSum * 100) : 0;
+    catHtml += '<div style="margin-bottom:.4rem"><div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.15rem"><span>' + catArr[ci].name + '</span><span style="font-weight:700">' + formatPrice(catArr[ci].sum) + ' (' + pct + '%)</span></div>'
+      + '<div style="height:6px;background:#F5EDE3;border-radius:3px;overflow:hidden"><div style="height:100%;background:var(--honey);width:' + pct + '%;border-radius:3px"></div></div></div>';
+  }
+  document.getElementById('dashKategorie').innerHTML = catHtml || '<p style="color:var(--text-soft);font-size:.8rem">Keine Daten</p>';
+  // Mitarbeiter
+  var maArr = [];
+  for (var m in maRank) maArr.push({ name: m, sum: maRank[m] });
+  maArr.sort(function(a, b) { return b.sum - a.sum; });
+  var maHtml = '';
+  for (var mi = 0; mi < maArr.length; mi++) {
+    maHtml += '<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem">'
+      + '<span>👤 ' + maArr[mi].name + '</span><span style="font-weight:700">' + formatPrice(maArr[mi].sum) + '</span></div>';
+  }
+  document.getElementById('dashMitarbeiter').innerHTML = maHtml || '<p style="color:var(--text-soft);font-size:.8rem">Keine Daten</p>';
+}
+
+function getWeekStart() {
+  var d = new Date();
+  var day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function convertDateShort(ds) {
+  var parts = ds.split('.');
+  if (parts.length === 3) return parts[2] + '-' + parts[1] + '-' + parts[0];
+  return dateStr();
+}
+
+function findCategory(productName) {
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    if (PRODUCTS[i].name === productName) return PRODUCTS[i].category;
+  }
+  return 'Sonstiges';
+}
+
+// ─── PRODUKTVERWALTUNG (Admin) ──────────────────────────────────────
+function renderProdMgmt() {
+  var search = (document.getElementById('prodMgmtSearch').value || '').toLowerCase().trim();
+  var html = '';
+  for (var i = 0; i < PRODUCTS.length; i++) {
+    var p = PRODUCTS[i];
+    if (search && !p.name.toLowerCase().includes(search)) continue;
+    html += '<div class="prod-mgmt-row" data-idx="' + i + '">'
+      + '<span class="prod-mgmt-name" title="' + p.name + '">' + p.name + '</span>'
+      + '<input type="number" class="prod-mgmt-input" step="0.01" value="' + p.price.toFixed(2) + '" data-field="price" data-idx="' + i + '">'
+      + '<span style="font-size:.65rem;color:var(--text-soft)">€</span>'
+      + '<label style="font-size:.7rem;display:flex;align-items:center;gap:.2rem;cursor:pointer">'
+      + '<input type="checkbox" ' + (p.active !== false ? 'checked' : '') + ' data-field="active" data-idx="' + i + '" style="cursor:pointer"> Aktiv</label>'
+      + '</div>';
+  }
+  document.getElementById('prodMgmtList').innerHTML = html || '<p style="padding:.5rem;color:var(--text-soft);font-size:.8rem">Keine Produkte</p>';
+}
+
+function saveProdMgmt() {
+  var priceInputs = document.querySelectorAll('.prod-mgmt-input[data-field="price"]');
+  var activeInputs = document.querySelectorAll('input[data-field="active"]');
+  priceInputs.forEach(function(inp) {
+    var idx = parseInt(inp.getAttribute('data-idx'));
+    var val = parseFloat(inp.value);
+    if (!isNaN(val) && val >= 0) PRODUCTS[idx].price = val;
+  });
+  activeInputs.forEach(function(inp) {
+    var idx = parseInt(inp.getAttribute('data-idx'));
+    PRODUCTS[idx].active = inp.checked;
+  });
+  renderProducts();
+  showToast('Produktänderungen gespeichert');
+}
 
 // ─── INIT ───────────────────────────────────────────────────────────
 document.getElementById('headerDate').textContent = new Date().toLocaleDateString('de-DE', {
@@ -2990,12 +4136,314 @@ function setupRealtime() {
     .subscribe();
 }
 
+// ─── LETZTEN VERKAUF WIEDERHOLEN ─────────────────────────────────────
+function repeatLastSale() {
+  var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  if (history.length === 0) { showToast('Keine vorherigen Verkäufe'); return; }
+  var last = history[0];
+  if (!last.items || last.items.length === 0) { showToast('Letzter Verkauf leer'); return; }
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+  last.items.forEach(function(item) {
+    for (var i = 0; i < PRODUCTS.length; i++) {
+      if (PRODUCTS[i].name === item.name) {
+        quantities[i] = Math.abs(item.qty);
+        break;
+      }
+    }
+  });
+  renderProducts(document.getElementById('searchInput').value);
+  updateSummary();
+  showToast('Letzter Verkauf geladen (' + last.items.length + ' Artikel)');
+}
+
+// ─── SCHNELLMENGEN-EINGABE (Long Press) ─────────────────────────────
+var longPressTimer = null;
+function setupLongPress() {
+  document.getElementById('productList').addEventListener('pointerdown', function(e) {
+    var card = e.target.closest('.card');
+    if (!card || e.target.classList.contains('card-minus')) return;
+    var idx = parseInt(card.id.replace('card-', ''));
+    if (isNaN(idx)) return;
+    longPressTimer = setTimeout(function() {
+      longPressTimer = null;
+      showQtyPrompt(idx);
+    }, 600);
+  });
+  document.getElementById('productList').addEventListener('pointerup', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+  document.getElementById('productList').addEventListener('pointerleave', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+}
+function showQtyPrompt(idx) {
+  var existing = document.getElementById('qtyPromptBox');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000';
+  overlay.id = 'qtyPromptOverlay';
+  overlay.onclick = function() { closeQtyPrompt(); };
+  var box = document.createElement('div');
+  box.className = 'qty-prompt';
+  box.id = 'qtyPromptBox';
+  box.onclick = function(e) { e.stopPropagation(); };
+  box.innerHTML = '<div style="font-size:.85rem;font-weight:700">' + PRODUCTS[idx].name + '</div>'
+    + '<input type="number" id="qtyPromptInput" min="0" value="' + (quantities[idx] || 0) + '" autofocus>'
+    + '<div class="qp-btns">'
+    + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeQtyPrompt()">Abbrechen</button>'
+    + '<button class="btn btn-honey" onclick="applyQtyPrompt(' + idx + ')">OK</button></div>';
+  document.body.appendChild(overlay);
+  document.body.appendChild(box);
+  setTimeout(function() { document.getElementById('qtyPromptInput').select(); }, 50);
+}
+function applyQtyPrompt(idx) {
+  var val = parseInt(document.getElementById('qtyPromptInput').value) || 0;
+  quantities[idx] = Math.max(0, val);
+  updateCard(idx);
+  updateSummary();
+  closeQtyPrompt();
+}
+function closeQtyPrompt() {
+  var o = document.getElementById('qtyPromptOverlay');
+  var b = document.getElementById('qtyPromptBox');
+  if (o) o.remove();
+  if (b) b.remove();
+}
+
+// ─── SYNC STATUS ────────────────────────────────────────────────────
+function updateSyncStatus() {
+  var el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (navigator.onLine && sb) {
+    el.innerHTML = '🟢 Online';
+    el.title = 'Verbunden mit Supabase';
+  } else {
+    el.innerHTML = '🔴 Offline';
+    el.title = 'Keine Verbindung - Daten werden lokal gespeichert';
+  }
+}
+window.addEventListener('online', updateSyncStatus);
+window.addEventListener('offline', updateSyncStatus);
+
+// ─── WOCHEN-/MONATSBERICHT PDF ──────────────────────────────────────
+async function generateReportPDF(period) {
+  var entries = [];
+  var title = '';
+  var startDate = '';
+  if (period === 'week') {
+    startDate = getWeekStart();
+    title = 'Wochenbericht';
+  } else {
+    var d = new Date();
+    startDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+    title = 'Monatsbericht ' + new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  }
+  try {
+    if (sb) {
+      var r = await sb.from('wochenmarkt_verkauf').select('*')
+        .gte('datum', startDate).order('created_at', { ascending: false });
+      if (!r.error && r.data) entries = r.data;
+    }
+  } catch(e) { console.warn('Report laden fehlgeschlagen:', e); }
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    entries = history.filter(function(e) {
+      var ed = convertDateShort(e.dateShort || '');
+      return ed >= startDate;
+    }).map(function(e) {
+      return { datum: convertDateShort(e.dateShort || ''), mitarbeiter: e.mitarbeiter, zahlungsart: e.zahlungsart || 'Bar',
+        produkte: (e.items || []).map(function(i) { return { name: i.name, anzahl: i.qty, preis: i.price }; }),
+        gesamt_brutto: e.total, gesamt_netto: e.netto, gesamt_mwst: e.mwst };
+    });
+  }
+  if (entries.length === 0) { showToast('Keine Daten für ' + title); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('Imkerei Durchdenwald', 105, 15, { align: 'center' });
+  doc.setFontSize(12); doc.text(title, 105, 23, { align: 'center' });
+  doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+  doc.text('Erstellt: ' + new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }), 105, 29, { align: 'center' });
+  var totalBrutto = 0, totalNetto = 0, totalMwst = 0, totalBar = 0, totalKarte = 0;
+  var productSums = {}, daySums = {};
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var betrag = parseFloat(e.gesamt_brutto) || 0;
+    totalBrutto += betrag;
+    totalNetto += parseFloat(e.gesamt_netto) || 0;
+    totalMwst += parseFloat(e.gesamt_mwst) || 0;
+    var za = e.zahlungsart || 'Bar';
+    if (za === 'Karte') totalKarte += betrag;
+    else if (za === 'Gemischt') { totalBar += betrag / 2; totalKarte += betrag / 2; }
+    else totalBar += betrag;
+    if (!daySums[e.datum]) daySums[e.datum] = { brutto: 0, count: 0 };
+    daySums[e.datum].brutto += betrag;
+    daySums[e.datum].count++;
+    var produkte = e.produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var pn = produkte[j].name;
+      if (!productSums[pn]) productSums[pn] = { qty: 0, sum: 0 };
+      productSums[pn].qty += produkte[j].anzahl || 0;
+      productSums[pn].sum += (parseFloat(produkte[j].preis) || 0) * (produkte[j].anzahl || 0);
+    }
+  }
+  // Kennzahlen
+  var y = 38;
+  doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+  doc.text('Zusammenfassung', 14, y); y += 6;
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text('Gesamtumsatz (brutto):', 14, y); doc.text(fmtRaw(totalBrutto) + ' EUR', 196, y, { align: 'right' }); y += 5;
+  doc.text('Netto:', 14, y); doc.text(fmtRaw(totalNetto) + ' EUR', 196, y, { align: 'right' }); y += 5;
+  doc.text('MwSt:', 14, y); doc.text(fmtRaw(totalMwst) + ' EUR', 196, y, { align: 'right' }); y += 5;
+  doc.text('Barzahlung:', 14, y); doc.text(fmtRaw(totalBar) + ' EUR', 196, y, { align: 'right' }); y += 5;
+  doc.text('Kartenzahlung:', 14, y); doc.text(fmtRaw(totalKarte) + ' EUR', 196, y, { align: 'right' }); y += 5;
+  doc.text('Anzahl Verkäufe:', 14, y); doc.text(String(entries.length), 196, y, { align: 'right' }); y += 8;
+  // Tagesübersicht
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Tagesumsätze', 14, y); y += 5;
+  var dayKeys = Object.keys(daySums).sort();
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  for (var di = 0; di < dayKeys.length; di++) {
+    doc.text(dayKeys[di] + ' (' + daySums[dayKeys[di]].count + ' Verkäufe)', 14, y);
+    doc.text(fmtRaw(daySums[dayKeys[di]].brutto) + ' EUR', 196, y, { align: 'right' }); y += 4;
+    if (y > 275) { doc.addPage(); y = 15; }
+  }
+  y += 4;
+  // Top-Produkte
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Top-Produkte', 14, y); y += 5;
+  var topArr = [];
+  for (var pn2 in productSums) topArr.push({ name: pn2, qty: productSums[pn2].qty, sum: productSums[pn2].sum });
+  topArr.sort(function(a, b) { return b.sum - a.sum; });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+  for (var ti = 0; ti < Math.min(topArr.length, 20); ti++) {
+    doc.text(topArr[ti].qty + 'x ' + topArr[ti].name, 14, y);
+    doc.text(fmtRaw(topArr[ti].sum) + ' EUR', 196, y, { align: 'right' }); y += 4;
+    if (y > 275) { doc.addPage(); y = 15; }
+  }
+  doc.save('bericht_' + period + '_' + dateStr() + '.pdf');
+  showToast(title + ' PDF erstellt');
+}
+
+function initDefaultInventory() {
+  var inv = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  if (Object.keys(inv).length > 0) return; // Bereits initialisiert
+  var defaults = {
+    // Honig
+    'Blütenhonig 500g': { bestand: 30, mindest: 5 },
+    'Waldhonig 500g': { bestand: 25, mindest: 5 },
+    'Tannenhonig 500g': { bestand: 15, mindest: 3 },
+    'Akazienhonig 500g': { bestand: 20, mindest: 5 },
+    'Lindenhonig 500g': { bestand: 15, mindest: 3 },
+    'Buchweizenhonig 500g': { bestand: 10, mindest: 3 },
+    'Edelkastanienhonig 500g': { bestand: 10, mindest: 3 },
+    'Manukahonig 250g MGO 550': { bestand: 5, mindest: 2 },
+    // Eier
+    'Eier Gr. L (10 Stk)': { bestand: 40, mindest: 10 },
+    'Eier Gr. L (6 Stk)': { bestand: 30, mindest: 10 },
+    'Eier Gr. M (10 Stk)': { bestand: 30, mindest: 10 },
+    // Kerzen
+    'Stumpenkerze': { bestand: 12, mindest: 3 },
+    'Tulpe': { bestand: 10, mindest: 3 },
+    'kleine Tulpe': { bestand: 15, mindest: 4 },
+    'Hirsch': { bestand: 8, mindest: 2 },
+    'Hirsche im Wald': { bestand: 12, mindest: 3 },
+    'großer Zapfen': { bestand: 10, mindest: 3 },
+    'kleiner Zapfen': { bestand: 15, mindest: 4 },
+    'Häuschen': { bestand: 8, mindest: 2 },
+    'Maria und Josef': { bestand: 6, mindest: 2 },
+    'Tannenbaum': { bestand: 12, mindest: 3 },
+    'Zylinderkerze': { bestand: 10, mindest: 3 },
+    'rund mit Ornamenten': { bestand: 10, mindest: 3 },
+    'Sonnenblumen': { bestand: 10, mindest: 3 },
+    'Bienenkorb': { bestand: 12, mindest: 3 },
+    'kleiner Bienenkorb': { bestand: 15, mindest: 4 },
+    'Schneeflocke': { bestand: 10, mindest: 3 },
+    'Sternschnuppe': { bestand: 12, mindest: 3 },
+    'Wirbelchen': { bestand: 10, mindest: 3 },
+    'Schnecki': { bestand: 12, mindest: 3 },
+    'Schäfchen': { bestand: 10, mindest: 3 },
+    'kleiner Nikolaus': { bestand: 8, mindest: 2 },
+    'Baltasar': { bestand: 10, mindest: 3 },
+    'kleiner Engel': { bestand: 12, mindest: 3 },
+    'Teelichter (Stk.)': { bestand: 100, mindest: 20 },
+    // Propolis & Pflege
+    'Propolis Tinktur 20ml': { bestand: 15, mindest: 4 },
+    'Propolis Tinktur 50ml': { bestand: 10, mindest: 3 },
+    'Propolis Salbe 30ml': { bestand: 12, mindest: 3 },
+    'Propolis Balsam sportiv': { bestand: 8, mindest: 2 },
+    'Propolis Gesichtscreme': { bestand: 10, mindest: 3 },
+    'Propolis Handcreme': { bestand: 15, mindest: 4 },
+    'Propolis Sirup 200ml': { bestand: 8, mindest: 2 },
+    'Propolis Deo Roll-on': { bestand: 8, mindest: 2 },
+    'Propolis Shampoo': { bestand: 10, mindest: 3 },
+    'Propolis Seife': { bestand: 20, mindest: 5 },
+    'Propolino Lippenstift': { bestand: 15, mindest: 4 },
+    'Propolis Mundspray': { bestand: 10, mindest: 3 },
+    'Propolind (ohne Alk.)': { bestand: 8, mindest: 2 },
+    'Propodent Zahncreme': { bestand: 10, mindest: 3 },
+    'Hyaluron Serum': { bestand: 8, mindest: 2 },
+    // Cremes & Kosmetik
+    'Gelée Royale Creme': { bestand: 10, mindest: 3 },
+    'Gelée Royale Trunk': { bestand: 6, mindest: 2 },
+    'Lotion-Royal 120ml': { bestand: 6, mindest: 2 },
+    'Honig Body Lotion': { bestand: 10, mindest: 3 },
+    'Männer Pflege Creme': { bestand: 8, mindest: 2 },
+    'After Shave Balm': { bestand: 6, mindest: 2 },
+    'Fuß & Beincreme': { bestand: 10, mindest: 3 },
+    'Lindesa Hautschutz': { bestand: 12, mindest: 3 },
+    'Lindesa Natur': { bestand: 12, mindest: 3 },
+    'Lindesa O': { bestand: 10, mindest: 3 },
+    'Lindesa F': { bestand: 10, mindest: 3 },
+    'LINDESA K': { bestand: 10, mindest: 3 },
+    'Lippenbalm': { bestand: 15, mindest: 4 },
+    'API-HOT Bienengift': { bestand: 5, mindest: 2 },
+    'Api-Regent': { bestand: 5, mindest: 2 },
+    // Seifen & Bad
+    'Honig Seife 100g': { bestand: 20, mindest: 5 },
+    'Honig Seife 250ml': { bestand: 12, mindest: 3 },
+    'Honig Creme Seife 1L': { bestand: 6, mindest: 2 },
+    'Honig Dusch Balm': { bestand: 10, mindest: 3 },
+    'Dusch Balm Gelée Royale': { bestand: 8, mindest: 2 },
+    'Naturshampoo': { bestand: 8, mindest: 2 },
+    'Honig Spülung': { bestand: 8, mindest: 2 },
+    'Honig Traum Bad': { bestand: 8, mindest: 2 },
+    'Meersalzbad': { bestand: 6, mindest: 2 },
+    // Süßes & Getränke
+    'Propolis Bonbons': { bestand: 30, mindest: 8 },
+    'Sanddorn Bären': { bestand: 25, mindest: 8 },
+    'MET 0,7l': { bestand: 12, mindest: 3 },
+    'Bio Hägenmark': { bestand: 10, mindest: 3 },
+    'Räuberlinsen 400g': { bestand: 10, mindest: 3 },
+    // Sonstiges
+    'Blütenpollen 250g': { bestand: 10, mindest: 3 },
+    'Honig-Löffelset': { bestand: 8, mindest: 2 },
+    'Holz- & Lederbalsam': { bestand: 6, mindest: 2 },
+    'Imkerhandschuh M': { bestand: 5, mindest: 2 }
+  };
+  localStorage.setItem('wm_inventory', JSON.stringify(defaults));
+}
+
 async function initApp() {
   await loadProductsFromDB();
   await loadMitarbeiter();
+  // Custom-Produkte aus localStorage laden
+  var customs = JSON.parse(localStorage.getItem('wm_custom_products') || '[]');
+  for (var ci = 0; ci < customs.length; ci++) {
+    var cp = customs[ci];
+    var exists = PRODUCTS.some(function(p) { return p.name === cp.name; });
+    if (!exists) {
+      PRODUCTS.push(cp);
+      quantities.push(0);
+      if (CAT_ORDER.indexOf(cp.category) === -1) CAT_ORDER.push(cp.category);
+    }
+  }
+  initDefaultInventory();
   renderProducts();
   updateSummary();
   setupRealtime();
+  setupLongPress();
+  updateSyncStatus();
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }

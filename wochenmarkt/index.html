@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Wochenmarkt | Imkerei Durchdenwald</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1C1410">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Wochenmarkt">
-<link rel="apple-touch-icon" href="icon.svg">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script>if(!window.supabase){window.supabase={createClient:function(){return null}};console.warn('Supabase CDN nicht erreichbar – Offline-Modus')}</script>
@@ -729,32 +723,115 @@ body {
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .card-name { font-size: .72rem; }
 }
+/* === STOCK BADGE === */
+.card-stock {
+  font-size: .55rem;
+  font-weight: 600;
+  padding: .05rem .3rem;
+  text-align: center;
+  border-radius: .2rem;
+}
+.card-stock.stock-ok { color: var(--forest); }
+.card-stock.stock-low { color: #92400E; background: #FEF3C7; }
+.card-stock.stock-empty { color: var(--red); background: var(--red-light); }
+.card.out-of-stock { opacity: .5; }
+.card.out-of-stock .card-img, .card.out-of-stock .card-img-placeholder { filter: grayscale(.8); }
+
+/* === ZAHLUNGSART === */
+.za-bar { display: flex; align-items: center; gap: .5rem; padding: .4rem 1rem; background: var(--cream-dark); border-bottom: 1px solid rgba(245,166,35,.15); }
+.za-bar label { font-size: 1rem; }
+.za-bar select { padding: .4rem .6rem; border: 1.5px solid #E8DFD4; border-radius: .4rem; font-size: .8rem; font-family: inherit; background: var(--white); color: var(--text); }
+
+/* === ADD PRODUCT BTN === */
+.add-product-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.add-product-row .search-bar { flex: 1; margin-bottom: 0; }
+.btn-add-product { width: 38px; height: 38px; border-radius: .5rem; background: var(--honey); border: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--bark); font-weight: 700; }
+.qty-prompt { position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--white);border-radius:.75rem;padding:1.25rem;box-shadow:0 8px 40px rgba(0,0,0,.3);z-index:1001;text-align:center;min-width:220px }
+.qty-prompt input { width:80px;padding:.5rem;border:2px solid var(--honey);border-radius:.5rem;font-size:1.4rem;text-align:center;font-family:inherit;font-weight:700;margin:.5rem 0 }
+.qty-prompt .qp-btns { display:flex;gap:.5rem;justify-content:center;margin-top:.5rem }
+
+/* === STAT CARDS === */
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.stat-card { background: var(--white); border: 1.5px solid #E8DFD4; border-radius: .65rem; padding: .6rem .75rem; }
+.stat-label { font-size: .65rem; color: var(--text-soft); }
+.stat-value { font-size: 1.1rem; font-weight: 800; color: var(--bark); margin-top: .1rem; }
+.stat-value.honey { color: var(--honey-deep); }
+
+/* === PASSWORT GATE === */
+.pw-gate {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, var(--bark), var(--bark-warm));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+}
+.pw-gate.hidden { display: none; }
+.pw-gate h2 {
+  font-family: 'Fraunces', serif;
+  color: var(--honey);
+  font-size: 1.4rem;
+}
+.pw-gate input {
+  padding: .6rem 1rem;
+  border: 2px solid rgba(255,255,255,.2);
+  border-radius: .5rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: rgba(255,255,255,.1);
+  color: var(--white);
+  text-align: center;
+  width: 220px;
+}
+.pw-gate input::placeholder { color: rgba(255,255,255,.4); }
+.pw-gate input:focus { outline: none; border-color: var(--honey); }
+.pw-gate button {
+  padding: .5rem 1.5rem;
+  background: var(--honey);
+  color: var(--bark);
+  border: none;
+  border-radius: .5rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pw-gate .pw-error {
+  color: #f87171;
+  font-size: .8rem;
+  min-height: 1.2em;
+}
 </style>
 </head>
 <body>
 
-<!-- PASSWORT GATE entfernt — offener Zugang für Mitarbeiter -->
+<!-- PASSWORT GATE -->
+<div class="pw-gate" id="pwGate">
+  <div style="font-size:3rem">🐝</div>
+  <h2>Wochenmarkt</h2>
+  <input type="password" id="pwInput" placeholder="Passwort..." onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()">Entsperren</button>
+  <div class="pw-error" id="pwError"></div>
+</div>
 
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
     <h1>🐝 Wochenmarkt</h1>
-    <span id="onlineStatus" style="font-size:.65rem;padding:.15rem .4rem;border-radius:.3rem;font-weight:700"></span>
     <span class="header-date" id="headerDate"></span>
   </div>
   <div class="header-actions">
     <button class="btn btn-honey" onclick="saveSession()">💾 Speichern</button>
+    <button class="btn btn-outline" onclick="repeatLastSale()">🔄 Letzte</button>
     <button class="btn btn-outline" onclick="exportCSV()">📤 CSV</button>
     <button class="btn btn-outline" onclick="generatePriceListPDF()">📄 Preisliste</button>
     <button class="btn btn-ghost" onclick="resetSession()">🗑️ Reset</button>
-    <button class="btn btn-outline" onclick="openCamera('produkt')">📷 Foto</button>
+    <span id="syncStatus" style="font-size:.6rem;opacity:.7;display:flex;align-items:center;gap:.2rem">🟢 Online</span>
   </div>
-</div>
-
-<!-- APP INSTALLIEREN BANNER -->
-<div id="installBanner" style="background:linear-gradient(135deg,var(--honey),var(--honey-deep));padding:.6rem 1rem;text-align:center;">
-  <a href="https://play.google.com/store/apps/details?id=de.bienenplan.wochenmarkt" target="_blank" id="apkDownloadBtn" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;text-decoration:none;display:inline-block;">📲 Im Play Store installieren</a>
-  <button onclick="installApp()" id="installBtnMain" style="display:none;background:var(--bark);color:var(--white);border:none;border-radius:.5rem;padding:.5rem 1.2rem;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;max-width:320px;">📲 App installieren</button>
 </div>
 
 <!-- MITARBEITER BAR -->
@@ -765,13 +842,21 @@ body {
   </select>
   <button class="btn-ma-add" onclick="openMitarbeiterModal()" title="Mitarbeiter verwalten">+</button>
 </div>
+<div class="za-bar">
+  <label>💳</label>
+  <select id="zahlungsartSelect">
+    <option value="bar">💵 Bar</option>
+    <option value="karte">💳 Karte</option>
+    <option value="gemischt">💵💳 Gemischt</option>
+  </select>
+</div>
 
 <!-- TABS -->
 <div class="tabs">
   <button class="tab active" onclick="switchTab('verkauf')">🛒 Verkauf</button>
   <button class="tab" onclick="switchTab('historie')">📋 Historie</button>
   <button class="tab" onclick="switchTab('upload')">📤 Upload</button>
-  <button class="tab" onclick="switchTab('kamera')">📷 Kamera</button>
+  <button class="tab" onclick="switchTab('tagesuebersicht')">📊 Tag</button>
 </div>
 
 <!-- CONTENT -->
@@ -779,8 +864,11 @@ body {
 
   <!-- TAB: VERKAUF -->
   <div class="tab-panel active" id="panel-verkauf">
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Produkt suchen..." oninput="filterProducts()">
+    <div class="add-product-row">
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Produkt suchen..." oninput="filterProducts()">
+      </div>
+      <button class="btn-add-product" onclick="openNeuesProduktModal()" title="Neues Produkt anlegen">+</button>
     </div>
     <div id="productList"></div>
   </div>
@@ -812,36 +900,19 @@ Propolis Tinktur 20ml;1</pre>
     </div>
   </div>
 
-  <!-- TAB: KAMERA -->
-  <div class="tab-panel" id="panel-kamera">
-    <h2 style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:1rem">Fotos aufnehmen</h2>
-
-    <!-- Produktfoto -->
-    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
-      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">📷 Produktfoto</h3>
-      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Foto aufnehmen und einem Produkt zuordnen</p>
-      <select id="fotoProduktSelect" style="width:100%;padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.4rem;font-size:.8rem;font-family:inherit;margin-bottom:.5rem">
-        <option value="">– Produkt wählen –</option>
-      </select>
-      <button class="btn btn-honey" onclick="openCamera('produkt')" style="width:100%">📷 Produktfoto aufnehmen</button>
-      <input type="file" id="cameraProdukt" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'produkt')">
+  <!-- TAB: TAGESÜBERSICHT -->
+  <div class="tab-panel" id="panel-tagesuebersicht">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-family:'Fraunces',serif;font-size:1.1rem">Tagesübersicht</h2>
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="exportTagesCSV()">📤 Tages-CSV</button>
     </div>
-
-    <!-- Beleg -->
-    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem;margin-bottom:1rem">
-      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.5rem">🧾 Beleg fotografieren</h3>
-      <p style="font-size:.8rem;color:var(--text-soft);margin-bottom:.75rem">Kassenbon oder Beleg als Foto speichern</p>
-      <button class="btn btn-honey" onclick="openCamera('beleg')" style="width:100%">📷 Beleg aufnehmen</button>
-      <input type="file" id="cameraBeleg" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event,'beleg')">
+    <div id="tagesSummary" style="background:linear-gradient(135deg,var(--bark),var(--bark-warm));color:var(--white);border-radius:.75rem;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:.75rem;opacity:.7">Heute</div>
+      <div style="font-size:1.5rem;font-weight:800;color:var(--honey)" id="tagesTotal">0,00 €</div>
+      <div style="font-size:.75rem;opacity:.7;margin-top:.2rem"><span id="tagesNetto">Netto: 0,00 €</span> · <span id="tagesMwst">MwSt: 0,00 €</span></div>
+      <div style="font-size:.75rem;opacity:.7;margin-top:.1rem"><span id="tagesAnzahl">0 Verkäufe</span> · <span id="tagesArtikel">0 Artikel</span></div>
     </div>
-
-    <!-- Gespeicherte Fotos -->
-    <div style="background:var(--white);border:1.5px solid #E8DFD4;border-radius:.75rem;padding:1rem">
-      <h3 style="font-size:.9rem;font-weight:700;margin-bottom:.75rem">🖼️ Gespeicherte Fotos</h3>
-      <div id="fotoGallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.5rem">
-        <p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Lade...</p>
-      </div>
-    </div>
+    <div id="tagesVerkaufListe"></div>
   </div>
 
 </div>
@@ -873,125 +944,6 @@ Propolis Tinktur 20ml;1</pre>
   <div class="detail-footer" id="detailFooter"></div>
 </div>
 
-<!-- GPS PFLICHT MODAL (nach Login) — NICHT schließbar -->
-<div class="modal-overlay" id="gpsPflichtModal" style="z-index:10000">
-  <div class="modal" style="max-width:400px;text-align:center">
-    <div style="font-size:3rem;margin-bottom:.5rem">📍</div>
-    <h3 style="color:#DC2626">Standort erforderlich</h3>
-    <p style="font-size:.85rem;color:var(--text);line-height:1.6;margin-bottom:.75rem">Diese App funktioniert <b>nur mit aktiviertem Standort</b>. Ohne GPS-Freigabe kann die App nicht verwendet werden.</p>
-    <p style="font-size:.75rem;color:var(--text-soft);margin-bottom:1rem">Der Standort wird für die korrekte Funktionsweise der App benötigt.</p>
-
-    <!-- Automatisch Freigabe auslösen -->
-    <button class="btn btn-honey" onclick="grantGPSPflicht()" style="width:100%;padding:.75rem;font-size:1rem;font-weight:700" id="gpsPflichtBtn">📍 Standort freigeben</button>
-    <p style="font-size:.7rem;color:var(--text-soft);margin-top:.4rem" id="gpsPflichtHint">Bitte im Browser-Popup auf <b>"Erlauben"</b> klicken...</p>
-
-    <div id="gpsPflichtError" style="color:#DC2626;font-size:.8rem;margin-top:.5rem;min-height:1.2em"></div>
-
-    <!-- Schritt 2: Falls blockiert -->
-    <div id="gpsPflichtHilfe" style="display:none;text-align:left;margin-top:1rem;font-size:.8rem;line-height:1.7;color:var(--text);background:var(--cream-dark);padding:.75rem;border-radius:.5rem">
-      <p style="color:#DC2626;font-weight:700;margin-bottom:.5rem">Standort ist blockiert. Bitte aktiviere ihn:</p>
-
-      <!-- Windows Einstellungen Button -->
-      <div id="windowsGpsHelp" style="display:none;margin-bottom:.75rem">
-        <p style="margin-bottom:.4rem"><b>Windows:</b> Standort in den Einstellungen aktivieren:</p>
-        <a href="ms-settings:privacy-location" class="btn btn-honey" style="width:100%;justify-content:center;padding:.5rem;font-size:.85rem;text-decoration:none;display:flex">⚙️ Windows Standort-Einstellungen öffnen</a>
-        <p style="font-size:.7rem;color:var(--text-soft);margin-top:.3rem">Aktiviere dort "Standort" und "Apps auf deinen Standort zugreifen lassen"</p>
-      </div>
-
-      <!-- Chrome Anleitung -->
-      <div id="chromeGpsHelp" style="margin-bottom:.5rem">
-        <p style="margin-bottom:.3rem"><b>Browser-Berechtigung zurücksetzen:</b></p>
-        <p style="margin-bottom:.2rem">1. Klicke auf das <b>🔒 Schloss</b> links neben der URL</p>
-        <p style="margin-bottom:.2rem">2. Setze <b>Standort</b> auf <b>"Erlauben"</b></p>
-        <p style="margin-bottom:.2rem">3. Klicke unten auf <b>"Nochmal versuchen"</b></p>
-      </div>
-
-      <!-- Android Einstellungen -->
-      <div id="androidGpsHelp" style="display:none;margin-bottom:.5rem">
-        <p><b>Handy:</b> Einstellungen → Standort → <b>Einschalten</b></p>
-      </div>
-
-      <!-- Safari Hilfe -->
-      <div id="safariGpsHelp" style="display:none;margin-bottom:.75rem;background:var(--white);padding:.75rem;border-radius:.5rem;border:2px solid var(--honey)">
-        <p style="font-weight:700;color:var(--honey-deep);margin-bottom:.4rem">Safari: Standort freigeben</p>
-        <p style="margin-bottom:.3rem"><b>1.</b> Öffne <b>Einstellungen</b> auf dem iPhone</p>
-        <p style="margin-bottom:.3rem"><b>2.</b> Gehe zu <b>Datenschutz → Ortungsdienste</b></p>
-        <p style="margin-bottom:.3rem"><b>3.</b> Stelle sicher dass <b>Ortungsdienste</b> aktiviert ist</p>
-        <p style="margin-bottom:.3rem"><b>4.</b> Scrolle zu <b>Safari</b> → wähle <b>"Beim Verwenden der App"</b></p>
-        <p style="margin-bottom:.3rem"><b>5.</b> Komm zurück und klicke <b>"Nochmal versuchen"</b></p>
-      </div>
-
-      <!-- Inkognito: In normalem Chrome öffnen -->
-      <div id="inkognitoHelp" style="display:none;margin-bottom:.75rem;background:var(--white);padding:.75rem;border-radius:.5rem;border:2px solid var(--honey)">
-        <p style="font-weight:700;color:var(--honey-deep);margin-bottom:.4rem">Inkognito-Modus erkannt!</p>
-        <p style="margin-bottom:.5rem">Im Inkognito-Modus funktioniert GPS nicht. Öffne die Seite im normalen Browser:</p>
-        <a href="intent://www.bienenplan.de/wochenmarkt/#Intent;scheme=https;package=com.android.chrome;end" id="openChromeBtn" class="btn btn-honey" style="width:100%;justify-content:center;padding:.6rem;font-size:.9rem;text-decoration:none;display:flex;font-weight:700">🌐 In Chrome öffnen</a>
-        <p id="desktopInkognitoHint" style="display:none;font-size:.75rem;color:var(--text-soft);margin-top:.4rem">Am Desktop: Schließe das Inkognito-Fenster und öffne die Seite in einem normalen Browser-Fenster (Strg+N)</p>
-      </div>
-
-      <button class="btn btn-honey" onclick="grantGPSPflicht()" style="width:100%;margin-top:.5rem">🔄 Nochmal versuchen</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- GPS BLOCKIERT ANLEITUNG -->
-<div class="modal-overlay" id="gpsBlockedModal">
-  <div class="modal" style="max-width:420px">
-    <h3>📍 GPS ist im Browser blockiert</h3>
-    <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
-      <p style="color:var(--red);font-weight:700;margin-bottom:.5rem">Dein Browser blockiert den Standortzugriff. So aktivierst du ihn:</p>
-
-      <p style="font-weight:700;margin-top:.5rem;color:var(--forest)">Chrome (Handy):</p>
-      <p>1. Tippe auf das <b>🔒 Schloss</b> links neben der URL</p>
-      <p>2. Tippe auf <b>"Berechtigungen"</b></p>
-      <p>3. Setze <b>"Standort"</b> auf <b>Erlauben</b></p>
-      <p>4. <b>Seite neu laden</b></p>
-
-      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
-
-      <p style="font-weight:700;color:var(--forest)">Chrome (Desktop):</p>
-      <p>1. Klicke auf das <b>🔒 Schloss</b> in der Adressleiste</p>
-      <p>2. Bei <b>"Standort"</b> → <b>"Erlauben"</b> wählen</p>
-      <p>3. <b>Seite neu laden</b> (F5)</p>
-
-      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
-
-      <p style="font-weight:700;color:var(--forest)">Safari (iPhone):</p>
-      <p>1. Öffne <b>Einstellungen → Safari → Standort</b></p>
-      <p>2. Wähle <b>"Erlauben"</b></p>
-      <p>3. Seite neu laden</p>
-
-      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
-      <p style="font-size:.75rem;color:var(--text-soft)">Wichtig: Auch das Handy/PC muss GPS/Standort in den Geräte-Einstellungen aktiviert haben!</p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-honey" onclick="document.getElementById('gpsBlockedModal').classList.remove('active')">Verstanden</button>
-    </div>
-  </div>
-</div>
-
-<!-- INSTALL HILFE MODAL -->
-<div class="modal-overlay" id="installHilfe" style="display:none">
-  <div class="modal" style="max-width:400px">
-    <h3>📲 App installieren</h3>
-    <div style="font-size:.85rem;line-height:1.8;color:var(--text)">
-      <p style="font-weight:700;margin-bottom:.5rem;color:var(--forest)">Empfohlen: Google Chrome</p>
-      <p>1. Öffne diese Seite in <b>Chrome</b></p>
-      <p>2. Tippe auf <b>⋮</b> (oben rechts)</p>
-      <p>3. Wähle <b>"App installieren"</b></p>
-      <p style="font-size:.75rem;color:var(--text-soft);margin-top:.3rem">Funktioniert dann auch offline!</p>
-      <hr style="border:none;border-top:1px solid #E8DFD4;margin:.6rem 0">
-      <p style="font-weight:700;margin-bottom:.5rem">Safari (iPhone):</p>
-      <p>1. Tippe auf <b>□↑</b> (Teilen, unten Mitte)</p>
-      <p>2. Wähle <b>"Zum Home-Bildschirm"</b></p>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-honey" onclick="closeInstallHilfe()">Verstanden</button>
-    </div>
-  </div>
-</div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1018,6 +970,61 @@ Propolis Tinktur 20ml;1</pre>
     <div id="maList"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeMitarbeiterModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEUES PRODUKT MODAL -->
+<div class="modal-overlay" id="neuesProduktModal">
+  <div class="modal">
+    <h3>Neues Produkt anlegen</h3>
+    <div style="display:flex;flex-direction:column;gap:.6rem">
+      <input type="text" id="npName" placeholder="Produktname *" style="padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text)">
+      <div style="display:flex;gap:.5rem">
+        <input type="number" id="npPreis" placeholder="Preis (€) *" step="0.01" min="0" style="flex:1;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text)">
+        <select id="npKategorie" style="flex:1;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text)">
+          <option value="Honig">🍯 Honig</option>
+          <option value="Eier">🥚 Eier</option>
+          <option value="Kerzen">🕯️ Kerzen</option>
+          <option value="Propolis & Pflege">🧴 Propolis & Pflege</option>
+          <option value="Cremes & Kosmetik">✨ Cremes & Kosmetik</option>
+          <option value="Seifen & Bad">🧼 Seifen & Bad</option>
+          <option value="Süßes & Getränke">🍬 Süßes & Getränke</option>
+          <option value="Sonstiges" selected>📦 Sonstiges</option>
+        </select>
+      </div>
+      <select id="npSteuer" style="padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text)">
+        <option value="0.19">19% MwSt</option>
+        <option value="0.07">7% MwSt</option>
+        <option value="0.078">7,8% (§24 UStG Pauschal)</option>
+      </select>
+      <input type="number" id="npBestand" placeholder="Anfangsbestand (optional)" min="0" style="padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.85rem;font-family:inherit;color:var(--text)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeNeuesProduktModal()">Abbrechen</button>
+      <button class="btn btn-honey" onclick="saveNeuesProdukt()">Anlegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAGESABSCHLUSS MODAL -->
+<div class="modal-overlay" id="tagesabschlussModal">
+  <div class="modal">
+    <h3>Tagesabschluss / Kassensturz</h3>
+    <div style="background:var(--cream-dark);border-radius:.5rem;padding:.75rem;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span>Soll (Bar lt. System):</span><strong id="taSollBar">0,00 €</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:.3rem"><span>Soll (Karte lt. System):</span><strong id="taSollKarte">0,00 €</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:.9rem;font-weight:700;border-top:1px solid #E8DFD4;padding-top:.3rem"><span>Gesamt:</span><strong id="taSollGesamt">0,00 €</strong></div>
+    </div>
+    <div style="margin-bottom:.75rem">
+      <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.3rem">Bargeld gezählt (Ist):</label>
+      <input type="number" id="taIstBar" step="0.01" min="0" placeholder="0,00" style="width:100%;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:1rem;font-family:inherit;color:var(--text);text-align:right" oninput="berechneTaDifferenz()">
+    </div>
+    <div id="taDifferenz" style="font-size:.9rem;font-weight:700;text-align:center;padding:.5rem;border-radius:.5rem;margin-bottom:.75rem"></div>
+    <textarea id="taNotiz" placeholder="Notizen zum Tagesabschluss..." style="width:100%;min-height:50px;padding:.5rem .75rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.8rem;font-family:inherit;color:var(--text);resize:vertical"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeTagesabschluss()">Abbrechen</button>
+      <button class="btn btn-honey" onclick="saveTagesabschluss()">Tag abschließen</button>
     </div>
   </div>
 </div>
@@ -1196,6 +1203,7 @@ function renderProducts(filter) {
     groups[p.category].push({ ...p, index: i });
   });
 
+  const inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
   let html = '';
   for (const cat of CAT_ORDER) {
     if (!groups[cat]) continue;
@@ -1207,15 +1215,29 @@ function renderProducts(filter) {
     for (const p of groups[cat]) {
       const qty = quantities[p.index];
       const soldClass = qty > 0 ? ' sold' : '';
+      const inv = inventory[p.name];
+      let stockClass = '';
+      let stockHtml = '';
+      if (inv) {
+        const rest = (inv.bestand || 0) - qty;
+        if (rest <= 0 && inv.bestand !== undefined) {
+          stockClass = ' out-of-stock';
+          stockHtml = '<div class="card-stock stock-empty">Ausverkauft</div>';
+        } else if (inv.mindest > 0 && rest <= inv.mindest) {
+          stockHtml = '<div class="card-stock stock-low">Noch ' + rest + '</div>';
+        } else if (inv.bestand !== undefined) {
+          stockHtml = '<div class="card-stock stock-ok">Noch ' + rest + '</div>';
+        }
+      }
       const imgHtml = p.img
         ? '<img class="card-img" src="' + IMG_DIR + p.img + '" alt="' + p.name + '" loading="lazy" onerror="this.outerHTML=\'<div class=card-img-placeholder>' + emoji + '</div>\'">'
         : '<div class="card-img-placeholder">' + emoji + '</div>';
 
-      html += '<div class="card' + soldClass + '" id="card-' + p.index + '" onclick="tapCard(' + p.index + ', event)">'
+      html += '<div class="card' + soldClass + (qty > 0 ? '' : stockClass) + '" id="card-' + p.index + '" onclick="tapCard(' + p.index + ', event)">'
         + '<button class="card-minus" onclick="minusCard(' + p.index + ', event)">−</button>'
         + '<div class="card-qty">' + qty + '</div>'
         + imgHtml
-        + '<div class="card-info"><div class="card-name">' + p.name + '</div><div class="card-price">' + formatPrice(p.price) + '</div></div>'
+        + '<div class="card-info"><div class="card-name">' + p.name + '</div><div class="card-price">' + formatPrice(p.price) + '</div>' + stockHtml + '</div>'
         + '</div>';
     }
     html += '</div></div>';
@@ -1491,17 +1513,6 @@ async function renderMitarbeiterList() {
 }
 
 // ─── SAVE / LOAD ────────────────────────────────────────────────────
-async function getGPS() {
-  return new Promise(function(resolve) {
-    if (!navigator.geolocation) { resolve(null); return; }
-    navigator.geolocation.getCurrentPosition(
-      function(pos) { resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-      function() { resolve(null); },
-      { timeout: 5000, enableHighAccuracy: true }
-    );
-  });
-}
-
 async function saveSession() {
   var t = calculateTotals();
   if (t.items === 0) { showToast('Keine Artikel zum Speichern'); return; }
@@ -1520,13 +1531,7 @@ async function saveSession() {
     }
   });
 
-  // GPS immer abfragen beim Speichern — ohne GPS kein Speichern
-  var gps = await getGPS();
-  if (!gps) {
-    showToast('Standort nicht verfügbar — bitte GPS freigeben');
-    document.getElementById('gpsPflichtModal').classList.add('active');
-    return;
-  }
+  var zahlungsart = document.getElementById('zahlungsartSelect').value;
 
   var entry = {
     id: Date.now(),
@@ -1537,8 +1542,7 @@ async function saveSession() {
     netto: t.netto,
     mwst: t.mwst,
     mitarbeiter: mitarbeiter,
-    latitude: gps ? gps.lat : null,
-    longitude: gps ? gps.lng : null,
+    zahlungsart: zahlungsart,
     synced: false
   };
 
@@ -1552,36 +1556,22 @@ async function saveSession() {
     };
   });
 
-  // Daten für Supabase
-  var insertData = {
-    datum: dateStr(),
-    mitarbeiter: mitarbeiter || null,
-    produkte: produkte,
-    gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
-    gesamt_netto: parseFloat(t.netto.toFixed(2)),
-    gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
-    device_id: getDeviceId()
-  };
-  if (gps) {
-    insertData.latitude = gps.lat;
-    insertData.longitude = gps.lng;
-  }
-
-  // Online: direkt in Supabase speichern / Offline: in Queue
+  // Primär in Supabase speichern
   try {
-    if (sb && navigator.onLine) {
-      var result = await db.insert('wochenmarkt_verkauf', insertData);
-      if (!result.error) {
-        entry.synced = true;
-      } else {
-        addToOfflineQueue(insertData);
-      }
-    } else {
-      addToOfflineQueue(insertData);
+    if (sb) {
+      var result = await db.insert('wochenmarkt_verkauf', {
+        datum: dateStr(),
+        mitarbeiter: mitarbeiter || null,
+        produkte: produkte,
+        gesamt_brutto: parseFloat(t.brutto.toFixed(2)),
+        gesamt_netto: parseFloat(t.netto.toFixed(2)),
+        gesamt_mwst: parseFloat(t.mwst.toFixed(2)),
+        zahlungsart: zahlungsart
+      });
+      if (!result.error) entry.synced = true;
     }
   } catch(e) {
-    console.warn('Supabase Speichern fehlgeschlagen, offline gespeichert:', e);
-    addToOfflineQueue(insertData);
+    console.warn('Supabase Speichern fehlgeschlagen:', e);
   }
 
   // localStorage als Backup
@@ -1589,17 +1579,21 @@ async function saveSession() {
   history.unshift(entry);
   localStorage.setItem('wm_history', JSON.stringify(history));
 
+  // Bestand reduzieren
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  soldItems.forEach(function(item) {
+    if (inventory[item.name]) {
+      inventory[item.name].bestand = Math.max(0, (inventory[item.name].bestand || 0) - item.qty);
+    }
+  });
+  localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+
   PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
   renderProducts(document.getElementById('searchInput').value);
   updateSummary();
   closeDetailPanel();
 
-  if (entry.synced) {
-    showToast('Markttag gespeichert: ' + formatPrice(t.brutto));
-  } else {
-    showToast('Offline gespeichert — wird bei Verbindung synchronisiert');
-  }
-  updateOnlineStatus();
+  showToast('Markttag gespeichert: ' + formatPrice(t.brutto));
 }
 
 function resetSession() {
@@ -1638,8 +1632,6 @@ async function renderHistory() {
             netto: parseFloat(d.gesamt_netto),
             mwst: parseFloat(d.gesamt_mwst),
             mitarbeiter: d.mitarbeiter || '',
-            latitude: d.latitude || null,
-            longitude: d.longitude || null,
             synced: true
           };
         });
@@ -2032,11 +2024,11 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
   var tabs = document.querySelectorAll('.tab');
-  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'kamera': 3 };
+  var panels = { 'verkauf': 0, 'historie': 1, 'upload': 2, 'tagesuebersicht': 3 };
   if (tabs[panels[name]]) tabs[panels[name]].classList.add('active');
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'historie') renderHistory();
-  if (name === 'kamera') { fillFotoProduktSelect(); loadFotoGallery(); }
+  if (name === 'tagesuebersicht') renderTagesuebersicht();
 }
 
 // ─── HELPERS ────────────────────────────────────────────────────────
@@ -2077,892 +2069,659 @@ uploadArea.addEventListener('drop', function(e) {
 });
 
 // ─── PASSWORT GATE ──────────────────────────────────────────────────
-// Eindeutige Geräte-ID (bleibt pro Gerät gleich)
-function getDeviceId() {
-  var id = localStorage.getItem('wm_device_id');
-  if (!id) {
-    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
-    localStorage.setItem('wm_device_id', id);
-  }
-  return id;
+var WM_PW_HASH = '0069b5f8416a40ed88ab4e12c6b6389d17d05245bbfd84cc12227ac6f818b3d4';
+var WM_PW_KEY = 'wm_unlocked';
+
+async function hashPw(pw) {
+  var data = new TextEncoder().encode(pw);
+  var buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
 }
 
-
-// ─── KAMERA & FOTOS ─────────────────────────────────────────────────
-var FOTO_BUCKET = 'wochenmarkt-fotos';
-
-function openCamera(typ) {
-  if (typ === 'produkt') {
-    document.getElementById('cameraProdukt').click();
+async function checkPw() {
+  var input = document.getElementById('pwInput');
+  var hash = await hashPw(input.value);
+  if (hash === WM_PW_HASH) {
+    localStorage.setItem(WM_PW_KEY, hash);
+    document.getElementById('pwGate').classList.add('hidden');
+    initApp();
   } else {
-    document.getElementById('cameraBeleg').click();
+    document.getElementById('pwError').textContent = 'Falsches Passwort';
+    input.value = '';
+    input.focus();
   }
 }
 
-async function handlePhoto(event, typ) {
-  var file = event.target.files[0];
-  if (!file) return;
+// ─── TAGESÜBERSICHT ─────────────────────────────────────────────────
+var tagesEntries = []; // cached for Tagesabschluss
 
-  // Datei komprimieren
-  var compressed = await compressImage(file, 1200, 0.8);
-
-  var timestamp = Date.now();
-  var fileName = typ + '/' + dateStr() + '_' + timestamp + '.jpg';
-
-  showToast('Foto wird hochgeladen...');
-
+async function loadTagesEntries() {
+  var today = dateStr();
+  var entries = [];
   try {
-    if (!sb) throw new Error('offline');
-    var result = await sb.storage.from(FOTO_BUCKET).upload(fileName, compressed, {
-      contentType: 'image/jpeg',
-      upsert: false
-    });
-    if (result.error) throw result.error;
-
-    // Bei Produktfoto: Produktname speichern
-    if (typ === 'produkt') {
-      var produktName = document.getElementById('fotoProduktSelect').value;
-      if (produktName) {
-        // Produktbild in DB aktualisieren
-        var publicUrl = sb.storage.from(FOTO_BUCKET).getPublicUrl(fileName).data.publicUrl;
-        await sb.from('wochenmarkt_produkte').update({ img: publicUrl }).eq('name', produktName);
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*')
+        .eq('datum', today)
+        .order('created_at', { ascending: false });
+      if (!result.error && result.data && result.data.length > 0) {
+        entries = result.data;
       }
     }
-
-    showToast('Foto gespeichert!');
-    if (document.getElementById('panel-kamera').classList.contains('active')) {
-      loadFotoGallery();
-    }
   } catch(e) {
-    console.error('Foto Upload fehlgeschlagen:', e);
-    showToast('Upload fehlgeschlagen');
+    console.warn('Tagesübersicht laden fehlgeschlagen:', e);
+  }
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    var todayShort = new Date().toLocaleDateString('de-DE');
+    entries = history.filter(function(e) { return e.dateShort === todayShort; })
+      .map(function(e) {
+        return {
+          id: e.id, created_at: new Date(e.id).toISOString(), mitarbeiter: e.mitarbeiter,
+          zahlungsart: e.zahlungsart || 'bar',
+          produkte: e.items.map(function(item) {
+            return { name: item.name, anzahl: item.qty, preis: item.price, tax: item.tax, netto_summe: item.netto };
+          }),
+          gesamt_brutto: e.total, gesamt_netto: e.netto, gesamt_mwst: e.mwst
+        };
+      });
+  }
+  tagesEntries = entries;
+  return entries;
+}
+
+async function renderTagesuebersicht() {
+  var entries = await loadTagesEntries();
+  var container = document.getElementById('tagesVerkaufListe');
+
+  var dayBrutto = 0, dayNetto = 0, dayMwst = 0, dayArtikel = 0, barSum = 0, karteSum = 0;
+  for (var i = 0; i < entries.length; i++) {
+    var b = parseFloat(entries[i].gesamt_brutto) || 0;
+    dayBrutto += b;
+    dayNetto += parseFloat(entries[i].gesamt_netto) || 0;
+    dayMwst += parseFloat(entries[i].gesamt_mwst) || 0;
+    var za = entries[i].zahlungsart || 'bar';
+    if (za === 'karte') karteSum += b;
+    else if (za === 'gemischt') { barSum += b / 2; karteSum += b / 2; }
+    else barSum += b;
+    var produkte = entries[i].produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      dayArtikel += Math.abs(produkte[j].anzahl || 0);
+    }
   }
 
-  event.target.value = '';
-}
+  document.getElementById('tagesTotal').textContent = formatPrice(dayBrutto);
+  document.getElementById('tagesNetto').textContent = 'Netto: ' + formatPrice(dayNetto);
+  document.getElementById('tagesMwst').textContent = 'MwSt: ' + formatPrice(dayMwst);
+  document.getElementById('tagesAnzahl').textContent = entries.length + ' Verkäufe';
+  document.getElementById('tagesArtikel').textContent = dayArtikel + ' Artikel';
 
-function compressImage(file, maxSize, quality) {
-  return new Promise(function(resolve) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var img = new Image();
-      img.onload = function() {
-        var canvas = document.createElement('canvas');
-        var w = img.width, h = img.height;
-        if (w > maxSize || h > maxSize) {
-          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-          else { w = Math.round(w * maxSize / h); h = maxSize; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', quality);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function fillFotoProduktSelect() {
-  var select = document.getElementById('fotoProduktSelect');
-  select.innerHTML = '<option value="">– Produkt wählen –</option>';
-  for (var i = 0; i < PRODUCTS.length; i++) {
-    var opt = document.createElement('option');
-    opt.value = PRODUCTS[i].name;
-    opt.textContent = PRODUCTS[i].name;
-    select.appendChild(opt);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="no-history"><div style="font-size:2rem;margin-bottom:.5rem">📊</div><p>Heute noch keine Verkäufe</p></div>';
+    return;
   }
+
+  // Zahlungsart-Aufschlüsselung + Buttons
+  var html = '<div class="stat-grid">'
+    + '<div class="stat-card"><div class="stat-label">💵 Bar</div><div class="stat-value honey">' + formatPrice(barSum) + '</div></div>'
+    + '<div class="stat-card"><div class="stat-label">💳 Karte</div><div class="stat-value honey">' + formatPrice(karteSum) + '</div></div>'
+    + '</div>';
+  html += '<div style="display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap">'
+    + '<button class="btn btn-honey" onclick="openTagesabschluss()" style="flex:1">🔒 Tagesabschluss</button>'
+    + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4;flex:1" onclick="generateBonPDF()">🧾 Bon PDF</button>'
+    + '</div>';
+
+  for (var h = 0; h < entries.length; h++) {
+    var entry = entries[h];
+    var zeit = new Date(entry.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    var produkte = entry.produkte || [];
+    var isKorrektur = parseFloat(entry.gesamt_brutto) < 0;
+    var cardStyle = isKorrektur ? 'border-color:var(--red);background:#FFF5F5' : '';
+    var zaIcon = (entry.zahlungsart === 'karte') ? '💳' : (entry.zahlungsart === 'gemischt') ? '💵💳' : '💵';
+
+    var itemsHtml = '';
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      var lineTotal = (parseFloat(p.preis) || 0) * (p.anzahl || 0);
+      var korrekturBtn = '';
+      if (!isKorrektur && p.anzahl > 0) {
+        var safeName = p.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        korrekturBtn = ' <button style="padding:.1rem .4rem;font-size:.6rem;background:var(--red-light);color:var(--red);border:1px solid var(--red);border-radius:.3rem;cursor:pointer" onclick="korrekturArtikel(' + entry.id + ',\'' + safeName + '\',' + p.preis + ',' + p.tax + ',' + p.anzahl + ')">↩ Korrektur</button>';
+      }
+      itemsHtml += '<div class="history-item" style="align-items:center"><span>' + p.anzahl + '× ' + p.name + '</span><span style="display:flex;align-items:center;gap:.3rem">' + formatPrice(lineTotal) + korrekturBtn + '</span></div>';
+    }
+
+    var maHtml = entry.mitarbeiter ? '<span class="history-ma">👤 ' + entry.mitarbeiter + '</span>' : '';
+
+    html += '<div class="history-card" style="' + cardStyle + '">'
+      + '<div class="history-header"><div><span class="history-date">' + (isKorrektur ? '↩️ Korrektur' : '🕐 ' + zeit + ' ' + zaIcon) + '</span>' + maHtml + '</div>'
+      + '<span class="history-total" style="' + (isKorrektur ? 'color:var(--red)' : '') + '">' + formatPrice(parseFloat(entry.gesamt_brutto)) + '</span></div>'
+      + '<div class="history-items">' + itemsHtml + '</div>'
+      + '</div>';
+  }
+  container.innerHTML = html;
 }
 
-async function loadFotoGallery() {
-  var container = document.getElementById('fotoGallery');
+async function korrekturArtikel(verkaufId, produktName, preis, tax, maxAnzahl) {
+  var anzahlStr = prompt('Wie viele "' + produktName + '" korrigieren?\n(max ' + maxAnzahl + ')', '1');
+  if (!anzahlStr) return;
+  var anzahl = parseInt(anzahlStr);
+  if (isNaN(anzahl) || anzahl < 1 || anzahl > maxAnzahl) {
+    showToast('Ungültige Anzahl (1-' + maxAnzahl + ')');
+    return;
+  }
+
+  var bruttoLine = preis * anzahl;
+  var nettoLine = bruttoLine / (1 + tax);
+  var mwstLine = bruttoLine - nettoLine;
+
+  var korrektur = {
+    datum: dateStr(),
+    mitarbeiter: document.getElementById('mitarbeiterSelect').value || null,
+    produkte: [{
+      name: produktName,
+      anzahl: -anzahl,
+      preis: preis,
+      tax: tax,
+      netto_summe: parseFloat((-nettoLine).toFixed(2))
+    }],
+    gesamt_brutto: parseFloat((-bruttoLine).toFixed(2)),
+    gesamt_netto: parseFloat((-nettoLine).toFixed(2)),
+    gesamt_mwst: parseFloat((-mwstLine).toFixed(2))
+  };
+
   try {
-    if (!sb) throw new Error('offline');
-
-    var produktFotos = await sb.storage.from(FOTO_BUCKET).list('produkt', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
-    var belegFotos = await sb.storage.from(FOTO_BUCKET).list('beleg', { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
-
-    var alleFotos = [];
-    if (produktFotos.data) {
-      produktFotos.data.forEach(function(f) {
-        if (f.name === '.emptyFolderPlaceholder') return;
-        alleFotos.push({ name: f.name, path: 'produkt/' + f.name, typ: 'Produkt' });
-      });
+    if (sb) {
+      var result = await db.insert('wochenmarkt_verkauf', korrektur);
+      if (result.error) throw result.error;
     }
-    if (belegFotos.data) {
-      belegFotos.data.forEach(function(f) {
-        if (f.name === '.emptyFolderPlaceholder') return;
-        alleFotos.push({ name: f.name, path: 'beleg/' + f.name, typ: 'Beleg' });
-      });
-    }
-
-    if (alleFotos.length === 0) {
-      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Noch keine Fotos gespeichert</p>';
-      return;
-    }
-
-    var html = '';
-    for (var i = 0; i < alleFotos.length; i++) {
-      var foto = alleFotos[i];
-      var url = sb.storage.from(FOTO_BUCKET).getPublicUrl(foto.path).data.publicUrl;
-      html += '<div style="position:relative;border-radius:.5rem;overflow:hidden;border:1.5px solid #E8DFD4">'
-        + '<img src="' + url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block" loading="lazy">'
-        + '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(28,20,16,.7);color:#fff;font-size:.6rem;padding:.2rem .3rem;text-align:center">' + foto.typ + '</div>'
-        + '<button onclick="deleteFoto(\'' + foto.path + '\')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:10px;background:var(--red);color:#fff;border:none;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>'
-        + '</div>';
-    }
-    container.innerHTML = html;
   } catch(e) {
-    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem;grid-column:1/-1">Fotos konnten nicht geladen werden</p>';
+    console.warn('Korrektur DB fehlgeschlagen:', e);
+  }
+
+  // Bestand wieder erhöhen
+  var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  if (inventory[produktName]) {
+    inventory[produktName].bestand = (inventory[produktName].bestand || 0) + anzahl;
+    localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+  }
+
+  // localStorage Backup
+  var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  history.unshift({
+    id: Date.now(),
+    dateShort: new Date().toLocaleDateString('de-DE'),
+    date: new Date().toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+    items: [{ name: produktName, price: preis, qty: -anzahl, tax: tax, netto: -nettoLine }],
+    total: -bruttoLine,
+    netto: -nettoLine,
+    mwst: -mwstLine,
+    mitarbeiter: korrektur.mitarbeiter,
+    synced: !!sb
+  });
+  localStorage.setItem('wm_history', JSON.stringify(history));
+
+  showToast('Korrektur: -' + anzahl + '× ' + produktName);
+  renderTagesuebersicht();
+}
+
+async function exportTagesCSV() {
+  var today = dateStr();
+  var entries = [];
+  try {
+    if (sb) {
+      var result = await sb.from('wochenmarkt_verkauf').select('*').eq('datum', today).order('created_at');
+      if (!result.error && result.data) entries = result.data;
+    }
+  } catch(e) {}
+
+  if (entries.length === 0) {
+    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+    var todayShort = new Date().toLocaleDateString('de-DE');
+    var localEntries = history.filter(function(e) { return e.dateShort === todayShort; });
+    if (localEntries.length === 0) { showToast('Keine Verkäufe heute'); return; }
+    entries = localEntries.map(function(e) {
+      return {
+        created_at: new Date(e.id).toISOString(),
+        mitarbeiter: e.mitarbeiter,
+        produkte: e.items.map(function(item) {
+          return { name: item.name, anzahl: item.qty, preis: item.price, tax: item.tax };
+        })
+      };
+    });
+  }
+
+  var lines = ['Uhrzeit;Mitarbeiter;Produkt;Anzahl;Einzelpreis;Steuersatz;Netto;MwSt;Brutto'];
+  var grand = 0, grandNetto = 0, grandMwst = 0;
+
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var zeit = new Date(entry.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    var produkte = entry.produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      var preis = parseFloat(p.preis);
+      var lineBrutto = preis * p.anzahl;
+      var tax = parseFloat(p.tax) || 0.19;
+      var lineNetto = lineBrutto / (1 + tax);
+      var lineMwst = lineBrutto - lineNetto;
+      grand += lineBrutto;
+      grandNetto += lineNetto;
+      grandMwst += lineMwst;
+      var taxPct = (tax * 100).toFixed(1).replace('.', ',') + '%';
+      lines.push(zeit + ';' + (entry.mitarbeiter || '') + ';' + p.name + ';' + p.anzahl + ';' + fmtRaw(preis) + ';' + taxPct + ';' + fmtRaw(lineNetto) + ';' + fmtRaw(lineMwst) + ';' + fmtRaw(lineBrutto));
+    }
+  }
+  lines.push('');
+  lines.push('GESAMT;;;;;;' + fmtRaw(grandNetto) + ';' + fmtRaw(grandMwst) + ';' + fmtRaw(grand));
+  downloadCSV(lines.join('\n'), 'tagesuebersicht_' + dateStr() + '.csv');
+  showToast('Tages-CSV exportiert');
+}
+
+// ─── NEUES PRODUKT ──────────────────────────────────────────────────
+function openNeuesProduktModal() {
+  document.getElementById('npName').value = '';
+  document.getElementById('npPreis').value = '';
+  document.getElementById('npBestand').value = '';
+  document.getElementById('neuesProduktModal').classList.add('active');
+  document.getElementById('npName').focus();
+}
+function closeNeuesProduktModal() {
+  document.getElementById('neuesProduktModal').classList.remove('active');
+}
+
+async function saveNeuesProdukt() {
+  var name = document.getElementById('npName').value.trim();
+  var preis = parseFloat(document.getElementById('npPreis').value);
+  var kat = document.getElementById('npKategorie').value;
+  var tax = parseFloat(document.getElementById('npSteuer').value);
+  var bestand = parseInt(document.getElementById('npBestand').value);
+
+  if (!name || isNaN(preis) || preis <= 0) {
+    showToast('Name und Preis sind Pflicht');
+    return;
+  }
+  if (PRODUCTS.some(function(p) { return p.name.toLowerCase() === name.toLowerCase(); })) {
+    showToast('Produkt existiert bereits');
+    return;
+  }
+
+  var newProduct = { name: name, price: preis, category: kat, img: '', tax: tax };
+  PRODUCTS.push(newProduct);
+  var idx = PRODUCTS.length - 1;
+  quantities[idx] = 0;
+
+  // Bestand setzen
+  if (!isNaN(bestand) && bestand > 0) {
+    var inventory = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+    inventory[name] = { bestand: bestand, mindest: 0 };
+    localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+  }
+
+  // In Supabase speichern
+  try {
+    if (sb) {
+      await db.insert('wochenmarkt_produkte', {
+        name: name, price: preis, category: kat, tax: tax, img: '', active: true,
+        sort_order: PRODUCTS.length
+      });
+    }
+  } catch(e) { console.warn('Neues Produkt DB speichern fehlgeschlagen:', e); }
+
+  // Lokal speichern (Fallback)
+  var custom = JSON.parse(localStorage.getItem('wm_custom_products') || '[]');
+  custom.push(newProduct);
+  localStorage.setItem('wm_custom_products', JSON.stringify(custom));
+
+  closeNeuesProduktModal();
+  renderProducts(document.getElementById('searchInput').value);
+  showToast('Produkt "' + name + '" angelegt');
+}
+
+// ─── TAGESABSCHLUSS ─────────────────────────────────────────────────
+function openTagesabschluss() {
+  var barSum = 0, karteSum = 0;
+  for (var i = 0; i < tagesEntries.length; i++) {
+    var b = parseFloat(tagesEntries[i].gesamt_brutto) || 0;
+    var za = tagesEntries[i].zahlungsart || 'bar';
+    if (za === 'karte') karteSum += b;
+    else if (za === 'gemischt') { barSum += b / 2; karteSum += b / 2; }
+    else barSum += b;
+  }
+  document.getElementById('taSollBar').textContent = formatPrice(barSum);
+  document.getElementById('taSollKarte').textContent = formatPrice(karteSum);
+  document.getElementById('taSollGesamt').textContent = formatPrice(barSum + karteSum);
+  document.getElementById('taIstBar').value = '';
+  document.getElementById('taNotiz').value = '';
+  document.getElementById('taDifferenz').textContent = '';
+  document.getElementById('tagesabschlussModal').classList.add('active');
+}
+function closeTagesabschluss() {
+  document.getElementById('tagesabschlussModal').classList.remove('active');
+}
+
+function berechneTaDifferenz() {
+  var ist = parseFloat(document.getElementById('taIstBar').value) || 0;
+  var sollText = document.getElementById('taSollBar').textContent;
+  var soll = parseFloat(sollText.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  var diff = ist - soll;
+  var el = document.getElementById('taDifferenz');
+  if (diff > 0.01) {
+    el.textContent = 'Überschuss: +' + formatPrice(diff);
+    el.style.background = 'var(--forest-light)';
+    el.style.color = 'var(--forest)';
+  } else if (diff < -0.01) {
+    el.textContent = 'Fehlbetrag: ' + formatPrice(diff);
+    el.style.background = 'var(--red-light)';
+    el.style.color = 'var(--red)';
+  } else {
+    el.textContent = 'Kasse stimmt! ✅';
+    el.style.background = 'var(--forest-light)';
+    el.style.color = 'var(--forest)';
   }
 }
 
-async function deleteFoto(path) {
-  showConfirm('Foto löschen?', 'Das Foto wird unwiderruflich gelöscht.', async function() {
-    try {
-      await sb.storage.from(FOTO_BUCKET).remove([path]);
-      showToast('Foto gelöscht');
-      loadFotoGallery();
-    } catch(e) {
-      showToast('Löschen fehlgeschlagen');
+async function saveTagesabschluss() {
+  var ist = parseFloat(document.getElementById('taIstBar').value) || 0;
+  var sollText = document.getElementById('taSollBar').textContent;
+  var soll = parseFloat(sollText.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+  var notiz = document.getElementById('taNotiz').value.trim();
+  var gesamtText = document.getElementById('taSollGesamt').textContent;
+  var gesamt = parseFloat(gesamtText.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+
+  var abschluss = {
+    datum: dateStr(),
+    soll_bar: soll,
+    ist_bar: ist,
+    differenz: ist - soll,
+    gesamt: gesamt,
+    notiz: notiz,
+    zeit: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+    mitarbeiter: document.getElementById('mitarbeiterSelect').value || ''
+  };
+
+  // In Supabase speichern
+  try {
+    if (sb) {
+      await db.insert('wochenmarkt_tagesabschluss', abschluss);
     }
-  });
+  } catch(e) { console.warn('Tagesabschluss DB fehlgeschlagen:', e); }
+
+  // localStorage
+  var abschluesse = JSON.parse(localStorage.getItem('wm_tagesabschluesse') || '[]');
+  abschluesse.unshift(abschluss);
+  localStorage.setItem('wm_tagesabschluesse', JSON.stringify(abschluesse));
+
+  closeTagesabschluss();
+  showToast('Tagesabschluss gespeichert');
 }
 
+// ─── BON / QUITTUNG PDF ────────────────────────────────────────────
+function generateBonPDF() {
+  if (!window.jspdf) { showToast('PDF-Bibliothek nicht geladen'); return; }
+  if (tagesEntries.length === 0) { showToast('Keine Verkäufe für Bon'); return; }
+
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ unit: 'mm', format: [80, 200] }); // Bonbreite 80mm
+
+  var y = 8;
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(10);
+  doc.text('Imkerei Durchdenwald', 40, y, { align: 'center' }); y += 5;
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(7);
+  doc.text('Wochenmarkt', 40, y, { align: 'center' }); y += 4;
+  doc.text(new Date().toLocaleDateString('de-DE') + ' ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }), 40, y, { align: 'center' }); y += 3;
+  doc.text('--------------------------------', 40, y, { align: 'center' }); y += 4;
+
+  // Alle Produkte des Tages aggregiert
+  var produktSummen = {};
+  var total = 0;
+  for (var i = 0; i < tagesEntries.length; i++) {
+    var produkte = tagesEntries[i].produkte || [];
+    for (var j = 0; j < produkte.length; j++) {
+      var p = produkte[j];
+      var key = p.name;
+      if (!produktSummen[key]) produktSummen[key] = { anzahl: 0, preis: parseFloat(p.preis), summe: 0 };
+      produktSummen[key].anzahl += p.anzahl;
+      produktSummen[key].summe += parseFloat(p.preis) * p.anzahl;
+    }
+    total += parseFloat(tagesEntries[i].gesamt_brutto) || 0;
+  }
+
+  doc.setFontSize(7);
+  for (var name in produktSummen) {
+    var ps = produktSummen[name];
+    if (ps.anzahl === 0) continue;
+    var nameShort = name.length > 22 ? name.substr(0, 22) + '..' : name;
+    doc.text(ps.anzahl + 'x ' + nameShort, 3, y);
+    doc.text(fmtRaw(ps.summe), 77, y, { align: 'right' });
+    y += 3.5;
+    if (y > 185) { doc.addPage([80, 200]); y = 8; }
+  }
+
+  y += 1;
+  doc.text('--------------------------------', 40, y, { align: 'center' }); y += 4;
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(9);
+  doc.text('GESAMT:', 3, y);
+  doc.text(fmtRaw(total) + ' EUR', 77, y, { align: 'right' }); y += 6;
+  doc.setFont('courier', 'normal');
+  doc.setFontSize(6);
+  doc.text('Vielen Dank fuer Ihren Einkauf!', 40, y, { align: 'center' }); y += 3;
+  doc.text('www.bienenplan.de', 40, y, { align: 'center' });
+
+  doc.save('bon_' + dateStr() + '.pdf');
+  showToast('Bon PDF erstellt');
+}
 
 // ─── INIT ───────────────────────────────────────────────────────────
 document.getElementById('headerDate').textContent = new Date().toLocaleDateString('de-DE', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
 });
 
-// ─── LIVE GPS KARTE ──────────────────────────────────────────────
-var liveMapInstance = null;
-var liveMarker = null;
-var gpsWatchId = null;
-var salesMarkers = [];
-var gpsAllowed = localStorage.getItem('wm_gps_allowed') === 'true';
+// ─── LETZTEN VERKAUF WIEDERHOLEN ─────────────────────────────────────
+function repeatLastSale() {
+  var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
+  if (history.length === 0) { showToast('Keine vorherigen Verkäufe'); return; }
+  var last = history[0];
+  if (!last.items || last.items.length === 0) { showToast('Letzter Verkauf leer'); return; }
+  PRODUCTS.forEach(function(_, i) { quantities[i] = 0; });
+  last.items.forEach(function(item) {
+    for (var i = 0; i < PRODUCTS.length; i++) {
+      if (PRODUCTS[i].name === item.name) {
+        quantities[i] = Math.abs(item.qty);
+        break;
+      }
+    }
+  });
+  renderProducts(document.getElementById('searchInput').value);
+  updateSummary();
+  showToast('Letzter Verkauf geladen (' + last.items.length + ' Artikel)');
+}
 
-function initLiveMap() {
-  var mapEl = document.getElementById('liveMap');
-  if (!mapEl) return;
+// ─── SCHNELLMENGEN-EINGABE (Long Press) ─────────────────────────────
+var longPressTimer = null;
+function setupLongPress() {
+  document.getElementById('productList').addEventListener('pointerdown', function(e) {
+    var card = e.target.closest('.card');
+    if (!card || e.target.classList.contains('card-minus')) return;
+    var idx = parseInt(card.id.replace('card-', ''));
+    if (isNaN(idx)) return;
+    longPressTimer = setTimeout(function() {
+      longPressTimer = null;
+      showQtyPrompt(idx);
+    }, 600);
+  });
+  document.getElementById('productList').addEventListener('pointerup', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+  document.getElementById('productList').addEventListener('pointerleave', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  });
+}
+function showQtyPrompt(idx) {
+  var existing = document.getElementById('qtyPromptBox');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000';
+  overlay.id = 'qtyPromptOverlay';
+  overlay.onclick = function() { closeQtyPrompt(); };
+  var box = document.createElement('div');
+  box.className = 'qty-prompt';
+  box.id = 'qtyPromptBox';
+  box.onclick = function(e) { e.stopPropagation(); };
+  box.innerHTML = '<div style="font-size:.85rem;font-weight:700">' + PRODUCTS[idx].name + '</div>'
+    + '<input type="number" id="qtyPromptInput" min="0" value="' + (quantities[idx] || 0) + '" autofocus>'
+    + '<div class="qp-btns">'
+    + '<button class="btn btn-outline" style="color:var(--text);border-color:#E8DFD4" onclick="closeQtyPrompt()">Abbrechen</button>'
+    + '<button class="btn btn-honey" onclick="applyQtyPrompt(' + idx + ')">OK</button></div>';
+  document.body.appendChild(overlay);
+  document.body.appendChild(box);
+  setTimeout(function() { document.getElementById('qtyPromptInput').select(); }, 50);
+}
+function applyQtyPrompt(idx) {
+  var val = parseInt(document.getElementById('qtyPromptInput').value) || 0;
+  quantities[idx] = Math.max(0, val);
+  updateCard(idx);
+  updateSummary();
+  closeQtyPrompt();
+}
+function closeQtyPrompt() {
+  var o = document.getElementById('qtyPromptOverlay');
+  var b = document.getElementById('qtyPromptBox');
+  if (o) o.remove();
+  if (b) b.remove();
+}
 
-  // Karte nur einmal initialisieren
-  if (!liveMapInstance) {
-    liveMapInstance = L.map('liveMap').setView([48.8, 9.5], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19
-    }).addTo(liveMapInstance);
-  }
-
-  // Fix für Leaflet in hidden Tabs
-  setTimeout(function() { liveMapInstance.invalidateSize(); }, 200);
-
-  // GPS nur auf Geräten mit GPS starten (Handy), am Desktop nur Karte zeigen
-  if ('geolocation' in navigator && /Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-    gpsAllowed = true;
-    localStorage.setItem('wm_gps_allowed', 'true');
-    startGPSTracking();
+// ─── SYNC STATUS ────────────────────────────────────────────────────
+function updateSyncStatus() {
+  var el = document.getElementById('syncStatus');
+  if (!el) return;
+  if (navigator.onLine && sb) {
+    el.innerHTML = '🟢 Online';
   } else {
-    document.getElementById('gpsStatus').textContent = 'Desktop-Modus — zeigt Standorte vom Handy';
-  }
-  // Vergangene Verkaufsstandorte + Live-Positionen anderer Geräte laden
-  loadSalesLocations();
-  loadAllLivePositions();
-  setupLiveTracking();
-}
-
-function allowGPS() {
-  gpsAllowed = true;
-  localStorage.setItem('wm_gps_allowed', 'true');
-  document.getElementById('gpsModal').classList.remove('active');
-  document.getElementById('gpsStatus').textContent = 'Warte auf Browser-Freigabe...';
-  // Browser-Prompt auslösen — das ist das native Browser-Popup
-  startGPSTracking();
-}
-
-function denyGPS() {
-  gpsAllowed = false;
-  localStorage.removeItem('wm_gps_allowed');
-  document.getElementById('gpsModal').classList.remove('active');
-  document.getElementById('gpsStatus').textContent = 'GPS deaktiviert';
-}
-
-function showGPSBlockedHelp() {
-  document.getElementById('gpsBlockedModal').classList.add('active');
-  document.getElementById('gpsStatus').innerHTML = '<span style="color:#DC2626;font-weight:600">● Blockiert</span> GPS im Browser freigeben (siehe Anleitung)';
-}
-
-function checkGPSPflicht() {
-  // Schon erlaubt? Direkt starten
-  if (localStorage.getItem('wm_gps_granted') === 'true') {
-    gpsAllowed = true;
-    startBackgroundGPS();
-    return;
-  }
-  if (!navigator.geolocation) {
-    blockApp('Dein Browser unterstützt kein GPS. Bitte nutze Chrome.');
-    return;
-  }
-  // Safari braucht User-Interaktion für GPS → immer Modal zeigen
-  var isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome|CriOS/i.test(navigator.userAgent);
-  if (isSafari) {
-    document.getElementById('gpsPflichtModal').classList.add('active');
-    return;
-  }
-  // Chrome/andere: automatisch GPS abfragen
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      localStorage.setItem('wm_gps_granted', 'true');
-      localStorage.setItem('wm_gps_allowed', 'true');
-      gpsAllowed = true;
-      startBackgroundGPS();
-    },
-    function(err) {
-      document.getElementById('gpsPflichtModal').classList.add('active');
-    },
-    { enableHighAccuracy: true, timeout: 5000 }
-  );
-}
-
-function blockApp(msg) {
-  document.getElementById('gpsPflichtModal').classList.add('active');
-  document.getElementById('gpsPflichtBtn').style.display = 'none';
-  document.getElementById('gpsPflichtError').textContent = msg || 'GPS nicht verfügbar';
-  document.getElementById('gpsPflichtHilfe').style.display = 'block';
-}
-
-function grantGPSPflicht() {
-  var btn = document.getElementById('gpsPflichtBtn');
-  var error = document.getElementById('gpsPflichtError');
-  var hint = document.getElementById('gpsPflichtHint');
-  btn.textContent = 'Warte auf Freigabe...';
-  btn.disabled = true;
-  error.textContent = '';
-  if (hint) hint.textContent = 'Bitte im Browser-Popup auf "Erlauben" klicken...';
-
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      // Erfolg!
-      localStorage.setItem('wm_gps_granted', 'true');
-      localStorage.setItem('wm_gps_allowed', 'true');
-      gpsAllowed = true;
-      document.getElementById('gpsPflichtModal').classList.remove('active');
-      startBackgroundGPS();
-      showToast('Standort aktiviert');
-    },
-    function(err) {
-      btn.textContent = '📍 Standort freigeben';
-      btn.disabled = false;
-      if (hint) hint.textContent = '';
-
-      var hilfe = document.getElementById('gpsPflichtHilfe');
-      hilfe.style.display = 'block';
-      var isWindows = /Windows/i.test(navigator.userAgent);
-      var isAndroid = /Android/i.test(navigator.userAgent);
-      var isDesktop = !/Mobi|Android|iPhone/i.test(navigator.userAgent);
-
-      // Inkognito erkennen
-      var maybeIncognito = false;
-      try {
-        var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-        if (fs) { fs(0, 0, function(){}, function(){ maybeIncognito = true; }); }
-        if (navigator.storage && navigator.storage.estimate) {
-          navigator.storage.estimate().then(function(est) {
-            if (est.quota && est.quota < 120000000) maybeIncognito = true;
-            showGPSHelp();
-          });
-          return; // warte auf async check
-        }
-      } catch(e) {}
-
-      var isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome|CriOS/i.test(navigator.userAgent);
-
-      function showGPSHelp() {
-        if (isSafari) {
-          document.getElementById('safariGpsHelp').style.display = 'block';
-        }
-        if (maybeIncognito || err.code === 1) {
-          document.getElementById('inkognitoHelp').style.display = 'block';
-          if (isDesktop) {
-            document.getElementById('openChromeBtn').style.display = 'none';
-            document.getElementById('desktopInkognitoHint').style.display = 'block';
-          }
-        }
-        if (isWindows) document.getElementById('windowsGpsHelp').style.display = 'block';
-        if (isAndroid) document.getElementById('androidGpsHelp').style.display = 'block';
-      }
-
-      if (err.code === 1) {
-        error.textContent = 'Standort blockiert — folge der Anleitung:';
-        showGPSHelp();
-      } else if (err.code === 2) {
-        error.textContent = 'Standort nicht verfügbar — GPS am Gerät aktivieren';
-        if (isSafari) document.getElementById('safariGpsHelp').style.display = 'block';
-        if (isWindows) document.getElementById('windowsGpsHelp').style.display = 'block';
-        if (isAndroid) document.getElementById('androidGpsHelp').style.display = 'block';
-      } else {
-        error.textContent = 'Zeitüberschreitung — nochmal versuchen';
-      }
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}
-
-function resetGPS() {
-  // App-seitige Erlaubnis zurücksetzen
-  localStorage.removeItem('wm_gps_allowed');
-  gpsAllowed = false;
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-  if (liveMarker) {
-    if (liveMarker._accCircle) liveMapInstance.removeLayer(liveMarker._accCircle);
-    liveMapInstance.removeLayer(liveMarker);
-    liveMarker = null;
-  }
-  document.getElementById('gpsStatus').textContent = 'GPS zurückgesetzt';
-  document.getElementById('gpsCoords').textContent = '';
-  // Modal nochmal zeigen
-  document.getElementById('gpsModal').classList.add('active');
-}
-
-function startGPSTracking() {
-  if (!navigator.geolocation) {
-    document.getElementById('gpsStatus').textContent = 'GPS nicht verfügbar';
-    return;
-  }
-  // Alten Watcher beenden falls vorhanden
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-
-  document.getElementById('gpsStatus').textContent = 'Standort wird gesucht...';
-
-  gpsWatchId = navigator.geolocation.watchPosition(
-    function(pos) {
-      var lat = pos.coords.latitude;
-      var lng = pos.coords.longitude;
-      var acc = Math.round(pos.coords.accuracy);
-
-      document.getElementById('gpsStatus').innerHTML = '<span style="color:#3D7C47;font-weight:600">● Live</span> Genauigkeit: ' + acc + 'm';
-      document.getElementById('gpsCoords').textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
-
-      if (!liveMarker) {
-        liveMarker = L.marker([lat, lng], {
-          icon: L.divIcon({
-            className: '',
-            html: '<div style="width:18px;height:18px;background:#3D7C47;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
-          })
-        }).addTo(liveMapInstance).bindPopup('📍 Dein Standort');
-        liveMapInstance.setView([lat, lng], 16);
-      } else {
-        liveMarker.setLatLng([lat, lng]);
-      }
-
-      // Genauigkeits-Kreis
-      if (liveMarker._accCircle) liveMapInstance.removeLayer(liveMarker._accCircle);
-      liveMarker._accCircle = L.circle([lat, lng], { radius: acc, color: '#3D7C47', fillOpacity: 0.08, weight: 1 }).addTo(liveMapInstance);
-
-      // Live-Standort an DB senden (alle 10 Sekunden)
-      sendLivePosition(lat, lng, acc);
-    },
-    function(err) {
-      if (err.code === 1) {
-        showGPSBlockedHelp();
-      } else {
-        document.getElementById('gpsStatus').textContent = 'GPS Fehler: ' + err.message;
-      }
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
-  );
-}
-
-var MARKER_COLORS = ['#F5A623', '#3D7C47', '#DC2626', '#2563EB', '#9333EA', '#EC4899', '#14B8A6', '#F97316'];
-
-function getMarkerColor(key) {
-  if (!key) return MARKER_COLORS[0];
-  var hash = 0;
-  for (var i = 0; i < key.length; i++) hash = ((hash << 5) - hash) + key.charCodeAt(i);
-  return MARKER_COLORS[Math.abs(hash) % MARKER_COLORS.length];
-}
-
-async function loadSalesLocations() {
-  var infoEl = document.getElementById('mapSalesInfo');
-  // Alte Marker entfernen
-  salesMarkers.forEach(function(m) { liveMapInstance.removeLayer(m); });
-  salesMarkers = [];
-
-  try {
-    if (!sb) throw new Error('offline');
-    var result = await sb.from('wochenmarkt_verkauf')
-      .select('id, datum, mitarbeiter, gesamt_brutto, latitude, longitude, device_id')
-      .not('latitude', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (result.error) throw result.error;
-
-    if (!result.data || result.data.length === 0) {
-      infoEl.textContent = 'Noch keine Standorte gespeichert. Beim nächsten Speichern wird GPS erfasst.';
-      return;
-    }
-
-    // Legende bauen
-    var geraete = {};
-    for (var i = 0; i < result.data.length; i++) {
-      var d = result.data[i];
-      var key = d.mitarbeiter || d.device_id || 'Unbekannt';
-      var color = getMarkerColor(key);
-      if (!geraete[key]) geraete[key] = color;
-
-      var datum = new Date(d.datum + 'T00:00:00').toLocaleDateString('de-DE');
-      var marker = L.marker([d.latitude, d.longitude], {
-        icon: L.divIcon({
-          className: '',
-          html: '<div style="width:14px;height:14px;background:' + color + ';border:2px solid white;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.2)"></div>',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
-        })
-      }).addTo(liveMapInstance)
-        .bindPopup('📅 ' + datum + '<br>💰 ' + formatPrice(d.gesamt_brutto) + '<br>👤 ' + key + (d.device_id ? '<br>📱 ' + d.device_id.substr(0, 10) : ''));
-      salesMarkers.push(marker);
-    }
-
-    // Legende anzeigen
-    var legendHtml = result.data.length + ' Standorte<br><div style="margin-top:.4rem">';
-    for (var name in geraete) {
-      legendHtml += '<span style="display:inline-flex;align-items:center;gap:.3rem;margin-right:.8rem;margin-bottom:.3rem"><span style="width:10px;height:10px;border-radius:50%;background:' + geraete[name] + ';display:inline-block"></span> ' + name + '</span>';
-    }
-    legendHtml += '</div>';
-    infoEl.innerHTML = legendHtml;
-  } catch(e) {
-    infoEl.textContent = 'Standorte konnten nicht geladen werden';
+    el.innerHTML = '🔴 Offline';
   }
 }
+window.addEventListener('online', updateSyncStatus);
+window.addEventListener('offline', updateSyncStatus);
 
-// ─── LIVE STANDORT TRACKING ──────────────────────────────────────
-var lastLiveSend = 0;
-var liveOtherMarkers = {};
-var liveTrackingChannel = null;
-
-function sendLivePosition(lat, lng, acc) {
-  if (!sb) return;
-  var now = Date.now();
-  if (now - lastLiveSend < 10000) return; // Max alle 10 Sekunden
-  lastLiveSend = now;
-
-  var ma = document.getElementById('mitarbeiterSelect').value;
-  sb.from('wochenmarkt_live_standort').upsert({
-    device_id: getDeviceId(),
-    mitarbeiter: ma || null,
-    latitude: lat,
-    longitude: lng,
-    accuracy: acc,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'device_id' }).then(function() {});
-}
-
-function setupLiveTracking() {
-  if (!sb || liveTrackingChannel) return;
-  liveTrackingChannel = sb.channel('live-standort')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'wochenmarkt_live_standort' }, function(payload) {
-      var d = payload.new;
-      if (!d || !d.latitude || !d.longitude) return;
-      // Eigenes Gerät ignorieren
-      if (d.device_id === getDeviceId()) return;
-      updateOtherMarker(d);
-    })
-    .subscribe();
-}
-
-function updateOtherMarker(d) {
-  if (!liveMapInstance) return;
-  var name = d.mitarbeiter || d.device_id.substr(0, 10);
-  var color = getMarkerColor(name);
-  var zeit = new Date(d.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
-  if (liveOtherMarkers[d.device_id]) {
-    // Marker aktualisieren
-    liveOtherMarkers[d.device_id].marker.setLatLng([d.latitude, d.longitude]);
-    liveOtherMarkers[d.device_id].marker.setPopupContent('👤 ' + name + '<br>🕐 ' + zeit + '<br>📍 ' + (d.accuracy ? d.accuracy + 'm' : ''));
-    if (liveOtherMarkers[d.device_id].circle) {
-      liveOtherMarkers[d.device_id].circle.setLatLng([d.latitude, d.longitude]);
-      if (d.accuracy) liveOtherMarkers[d.device_id].circle.setRadius(d.accuracy);
-    }
-  } else {
-    // Neuer Marker
-    var marker = L.marker([d.latitude, d.longitude], {
-      icon: L.divIcon({
-        className: '',
-        html: '<div style="width:16px;height:16px;background:' + color + ';border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      })
-    }).addTo(liveMapInstance)
-      .bindPopup('👤 ' + name + '<br>🕐 ' + zeit + '<br>📍 ' + (d.accuracy ? d.accuracy + 'm' : ''));
-    var circle = d.accuracy ? L.circle([d.latitude, d.longitude], { radius: d.accuracy, color: color, fillOpacity: 0.06, weight: 1 }).addTo(liveMapInstance) : null;
-    liveOtherMarkers[d.device_id] = { marker: marker, circle: circle };
-  }
-}
-
-async function loadAllLivePositions() {
-  if (!sb || !liveMapInstance) return;
-  try {
-    var result = await sb.from('wochenmarkt_live_standort').select('*');
-    if (result.error || !result.data) return;
-    for (var i = 0; i < result.data.length; i++) {
-      var d = result.data[i];
-      if (d.device_id === getDeviceId()) continue;
-      // Nur Positionen der letzten 2 Stunden anzeigen
-      var age = Date.now() - new Date(d.updated_at).getTime();
-      if (age > 2 * 60 * 60 * 1000) continue;
-      updateOtherMarker(d);
-    }
-  } catch(e) {}
-}
-
-var bgGpsWatchId = null;
-var wakeLock = null;
-var bgWorker = null;
-var bgTrackingActive = false;
-
-function startBackgroundGPS() {
-  if (bgGpsWatchId !== null) return;
-  bgGpsWatchId = navigator.geolocation.watchPosition(
-    function(pos) {
-      sendLivePosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy));
-    },
-    function() {},
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-  );
-  bgTrackingActive = true;
-
-  // Wake Lock — Bildschirm bleibt an
-  requestWakeLock();
-
-  // Web Worker — hält App im Hintergrund am Leben
-  startKeepAliveWorker();
-
-  // Notification zeigen dass Tracking läuft
-  if (Notification.permission === 'granted') {
-    new Notification('Wochenmarkt GPS', { body: 'Standort-Tracking ist aktiv', icon: 'icon.svg', tag: 'gps-tracking', silent: true });
-  }
-}
-
-function stopBackgroundGPS() {
-  if (bgGpsWatchId !== null) {
-    navigator.geolocation.clearWatch(bgGpsWatchId);
-    bgGpsWatchId = null;
-  }
-  bgTrackingActive = false;
-  releaseWakeLock();
-  stopKeepAliveWorker();
-}
-
-// Wake Lock API — verhindert Bildschirm-Aus
-async function requestWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', function() {
-        // Erneut anfordern wenn Seite wieder sichtbar wird
-      });
-    }
-  } catch(e) {}
-}
-
-function releaseWakeLock() {
-  if (wakeLock) { wakeLock.release(); wakeLock = null; }
-}
-
-// Bei Sichtbarkeitsänderung Wake Lock erneuern
-document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'visible' && bgTrackingActive) {
-    requestWakeLock();
-  }
-});
-
-// Web Worker Keep-Alive — verhindert dass Browser die Seite killt
-function startKeepAliveWorker() {
-  if (bgWorker) return;
-  var blob = new Blob([
-    'setInterval(function(){ postMessage("keepalive"); }, 5000);'
-  ], { type: 'application/javascript' });
-  bgWorker = new Worker(URL.createObjectURL(blob));
-  bgWorker.onmessage = function() {
-    // Kleiner Ping um die Seite aktiv zu halten
-    if (bgTrackingActive && bgGpsWatchId === null) {
-      // Watcher wurde vom Browser beendet → neu starten
-      bgGpsWatchId = navigator.geolocation.watchPosition(
-        function(pos) {
-          sendLivePosition(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy));
-        },
-        function() {},
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    }
+function initDefaultInventory() {
+  var inv = JSON.parse(localStorage.getItem('wm_inventory') || '{}');
+  if (Object.keys(inv).length > 0) return;
+  var defaults = {
+    'Blütenhonig 500g': { bestand: 30, mindest: 5 },
+    'Waldhonig 500g': { bestand: 25, mindest: 5 },
+    'Tannenhonig 500g': { bestand: 15, mindest: 3 },
+    'Akazienhonig 500g': { bestand: 20, mindest: 5 },
+    'Lindenhonig 500g': { bestand: 15, mindest: 3 },
+    'Buchweizenhonig 500g': { bestand: 10, mindest: 3 },
+    'Edelkastanienhonig 500g': { bestand: 10, mindest: 3 },
+    'Manukahonig 250g MGO 550': { bestand: 5, mindest: 2 },
+    'Eier Gr. L (10 Stk)': { bestand: 40, mindest: 10 },
+    'Eier Gr. L (6 Stk)': { bestand: 30, mindest: 10 },
+    'Eier Gr. M (10 Stk)': { bestand: 30, mindest: 10 },
+    'Stumpenkerze': { bestand: 12, mindest: 3 },
+    'Tulpe': { bestand: 10, mindest: 3 },
+    'kleine Tulpe': { bestand: 15, mindest: 4 },
+    'Hirsch': { bestand: 8, mindest: 2 },
+    'Hirsche im Wald': { bestand: 12, mindest: 3 },
+    'großer Zapfen': { bestand: 10, mindest: 3 },
+    'kleiner Zapfen': { bestand: 15, mindest: 4 },
+    'Häuschen': { bestand: 8, mindest: 2 },
+    'Maria und Josef': { bestand: 6, mindest: 2 },
+    'Tannenbaum': { bestand: 12, mindest: 3 },
+    'Zylinderkerze': { bestand: 10, mindest: 3 },
+    'rund mit Ornamenten': { bestand: 10, mindest: 3 },
+    'Sonnenblumen': { bestand: 10, mindest: 3 },
+    'Bienenkorb': { bestand: 12, mindest: 3 },
+    'kleiner Bienenkorb': { bestand: 15, mindest: 4 },
+    'Schneeflocke': { bestand: 10, mindest: 3 },
+    'Sternschnuppe': { bestand: 12, mindest: 3 },
+    'Wirbelchen': { bestand: 10, mindest: 3 },
+    'Schnecki': { bestand: 12, mindest: 3 },
+    'Schäfchen': { bestand: 10, mindest: 3 },
+    'kleiner Nikolaus': { bestand: 8, mindest: 2 },
+    'Baltasar': { bestand: 10, mindest: 3 },
+    'kleiner Engel': { bestand: 12, mindest: 3 },
+    'Teelichter (Stk.)': { bestand: 100, mindest: 20 },
+    'Propolis Tinktur 20ml': { bestand: 15, mindest: 4 },
+    'Propolis Tinktur 50ml': { bestand: 10, mindest: 3 },
+    'Propolis Salbe 30ml': { bestand: 12, mindest: 3 },
+    'Propolis Balsam sportiv': { bestand: 8, mindest: 2 },
+    'Propolis Gesichtscreme': { bestand: 10, mindest: 3 },
+    'Propolis Handcreme': { bestand: 15, mindest: 4 },
+    'Propolis Sirup 200ml': { bestand: 8, mindest: 2 },
+    'Propolis Deo Roll-on': { bestand: 8, mindest: 2 },
+    'Propolis Shampoo': { bestand: 10, mindest: 3 },
+    'Propolis Seife': { bestand: 20, mindest: 5 },
+    'Propolino Lippenstift': { bestand: 15, mindest: 4 },
+    'Propolis Mundspray': { bestand: 10, mindest: 3 },
+    'Propolind (ohne Alk.)': { bestand: 8, mindest: 2 },
+    'Propodent Zahncreme': { bestand: 10, mindest: 3 },
+    'Hyaluron Serum': { bestand: 8, mindest: 2 },
+    'Gelée Royale Creme': { bestand: 10, mindest: 3 },
+    'Gelée Royale Trunk': { bestand: 6, mindest: 2 },
+    'Lotion-Royal 120ml': { bestand: 6, mindest: 2 },
+    'Honig Body Lotion': { bestand: 10, mindest: 3 },
+    'Männer Pflege Creme': { bestand: 8, mindest: 2 },
+    'After Shave Balm': { bestand: 6, mindest: 2 },
+    'Fuß & Beincreme': { bestand: 10, mindest: 3 },
+    'Lindesa Hautschutz': { bestand: 12, mindest: 3 },
+    'Lindesa Natur': { bestand: 12, mindest: 3 },
+    'Lindesa O': { bestand: 10, mindest: 3 },
+    'Lindesa F': { bestand: 10, mindest: 3 },
+    'LINDESA K': { bestand: 10, mindest: 3 },
+    'Lippenbalm': { bestand: 15, mindest: 4 },
+    'API-HOT Bienengift': { bestand: 5, mindest: 2 },
+    'Api-Regent': { bestand: 5, mindest: 2 },
+    'Honig Seife 100g': { bestand: 20, mindest: 5 },
+    'Honig Seife 250ml': { bestand: 12, mindest: 3 },
+    'Honig Creme Seife 1L': { bestand: 6, mindest: 2 },
+    'Honig Dusch Balm': { bestand: 10, mindest: 3 },
+    'Dusch Balm Gelée Royale': { bestand: 8, mindest: 2 },
+    'Naturshampoo': { bestand: 8, mindest: 2 },
+    'Honig Spülung': { bestand: 8, mindest: 2 },
+    'Honig Traum Bad': { bestand: 8, mindest: 2 },
+    'Meersalzbad': { bestand: 6, mindest: 2 },
+    'Propolis Bonbons': { bestand: 30, mindest: 8 },
+    'Sanddorn Bären': { bestand: 25, mindest: 8 },
+    'MET 0,7l': { bestand: 12, mindest: 3 },
+    'Bio Hägenmark': { bestand: 10, mindest: 3 },
+    'Räuberlinsen 400g': { bestand: 10, mindest: 3 },
+    'Blütenpollen 250g': { bestand: 10, mindest: 3 },
+    'Honig-Löffelset': { bestand: 8, mindest: 2 },
+    'Holz- & Lederbalsam': { bestand: 6, mindest: 2 },
+    'Imkerhandschuh M': { bestand: 5, mindest: 2 }
   };
+  localStorage.setItem('wm_inventory', JSON.stringify(defaults));
 }
-
-function stopKeepAliveWorker() {
-  if (bgWorker) { bgWorker.terminate(); bgWorker = null; }
-}
-
-function toggleBackgroundTracking() {
-  var btn = document.getElementById('bgTrackBtn');
-  if (bgTrackingActive) {
-    stopBackgroundGPS();
-    btn.textContent = '📡 Hintergrund-Tracking AN';
-    btn.style.background = '';
-    btn.style.color = 'var(--text)';
-    showToast('Hintergrund-Tracking gestoppt');
-  } else {
-    startBackgroundGPS();
-    btn.textContent = '📡 Tracking AKTIV';
-    btn.style.background = '#3D7C47';
-    btn.style.color = '#fff';
-    showToast('Hintergrund-Tracking gestartet — App offen lassen');
-  }
-}
-
-// ─── ADMIN NACHRICHTEN & REALTIME ─────────────────────────────────
-var realtimeChannel = null;
-
-async function requestGPSFromAll() {
-  if (!sb) { showToast('Offline - nicht möglich'); return; }
-  try {
-    var result = await sb.from('wochenmarkt_nachrichten').insert({ text: '::GPS_REQUEST::', von: 'Admin' });
-    if (result.error) throw result.error;
-    showToast('GPS-Anfrage an alle gesendet');
-  } catch(e) {
-    showToast('Senden fehlgeschlagen');
-  }
-}
-
-async function sendAdminMessage() {
-  var input = document.getElementById('adminMsgInput');
-  var text = input.value.trim();
-  if (!text) { showToast('Bitte Nachricht eingeben'); return; }
-  if (!sb) { showToast('Offline - nicht möglich'); return; }
-
-  try {
-    var result = await sb.from('wochenmarkt_nachrichten').insert({ text: text, von: 'Admin' });
-    if (result.error) throw result.error;
-    input.value = '';
-    showToast('Nachricht gesendet');
-    loadAdminMessages();
-  } catch(e) {
-    console.error('Nachricht senden fehlgeschlagen:', e);
-    showToast('Senden fehlgeschlagen');
-  }
-}
-
-async function loadAdminMessages() {
-  var container = document.getElementById('adminMsgList');
-  if (!container) return;
-  try {
-    if (!sb) throw new Error('offline');
-    var result = await sb.from('wochenmarkt_nachrichten').select('*').order('created_at', { ascending: false }).limit(20);
-    if (result.error) throw result.error;
-    if (!result.data || result.data.length === 0) {
-      container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Noch keine Nachrichten</p>';
-      return;
-    }
-    var html = '';
-    for (var i = 0; i < result.data.length; i++) {
-      var msg = result.data[i];
-      var zeit = new Date(msg.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-      html += '<div style="padding:.5rem 0;border-bottom:1px solid #F5EDE3;font-size:.8rem">'
-        + '<div style="display:flex;justify-content:space-between;margin-bottom:.2rem"><strong>' + (msg.von || 'System') + '</strong><span style="color:var(--text-soft);font-size:.7rem">' + zeit + '</span></div>'
-        + '<div style="color:var(--text)">' + msg.text.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
-        + '</div>';
-    }
-    container.innerHTML = html;
-  } catch(e) {
-    container.innerHTML = '<p style="color:var(--text-soft);font-size:.8rem">Nachrichten konnten nicht geladen werden</p>';
-  }
-}
-
-function setupRealtime() {
-  if (!sb || realtimeChannel) return;
-  realtimeChannel = sb.channel('wochenmarkt-nachrichten')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wochenmarkt_nachrichten' }, function(payload) {
-      var msg = payload.new;
-
-      // GPS-Anfrage vom Admin erkennen
-      if (msg.text === '::GPS_REQUEST::') {
-        // GPS zurücksetzen und Modal zeigen
-        localStorage.removeItem('wm_gps_allowed');
-        gpsAllowed = false;
-        if (gpsWatchId !== null) {
-          navigator.geolocation.clearWatch(gpsWatchId);
-          gpsWatchId = null;
-        }
-        document.getElementById('gpsModal').classList.add('active');
-        showToast('📍 Admin fordert GPS-Freigabe an');
-        if (Notification.permission === 'granted') {
-          new Notification('Wochenmarkt', { body: 'Bitte Standort freigeben', icon: 'icon.svg' });
-        }
-        return;
-      }
-
-      showToast('📢 ' + (msg.von || 'System') + ': ' + msg.text.substring(0, 60));
-      // Browser-Notification
-      if (Notification.permission === 'granted') {
-        new Notification('Wochenmarkt: ' + (msg.von || 'System'), { body: msg.text, icon: 'icon.svg' });
-      }
-      // Admin-Tab aktualisieren falls offen
-      if (document.getElementById('panel-admin') && document.getElementById('panel-admin').classList.contains('active')) {
-        loadAdminMessages();
-      }
-    })
-    .subscribe();
-}
-
-// ─── OFFLINE ZWISCHENSPEICHER ────────────────────────────────────
-var OFFLINE_QUEUE_KEY = 'wm_offline_queue';
-
-function getOfflineQueue() {
-  return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
-}
-
-function addToOfflineQueue(data) {
-  var queue = getOfflineQueue();
-  queue.push(data);
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-}
-
-async function syncOfflineQueue() {
-  if (!sb || !navigator.onLine) return;
-  var queue = getOfflineQueue();
-  if (queue.length === 0) return;
-
-  var remaining = [];
-  for (var i = 0; i < queue.length; i++) {
-    try {
-      var result = await db.insert('wochenmarkt_verkauf', queue[i]);
-      if (result.error) {
-        remaining.push(queue[i]);
-      }
-    } catch(e) {
-      remaining.push(queue[i]);
-    }
-  }
-  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
-
-  var synced = queue.length - remaining.length;
-  if (synced > 0) {
-    showToast(synced + ' offline gespeicherte Verkäufe synchronisiert');
-    // Synced-Flag in History aktualisieren
-    var history = JSON.parse(localStorage.getItem('wm_history') || '[]');
-    for (var j = 0; j < history.length; j++) {
-      if (!history[j].synced) history[j].synced = true;
-    }
-    localStorage.setItem('wm_history', JSON.stringify(history));
-  }
-  updateOnlineStatus();
-}
-
-function updateOnlineStatus() {
-  var el = document.getElementById('onlineStatus');
-  var queue = getOfflineQueue();
-  if (navigator.onLine) {
-    if (queue.length > 0) {
-      el.textContent = '⏳ ' + queue.length + ' warten';
-      el.style.background = '#FEF3C7';
-      el.style.color = '#92400E';
-    } else {
-      el.textContent = '● Online';
-      el.style.background = 'var(--forest)';
-      el.style.color = '#fff';
-    }
-  } else {
-    el.textContent = '● Offline';
-    el.style.background = '#FEE2E2';
-    el.style.color = '#DC2626';
-  }
-}
-
-window.addEventListener('online', function() {
-  updateOnlineStatus();
-  syncOfflineQueue();
-});
-window.addEventListener('offline', function() {
-  updateOnlineStatus();
-});
 
 async function initApp() {
-  updateOnlineStatus();
+  // Benutzerdefinierte Produkte aus localStorage laden
+  var custom = JSON.parse(localStorage.getItem('wm_custom_products') || '[]');
   await loadProductsFromDB();
+  // Custom-Produkte hinzufügen (falls nicht schon aus DB geladen)
+  custom.forEach(function(cp) {
+    if (!PRODUCTS.some(function(p) { return p.name === cp.name; })) {
+      PRODUCTS.push(cp);
+      quantities[PRODUCTS.length - 1] = 0;
+    }
+  });
   await loadMitarbeiter();
+  initDefaultInventory();
   renderProducts();
   updateSummary();
-  // Realtime & Notifications
-  setupRealtime();
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-  // GPS-Pflicht — App blockiert ohne GPS
-  checkGPSPflicht();
-  // Offline-Queue synchronisieren
-  syncOfflineQueue();
+  setupLongPress();
+  updateSyncStatus();
 }
 
-// App direkt starten (kein Passwort nötig)
-initApp();
-
-// ─── APP INSTALL ────────────────────────────────────────────────────
-var deferredPrompt = null;
-var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-var isTWA = document.referrer.includes('android-app://');
-var isAndroidDevice = /Android/i.test(navigator.userAgent);
-
-// Standalone oder TWA → Banner komplett ausblenden
-if (isStandalone || isTWA) {
-  document.getElementById('installBanner').style.display = 'none';
-} else if (isAndroidDevice) {
-  // Android → APK-Download anzeigen
-  document.getElementById('apkDownloadBtn').style.display = 'inline-block';
-  document.getElementById('installBtnMain').style.display = 'none';
+// Prüfe ob schon entsperrt (gespeicherter Hash muss übereinstimmen)
+if (localStorage.getItem(WM_PW_KEY) === WM_PW_HASH) {
+  document.getElementById('pwGate').classList.add('hidden');
+  initApp();
 } else {
-  // Desktop/iOS → PWA-Install Button
-  document.getElementById('apkDownloadBtn').style.display = 'none';
-  document.getElementById('installBtnMain').style.display = 'inline-block';
-}
-
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-
-function installApp() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(function(choice) {
-      deferredPrompt = null;
-      if (choice.outcome === 'accepted') {
-        document.getElementById('installBanner').style.display = 'none';
-        showToast('App wird installiert...');
-      }
-    });
-  } else {
-    alert('Tippe auf die 3 Punkte oben rechts und dann auf "Zum Startbildschirm hinzufügen"');
-  }
-}
-
-window.addEventListener('appinstalled', function() {
-  document.getElementById('installBanner').style.display = 'none';
-  showToast('App installiert!');
-});
-
-// ─── SERVICE WORKER (PWA / Offline) ─────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+  document.getElementById('pwInput').focus();
 }
 </script>
 </body>
