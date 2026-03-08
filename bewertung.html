@@ -91,6 +91,21 @@
         
         .btn-outline{background:transparent;border:2px solid #E8DFD4;color:#7A6652}
         .btn-outline:hover{border-color:#F5A623;background:#FFF8EE}
+
+        /* === SUCHLEISTE === */
+        .such-bar{position:relative;margin-bottom:.75rem}
+        .such-bar input{width:100%;padding:.6rem 1rem .6rem 2.5rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.9rem;font-family:inherit;outline:none;background:#fff;transition:border-color .2s}
+        .such-bar input:focus{border-color:#F5A623}
+        .such-bar .such-icon{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);font-size:1rem;color:#A69580;pointer-events:none}
+        .such-bar .such-clear{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;cursor:pointer;color:#A69580;padding:.2rem;line-height:1}
+        .such-ergebnis{background:#fff;border:2px solid #F5A623;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;animation:slideDown .2s ease}
+
+        /* === STANDORT GRID === */
+        .standort-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;cursor:pointer;transition:all .2s}
+        .standort-card:hover{border-color:#F5A623;box-shadow:0 4px 12px rgba(245,166,35,0.12);transform:translateY(-2px)}
+        .standort-card.selected{border-color:#F5A623;background:#FFFBF0;box-shadow:0 4px 12px rgba(245,166,35,0.15)}
+        .volk-grid-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.75rem;transition:all .2s}
+        .volk-grid-card:hover{border-color:#F5A623;background:#FFFBF0}
         
         /* === ZUCHTWERTKARTE (BeeBreed) === */
         .zw-card{background:linear-gradient(135deg,#fff,#FFFBF0);border:1px solid rgba(245,166,35,0.2);border-radius:.75rem;padding:.75rem;margin-bottom:.75rem}
@@ -209,13 +224,15 @@ var voelker = [];
 var bewertungen = []; // Legacy-Bewertungen (alte Tabelle)
 var durchsichten = []; // Neue Durchsichten
 var koeniginnen = {}; // Königinnen-Info pro volkId
-var activeTab = 'durchsicht';
+var activeTab = 'standorte';
 var openVolkDetail = null;
 var modalStep = 0;
 var editDurchsicht = null;
 var formData = {};
 var selectedVerlaufVolk = '';
 var collapsedStandorte = [];
+var suchBegriff = '';
+var selectedStandortFilter = '';
 
 // ============================================
 // INIT
@@ -292,8 +309,24 @@ async function init() {
 // ============================================
 function render() {
     var html = '<div class="container">';
-    
-    html += '<div class="tab-bar">';
+
+    // === SUCHLEISTE (immer sichtbar) ===
+    html += '<div class="such-bar">';
+    html += '<span class="such-icon">🔍</span>';
+    html += '<input type="text" id="suchFeld" placeholder="Volk suchen..." value="' + suchBegriff.replace(/"/g,'&quot;') + '" oninput="suchBegriff=this.value;render();setTimeout(function(){var f=document.getElementById(\'suchFeld\');if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}},10)">';
+    if (suchBegriff) html += '<button class="such-clear" onclick="suchBegriff=\'\';render()">✕</button>';
+    html += '</div>';
+
+    // Wenn Suche aktiv → Suchergebnisse anzeigen statt Tabs
+    if (suchBegriff.trim().length >= 2) {
+        html += renderSuchergebnisse();
+        html += '</div>';
+        document.getElementById('app').innerHTML = html;
+        return;
+    }
+
+    html += '<div class="tab-bar" style="flex-wrap:wrap">';
+    html += '<button class="tab-btn '+(activeTab==='standorte'?'active':'')+'" onclick="switchTab(\'standorte\')">📍 Standorte</button>';
     html += '<button class="tab-btn '+(activeTab==='durchsicht'?'active':'')+'" onclick="switchTab(\'durchsicht\')">📋 Durchsicht</button>';
     html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="switchTab(\'bewerten\')">⭐ Bewertung</button>';
     html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="switchTab(\'ranking\')">🏆 Ranking</button>';
@@ -301,12 +334,13 @@ function render() {
     html += '<button class="tab-btn '+(activeTab==='stammbaum'?'active':'')+'" onclick="switchTab(\'stammbaum\')">🌳 Stammbaum</button>';
     html += '</div>';
 
-    if (activeTab === 'durchsicht') html += renderDurchsicht();
+    if (activeTab === 'standorte') html += renderStandorteTab();
+    else if (activeTab === 'durchsicht') html += renderDurchsicht();
     else if (activeTab === 'bewerten') html += renderBewerten();
     else if (activeTab === 'ranking') html += renderRanking();
     else if (activeTab === 'historie') html += renderHistorie();
     else if (activeTab === 'stammbaum') html += renderStammbaum();
-    
+
     html += '</div>';
     document.getElementById('app').innerHTML = html;
 }
@@ -314,6 +348,275 @@ function render() {
 function switchTab(tab) {
     activeTab = tab;
     render();
+}
+
+// ============================================
+// TAB: STANDORTE (Übersicht)
+// ============================================
+function renderStandorteTab() {
+    var html = '';
+
+    if (!standorte.length) {
+        html += '<div class="card" style="text-align:center;padding:3rem;color:#7A6652">';
+        html += '<div style="font-size:3rem;margin-bottom:1rem">📍</div>';
+        html += '<h3>Keine Standorte vorhanden</h3>';
+        html += '<p style="margin-top:.5rem">Lege zuerst Standorte und Völker unter <a href="standorte.html" style="color:#F5A623;font-weight:600">Standorte</a> an.</p>';
+        html += '</div>';
+        return html;
+    }
+
+    // Standort-Kacheln
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-bottom:1rem">';
+    html += '<div class="standort-card' + (!selectedStandortFilter?' selected':'') + '" onclick="selectedStandortFilter=\'\';render()">';
+    html += '<div style="font-size:1.5rem;margin-bottom:.25rem">🐝</div>';
+    html += '<div style="font-weight:600;font-size:.85rem">Alle Völker</div>';
+    html += '<div style="font-size:.75rem;color:#7A6652">' + voelker.length + ' Völker</div>';
+    html += '</div>';
+    standorte.forEach(function(s) {
+        var cnt = voelker.filter(function(v){return v.standortId===s.id;}).length;
+        if (!cnt) return;
+        html += '<div class="standort-card' + (selectedStandortFilter===s.id?' selected':'') + '" onclick="selectedStandortFilter=\'' + s.id + '\';render()">';
+        html += '<div style="font-size:1.5rem;margin-bottom:.25rem">📍</div>';
+        html += '<div style="font-weight:600;font-size:.85rem">' + s.name + '</div>';
+        html += '<div style="font-size:.75rem;color:#7A6652">' + cnt + ' Völker</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    // Völker-Grid des gewählten Standorts
+    var filteredVoelker = selectedStandortFilter
+        ? voelker.filter(function(v){return v.standortId===selectedStandortFilter;})
+        : voelker;
+
+    if (!filteredVoelker.length) {
+        html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Keine Völker an diesem Standort.</div>';
+        return html;
+    }
+
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">';
+    filteredVoelker.forEach(function(v) {
+        html += renderVolkKarte(v);
+    });
+    html += '</div>';
+
+    return html;
+}
+
+function renderVolkKarte(v) {
+    var s = standorte.find(function(x){return x.id===v.standortId;});
+    var kInfo = koeniginnen[v.id] || {};
+    var volkDs = getDurchsichtenFuerVolk(v.id);
+    var letzte = volkDs.length ? volkDs[0] : null;
+
+    var html = '<div class="volk-grid-card" onclick="suchBegriff=\'' + v.name.replace(/'/g,"\\'") + '\';render()" style="cursor:pointer">';
+
+    // Header
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">';
+    html += '<div>';
+    html += '<div style="font-weight:700;font-size:1rem">🐝 ' + v.name + '</div>';
+    if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + s.name + '</div>';
+    html += '</div>';
+    if (kInfo.jahrgang) {
+        var farbDot = kInfo.markiert ? getColorDot(kInfo.farbe) : '';
+        html += '<span style="font-size:.75rem;background:#FFF8EE;padding:.15rem .5rem;border-radius:.25rem;color:#92400E;white-space:nowrap">👑 ' + kInfo.jahrgang + ' ' + farbDot + '</span>';
+    }
+    html += '</div>';
+
+    // Königin-Info kompakt
+    if (kInfo.begattung) {
+        html += '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.35rem">';
+        var details = [];
+        if (kInfo.begattung) details.push(kInfo.begattung);
+        if (kInfo.zuchtbuchNr) details.push('Nr: ' + kInfo.zuchtbuchNr);
+        html += details.join(' · ');
+        html += '</div>';
+    }
+
+    // Abstammung
+    if (kInfo.muttervolk_id || kInfo.drohnenvolk_id) {
+        html += '<div style="font-size:.72rem;color:#92400E;background:#FFFBF0;padding:.3rem .5rem;border-radius:.35rem;margin-bottom:.35rem">';
+        if (kInfo.muttervolk_id) {
+            var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
+            if (mv) html += '👑 ' + mv.name + ' ';
+        }
+        if (kInfo.drohnenvolk_id) {
+            var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
+            if (dv) html += '🐝♂ ' + dv.name;
+        }
+        html += '</div>';
+    }
+
+    // Letzte Durchsicht
+    if (letzte) {
+        var schnitt = durchschnittKriterien(letzte.kriterien);
+        var tage = Math.floor((Date.now() - new Date(letzte.datum).getTime()) / 86400000);
+        var tageLabel = tage === 0 ? 'Heute' : tage === 1 ? 'Gestern' : 'vor ' + tage + ' Tagen';
+        var tageColor = tage > 14 ? '#ef4444' : tage > 7 ? '#f59e0b' : '#10b981';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:.75rem;padding-top:.35rem;border-top:1px solid #f5f0eb">';
+        html += '<span>' + renderMiniStars(schnitt) + '</span>';
+        html += '<span style="color:' + tageColor + ';font-weight:500">' + tageLabel + '</span>';
+        html += '</div>';
+    } else {
+        html += '<div style="font-size:.75rem;color:#A69580;padding-top:.35rem;border-top:1px solid #f5f0eb">Noch keine Durchsicht</div>';
+    }
+
+    html += '</div>';
+    return html;
+}
+
+// ============================================
+// SUCHFUNKTION
+// ============================================
+function renderSuchergebnisse() {
+    var html = '';
+    var q = suchBegriff.trim().toLowerCase();
+
+    // Völker filtern
+    var treffer = voelker.filter(function(v) {
+        if (v.name.toLowerCase().indexOf(q) > -1) return true;
+        var s = standorte.find(function(x){return x.id===v.standortId;});
+        if (s && s.name.toLowerCase().indexOf(q) > -1) return true;
+        var kInfo = koeniginnen[v.id];
+        if (kInfo) {
+            if (kInfo.zuchtbuchNr && kInfo.zuchtbuchNr.toLowerCase().indexOf(q) > -1) return true;
+            if (kInfo.begattung && kInfo.begattung.toLowerCase().indexOf(q) > -1) return true;
+        }
+        return false;
+    });
+
+    if (!treffer.length) {
+        html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">';
+        html += '<div style="font-size:2rem;margin-bottom:.5rem">🔍</div>';
+        html += '<p>Kein Volk gefunden für "<strong>' + suchBegriff + '</strong>"</p>';
+        html += '</div>';
+        return html;
+    }
+
+    html += '<div style="font-size:.8rem;color:#7A6652;margin-bottom:.5rem">' + treffer.length + ' Ergebnis' + (treffer.length>1?'se':'') + ' für "<strong>' + suchBegriff + '</strong>"</div>';
+
+    // Bei genau 1 Treffer oder exaktem Match: Volk-Profil anzeigen
+    var exakt = treffer.find(function(v){return v.name.toLowerCase() === q;});
+    if (treffer.length === 1 || exakt) {
+        html += renderVolkProfil(exakt || treffer[0]);
+        return html;
+    }
+
+    // Mehrere Treffer: Karten-Grid
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem">';
+    treffer.forEach(function(v) {
+        html += renderVolkKarte(v);
+    });
+    html += '</div>';
+
+    return html;
+}
+
+function renderVolkProfil(v) {
+    var html = '';
+    var s = standorte.find(function(x){return x.id===v.standortId;});
+    var kInfo = koeniginnen[v.id] || {};
+    var volkDs = getDurchsichtenFuerVolk(v.id);
+
+    // Header-Card
+    html += '<div class="such-ergebnis">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">';
+    html += '<div>';
+    html += '<h2 style="margin:0;font-size:1.2rem">🐝 ' + v.name + '</h2>';
+    if (s) html += '<div style="font-size:.85rem;color:#7A6652">📍 ' + s.name + '</div>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:.5rem">';
+    html += '<button class="btn btn-sm" onclick="selectedVerlaufVolk=\'' + v.id + '\';suchBegriff=\'\';switchTab(\'historie\')" style="padding:.3rem .6rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-size:.75rem;cursor:pointer">📜 Historie</button>';
+    html += '<button class="btn btn-sm" onclick="selectedStammbaumVolk=\'' + v.id + '\';suchBegriff=\'\';switchTab(\'stammbaum\')" style="padding:.3rem .6rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-size:.75rem;cursor:pointer">🌳 Stammbaum</button>';
+    html += '</div>';
+    html += '</div>';
+
+    // Königin-Info
+    if (kInfo.begattung || kInfo.jahrgang || kInfo.zuchtbuchNr) {
+        html += '<div class="koenigin-section" style="margin-bottom:.75rem">';
+        html += '<h4>👑 Königinnen-Info</h4>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;font-size:.85rem">';
+        if (kInfo.jahrgang) html += '<div><span style="color:#7A6652">Jahrgang:</span> <strong>' + kInfo.jahrgang + '</strong> ' + (kInfo.markiert?getColorDot(kInfo.farbe):'') + '</div>';
+        if (kInfo.begattung) html += '<div><span style="color:#7A6652">Begattung:</span> <strong>' + kInfo.begattung + '</strong></div>';
+        if (kInfo.herkunft) html += '<div><span style="color:#7A6652">Herkunft:</span> <strong>' + formatHerkunft(kInfo.herkunft) + '</strong></div>';
+        if (kInfo.zuchtbuchNr) html += '<div><span style="color:#7A6652">Zuchtbuch:</span> <strong>' + kInfo.zuchtbuchNr + '</strong></div>';
+        if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
+        // Abstammung
+        if (kInfo.muttervolk_id) {
+            var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
+            if (mv) html += '<div><span style="color:#7A6652">Muttervolk:</span> <strong>' + mv.name + '</strong></div>';
+        }
+        if (kInfo.drohnenvolk_id) {
+            var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
+            if (dv) html += '<div><span style="color:#7A6652">Drohnenvolk:</span> <strong>' + dv.name + '</strong></div>';
+        }
+        html += '</div>';
+
+        // Zuchtwerte
+        if (kInfo.zuchtwerte && Object.keys(kInfo.zuchtwerte).some(function(k){return kInfo.zuchtwerte[k];})) {
+            html += '<div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(245,166,35,0.15)">';
+            html += '<div style="font-size:.78rem;font-weight:600;color:#92400E;margin-bottom:.3rem">📊 Zuchtwerte</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:.4rem">';
+            [{key:'honig',icon:'🍯'},{key:'sanftmut',icon:'🤲'},{key:'wabensitz',icon:'🪵'},{key:'schwarm',icon:'🐝'},{key:'varroa',icon:'🔬'},{key:'gesamt',icon:'⭐'}].forEach(function(zw) {
+                if (kInfo.zuchtwerte[zw.key]) {
+                    var val = kInfo.zuchtwerte[zw.key];
+                    var c = val >= 110 ? '#10b981' : val >= 90 ? '#7A6652' : '#ef4444';
+                    html += '<span style="font-size:.72rem;padding:.15rem .4rem;border-radius:.25rem;background:#f5f0eb;color:' + c + '">' + zw.icon + ' ' + val + '</span>';
+                }
+            });
+            html += '</div></div>';
+        }
+        html += '</div>';
+    }
+
+    // Letzte Bewertung
+    if (volkDs.length) {
+        var letzte = volkDs[0];
+        var schnitt = durchschnittKriterien(letzte.kriterien);
+        html += '<div style="margin-bottom:.75rem">';
+        html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:.35rem">Letzte Durchsicht: ' + fmtDate(letzte.datum) + '</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.35rem">';
+        KRITERIEN.forEach(function(k) {
+            var val = letzte.kriterien[k.key] || 3;
+            var c = val >= 4 ? '#10b981' : val <= 2 ? '#ef4444' : '#f59e0b';
+            html += '<span style="font-size:.7rem;padding:.2rem .4rem;border-radius:.25rem;background:#f5f0eb"><span style="color:' + c + '">●</span> ' + k.label.split(' ').pop() + ' ' + val + '/5</span>';
+        });
+        html += '</div>';
+
+        // Tätigkeiten
+        var tags = (letzte.taetigkeiten||[]).map(function(t) {
+            var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+            return def ? def.icon + ' ' + def.label : t.key;
+        });
+        if (tags.length) {
+            html += '<div style="display:flex;flex-wrap:wrap;gap:.25rem">';
+            tags.forEach(function(t) { html += '<span class="historie-tag">' + t + '</span>'; });
+            html += '</div>';
+        }
+        if (letzte.notizen) html += '<div style="font-size:.78rem;color:#7A6652;margin-top:.3rem;font-style:italic">"' + letzte.notizen + '"</div>';
+        html += '</div>';
+    }
+
+    // Durchsicht-Historie kompakt
+    if (volkDs.length > 1) {
+        html += '<div style="border-top:1px solid #E8DFD4;padding-top:.5rem">';
+        html += '<div style="font-size:.82rem;font-weight:600;margin-bottom:.35rem">📜 Alle Durchsichten (' + volkDs.length + ')</div>';
+        volkDs.slice(0, 10).forEach(function(d, i) {
+            if (i === 0) return; // erste schon oben gezeigt
+            var tags = (d.taetigkeiten||[]).map(function(t){
+                var def = TAETIGKEITEN.find(function(x){return x.key===t.key;});
+                return def ? def.icon : '';
+            }).join(' ');
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;font-size:.8rem;border-bottom:1px solid #f5f0eb">';
+            html += '<span>' + fmtDate(d.datum) + ' ' + tags + '</span>';
+            html += '<span>' + renderMiniStars(durchschnittKriterien(d.kriterien)) + '</span>';
+            html += '</div>';
+        });
+        if (volkDs.length > 10) html += '<div style="font-size:.75rem;color:#A69580;margin-top:.25rem">... und ' + (volkDs.length - 10) + ' weitere</div>';
+        html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
 }
 
 // ============================================
