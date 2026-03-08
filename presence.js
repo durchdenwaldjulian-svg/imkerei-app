@@ -2,7 +2,7 @@
 // IMKEREI TAGESPLANER – PRESENCE TRACKER
 // presence.js – meldet User als online im Supabase Presence Channel
 // Wird in allen Seiten eingebunden (nach config.js)
-// imkermeister.html liest diesen Channel aus
+// imkeradmin.html liest diesen Channel aus
 // ============================================
 
 (function(){

@@ -88,7 +88,7 @@ function showToast(msg, typ, dauer) {
 
 // ============================================
 // PUBLIC CLIENT (ohne Session, für öffentliche Seiten)
-// Verwendet von: trachtkarte.html, imkermeister.html
+// Verwendet von: trachtkarte.html, imkeradmin.html
 // ============================================
 function createPublicClient() {
     return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
