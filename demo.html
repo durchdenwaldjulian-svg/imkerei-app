@@ -263,14 +263,16 @@ a{color:inherit;text-decoration:none}
 
   <div class="nav-section">Völker</div>
   <button class="nav-item" data-screen="koenigin" onclick="showScreen('koenigin')">👑 Königinnenzucht</button>
+  <button class="nav-item" data-screen="zuchtberater" onclick="showScreen('zuchtberater')">🧬 Zuchtberater</button>
   <button class="nav-item" data-screen="behandlung" onclick="showScreen('behandlung')">💉 Behandlungen</button>
-  <button class="nav-item" data-screen="bewertung" onclick="showScreen('bewertung')">⭐ Völker-Bewertung</button>
+  <button class="nav-item" data-screen="bewertung" onclick="showScreen('bewertung')">⭐ Stockkarte</button>
   <button class="nav-item" data-screen="assistent" onclick="showScreen('assistent')">🤖 Assistent</button>
   <button class="nav-item" onclick="showToast('Registriere dich, um das Bestandsbuch zu nutzen!')">📋 Bestandsbuch</button>
 
   <div class="nav-section">Ernte & Planung</div>
   <button class="nav-item" data-screen="ernte" onclick="showScreen('ernte')">🍯 Honigernte</button>
   <button class="nav-item" data-screen="tracht" onclick="showScreen('tracht')">🌸 Tracht</button>
+  <button class="nav-item" data-screen="trachtradar" onclick="showScreen('trachtradar')">🗺️ Tracht-Radar</button>
   <button class="nav-item" data-screen="packliste" onclick="showScreen('packliste')">📦 Packliste</button>
 
   <div class="nav-section">Community</div>
@@ -329,8 +331,9 @@ a{color:inherit;text-decoration:none}
     <div class="mobile-menu-section">Völker</div>
     <div class="mobile-menu-grid">
       <button class="mobile-menu-item" data-mmscreen="koenigin" onclick="showScreen('koenigin');mobileMenuClose()"><span class="mm-icon">👑</span>Zucht</button>
+      <button class="mobile-menu-item" data-mmscreen="zuchtberater" onclick="showScreen('zuchtberater');mobileMenuClose()"><span class="mm-icon">🧬</span>Zuchtberater</button>
       <button class="mobile-menu-item" data-mmscreen="behandlung" onclick="showScreen('behandlung');mobileMenuClose()"><span class="mm-icon">💉</span>Behandlung</button>
-      <button class="mobile-menu-item" data-mmscreen="bewertung" onclick="showScreen('bewertung');mobileMenuClose()"><span class="mm-icon">⭐</span>Bewertung</button>
+      <button class="mobile-menu-item" data-mmscreen="bewertung" onclick="showScreen('bewertung');mobileMenuClose()"><span class="mm-icon">⭐</span>Stockkarte</button>
     </div>
 
     <div class="mobile-menu-section">Tools</div>
@@ -343,8 +346,8 @@ a{color:inherit;text-decoration:none}
     <div class="mobile-menu-section">Ernte & Planung</div>
     <div class="mobile-menu-grid">
       <button class="mobile-menu-item" data-mmscreen="tracht" onclick="showScreen('tracht');mobileMenuClose()"><span class="mm-icon">🌸</span>Tracht</button>
+      <button class="mobile-menu-item" data-mmscreen="trachtradar" onclick="showScreen('trachtradar');mobileMenuClose()"><span class="mm-icon">🗺️</span>Tracht-Radar</button>
       <button class="mobile-menu-item" data-mmscreen="packliste" onclick="showScreen('packliste');mobileMenuClose()"><span class="mm-icon">📦</span>Packliste</button>
-      <button class="mobile-menu-item" onclick="showScreen('ernte');mobileMenuClose()"><span class="mm-icon">💰</span>Kosten</button>
     </div>
 
     <div class="mobile-menu-section">Community</div>
@@ -822,63 +825,109 @@ a{color:inherit;text-decoration:none}
 
 <!-- ===== 8. BEWERTUNG ===== -->
 <section class="screen" id="screen-bewertung">
-  <h1>⭐ Bewertung</h1>
-  <p style="color:#7A6652;margin-top:-.75rem;margin-bottom:1rem;font-size:.9rem">Völker-Bewertung mit Radar-Chart &middot; Volk 4 (Waldlichtung)</p>
+  <h1>📋 Stockkarte</h1>
+  <p style="color:#7A6652;margin-top:-.75rem;margin-bottom:1rem;font-size:.9rem">Durchsichtprotokoll · Bewertung · Varroa · Königinnen-Info</p>
 
-  <div class="card">
-    <h3>Gesamt-Bewertung</h3>
-    <div class="sterne-row">
-      <span class="stern active">★</span>
-      <span class="stern active">★</span>
-      <span class="stern active">★</span>
-      <span class="stern active">★</span>
-      <span class="stern">★</span>
-    </div>
-    <p style="font-size:.82rem;color:#7A6652;margin-top:.35rem">4 von 5 Sternen – Sehr gutes Volk</p>
+  <!-- Tab-Bar wie in echt -->
+  <div style="display:flex;gap:.25rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem;margin-bottom:1rem">
+    <div style="flex:1;padding:.5rem;background:#fff;border-radius:.5rem;font-size:.85rem;font-weight:600;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.1);color:#1C1410">📋 Durchsicht</div>
+    <div style="flex:1;padding:.5rem;border-radius:.5rem;font-size:.85rem;text-align:center;color:#7A6652;cursor:pointer" onclick="showToast('Registriere dich für alle Tabs!')">⭐ Bewertung</div>
+    <div style="flex:1;padding:.5rem;border-radius:.5rem;font-size:.85rem;text-align:center;color:#7A6652;cursor:pointer" onclick="showToast('Registriere dich für alle Tabs!')">🏆 Ranking</div>
+    <div style="flex:1;padding:.5rem;border-radius:.5rem;font-size:.85rem;text-align:center;color:#7A6652;cursor:pointer" onclick="showToast('Registriere dich für alle Tabs!')">📜 Historie</div>
   </div>
 
   <div class="card">
-    <h3>Eigenschaften-Radar</h3>
-    <div class="radar-wrap">
-      <svg viewBox="0 0 300 300" width="260" height="260" style="max-width:100%">
-        <polygon points="150,30 255,90 255,210 150,270 45,210 45,90" fill="none" stroke="#E8DFD4" stroke-width="1"/>
-        <polygon points="150,60 225,105 225,195 150,240 75,195 75,105" fill="none" stroke="#E8DFD4" stroke-width="1"/>
-        <polygon points="150,90 195,120 195,180 150,210 105,180 105,120" fill="none" stroke="#E8DFD4" stroke-width="1"/>
-        <line x1="150" y1="30" x2="150" y2="270" stroke="#E8DFD4" stroke-width="0.5"/>
-        <line x1="45" y1="90" x2="255" y2="210" stroke="#E8DFD4" stroke-width="0.5"/>
-        <line x1="255" y1="90" x2="45" y2="210" stroke="#E8DFD4" stroke-width="0.5"/>
-        <polygon points="150,48 237,99 228,204 150,252 69,186 81,96" fill="rgba(245,166,35,0.2)" stroke="#F5A623" stroke-width="2.5"/>
-        <circle cx="150" cy="48" r="5" fill="#F5A623"/>
-        <circle cx="237" cy="99" r="5" fill="#F5A623"/>
-        <circle cx="228" cy="204" r="5" fill="#F5A623"/>
-        <circle cx="150" cy="252" r="5" fill="#F5A623"/>
-        <circle cx="69" cy="186" r="5" fill="#F5A623"/>
-        <circle cx="81" cy="96" r="5" fill="#F5A623"/>
-        <text x="150" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Sanftmut</text>
-        <text x="270" y="93" text-anchor="start" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Wabensitz</text>
-        <text x="270" y="215" text-anchor="start" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Honigertrag</text>
-        <text x="150" y="292" text-anchor="middle" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Schwarmtrieb</text>
-        <text x="28" y="215" text-anchor="end" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Winterfest</text>
-        <text x="28" y="93" text-anchor="end" font-size="11" font-weight="600" fill="#4A3728" font-family="Outfit,sans-serif">Volksstärke</text>
-      </svg>
+    <h3>📍 Waldlichtung <span style="font-size:.75rem;color:#7A6652;font-weight:400">(3 Völker)</span></h3>
+    
+    <!-- Volk 1 – mit Detail aufgeklappt -->
+    <div style="border-bottom:1px solid #f5f0eb">
+      <div style="padding:.75rem 0;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:600;font-size:.95rem">🐝 Volk 1 – Carnica <span style="font-size:.7rem;color:#7A6652;display:inline-block;transform:rotate(90deg)">▶</span></div>
+            <div style="font-size:.72rem;color:#7A6652">👑 2025 · Belegstelle · <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span></div>
+            <div style="font-size:.75rem;color:#7A6652">Letzte: 05. Mär 2026 · <span style="color:#F5A623">★★★★☆</span> 🍯 📦 · 🔬 3.0 M/Tag</div>
+          </div>
+          <span class="badge badge-green">4.2</span>
+        </div>
+      </div>
+      <!-- Aufgeklappte Stockkarte -->
+      <div style="background:#FFFBF0;border-radius:.5rem;padding:.75rem;margin-bottom:.5rem;border:1px solid rgba(245,166,35,0.2)">
+        <div style="font-size:.85rem;font-weight:600;color:#92400E;margin-bottom:.5rem">📖 Stockkarte: Volk 1 – Carnica</div>
+        <!-- Königin-Info -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .75rem;font-size:.78rem;padding:.5rem;background:#fff;border-radius:.5rem;margin-bottom:.5rem">
+          <div><span style="color:#7A6652">👑 Begattung:</span> <strong>Belegstelle</strong></div>
+          <div><span style="color:#7A6652">Herkunft:</span> <strong>Fremde Königin</strong></div>
+          <div><span style="color:#7A6652">Jahrgang:</span> <strong>2025</strong></div>
+          <div><span style="color:#7A6652">Markiert:</span> <strong>Ja <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span></strong></div>
+          <div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>Gebirgs-Belegstelle Schwarzwald</strong></div>
+        </div>
+        <!-- Letzte Durchsicht -->
+        <div style="font-size:.75rem;font-weight:600;color:#7A6652;margin-bottom:.25rem">📋 Durchsichten (2)</div>
+        <div style="padding:.4rem;background:#fff;border-radius:.5rem;margin-bottom:.25rem">
+          <div style="font-weight:600;font-size:.8rem">05. Mär 2026 <span style="color:#F5A623">★★★★☆</span> <span style="color:#7A6652;font-size:.75rem">(4.2)</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:.2rem;margin-top:.2rem">
+            <span style="font-size:.62rem;padding:.1rem .35rem;border-radius:.2rem;background:#f5f0eb;color:#7A6652">🍯 Honigernte</span>
+            <span style="font-size:.62rem;padding:.1rem .35rem;border-radius:.2rem;background:#f5f0eb;color:#7A6652">📦 Honigraum erweitert</span>
+          </div>
+          <div style="margin-top:.2rem"><span class="badge badge-green" style="font-size:.55rem">🔬 3.0 M/Tag (Puderzucker)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Volk 2 -->
+    <div style="padding:.75rem 0;border-bottom:1px solid #f5f0eb">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:.95rem">🐝 Volk 2 – Buckfast <span style="font-size:.7rem;color:#7A6652">▶</span></div>
+          <div style="font-size:.72rem;color:#7A6652">👑 2025 · Standbegattung · <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;vertical-align:middle"></span></div>
+          <div style="font-size:.75rem;color:#7A6652">Letzte: 04. Mär 2026 · <span style="color:#F5A623">★★★☆☆</span> 🍬 🐝 · 🔬 8.0 M/Tag</div>
+        </div>
+        <span class="badge badge-yellow">3.1</span>
+      </div>
+    </div>
+
+    <!-- Volk 3 – noch keine Durchsicht -->
+    <div style="padding:.75rem 0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:.95rem">🐝 Volk 3 – Dunkle Biene <span style="font-size:.7rem;color:#7A6652">▶</span></div>
+          <div style="font-size:.75rem;color:#94a3b8">Noch keine Durchsicht</div>
+        </div>
+        <span class="badge" style="background:#f3f4f6;color:#6b7280">–</span>
+      </div>
     </div>
   </div>
 
+  <!-- BeeBreed Zuchtwertkarte -->
+  <div class="card" style="background:linear-gradient(135deg,#fff,#FFFBF0);border:1px solid rgba(245,166,35,0.2)">
+    <h3 style="font-size:.88rem;color:#92400E;display:flex;align-items:center;gap:.35rem">📊 BeeBreed Zuchtwerte</h3>
+    <div style="display:inline-block;font-family:monospace;font-size:.78rem;color:#3b82f6;font-weight:600;background:#dbeafe;padding:.15rem .5rem;border-radius:.25rem;margin-bottom:.5rem">DE-19-240-1-2024</div>
+    <div style="display:flex;flex-direction:column;gap:.35rem;margin-top:.35rem">
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;font-weight:700;padding-top:.25rem;border-top:1px solid #E8DFD4"><span style="width:85px;color:#7A6652">⭐ Gesamt</span><span style="width:30px;color:#10b981;text-align:right">114</span><div style="flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden"><div style="position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3"></div><div style="height:100%;width:73%;background:#10b981;border-radius:5px"></div></div></div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="width:85px;color:#7A6652">🍯 Honig</span><span style="width:30px;font-weight:700;color:#F5A623;text-align:right">109</span><div style="flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden"><div style="position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3"></div><div style="height:100%;width:65%;background:#F5A623;border-radius:5px"></div></div></div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="width:85px;color:#7A6652">🤲 Sanftmut</span><span style="width:30px;font-weight:700;color:#10b981;text-align:right">113</span><div style="flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden"><div style="position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3"></div><div style="height:100%;width:72%;background:#10b981;border-radius:5px"></div></div></div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="width:85px;color:#7A6652">🐝 Schwarm</span><span style="width:30px;font-weight:700;color:#F5A623;text-align:right">108</span><div style="flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden"><div style="position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3"></div><div style="height:100%;width:63%;background:#F5A623;border-radius:5px"></div></div></div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem"><span style="width:85px;color:#7A6652">🔬 Varroa</span><span style="width:30px;font-weight:700;color:#10b981;text-align:right">111</span><div style="flex:1;height:10px;background:#E8DFD4;border-radius:5px;position:relative;overflow:hidden"><div style="position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:#1C1410;opacity:.3"></div><div style="height:100%;width:68%;background:#10b981;border-radius:5px"></div></div></div>
+    </div>
+  </div>
+
+  <!-- Stepper-Preview -->
   <div class="card">
-    <h3>Einzelbewertungen</h3>
-    <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Sanftmut</span><span style="color:#F5A623;font-weight:700">★★★★★</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Wabensitz</span><span style="color:#F5A623;font-weight:700">★★★★☆</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Honigertrag</span><span style="color:#F5A623;font-weight:700">★★★★☆</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Schwarmtrieb</span><span style="color:#F5A623;font-weight:700">★★☆☆☆</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Winterfestigkeit</span><span style="color:#F5A623;font-weight:700">★★★☆☆</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:.88rem"><span>Volksstärke</span><span style="color:#F5A623;font-weight:700">★★★★☆</span></div>
+    <h3>📋 Neue Durchsicht</h3>
+    <p style="font-size:.82rem;color:#7A6652;margin-bottom:.75rem">5 klickbare Schritte – Speichern jederzeit möglich</p>
+    <div style="display:flex;gap:.15rem;background:#f5f0eb;border-radius:.75rem;padding:.25rem">
+      <div style="flex:1;text-align:center;padding:.4rem;background:#fff;border-radius:.5rem;font-size:.72rem;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)">🐝<br>Volk</div>
+      <div style="flex:1;text-align:center;padding:.4rem;font-size:.72rem;color:#7A6652">🔧<br>Tätigkeit<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#10b981;margin-left:2px;vertical-align:middle"></span></div>
+      <div style="flex:1;text-align:center;padding:.4rem;font-size:.72rem;color:#7A6652">⭐<br>Bewertung</div>
+      <div style="flex:1;text-align:center;padding:.4rem;font-size:.72rem;color:#7A6652">🔬<br>Varroa</div>
+      <div style="flex:1;text-align:center;padding:.4rem;font-size:.72rem;color:#7A6652">👑<br>Königin</div>
     </div>
   </div>
 
   <div class="cta-card">
-    <h3>Deine Völker bewerten?</h3>
-    <p>Radar-Chart, Sterne-Bewertung und Vergleiche.</p>
+    <h3>Stockkarte nutzen?</h3>
+    <p>Durchsichten protokollieren, BeeBreed-Zuchtwerte erfassen.</p>
     <a href="app.html#register">Kostenlos starten &rarr;</a>
   </div>
 </section>
@@ -936,8 +985,98 @@ a{color:inherit;text-decoration:none}
   </div>
 
   <div class="cta-card">
-    <h3>KI-Assistent freischalten?</h3>
+    <h3>Assistent freischalten?</h3>
     <p>Diagnose, Stresstest, Futterrechner und Saison-Tipps.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 10. ZUCHTBERATER ===== -->
+<section class="screen" id="screen-zuchtberater">
+  <h1>🧬 Zuchtberater</h1>
+  <p style="color:#7A6652;margin-top:-.75rem;margin-bottom:1rem;font-size:.9rem">Instrumentelle Besamung, Selektion & Linienaufbau</p>
+
+  <div class="card" style="background:linear-gradient(135deg,#1C1410,#2D1F15);color:#fff;border:none;padding:1.5rem">
+    <h3 style="color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.15rem;margin-bottom:.5rem">Dein Zuchtplan auf einen Blick</h3>
+    <p style="color:#C4A882;font-size:.85rem;line-height:1.5">Wähle eine Zuchtstrategie, gib deine Ressourcen ein – und erhalte einen konkreten Generationsplan mit Kalender-Terminen und Erfolgswahrscheinlichkeit.</p>
+  </div>
+
+  <div class="card">
+    <h3>🔬 Verfügbare Strategien</h3>
+    <div style="display:grid;gap:.5rem;margin-top:.75rem">
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.1)">
+        <span style="font-size:1.5rem">🔬</span>
+        <div><div style="font-weight:700;font-size:.9rem">Single Drone Insemination (SDI)</div><div style="font-size:.75rem;color:#7A6652">Maximale genetische Kontrolle · 4-6 Generationen</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.1)">
+        <span style="font-size:1.5rem">🔄</span>
+        <div><div style="font-weight:700;font-size:.9rem">Rückkreuzung (Backcross)</div><div style="font-size:.75rem;color:#7A6652">Eigenschafts-Fixierung · 3-5 Generationen</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.1)">
+        <span style="font-size:1.5rem">👨‍👩‍👦‍👦</span>
+        <div><div style="font-weight:700;font-size:.9rem">Brüderdrohnen-Besamung</div><div style="font-size:.75rem;color:#7A6652">Guter Kompromiss · 3-4 Generationen</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.1)">
+        <span style="font-size:1.5rem">⚡</span>
+        <div><div style="font-weight:700;font-size:.9rem">SDI + Brüderdrohnen Kombi</div><div style="font-size:.75rem;color:#7A6652">Profi-Strategie · 4-5 Generationen</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1px solid rgba(245,166,35,0.1)">
+        <span style="font-size:1.5rem">🏔️</span>
+        <div><div style="font-weight:700;font-size:.9rem">Klassische Selektion (Belegstelle)</div><div style="font-size:.75rem;color:#7A6652">Keine Besamung nötig · 5-8 Generationen</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📊 Beispiel-Ergebnis</h3>
+    <div style="text-align:center;padding:1rem;background:#f0fdf4;border-radius:.75rem;border:1px solid #6ee7b7;margin-bottom:.75rem">
+      <div style="font-size:.8rem;color:#065f46;font-weight:600">Geschätzte Erfolgswahrscheinlichkeit</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:2.5rem;color:#059669;margin:.25rem 0">65-80%</div>
+      <div style="font-size:.8rem;color:#065f46">für eine stabile Linie nach 4 Generationen</div>
+    </div>
+    <p style="font-size:.85rem;color:#7A6652;line-height:1.5">Mit 30 Königinnen pro Serie, 4 Drohnenvölkern und SDI+Brüderdrohnen-Kombi. Inkl. konkretem Kalenderplan ab deinem Startdatum.</p>
+  </div>
+
+  <div class="card">
+    <h3>📖 Integriertes Glossar</h3>
+    <p style="font-size:.85rem;color:#7A6652;margin-bottom:.5rem">16 Fachbegriffe erklärt – SDI, MDI, COI, VSH, SMR, Backcross, Heterosis und mehr. Jeder Begriff per ❓-Button direkt erreichbar.</p>
+  </div>
+
+  <div class="cta-card">
+    <h3>Zuchtberater nutzen?</h3>
+    <p>Berechne deinen optimalen Zuchtplan – kostenlos.</p>
+    <a href="app.html#register">Kostenlos starten &rarr;</a>
+  </div>
+</section>
+
+<!-- ===== 11. TRACHT-RADAR ===== -->
+<section class="screen" id="screen-trachtradar">
+  <h1>🗺️ Tracht-Radar</h1>
+  <p style="color:#7A6652;margin-top:-.75rem;margin-bottom:1rem;font-size:.9rem">Trachten & Standorte auf der Karte mit GTS-Ampel</p>
+
+  <div class="map-mock" style="height:300px;position:relative">
+    <div class="map-marker" style="top:25%;left:20%">🐝</div>
+    <div class="map-label" style="top:17%;left:25%;background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:.7rem;font-weight:600">GTS 285°C 🟢</div>
+    <div class="map-marker" style="top:50%;left:60%">🐝</div>
+    <div class="map-label" style="top:42%;left:65%;background:#FFF3D6;color:#92400e;padding:2px 6px;border-radius:4px;font-size:.7rem;font-weight:600">GTS 180°C 🟡</div>
+    <div class="map-marker" style="top:35%;left:45%;font-size:1.2rem">🌸</div>
+    <div class="map-label" style="top:28%;left:49%;font-size:.65rem">Raps</div>
+    <div class="map-marker" style="top:65%;left:30%;font-size:1.2rem">🌳</div>
+    <div class="map-label" style="top:58%;left:34%;font-size:.65rem">Linde</div>
+  </div>
+
+  <div class="card">
+    <h3>🌡️ GTS Grünlandtemperatursumme</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.5rem;font-size:.8rem;text-align:center">
+      <div style="padding:.5rem;background:#d1fae5;border-radius:.5rem"><div style="font-weight:700;color:#065f46">🟢 Raps</div><div style="color:#065f46;font-size:.7rem">ab 250°C – blüht!</div></div>
+      <div style="padding:.5rem;background:#FFF3D6;border-radius:.5rem"><div style="font-weight:700;color:#92400e">🟡 Akazie</div><div style="color:#92400e;font-size:.7rem">ab 350°C – bald</div></div>
+      <div style="padding:.5rem;background:#fee2e2;border-radius:.5rem"><div style="font-weight:700;color:#991b1b">🔴 Linde</div><div style="color:#991b1b;font-size:.7rem">ab 500°C – dauert</div></div>
+    </div>
+  </div>
+
+  <div class="cta-card">
+    <h3>Tracht-Radar nutzen?</h3>
+    <p>Trachtquellen kartieren, GTS live verfolgen.</p>
     <a href="app.html#register">Kostenlos starten &rarr;</a>
   </div>
 </section>
