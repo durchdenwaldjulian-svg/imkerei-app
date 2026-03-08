@@ -238,10 +238,10 @@ async function init() {
     
     standorte = (results[0].data || []).map(function(r){
         return {id:r.id, name:r.name};
-    });
+    }).sort(function(a,b){ return a.name.localeCompare(b.name); });
     voelker = (results[1].data || []).map(function(r){
         return {id:r.id, standortId:r.standort_id, name:r.name, status:r.status};
-    });
+    }).sort(function(a,b){ return a.name.localeCompare(b.name); });
     
     // Legacy-Bewertungen laden
     bewertungen = (results[2].data || []).map(function(r){
