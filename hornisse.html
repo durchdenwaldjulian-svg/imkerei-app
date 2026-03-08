@@ -327,7 +327,7 @@ function renderMarkers() {
 
 function createHornisseIcon(typ, status) {
     var borderColor = status === 'entfernt' ? '#10B981' : status === 'bestaetigt' ? '#F59E0B' : '#9CA3AF';
-    var size = typ === 'nest' ? 56 : 46;
+    var size = typ === 'nest' ? 36 : 28;
     var imgSize = size - 6;
     var label = typ === 'nest' ? '🪹' : typ === 'angriff' ? '⚠️' : '';
     var badge = label ? '<div style="position:absolute;top:-6px;right:-6px;font-size:12px;background:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)">' + label + '</div>' : '';
