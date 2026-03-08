@@ -36,7 +36,8 @@
                 'bestandsbuch.html': 'Bestandsbuch',
                 'forum.html': 'Forum',
                 'trachtkarte.html': 'Trachtkarte',
-                'verein_trachten.html': 'Vereins-Trachten'
+                'verein_trachten.html': 'Vereins-Trachten',
+                'hornisse.html': 'Hornissen-Melder'
             };
             var seitenLabel = seitenNamen[seite] || seite;
 

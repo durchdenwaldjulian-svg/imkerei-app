@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hornissen-Melder – Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#DC2626">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="/fonts/fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        body{padding-left:220px;padding-bottom:0;margin:0;overflow:hidden;height:100vh}
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+
+        .page-header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:linear-gradient(135deg,#FEF2F2,#fff);border-bottom:2px solid rgba(220,38,38,0.12);z-index:40;position:relative}
+        .page-header h1{margin:0;font-size:1.1rem;color:#991B1B;display:flex;align-items:center;gap:.5rem}
+        .page-header .header-actions{display:flex;gap:.5rem}
+
+        #map{width:100%;height:calc(100vh - 54px);z-index:1}
+
+        /* Filter */
+        .filter-bar{position:absolute;top:62px;left:8px;right:8px;z-index:1000;display:flex;gap:.5rem;flex-wrap:wrap;padding:.5rem;background:rgba(255,255,255,0.95);border-radius:.75rem;box-shadow:0 2px 12px rgba(0,0,0,0.1);backdrop-filter:blur(8px);max-width:600px}
+        .filter-bar select,.filter-bar input{padding:.4rem .6rem;border:1.5px solid #E8DFD4;border-radius:.5rem;font-size:.8rem;font-family:inherit;background:#fff;outline:none}
+        .filter-bar select:focus,.filter-bar input:focus{border-color:#DC2626}
+
+        /* Stats */
+        .stat-bar{position:fixed;bottom:0;left:220px;right:0;z-index:1000;background:rgba(255,255,255,0.95);border-top:1px solid #E8DFD4;padding:.4rem 1rem;font-size:.75rem;color:#7A6652;display:flex;gap:1rem;align-items:center;backdrop-filter:blur(8px)}
+        .stat-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.25rem}
+
+        /* Melde-Modal */
+        .melde-modal{display:none;position:fixed;inset:0;background:rgba(28,20,16,0.45);z-index:10000;align-items:stretch;justify-content:flex-end}
+        .melde-modal.active{display:flex}
+        .melde-content{background:#fff;border-radius:1rem 0 0 1rem;width:100%;max-width:500px;height:100vh;overflow-y:auto;box-shadow:-4px 0 20px rgba(28,20,16,0.15);display:flex;flex-direction:column}
+        .melde-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid rgba(220,38,38,0.12);background:linear-gradient(to right,#FEF2F2,#fff);border-radius:1rem 0 0 0;position:sticky;top:0;z-index:5}
+        .melde-header h2{margin:0;font-size:1.15rem;color:#991B1B}
+        .melde-body{flex:1;padding:1.25rem;overflow-y:auto}
+        .melde-footer{padding:1rem 1.25rem;border-top:2px solid rgba(220,38,38,0.12);background:#fff}
+
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-weight:600;font-size:.82rem;color:#1C1410;margin-bottom:.4rem}
+        .input{width:100%;padding:.6rem .75rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s}
+        .input:focus{border-color:#DC2626}
+
+        .sichtung-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+        .sichtung-btn{padding:.75rem .5rem;border:2px solid #E8DFD4;border-radius:.75rem;background:#fff;cursor:pointer;text-align:center;transition:all .2s;font-size:.8rem}
+        .sichtung-btn:hover{border-color:#DC2626;background:#FEF2F2;transform:translateY(-2px)}
+        .sichtung-btn.selected{border-color:#DC2626;background:#DC2626;color:#fff}
+        .sichtung-btn .emoji{display:block;font-size:1.5rem;margin-bottom:.25rem}
+
+        .foto-upload{border:2px dashed #E8DFD4;border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:#FAFAF9}
+        .foto-upload:hover{border-color:#DC2626;background:#FEF2F2}
+        .foto-upload.has-foto{border-style:solid;border-color:#10b981;background:#F0FDF4}
+        .foto-preview{max-width:100%;max-height:200px;border-radius:.5rem;margin-top:.5rem}
+
+        /* Popup */
+        .hornisse-popup{min-width:220px}
+        .hornisse-popup .popup-type{font-size:1rem;font-weight:700;margin-bottom:.35rem}
+        .hornisse-popup .popup-detail{font-size:.82rem;color:#4B5563;line-height:1.6}
+        .hornisse-popup .popup-status{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:600;color:#fff}
+        .hornisse-popup .popup-foto{max-width:100%;max-height:150px;border-radius:.5rem;margin-top:.5rem}
+        .hornisse-popup .popup-actions{margin-top:.5rem;display:flex;gap:.35rem}
+        .hornisse-popup .popup-actions button{padding:.25rem .5rem;border:1px solid #E8DFD4;border-radius:.35rem;font-size:.72rem;cursor:pointer;background:#fff}
+        .hornisse-popup .popup-actions button:hover{background:#FEF2F2;border-color:#DC2626}
+
+        /* Info-Banner */
+        .info-banner{position:absolute;bottom:40px;left:8px;right:8px;z-index:1000;max-width:500px;background:rgba(255,255,255,0.95);border-radius:.75rem;padding:.75rem 1rem;box-shadow:0 2px 12px rgba(0,0,0,0.1);font-size:.8rem;color:#7A6652;backdrop-filter:blur(8px);display:none}
+
+        /* Toast */
+        .toast{position:fixed;bottom:3rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.5rem 1.25rem;border-radius:999px;font-size:.8rem;z-index:99999;display:none;max-width:90vw;white-space:nowrap;pointer-events:none}
+        .toast.show{display:block}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:68px;overflow:auto;height:auto}
+            .nav{display:none}
+            .mobile-nav{display:flex}
+            #map{height:calc(100vh - 54px - 68px)}
+            .filter-bar{left:4px;right:4px;top:58px}
+            .stat-bar{left:0;bottom:68px}
+            .melde-content{max-width:100%;border-radius:0}
+            .melde-header{border-radius:0}
+            .info-banner{bottom:110px;left:4px;right:4px}
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+
+<div class="page-header">
+    <h1>🐝 Hornissen-Melder</h1>
+    <div class="header-actions">
+        <button onclick="toggleInfo()" style="padding:.35rem .6rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.8rem">ℹ️ Info</button>
+        <button onclick="openMeldeModal()" style="padding:.35rem .75rem;background:#DC2626;color:#fff;border:none;border-radius:.5rem;cursor:pointer;font-size:.85rem;font-weight:600" id="meldeBtn">+ Meldung</button>
+    </div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+    <select id="filterTyp" onchange="renderMarkers()">
+        <option value="">Alle Sichtungen</option>
+        <option value="einzeln">Einzelne Hornisse</option>
+        <option value="mehrere">Mehrere Hornissen</option>
+        <option value="nest">Nest gefunden</option>
+        <option value="angriff">Angriff auf Bienenvolk</option>
+    </select>
+    <select id="filterStatus" onchange="renderMarkers()">
+        <option value="">Alle Status</option>
+        <option value="unbestaetigt">Unbestätigt</option>
+        <option value="bestaetigt">Bestätigt</option>
+        <option value="entfernt">Nest entfernt</option>
+    </select>
+    <select id="filterZeit" onchange="renderMarkers()">
+        <option value="90">Letzte 90 Tage</option>
+        <option value="30">Letzte 30 Tage</option>
+        <option value="7">Letzte 7 Tage</option>
+        <option value="">Alle</option>
+    </select>
+</div>
+
+<div id="map"></div>
+
+<div class="stat-bar" id="statBar">Lade Meldungen...</div>
+
+<div class="info-banner" id="infoBanner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+            <strong style="color:#991B1B">Asiatische Hornisse (Vespa velutina)</strong>
+            <p style="margin:.35rem 0 0">Die Asiatische Hornisse ist eine invasive Art, die Honigbienen jagt. Frühes Erkennen und Melden von Nestern ist entscheidend!</p>
+            <p style="margin:.25rem 0 0"><strong>Erkennungsmerkmale:</strong> Dunkler Körper, orange Gesichtsmaske, gelbe Beinenden, kleiner als heimische Hornisse</p>
+            <p style="margin:.25rem 0 0;font-size:.72rem;color:#A69580">Verwechslungsgefahr mit der heimischen Hornisse (Vespa crabro) – diese ist geschützt!</p>
+        </div>
+        <button onclick="toggleInfo()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:#7A6652;padding:0;line-height:1;flex-shrink:0;margin-left:.5rem">✕</button>
+    </div>
+</div>
+
+<!-- Melde-Modal -->
+<div class="melde-modal" id="meldeModal">
+    <div class="melde-content">
+        <div class="melde-header">
+            <h2>🐝 Hornisse melden</h2>
+            <button onclick="closeMeldeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#7A6652;padding:.25rem;line-height:1">✕</button>
+        </div>
+        <div class="melde-body" id="meldeBody"></div>
+        <div class="melde-footer">
+            <button onclick="saveMeldung()" style="width:100%;padding:.75rem;background:#DC2626;color:#fff;border:none;border-radius:.5rem;font-size:1rem;font-weight:600;cursor:pointer">Meldung absenden</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="config.js"></script>
+<script src="plan.js"></script>
+<script src="presence.js"></script>
+<script>
+// ============================================
+// HORNISSEN-MELDER
+// ============================================
+var map, markers, meldungen = [], loggedInUserId = null, loggedInEmail = '';
+var meldeFormData = {};
+var standorte = []; // eigene Standorte für Warnradius
+
+var SICHTUNGS_TYPEN = {
+    einzeln:  {label:'Einzelne Hornisse', emoji:'🐝', color:'#F59E0B'},
+    mehrere:  {label:'Mehrere Hornissen', emoji:'🐝🐝', color:'#F97316'},
+    nest:     {label:'Nest gefunden', emoji:'🪹', color:'#DC2626'},
+    angriff:  {label:'Angriff auf Bienenvolk', emoji:'⚠️', color:'#991B1B'}
+};
+
+var STATUS_MAP = {
+    unbestaetigt: {label:'Unbestätigt', color:'#9CA3AF'},
+    bestaetigt:   {label:'Bestätigt', color:'#F59E0B'},
+    entfernt:     {label:'Nest entfernt', color:'#10B981'}
+};
+
+var VERHALTEN = ['Jagend vor Bienenstock','Fliegend/Suchend','Nest am Gebäude','Nest im Baum','Nest in Hecke/Strauch','Nest im Boden','Am Obst/Nahrungsquelle','Sonstiges'];
+var NEST_GROESSE = ['Tennisball (Primärnest)','Handball','Fußball','Größer als Fußball','Unbekannt'];
+var NEST_HOEHE = ['Bodennah (0-2m)','Strauch/niedrig (2-5m)','Baumkrone/hoch (5m+)','Am Gebäude','Unbekannt'];
+
+// ============================================
+// INIT
+// ============================================
+window.onload = async function() {
+    // Map initialisieren
+    map = L.map('map').setView([51.1657, 10.4515], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 18
+    }).addTo(map);
+    markers = L.layerGroup().addTo(map);
+
+    // Klick auf Karte = Position wählen (wenn Modal offen)
+    map.on('click', function(e) {
+        if (document.getElementById('meldeModal').classList.contains('active')) {
+            meldeFormData.lat = e.latlng.lat;
+            meldeFormData.lng = e.latlng.lng;
+            renderMeldeForm();
+            toast('📍 Position gesetzt');
+        }
+    });
+
+    // Auth prüfen
+    try {
+        var sess = await sb.auth.getSession();
+        if (sess.data.session) {
+            loggedInUserId = sess.data.session.user.id;
+            loggedInEmail = sess.data.session.user.email || '';
+            document.getElementById('meldeBtn').style.display = '';
+            // Eigene Standorte laden für Warnradius
+            var sRes = await sb.from('standorte').select('id,name,lat,lng').eq('user_id', loggedInUserId);
+            standorte = (sRes.data || []).filter(function(s){return s.lat && s.lng;});
+        }
+    } catch(e) { console.warn('Auth:', e); }
+
+    // Meldungen laden
+    await loadMeldungen();
+    renderMarkers();
+    updateStats();
+};
+
+// ============================================
+// DATEN LADEN
+// ============================================
+async function loadMeldungen() {
+    var pubSb = createPublicClient();
+    var res = await pubSb.from('hornissen_meldungen').select('*').order('created_at', {ascending: false});
+    if (res.error) {
+        console.error('Fehler beim Laden:', res.error);
+        meldungen = [];
+        return;
+    }
+    meldungen = res.data || [];
+}
+
+// ============================================
+// MARKER RENDERN
+// ============================================
+function renderMarkers() {
+    markers.clearLayers();
+
+    var filterTyp = document.getElementById('filterTyp').value;
+    var filterStatus = document.getElementById('filterStatus').value;
+    var filterZeit = document.getElementById('filterZeit').value;
+    var zeitGrenze = filterZeit ? Date.now() - (parseInt(filterZeit) * 86400000) : 0;
+
+    var filtered = meldungen.filter(function(m) {
+        if (filterTyp && m.typ !== filterTyp) return false;
+        if (filterStatus && m.status !== filterStatus) return false;
+        if (zeitGrenze && new Date(m.created_at).getTime() < zeitGrenze) return false;
+        return true;
+    });
+
+    filtered.forEach(function(m) {
+        if (!m.lat || !m.lng) return;
+        var typ = SICHTUNGS_TYPEN[m.typ] || SICHTUNGS_TYPEN.einzeln;
+        var status = STATUS_MAP[m.status] || STATUS_MAP.unbestaetigt;
+        var icon = createHornisseIcon(m.typ, m.status);
+
+        var popupHtml = '<div class="hornisse-popup">';
+        popupHtml += '<div class="popup-type">' + typ.emoji + ' ' + typ.label + '</div>';
+        popupHtml += '<div class="popup-detail">';
+        popupHtml += '📅 ' + formatDatum(m.datum || m.created_at) + '<br>';
+        if (m.verhalten) popupHtml += '👁️ ' + m.verhalten + '<br>';
+        if (m.nest_groesse) popupHtml += '📏 ' + m.nest_groesse + '<br>';
+        if (m.nest_hoehe) popupHtml += '📐 ' + m.nest_hoehe + '<br>';
+        popupHtml += '<span class="popup-status" style="background:' + status.color + '">' + status.label + '</span>';
+        if (m.bestaetigt_count > 0) popupHtml += ' <span style="font-size:.7rem;color:#7A6652">(' + m.bestaetigt_count + 'x bestätigt)</span>';
+        if (m.notizen) popupHtml += '<br>💬 ' + m.notizen;
+        popupHtml += '</div>';
+        if (m.foto_url) popupHtml += '<img src="' + m.foto_url + '" class="popup-foto" alt="Foto">';
+        popupHtml += '<div style="font-size:.7rem;color:#9CA3AF;margin-top:.35rem">👤 ' + (m.melder_name || 'Anonym') + '</div>';
+
+        // Aktionen
+        popupHtml += '<div class="popup-actions">';
+        if (loggedInUserId && m.status === 'unbestaetigt') {
+            popupHtml += '<button onclick="bestaetigeMeldung(\'' + m.id + '\')">✅ Bestätigen</button>';
+        }
+        if (loggedInUserId && m.user_id === loggedInUserId) {
+            popupHtml += '<button onclick="deleteMeldung(\'' + m.id + '\')" style="color:#DC2626">🗑️ Löschen</button>';
+        }
+        if (loggedInUserId && m.typ === 'nest' && m.status !== 'entfernt') {
+            popupHtml += '<button onclick="markiereEntfernt(\'' + m.id + '\')">🏁 Entfernt</button>';
+        }
+        popupHtml += '</div>';
+        popupHtml += '</div>';
+
+        var marker = L.marker([m.lat, m.lng], {icon: icon}).bindPopup(popupHtml, {maxWidth: 300});
+        markers.addLayer(marker);
+    });
+
+    // Eigene Standorte als blaue Kreise (Warnradius 5km)
+    if (loggedInUserId && standorte.length) {
+        standorte.forEach(function(s) {
+            L.circle([s.lat, s.lng], {radius: 5000, color: '#3B82F6', fillColor: '#3B82F6', fillOpacity: 0.05, weight: 1, dashArray: '5,5'})
+                .bindPopup('📍 ' + s.name + '<br><span style="font-size:.75rem;color:#7A6652">5 km Warnradius</span>')
+                .addTo(markers);
+        });
+    }
+
+    // Karte auf Marker zoomen
+    if (filtered.length > 0) {
+        var bounds = L.latLngBounds(filtered.filter(function(m){return m.lat && m.lng;}).map(function(m){return [m.lat, m.lng];}));
+        if (bounds.isValid()) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 10});
+    }
+
+    updateStats();
+}
+
+function createHornisseIcon(typ, status) {
+    var typInfo = SICHTUNGS_TYPEN[typ] || SICHTUNGS_TYPEN.einzeln;
+    var borderColor = status === 'entfernt' ? '#10B981' : status === 'bestaetigt' ? '#F59E0B' : '#9CA3AF';
+    var size = typ === 'nest' ? 36 : 28;
+
+    return L.divIcon({
+        html: '<div style="background:' + typInfo.color + ';width:' + size + 'px;height:' + size + 'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:' + (typ==='nest'?'18':'14') + 'px;border:3px solid ' + borderColor + ';box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer">' + typInfo.emoji.charAt(0) + typInfo.emoji.charAt(1) + '</div>',
+        className: '',
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+        popupAnchor: [0, -size/2]
+    });
+}
+
+// ============================================
+// STATISTIKEN
+// ============================================
+function updateStats() {
+    var nester = meldungen.filter(function(m){return m.typ==='nest' && m.status!=='entfernt';}).length;
+    var bestaetigt = meldungen.filter(function(m){return m.status==='bestaetigt';}).length;
+    var gesamt = meldungen.length;
+    var entfernt = meldungen.filter(function(m){return m.status==='entfernt';}).length;
+
+    // Warnung wenn Nest in der Nähe
+    var warnHtml = '';
+    if (loggedInUserId && standorte.length) {
+        meldungen.forEach(function(m) {
+            if (m.typ !== 'nest' || m.status === 'entfernt' || !m.lat || !m.lng) return;
+            standorte.forEach(function(s) {
+                var dist = getDistanceKm(s.lat, s.lng, m.lat, m.lng);
+                if (dist < 5) {
+                    warnHtml = ' | <span style="color:#DC2626;font-weight:600">⚠️ Nest ' + dist.toFixed(1) + ' km von ' + s.name + '!</span>';
+                }
+            });
+        });
+    }
+
+    document.getElementById('statBar').innerHTML =
+        '<span><span class="stat-dot" style="background:#DC2626"></span>' + nester + ' aktive Nester</span>' +
+        '<span><span class="stat-dot" style="background:#F59E0B"></span>' + bestaetigt + ' bestätigt</span>' +
+        '<span><span class="stat-dot" style="background:#10B981"></span>' + entfernt + ' entfernt</span>' +
+        '<span style="color:#A69580">' + gesamt + ' Meldungen gesamt</span>' +
+        warnHtml;
+}
+
+// ============================================
+// MELDE-MODAL
+// ============================================
+function openMeldeModal() {
+    if (!loggedInUserId) {
+        toast('Bitte einloggen um zu melden', 'error');
+        return;
+    }
+    meldeFormData = {
+        typ: '',
+        datum: new Date().toISOString().split('T')[0],
+        lat: null,
+        lng: null,
+        verhalten: '',
+        nest_groesse: '',
+        nest_hoehe: '',
+        notizen: '',
+        foto: null,
+        foto_preview: ''
+    };
+    renderMeldeForm();
+    document.getElementById('meldeModal').classList.add('active');
+}
+
+function closeMeldeModal() {
+    document.getElementById('meldeModal').classList.remove('active');
+}
+
+function renderMeldeForm() {
+    var html = '';
+
+    // 1. Art der Sichtung
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Art der Sichtung *</label>';
+    html += '<div class="sichtung-grid">';
+    [{key:'einzeln',emoji:'🐝',label:'Einzelne'},{key:'mehrere',emoji:'🐝🐝',label:'Mehrere'},{key:'nest',emoji:'🪹',label:'Nest'},{key:'angriff',emoji:'⚠️',label:'Angriff'}].forEach(function(t) {
+        html += '<div class="sichtung-btn' + (meldeFormData.typ===t.key?' selected':'') + '" onclick="meldeFormData.typ=\'' + t.key + '\';renderMeldeForm()">';
+        html += '<span class="emoji">' + t.emoji + '</span>' + t.label;
+        html += '</div>';
+    });
+    html += '</div></div>';
+
+    // 2. Datum
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Datum der Sichtung *</label>';
+    html += '<input type="date" class="input" value="' + meldeFormData.datum + '" onchange="meldeFormData.datum=this.value">';
+    html += '</div>';
+
+    // 3. Position
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Position * <span style="font-size:.72rem;color:#A69580;font-weight:400">(klicke auf die Karte oder nutze GPS)</span></label>';
+    if (meldeFormData.lat && meldeFormData.lng) {
+        html += '<div style="display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:.5rem;font-size:.85rem">';
+        html += '<span>📍 ' + meldeFormData.lat.toFixed(5) + ', ' + meldeFormData.lng.toFixed(5) + '</span>';
+        html += '<button onclick="meldeFormData.lat=null;meldeFormData.lng=null;renderMeldeForm()" style="background:none;border:none;cursor:pointer;font-size:.9rem">✕</button>';
+        html += '</div>';
+    } else {
+        html += '<div style="display:flex;gap:.5rem">';
+        html += '<button onclick="getGPS()" style="flex:1;padding:.6rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.85rem">📡 GPS verwenden</button>';
+        html += '<button onclick="closeMeldeModal();toast(\'Klicke jetzt auf die Karte\')" style="flex:1;padding:.6rem;background:#fff;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.85rem">🗺️ Auf Karte klicken</button>';
+        html += '</div>';
+    }
+    html += '</div>';
+
+    // 4. Verhalten
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Verhalten</label>';
+    html += '<select class="input" onchange="meldeFormData.verhalten=this.value">';
+    html += '<option value="">-- wählen --</option>';
+    VERHALTEN.forEach(function(v) {
+        html += '<option' + (meldeFormData.verhalten===v?' selected':'') + '>' + v + '</option>';
+    });
+    html += '</select></div>';
+
+    // 5. Nest-Details (nur bei Nest)
+    if (meldeFormData.typ === 'nest') {
+        html += '<div style="background:#FEF2F2;border-radius:.75rem;padding:.75rem;border:1px solid rgba(220,38,38,0.15);margin-bottom:1rem">';
+        html += '<label class="form-label" style="color:#991B1B">🪹 Nest-Details</label>';
+
+        html += '<div class="form-group" style="margin-bottom:.5rem">';
+        html += '<label style="font-size:.78rem;color:#7A6652;display:block;margin-bottom:.25rem">Größe</label>';
+        html += '<select class="input" onchange="meldeFormData.nest_groesse=this.value">';
+        html += '<option value="">-- wählen --</option>';
+        NEST_GROESSE.forEach(function(g) {
+            html += '<option' + (meldeFormData.nest_groesse===g?' selected':'') + '>' + g + '</option>';
+        });
+        html += '</select></div>';
+
+        html += '<div class="form-group" style="margin-bottom:0">';
+        html += '<label style="font-size:.78rem;color:#7A6652;display:block;margin-bottom:.25rem">Höhe / Position</label>';
+        html += '<select class="input" onchange="meldeFormData.nest_hoehe=this.value">';
+        html += '<option value="">-- wählen --</option>';
+        NEST_HOEHE.forEach(function(h) {
+            html += '<option' + (meldeFormData.nest_hoehe===h?' selected':'') + '>' + h + '</option>';
+        });
+        html += '</select></div>';
+        html += '</div>';
+    }
+
+    // 6. Foto
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Foto <span style="font-size:.72rem;color:#A69580;font-weight:400">(hilft bei der Verifizierung)</span></label>';
+    html += '<div class="foto-upload' + (meldeFormData.foto_preview?' has-foto':'') + '" onclick="document.getElementById(\'fotoInput\').click()">';
+    if (meldeFormData.foto_preview) {
+        html += '<img src="' + meldeFormData.foto_preview + '" class="foto-preview">';
+        html += '<div style="font-size:.78rem;color:#10b981;margin-top:.35rem">✓ Foto ausgewählt</div>';
+    } else {
+        html += '<div style="font-size:2rem;margin-bottom:.25rem">📷</div>';
+        html += '<div style="font-size:.85rem;color:#7A6652">Foto aufnehmen oder hochladen</div>';
+    }
+    html += '</div>';
+    html += '<input type="file" id="fotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleFoto(this)">';
+    html += '</div>';
+
+    // 7. Notizen
+    html += '<div class="form-group">';
+    html += '<label class="form-label">Notizen</label>';
+    html += '<textarea class="input" rows="2" placeholder="Weitere Details, Beschreibung..." onchange="meldeFormData.notizen=this.value">' + (meldeFormData.notizen||'') + '</textarea>';
+    html += '</div>';
+
+    // Hinweis
+    html += '<div style="font-size:.72rem;color:#7A6652;padding:.5rem;background:#FEF2F2;border-radius:.35rem">';
+    html += '⚠️ <strong>Verwechslungsgefahr:</strong> Die heimische Hornisse (Vespa crabro) ist geschützt! Die Asiatische Hornisse ist dunkler, hat eine orange Gesichtsmaske und gelbe Beinenden.';
+    html += '</div>';
+
+    document.getElementById('meldeBody').innerHTML = html;
+}
+
+// ============================================
+// GPS
+// ============================================
+function getGPS() {
+    if (!navigator.geolocation) { toast('GPS nicht verfügbar', 'error'); return; }
+    toast('📡 Position wird ermittelt...');
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        meldeFormData.lat = pos.coords.latitude;
+        meldeFormData.lng = pos.coords.longitude;
+        map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+        renderMeldeForm();
+        toast('📍 Position gefunden!', 'success');
+    }, function(err) {
+        toast('GPS-Fehler: ' + err.message, 'error');
+    }, {enableHighAccuracy: true, timeout: 10000});
+}
+
+// ============================================
+// FOTO
+// ============================================
+function handleFoto(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+
+    // Größe prüfen (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        toast('Foto zu groß (max 5 MB)', 'error');
+        return;
+    }
+
+    meldeFormData.foto = file;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        meldeFormData.foto_preview = e.target.result;
+        renderMeldeForm();
+    };
+    reader.readAsDataURL(file);
+}
+
+// ============================================
+// SPEICHERN
+// ============================================
+async function saveMeldung() {
+    if (!meldeFormData.typ) { toast('Bitte Art der Sichtung wählen!', 'error'); return; }
+    if (!meldeFormData.lat || !meldeFormData.lng) { toast('Bitte Position angeben!', 'error'); return; }
+
+    toast('Wird gespeichert...');
+
+    // Foto hochladen (optional)
+    var fotoUrl = null;
+    if (meldeFormData.foto) {
+        var ext = meldeFormData.foto.name.split('.').pop() || 'jpg';
+        var fotoName = 'hornisse_' + Date.now() + '_' + Math.random().toString(36).substr(2,6) + '.' + ext;
+        var uploadRes = await sb.storage.from('hornissen-fotos').upload(fotoName, meldeFormData.foto);
+        if (!uploadRes.error) {
+            var urlRes = sb.storage.from('hornissen-fotos').getPublicUrl(fotoName);
+            fotoUrl = urlRes.data.publicUrl;
+        }
+    }
+
+    var dbData = {
+        id: crypto.randomUUID ? crypto.randomUUID() : 'h_' + Date.now(),
+        user_id: loggedInUserId,
+        melder_name: loggedInEmail.split('@')[0] || 'Imker',
+        typ: meldeFormData.typ,
+        datum: meldeFormData.datum,
+        lat: meldeFormData.lat,
+        lng: meldeFormData.lng,
+        verhalten: meldeFormData.verhalten || null,
+        nest_groesse: meldeFormData.nest_groesse || null,
+        nest_hoehe: meldeFormData.nest_hoehe || null,
+        notizen: meldeFormData.notizen || null,
+        foto_url: fotoUrl,
+        status: 'unbestaetigt',
+        bestaetigt_count: 0
+    };
+
+    var res = await sb.from('hornissen_meldungen').insert(dbData);
+    if (res.error) {
+        toast('Fehler: ' + res.error.message, 'error');
+        return;
+    }
+
+    meldungen.unshift(dbData);
+    closeMeldeModal();
+    renderMarkers();
+    toast('✅ Meldung gespeichert!', 'success');
+}
+
+// ============================================
+// AKTIONEN
+// ============================================
+async function bestaetigeMeldung(id) {
+    var m = meldungen.find(function(x){return x.id===id;});
+    if (!m) return;
+    var newCount = (m.bestaetigt_count || 0) + 1;
+    var newStatus = newCount >= 2 ? 'bestaetigt' : m.status;
+    await sb.from('hornissen_meldungen').update({bestaetigt_count: newCount, status: newStatus}).eq('id', id);
+    m.bestaetigt_count = newCount;
+    m.status = newStatus;
+    renderMarkers();
+    toast('✅ Bestätigung gespeichert', 'success');
+}
+
+async function markiereEntfernt(id) {
+    if (!confirm('Nest als entfernt markieren?')) return;
+    await sb.from('hornissen_meldungen').update({status: 'entfernt'}).eq('id', id);
+    var m = meldungen.find(function(x){return x.id===id;});
+    if (m) m.status = 'entfernt';
+    renderMarkers();
+    toast('🏁 Als entfernt markiert', 'success');
+}
+
+async function deleteMeldung(id) {
+    if (!confirm('Meldung wirklich löschen?')) return;
+    await sb.from('hornissen_meldungen').delete().eq('id', id);
+    meldungen = meldungen.filter(function(x){return x.id!==id;});
+    renderMarkers();
+    toast('🗑️ Gelöscht', 'success');
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function formatDatum(d) {
+    return new Date(d).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2-lat1) * Math.PI / 180;
+    var dLng = (lng2-lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function toggleInfo() {
+    var el = document.getElementById('infoBanner');
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function toast(msg, type) {
+    type = type || '';
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+</script>
+</body>
+</html>

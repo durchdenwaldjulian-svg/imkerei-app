@@ -31,7 +31,8 @@
         ]},
         { title: 'Community', items: [
             { href: 'forum.html', icon: '💬', label: 'Forum' },
-            { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' }
+            { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' },
+            { href: 'hornisse.html', icon: '🐝', label: 'Hornissen-Melder' }
         ]},
         { title: 'Verwaltung', items: [
             { href: 'app.html#kosten', icon: '💰', label: 'Kosten' }
@@ -146,7 +147,8 @@
             ]},
             { title: 'Community', items: [
                 { href: 'forum.html', icon: '💬', label: 'Forum' },
-                { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' }
+                { href: 'verein_trachten.html', icon: '🏘️', label: 'Mein Verein' },
+                { href: 'hornisse.html', icon: '🐝', label: 'Hornissen-Melder' }
             ]},
             { title: 'Verwaltung', items: [
                 { page: 'einstellungen', icon: '⚙️', label: 'Einstellungen' },
