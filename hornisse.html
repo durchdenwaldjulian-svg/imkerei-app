@@ -474,8 +474,9 @@ function renderMeldeForm() {
     }
     html += '<div style="display:flex;gap:.5rem;margin-bottom:.5rem">';
     html += '<button onclick="getGPS()" style="flex:1;padding:.5rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.8rem">📡 GPS</button>';
+    html += '<button onclick="toggleMiniMapSize()" id="expandMapBtn" style="padding:.5rem .75rem;background:#fff;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.8rem">🔍 Karte vergrößern</button>';
     html += '</div>';
-    html += '<div id="miniMapContainer" style="height:200px;border-radius:.75rem;border:2px solid #E8DFD4;overflow:hidden;position:relative"></div>';
+    html += '<div id="miniMapContainer" style="height:200px;border-radius:.75rem;border:2px solid #E8DFD4;overflow:hidden;position:relative;transition:height .3s ease"></div>';
     html += '</div>';
 
     // 4. Verhalten
@@ -552,7 +553,18 @@ function renderMeldeForm() {
     initMiniMap();
 }
 
-var miniMap = null, miniMarker = null;
+var miniMap = null, miniMarker = null, miniMapExpanded = false;
+
+function toggleMiniMapSize() {
+    var container = document.getElementById('miniMapContainer');
+    var btn = document.getElementById('expandMapBtn');
+    if (!container || !miniMap) return;
+    miniMapExpanded = !miniMapExpanded;
+    container.style.height = miniMapExpanded ? '450px' : '200px';
+    btn.textContent = miniMapExpanded ? '🔍 Karte verkleinern' : '🔍 Karte vergrößern';
+    setTimeout(function(){ miniMap.invalidateSize(); }, 350);
+}
+
 function initMiniMap() {
     var container = document.getElementById('miniMapContainer');
     if (!container) return;
@@ -564,9 +576,21 @@ function initMiniMap() {
     var startLng = meldeFormData.lng || 10.4515;
     var startZoom = (meldeFormData.lat && meldeFormData.lng) ? 14 : 6;
 
+    // Expanded-Zustand beibehalten
+    if (miniMapExpanded) container.style.height = '450px';
+
     miniMap = L.map(container, { zoomControl: false, attributionControl: false }).setView([startLat, startLng], startZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
     L.control.zoom({ position: 'topright' }).addTo(miniMap);
+
+    // Automatisch auf Standort des Users zentrieren (wenn noch keine Position gesetzt)
+    if (!meldeFormData.lat && !meldeFormData.lng && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            if (miniMap && !meldeFormData.lat) {
+                miniMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
+            }
+        }, function(){}, { timeout: 5000 });
+    }
 
     // Marker setzen falls Position vorhanden
     if (meldeFormData.lat && meldeFormData.lng) {
