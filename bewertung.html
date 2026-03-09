@@ -823,6 +823,7 @@ function renderVolkDetail(v, volkDs, kInfo) {
     var html = '<div class="volk-detail">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">';
     html += '<span style="font-size:.85rem;font-weight:600;color:#92400E">📖 Stockkarte: ' + v.name + '</span>';
+    html += '<button onclick="event.stopPropagation();druckeStockkarte(\'' + v.id + '\')" class="btn btn-xs" style="background:#f5f0eb;color:#3D2E1F">🖨️ Drucken</button>';
     html += '</div>';
     
     // Königinnen-Info
@@ -1963,68 +1964,151 @@ function druckeStockkarte(volkId) {
     var s = standorte.find(function(x){return x.id===v.standortId;});
     var kInfo = koeniginnen[volkId] || {};
     var volkDs = durchsichten.filter(function(d){return d.volkId===volkId;}).sort(function(a,b){return b.datum.localeCompare(a.datum);});
-    var letzteDs = volkDs[0];
 
     var w = window.open('','_blank');
-    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + v.name + '</title>');
-    w.document.write('<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>');
-    w.document.write('<style>');
-    w.document.write('*{margin:0;padding:0;box-sizing:border-box}');
-    w.document.write('body{font-family:Arial,sans-serif;padding:2rem;color:#1C1410}');
-    w.document.write('h1{font-size:1.5rem;margin-bottom:.25rem}');
-    w.document.write('.subtitle{color:#7A6652;font-size:.9rem;margin-bottom:1.5rem}');
-    w.document.write('.grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}');
-    w.document.write('.box{border:1px solid #E8DFD4;border-radius:.5rem;padding:.75rem}');
-    w.document.write('.box h3{font-size:.85rem;color:#92400E;margin-bottom:.5rem;border-bottom:1px solid #E8DFD4;padding-bottom:.25rem}');
-    w.document.write('.box p{font-size:.8rem;margin-bottom:.25rem}');
-    w.document.write('.qr-section{text-align:center;margin-top:1.5rem;padding-top:1rem;border-top:2px solid #E8DFD4}');
-    w.document.write('.qr-section p{font-size:.7rem;color:#7A6652;margin-top:.5rem}');
-    w.document.write('.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}');
-    w.document.write('.header-left{flex:1}');
-    w.document.write('@media print{body{padding:1.5cm}}');
-    w.document.write('</style></head><body>');
+    var h = '';
+    h += '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + v.name + '</title>';
+    h += '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>';
+    h += '<style>';
+    h += '*{margin:0;padding:0;box-sizing:border-box}';
+    h += 'body{font-family:Arial,sans-serif;padding:1.5rem;color:#1C1410;font-size:.8rem}';
+    h += 'h1{font-size:1.4rem;margin-bottom:.15rem}';
+    h += 'h2{font-size:1rem;color:#92400E;margin:1rem 0 .5rem;border-bottom:2px solid #E8DFD4;padding-bottom:.25rem}';
+    h += '.subtitle{color:#7A6652;font-size:.85rem;margin-bottom:1rem}';
+    h += '.grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}';
+    h += '.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.75rem}';
+    h += '.box{border:1px solid #E8DFD4;border-radius:.4rem;padding:.6rem}';
+    h += '.box h3{font-size:.8rem;color:#92400E;margin-bottom:.4rem;border-bottom:1px solid #E8DFD4;padding-bottom:.2rem}';
+    h += '.box p{margin-bottom:.2rem}';
+    h += '.stars{color:#F5A623;letter-spacing:1px}';
+    h += '.ds-entry{border:1px solid #E8DFD4;border-radius:.4rem;padding:.6rem;margin-bottom:.5rem;page-break-inside:avoid}';
+    h += '.ds-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;font-weight:600}';
+    h += '.ds-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.35rem}';
+    h += '.ds-tag{background:#f5f0eb;padding:.15rem .4rem;border-radius:.25rem;font-size:.7rem}';
+    h += '.zw-bar{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem}';
+    h += '.zw-bar .bar{height:8px;border-radius:4px;min-width:4px}';
+    h += '.zw-label{width:100px;font-size:.7rem}';
+    h += '.zw-val{font-size:.7rem;font-weight:600;width:30px;text-align:right}';
+    h += '.qr-section{text-align:center;margin-top:1rem;padding-top:.75rem;border-top:2px solid #E8DFD4}';
+    h += '.qr-section p{font-size:.65rem;color:#7A6652;margin-top:.35rem}';
+    h += '.footer{display:flex;justify-content:space-between;align-items:flex-end}';
+    h += '.footer-left{flex:1}';
+    h += '@media print{body{padding:1cm}h2{margin-top:.75rem}}';
+    h += '</style></head><body>';
 
-    w.document.write('<div class="header"><div class="header-left">');
-    w.document.write('<h1>\ud83d\udc1d ' + v.name + '</h1>');
-    w.document.write('<div class="subtitle">\ud83d\udccd ' + (s ? s.name : 'Unbekannt') + ' | Status: ' + (v.status || 'ok') + '</div>');
-    w.document.write('</div></div>');
+    // Header
+    var typIcon = (v.typ === 'ableger') ? '🌱' : '🐝';
+    h += '<h1>' + typIcon + ' ' + v.name + '</h1>';
+    h += '<div class="subtitle">📍 ' + (s ? s.name : 'Unbekannt') + ' | Status: ' + (v.status || 'ok') + (v.typ === 'ableger' ? ' | Ableger' : '') + ' | Erstellt: ' + new Date().toLocaleDateString('de-DE') + '</div>';
 
-    w.document.write('<div class="grid">');
-    // K\u00f6nigin
-    w.document.write('<div class="box"><h3>\ud83d\udc51 K\u00f6nigin</h3>');
+    // Königin + Zuchtwerte
+    h += '<h2>👑 Königin</h2>';
+    h += '<div class="grid">';
+    h += '<div class="box"><h3>Stammdaten</h3>';
     if (kInfo.begattung) {
-        w.document.write('<p>Begattung: ' + kInfo.begattung + '</p>');
-        if (kInfo.jahrgang) w.document.write('<p>Jahrgang: ' + kInfo.jahrgang + '</p>');
-        if (kInfo.farbe) w.document.write('<p>Farbe: ' + kInfo.farbe + '</p>');
-        if (kInfo.zuchtbuchNr) w.document.write('<p>Zuchtbuch: ' + kInfo.zuchtbuchNr + '</p>');
-        if (kInfo.nummer) w.document.write('<p>Nummer: ' + kInfo.nummer + '</p>');
-    } else {
-        w.document.write('<p style="color:#9CA3AF">Keine K\u00f6nigin-Daten</p>');
-    }
-    w.document.write('</div>');
-
-    // Letzte Durchsicht
-    w.document.write('<div class="box"><h3>\ud83d\udccb Letzte Durchsicht</h3>');
-    if (letzteDs) {
-        w.document.write('<p>Datum: ' + new Date(letzteDs.datum).toLocaleDateString('de-DE') + '</p>');
-        if (letzteDs.taetigkeiten && letzteDs.taetigkeiten.length) {
-            w.document.write('<p>T\u00e4tigkeiten: ' + letzteDs.taetigkeiten.map(function(t){return t.key;}).join(', ') + '</p>');
+        h += '<p>Begattung: <strong>' + kInfo.begattung + '</strong></p>';
+        if (kInfo.herkunft) h += '<p>Herkunft: ' + kInfo.herkunft + '</p>';
+        if (kInfo.jahrgang) h += '<p>Jahrgang: ' + kInfo.jahrgang + '</p>';
+        if (kInfo.farbe) h += '<p>Markierung: ' + kInfo.farbe + (kInfo.markiert ? ' ✓' : '') + '</p>';
+        if (kInfo.belegstelle) h += '<p>Belegstelle: ' + kInfo.belegstelle + '</p>';
+        if (kInfo.zuchtbuchNr) h += '<p>Zuchtbuch: <strong>' + kInfo.zuchtbuchNr + '</strong></p>';
+        if (kInfo.nummer) h += '<p>Nummer: ' + kInfo.nummer + '</p>';
+        // Abstammung
+        if (kInfo.muttervolk_id) {
+            var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
+            if (mv) h += '<p>Muttervolk: ' + mv.name + '</p>';
         }
-        if (letzteDs.notizen) w.document.write('<p>Notizen: ' + letzteDs.notizen + '</p>');
+        if (kInfo.drohnenvolk_id) {
+            var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
+            if (dv) h += '<p>Drohnenvolk: ' + dv.name + '</p>';
+        }
     } else {
-        w.document.write('<p style="color:#9CA3AF">Keine Durchsichten</p>');
+        h += '<p style="color:#9CA3AF">Keine Königin-Daten</p>';
     }
-    w.document.write('</div>');
-    w.document.write('</div>');
+    h += '</div>';
 
-    // QR Code
-    w.document.write('<div class="qr-section"><div id="printQR"></div>');
-    w.document.write('<p>QR-Code scannen um dieses Volk in der App zu \u00f6ffnen</p>');
-    w.document.write('<p style="font-size:.65rem;color:#A69580">bienenplan.de | ' + v.name + ' | ' + (s ? s.name : '') + '</p>');
-    w.document.write('</div>');
+    // Zuchtwerte
+    h += '<div class="box"><h3>Zuchtwerte (BeeBreed)</h3>';
+    if (kInfo.zuchtwerte && kInfo.zuchtbuchNr) {
+        var zw = kInfo.zuchtwerte;
+        var zwKeys = [{key:'honig',label:'Honig'},{key:'sanftmut',label:'Sanftmut'},{key:'wabensitz',label:'Wabensitz'},{key:'schwarm',label:'Schwarmtrieb'},{key:'varroa',label:'Varroa'},{key:'gesamt',label:'Gesamt'}];
+        zwKeys.forEach(function(z) {
+            var val = zw[z.key] || 100;
+            var pct = Math.min(150, Math.max(50, val));
+            var color = val >= 110 ? '#10b981' : val >= 100 ? '#F5A623' : '#ef4444';
+            h += '<div class="zw-bar"><span class="zw-label">' + z.label + '</span><div style="flex:1;background:#f5f0eb;border-radius:4px;height:8px"><div class="bar" style="width:' + ((pct-50)/100*100) + '%;background:' + color + '"></div></div><span class="zw-val">' + val + '</span></div>';
+        });
+    } else {
+        h += '<p style="color:#9CA3AF">Keine Zuchtwerte</p>';
+    }
+    h += '</div></div>';
 
-    w.document.write('<script>new QRCode(document.getElementById("printQR"),{text:"https://www.bienenplan.de/bewertung.html?volk=' + volkId + '",width:150,height:150,colorDark:"#1C1410",colorLight:"#ffffff"});setTimeout(function(){window.print();},600);<\/script>');
-    w.document.write('</body></html>');
+    // Durchsichten
+    h += '<h2>📋 Durchsichten (' + volkDs.length + ')</h2>';
+    if (volkDs.length === 0) {
+        h += '<p style="color:#9CA3AF">Keine Durchsichten vorhanden</p>';
+    }
+    volkDs.forEach(function(ds) {
+        h += '<div class="ds-entry">';
+        // Header mit Datum und Durchschnitt
+        var schnitt = 0, anzahl = 0;
+        if (ds.kriterien) {
+            KRITERIEN.forEach(function(k) {
+                var w = ds.kriterien[k.key];
+                if (w && w !== 3) { schnitt += w; anzahl++; }
+                else { schnitt += 3; anzahl++; }
+            });
+        }
+        var avg = anzahl > 0 ? (schnitt / anzahl).toFixed(1) : '–';
+        h += '<div class="ds-header"><span>📅 ' + new Date(ds.datum).toLocaleDateString('de-DE') + '</span><span>' + avg + ' ⌀</span></div>';
+
+        // Tätigkeiten
+        if (ds.taetigkeiten && ds.taetigkeiten.length) {
+            h += '<div class="ds-tags">';
+            ds.taetigkeiten.forEach(function(t) {
+                var tDef = TAETIGKEITEN.find(function(td){return td.key===t.key;});
+                var label = tDef ? (tDef.icon + ' ' + tDef.label) : t.key;
+                if (t.subs && t.subs.length) label += ' (' + t.subs.join(', ') + ')';
+                if (t.menge) label += ' ' + t.menge;
+                h += '<span class="ds-tag">' + label + '</span>';
+            });
+            h += '</div>';
+        }
+
+        // Kriterien als kompakte Zeile
+        if (ds.kriterien) {
+            h += '<div class="grid3">';
+            KRITERIEN.forEach(function(k) {
+                var w = ds.kriterien[k.key] || 3;
+                var sterne = '';
+                for (var i = 1; i <= 5; i++) sterne += i <= w ? '★' : '☆';
+                h += '<div style="font-size:.7rem"><span style="color:#7A6652">' + k.label.split(' ').slice(1).join(' ') + ':</span> <span class="stars">' + sterne + '</span></div>';
+            });
+            h += '</div>';
+        }
+
+        // Varroa
+        if (ds.varroa && parseInt(ds.varroa.milben) > 0) {
+            var milbenTag = ds.varroa.tage > 0 ? (ds.varroa.milben / ds.varroa.tage).toFixed(1) : ds.varroa.milben;
+            h += '<p>🔬 Varroa: <strong>' + milbenTag + ' Milben/Tag</strong> (' + ds.varroa.methode + ')</p>';
+        }
+
+        // Notizen
+        if (ds.notizen) {
+            h += '<p>💬 ' + ds.notizen + '</p>';
+        }
+        h += '</div>';
+    });
+
+    // QR Code + Footer
+    h += '<div class="qr-section"><div class="footer"><div class="footer-left">';
+    h += '<p>QR-Code scannen um dieses Volk in der App zu öffnen</p>';
+    h += '<p style="font-size:.6rem;color:#A69580">bienenplan.de | ' + v.name + ' | ' + (s ? s.name : '') + '</p>';
+    h += '</div><div id="printQR"></div></div></div>';
+
+    h += '<script>new QRCode(document.getElementById("printQR"),{text:"https://www.bienenplan.de/bewertung.html?volk=' + volkId + '",width:120,height:120,colorDark:"#1C1410",colorLight:"#ffffff"});setTimeout(function(){window.print();},600);<\/script>';
+    h += '</body></html>';
+    w.document.write(h);
     w.document.close();
 }
 
