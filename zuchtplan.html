@@ -11,6 +11,13 @@
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:2rem}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
 
         /* Toast: kommt aus shared-styles.css */
 
@@ -101,6 +108,8 @@
 
         .seg-sammelbrut{background:linear-gradient(135deg,#F5A623,#f7bc5e)}
         .seg-umlarven{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+        .seg-verschulen{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+        .seg-schlupf{background:linear-gradient(135deg,#ec4899,#f472b6)}
         .seg-zusetzen{background:linear-gradient(135deg,#10b981,#34d399)}
         .seg-completed{background:linear-gradient(135deg,#9ca3af,#b4b9c2)}
 
@@ -164,6 +173,8 @@
         /* === MOBILE === */
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
+            .nav{display:none}
+            .mobile-nav{display:flex}
             .stats-row{grid-template-columns:1fr 1fr 1fr}
             .stat-value{font-size:1.25rem}
             .zucht-header-banner{padding:1.5rem 1rem}
@@ -232,10 +243,30 @@
                 <input type="date" id="zuchtUmlarven" class="input" style="margin-top:.5rem" disabled>
             </div>
             <div class="form-group">
-                <label class="form-label">👑 Zusetzen – Tage nach Umlarven</label>
+                <label class="form-label">🏠 Verschulen – Tage nach Umlarven</label>
+                <div class="tage-counter">
+                    <button class="counter-btn" onclick="changeTage('verschulen',-1)">−</button>
+                    <div class="counter-value" id="tageVerschulenVal">10</div>
+                    <button class="counter-btn" onclick="changeTage('verschulen',1)">+</button>
+                    <div class="counter-label">Tage</div>
+                </div>
+                <input type="date" id="zuchtVerschulen" class="input" style="margin-top:.5rem" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🐣 Schlupf – Tage nach Verschulen</label>
+                <div class="tage-counter">
+                    <button class="counter-btn" onclick="changeTage('schlupf',-1)">−</button>
+                    <div class="counter-value" id="tageSchlupfVal">2</div>
+                    <button class="counter-btn" onclick="changeTage('schlupf',1)">+</button>
+                    <div class="counter-label">Tage</div>
+                </div>
+                <input type="date" id="zuchtSchlupf" class="input" style="margin-top:.5rem" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">👑 Zusetzen – Tage nach Schlupf</label>
                 <div class="tage-counter">
                     <button class="counter-btn" onclick="changeTage('zusetzen',-1)">−</button>
-                    <div class="counter-value" id="tageZusetzenVal">12</div>
+                    <div class="counter-value" id="tageZusetzenVal">7</div>
                     <button class="counter-btn" onclick="changeTage('zusetzen',1)">+</button>
                     <div class="counter-label">Tage</div>
                 </div>
@@ -246,6 +277,49 @@
                 <textarea id="zuchtNotizen" class="input" placeholder="Linie, Herkunft, Zuchtziel..."></textarea>
             </div>
             <button class="btn btn-primary btn-block" onclick="saveZucht()">Zuchtplan speichern</button>
+        </div>
+    </div>
+</div>
+
+<!-- === RÜCKWÄRTSRECHNER MODAL === -->
+<div id="rueckwaertsModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:500px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2>🔄 Besamungstermin-Planer</h2>
+            <button class="close-btn" onclick="document.getElementById('rueckwaertsModal').classList.remove('active')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-box" style="margin-bottom:1rem">💡 Gib deinen Besamungstermin ein und ich berechne rückwärts, wann du mit der Zucht starten musst.</div>
+            <div class="form-group">
+                <label class="form-label">📅 Besamungstermin (Zusetzen-Datum)</label>
+                <input type="date" id="rueckDatum" class="input" onchange="berechneRueckwaerts()">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size:.8rem;color:#7A6652">Tage-Parameter anpassen:</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
+                        Schlupf→Zusetzen<br><strong id="rwZusetzenVal">7</strong> Tage
+                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',-1)">−</button>
+                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',1)">+</button></div>
+                    </div>
+                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
+                        Verschulen→Schlupf<br><strong id="rwSchlupfVal">2</strong> Tage
+                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',-1)">−</button>
+                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',1)">+</button></div>
+                    </div>
+                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
+                        Umlarven→Verschulen<br><strong id="rwVerschulenVal">10</strong> Tage
+                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',-1)">−</button>
+                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',1)">+</button></div>
+                    </div>
+                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
+                        Sammelbrut→Umlarven<br><strong id="rwUmlarvenVal">4</strong> Tage
+                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',-1)">−</button>
+                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',1)">+</button></div>
+                    </div>
+                </div>
+            </div>
+            <div id="rueckErgebnis" style="display:none;margin-top:1rem"></div>
         </div>
     </div>
 </div>
@@ -277,7 +351,9 @@ let isPreview = false;
 let plaene = [];
 let editId = null;
 let tageUmlarven = 4;
-let tageZusetzen = 12;
+let tageVerschulen = 10;
+let tageSchlupf = 2;
+let tageZusetzen = 7;
 let currentFilter = 'alle';
 let currentView = 'gantt'; // 'gantt' oder 'cards'
 
@@ -285,11 +361,11 @@ let currentView = 'gantt'; // 'gantt' oder 'cards'
 // DEMO-DATEN für Preview
 // ============================================
 const DEMO_PLAENE = [
-    {id:'z1', name:'Buckfast 2026-1', sammelbrut: new Date('2026-02-20').getTime(), umlarven: new Date('2026-02-24').getTime(), zusetzen: new Date('2026-03-08').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-02-20').getTime(), umlarven_done: new Date('2026-02-24').getTime(), zusetzen_done: new Date('2026-03-08').getTime(), created: new Date('2026-02-15').getTime()},
-    {id:'z2', name:'Carnica Vereinslinie', sammelbrut: new Date('2026-03-01').getTime(), umlarven: new Date('2026-03-05').getTime(), zusetzen: new Date('2026-03-17').getTime(), notizen:'Schwarmträge Carnica aus dem Verein.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-03-01').getTime(), umlarven_done: null, zusetzen_done: null, created: new Date('2026-02-22').getTime()},
-    {id:'z3', name:'Buckfast 2026-2', sammelbrut: new Date('2026-03-10').getTime(), umlarven: new Date('2026-03-14').getTime(), zusetzen: new Date('2026-03-26').getTime(), notizen:'Zweite Charge. Belegstelle Hohenlohe.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: null, umlarven_done: null, zusetzen_done: null, created: new Date('2026-02-28').getTime()},
-    {id:'z4', name:'Standbegattung Abl. 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), zusetzen: new Date('2026-02-17').getTime(), notizen:'Abgeschlossen. Königin gezeichnet (blau).', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: new Date('2026-02-01').getTime(), umlarven_done: new Date('2026-02-05').getTime(), zusetzen_done: new Date('2026-02-17').getTime(), created: new Date('2026-01-15').getTime()},
-    {id:'z5', name:'Carnica Reinzucht', sammelbrut: new Date('2026-03-20').getTime(), umlarven: new Date('2026-03-24').getTime(), zusetzen: new Date('2026-04-05').getTime(), notizen:'Reinzuchtlinie aus Kärnten.', tageUmlarven:4, tageZusetzen:12, sammelbrut_done: null, umlarven_done: null, zusetzen_done: null, created: new Date('2026-03-01').getTime()}
+    {id:'z1', name:'Buckfast 2026-1', sammelbrut: new Date('2026-02-20').getTime(), umlarven: new Date('2026-02-24').getTime(), verschulen: new Date('2026-03-06').getTime(), schlupf: new Date('2026-03-08').getTime(), zusetzen: new Date('2026-03-15').getTime(), notizen:'Buckfast-Linie aus Dänemark. Sanftmütig, guter Honigertrag.', tageUmlarven:4, tageVerschulen:10, tageSchlupf:2, tageZusetzen:7, sammelbrut_done: new Date('2026-02-20').getTime(), umlarven_done: new Date('2026-02-24').getTime(), verschulen_done: new Date('2026-03-06').getTime(), schlupf_done: new Date('2026-03-08').getTime(), zusetzen_done: new Date('2026-03-15').getTime(), created: new Date('2026-02-15').getTime()},
+    {id:'z2', name:'Carnica Vereinslinie', sammelbrut: new Date('2026-03-01').getTime(), umlarven: new Date('2026-03-05').getTime(), verschulen: new Date('2026-03-15').getTime(), schlupf: new Date('2026-03-17').getTime(), zusetzen: new Date('2026-03-24').getTime(), notizen:'Schwarmträge Carnica aus dem Verein.', tageUmlarven:4, tageVerschulen:10, tageSchlupf:2, tageZusetzen:7, sammelbrut_done: new Date('2026-03-01').getTime(), umlarven_done: null, verschulen_done: null, schlupf_done: null, zusetzen_done: null, created: new Date('2026-02-22').getTime()},
+    {id:'z3', name:'Buckfast 2026-2', sammelbrut: new Date('2026-03-10').getTime(), umlarven: new Date('2026-03-14').getTime(), verschulen: new Date('2026-03-24').getTime(), schlupf: new Date('2026-03-26').getTime(), zusetzen: new Date('2026-04-02').getTime(), notizen:'Zweite Charge. Belegstelle Hohenlohe.', tageUmlarven:4, tageVerschulen:10, tageSchlupf:2, tageZusetzen:7, sammelbrut_done: null, umlarven_done: null, verschulen_done: null, schlupf_done: null, zusetzen_done: null, created: new Date('2026-02-28').getTime()},
+    {id:'z4', name:'Standbegattung Abl. 3', sammelbrut: new Date('2026-02-01').getTime(), umlarven: new Date('2026-02-05').getTime(), verschulen: new Date('2026-02-15').getTime(), schlupf: new Date('2026-02-17').getTime(), zusetzen: new Date('2026-02-24').getTime(), notizen:'Abgeschlossen. Königin gezeichnet (blau).', tageUmlarven:4, tageVerschulen:10, tageSchlupf:2, tageZusetzen:7, sammelbrut_done: new Date('2026-02-01').getTime(), umlarven_done: new Date('2026-02-05').getTime(), verschulen_done: new Date('2026-02-15').getTime(), schlupf_done: new Date('2026-02-17').getTime(), zusetzen_done: new Date('2026-02-24').getTime(), created: new Date('2026-01-15').getTime()},
+    {id:'z5', name:'Carnica Reinzucht', sammelbrut: new Date('2026-03-20').getTime(), umlarven: new Date('2026-03-24').getTime(), verschulen: new Date('2026-04-03').getTime(), schlupf: new Date('2026-04-05').getTime(), zusetzen: new Date('2026-04-12').getTime(), notizen:'Reinzuchtlinie aus Kärnten.', tageUmlarven:4, tageVerschulen:10, tageSchlupf:2, tageZusetzen:7, sammelbrut_done: null, umlarven_done: null, verschulen_done: null, schlupf_done: null, zusetzen_done: null, created: new Date('2026-03-01').getTime()}
 ];
 
 // ============================================
@@ -333,12 +409,18 @@ async function loadFromSupabase() {
             name: r.name,
             sammelbrut: r.sammelbrut,
             umlarven: r.umlarven,
+            verschulen: r.verschulen || 0,
+            schlupf: r.schlupf || 0,
             zusetzen: r.zusetzen,
             notizen: r.notizen,
             tageUmlarven: r.tage_umlarven || 4,
-            tageZusetzen: r.tage_zusetzen || 12,
+            tageVerschulen: r.tage_verschulen || 10,
+            tageSchlupf: r.tage_schlupf || 2,
+            tageZusetzen: r.tage_zusetzen || 7,
             sammelbrut_done: r.sammelbrut_done || null,
             umlarven_done: r.umlarven_done || null,
+            verschulen_done: r.verschulen_done || null,
+            schlupf_done: r.schlupf_done || null,
             zusetzen_done: r.zusetzen_done || null,
             created: new Date(r.created_at).getTime()
         };
@@ -396,6 +478,8 @@ function render() {
         var steps = [];
         if (!p.sammelbrut_done) steps.push({t: p.sammelbrut, s: '📦 Sammelbrut'});
         if (!p.umlarven_done) steps.push({t: p.umlarven, s: '🔬 Umlarven'});
+        if (p.verschulen && !p.verschulen_done) steps.push({t: p.verschulen, s: '🏠 Verschulen'});
+        if (p.schlupf && !p.schlupf_done) steps.push({t: p.schlupf, s: '🐣 Schlupf'});
         if (!p.zusetzen_done) steps.push({t: p.zusetzen, s: '👑 Zusetzen'});
         steps.forEach(function(x) {
             if (x.t > 0 && (!naechsterTermin || x.t < naechsterTermin)) {
@@ -420,6 +504,7 @@ function render() {
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">';
     if (!isPreview) {
         html += '<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neuer Zuchtplan</button>';
+        html += ' <button class="btn btn-blue btn-sm" onclick="openRueckwaerts()" style="margin-left:.5rem">🔄 Besamungstermin-Planer</button>';
     } else {
         html += '<div></div>';
     }
@@ -599,22 +684,38 @@ function renderGanttHTML(filtered) {
 
         var totalMs = plan.zusetzen - plan.sammelbrut;
         var seg1W = ((plan.umlarven - plan.sammelbrut) / totalMs) * 100;
-        var seg2W = ((plan.zusetzen - plan.umlarven) / totalMs) * 100;
+        var vsTime = plan.verschulen || plan.umlarven;
+        var scTime = plan.schlupf || vsTime;
+        var seg2W = ((vsTime - plan.umlarven) / totalMs) * 100;
+        var seg3W = ((scTime - vsTime) / totalMs) * 100;
+        var seg4W = ((plan.zusetzen - scTime) / totalMs) * 100;
 
         var segClass1 = isCompleted ? 'seg-completed' : 'seg-sammelbrut';
-        var segClass2 = isCompleted ? 'seg-completed' : (!!plan.umlarven_done || jetzt >= plan.umlarven ? 'seg-umlarven' : 'seg-sammelbrut');
+        var segClass2 = isCompleted ? 'seg-completed' : 'seg-umlarven';
+        var segClass3 = isCompleted ? 'seg-completed' : 'seg-verschulen';
+        var segClass4 = isCompleted ? 'seg-completed' : 'seg-zusetzen';
 
         html += '<div class="gantt-bar" style="left:' + barStartPx + 'px;width:' + barWidth + 'px" onmouseenter="showGanttTooltip(event,\'' + plan.id + '\')" onmouseleave="hideGanttTooltip()" onclick="setView(\'cards\')">';
 
         html += '<div class="gantt-bar-segment ' + segClass1 + '" style="width:' + seg1W + '%">';
-        if (barWidth > 140) html += '<span class="gantt-step-label">📦</span>';
+        if (barWidth > 200) html += '<span class="gantt-step-label">📦</span>';
         html += '</div>';
 
         html += '<div class="gantt-bar-segment ' + segClass2 + '" style="width:' + seg2W + '%">';
-        if (barWidth > 140) html += '<span class="gantt-step-label">🔬→👑</span>';
+        if (barWidth > 200) html += '<span class="gantt-step-label">🔬</span>';
+        html += '</div>';
+
+        html += '<div class="gantt-bar-segment ' + segClass3 + '" style="width:' + seg3W + '%">';
+        if (barWidth > 200) html += '<span class="gantt-step-label">🏠</span>';
+        html += '</div>';
+
+        html += '<div class="gantt-bar-segment ' + segClass4 + '" style="width:' + seg4W + '%">';
+        if (barWidth > 200) html += '<span class="gantt-step-label">🐣→👑</span>';
         html += '</div>';
 
         html += '<div class="gantt-dot ' + (isCompleted ? 'dot-done' : 'dot-mid') + '" style="left:calc(' + seg1W + '% - 5px)"></div>';
+        if (plan.verschulen) html += '<div class="gantt-dot ' + (isCompleted ? 'dot-done' : 'dot-mid') + '" style="left:calc(' + (seg1W + seg2W) + '% - 5px)"></div>';
+        if (plan.schlupf) html += '<div class="gantt-dot ' + (isCompleted ? 'dot-done' : 'dot-mid') + '" style="left:calc(' + (seg1W + seg2W + seg3W) + '% - 5px)"></div>';
 
         html += '</div>'; // bar
         html += '</div>'; // timeline
@@ -627,6 +728,8 @@ function renderGanttHTML(filtered) {
     html += '<div class="gantt-legend">';
     html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#F5A623,#f7bc5e)"></div> Sammelbrut</div>';
     html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#3b82f6,#60a5fa)"></div> Umlarven</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)"></div> Verschulen</div>';
+    html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#ec4899,#f472b6)"></div> Schlupf</div>';
     html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#10b981,#34d399)"></div> Zusetzen</div>';
     html += '<div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#9ca3af,#b4b9c2)"></div> Abgeschlossen</div>';
     html += '<div class="legend-item"><div class="legend-dot" style="background:#ef4444;width:3px;border-radius:1px"></div> Heute</div>';
@@ -651,6 +754,8 @@ function renderCardsHTML(filtered) {
         var naechster = null, naechstesDatum = null;
         if (!plan.sammelbrut_done && jetzt < plan.sammelbrut) { naechster = 'Sammelbrut'; naechstesDatum = plan.sammelbrut; }
         else if (!plan.umlarven_done && jetzt < plan.umlarven) { naechster = 'Umlarven'; naechstesDatum = plan.umlarven; }
+        else if (plan.verschulen && !plan.verschulen_done && jetzt < plan.verschulen) { naechster = 'Verschulen'; naechstesDatum = plan.verschulen; }
+        else if (plan.schlupf && !plan.schlupf_done && jetzt < plan.schlupf) { naechster = 'Schlupf'; naechstesDatum = plan.schlupf; }
         else if (!plan.zusetzen_done && jetzt < plan.zusetzen) { naechster = 'Zusetzen'; naechstesDatum = plan.zusetzen; }
         var verbleibend = naechstesDatum ? getTageVerbleibend(naechstesDatum) : null;
 
@@ -694,11 +799,35 @@ function renderCardsHTML(filtered) {
         else if (jetzt >= plan.umlarven && !ud && jetzt < plan.zusetzen) html += '<div class="timeline-note" style="color:#F5A623">🐝 Weiselzellen wachsen...</div>';
         html += '</div></div>';
 
+        // Verschulen
+        var vsd = !!plan.verschulen_done;
+        if (plan.verschulen) {
+            html += '<div class="timeline-item"><div class="timeline-dot ' + (vsd ? 'completed' : (jetzt >= plan.verschulen ? 'active' : 'upcoming')) + '"></div>';
+            html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+            html += '<div><div class="timeline-title">🏠 Verschulen</div><div class="timeline-date">' + formatDatum(plan.verschulen) + ' <small style="color:#A69580">(+' + (plan.tageVerschulen || 10) + ' Tage)</small></div></div>';
+            if (!isPreview) html += '<button class="btn-check' + (vsd ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'verschulen_done\')">' + (vsd ? '✅' : '☐') + '</button>';
+            html += '</div>';
+            if (vsd) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.verschulen_done) + '</div>';
+            html += '</div></div>';
+        }
+
+        // Schlupf
+        var scd = !!plan.schlupf_done;
+        if (plan.schlupf) {
+            html += '<div class="timeline-item"><div class="timeline-dot ' + (scd ? 'completed' : (jetzt >= plan.schlupf ? 'active' : 'upcoming')) + '"></div>';
+            html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
+            html += '<div><div class="timeline-title">🐣 Schlupf</div><div class="timeline-date">' + formatDatum(plan.schlupf) + ' <small style="color:#A69580">(+' + (plan.tageSchlupf || 2) + ' Tage)</small></div></div>';
+            if (!isPreview) html += '<button class="btn-check' + (scd ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'schlupf_done\')">' + (scd ? '✅' : '☐') + '</button>';
+            html += '</div>';
+            if (scd) html += '<div class="timeline-note" style="color:#10b981">✅ Erledigt am ' + formatDatum(plan.schlupf_done) + '</div>';
+            html += '</div></div>';
+        }
+
         // Zusetzen
         var zd = !!plan.zusetzen_done;
         html += '<div class="timeline-item"><div class="timeline-dot ' + (zd ? 'completed' : (jetzt >= plan.zusetzen ? 'active' : 'upcoming')) + '"></div>';
         html += '<div class="timeline-content"><div style="display:flex;justify-content:space-between;align-items:center">';
-        html += '<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 12) + ' Tage)</small></div></div>';
+        html += '<div><div class="timeline-title">👑 Königin zusetzen</div><div class="timeline-date">' + formatDatum(plan.zusetzen) + ' <small style="color:#A69580">(+' + (plan.tageZusetzen || 7) + ' Tage)</small></div></div>';
         if (!isPreview) html += '<button class="btn-check' + (zd ? ' done' : '') + '" onclick="toggleStep(\'' + plan.id + '\',\'zusetzen_done\')">' + (zd ? '✅' : '☐') + '</button>';
         html += '</div>';
         if (zd) html += '<div class="timeline-note" style="color:#10b981">✅ Abgeschlossen am ' + formatDatum(plan.zusetzen_done) + '</div>';
@@ -726,6 +855,8 @@ function showGanttTooltip(event, id) {
     tip.innerHTML = '<h4>👑 ' + esc(plan.name) + '</h4>'
         + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">📦 Sammelbrut</span><span class="gantt-tooltip-date">' + formatDatum(plan.sammelbrut) + (plan.sammelbrut_done ? ' ✅' : '') + '</span></div>'
         + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">🔬 Umlarven (+' + plan.tageUmlarven + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.umlarven) + (plan.umlarven_done ? ' ✅' : '') + '</span></div>'
+        + (plan.verschulen ? '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">🏠 Verschulen (+' + (plan.tageVerschulen||10) + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.verschulen) + (plan.verschulen_done ? ' ✅' : '') + '</span></div>' : '')
+        + (plan.schlupf ? '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">🐣 Schlupf (+' + (plan.tageSchlupf||2) + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.schlupf) + (plan.schlupf_done ? ' ✅' : '') + '</span></div>' : '')
         + '<div class="gantt-tooltip-row"><span class="gantt-tooltip-step">👑 Zusetzen (+' + plan.tageZusetzen + 'd)</span><span class="gantt-tooltip-date">' + formatDatum(plan.zusetzen) + (plan.zusetzen_done ? ' ✅' : '') + '</span></div>'
         + (plan.notizen ? '<div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.15);color:#C4A882;font-size:.75rem">💭 ' + esc(plan.notizen) + '</div>' : '');
     tip.classList.add('show');
@@ -788,7 +919,9 @@ function openModal(id) {
         document.getElementById('zuchtSammel').value = new Date(plan.sammelbrut).toISOString().split('T')[0];
         document.getElementById('zuchtNotizen').value = plan.notizen || '';
         tageUmlarven = plan.tageUmlarven || 4;
-        tageZusetzen = plan.tageZusetzen || 12;
+        tageVerschulen = plan.tageVerschulen || 10;
+        tageSchlupf = plan.tageSchlupf || 2;
+        tageZusetzen = plan.tageZusetzen || 7;
     } else {
         editId = null;
         document.getElementById('zuchtModalTitle').textContent = '👑 Neuer Zuchtplan';
@@ -796,10 +929,14 @@ function openModal(id) {
         document.getElementById('zuchtSammel').value = new Date().toISOString().split('T')[0];
         document.getElementById('zuchtNotizen').value = '';
         tageUmlarven = 4;
-        tageZusetzen = 12;
+        tageVerschulen = 10;
+        tageSchlupf = 2;
+        tageZusetzen = 7;
     }
 
     document.getElementById('tageUmlarvenVal').textContent = tageUmlarven;
+    document.getElementById('tageVerschulenVal').textContent = tageVerschulen;
+    document.getElementById('tageSchlupfVal').textContent = tageSchlupf;
     document.getElementById('tageZusetzenVal').textContent = tageZusetzen;
     berechneAlles();
     document.getElementById('zuchtModal').classList.add('active');
@@ -812,10 +949,16 @@ function closeModal() {
 
 function changeTage(typ, delta) {
     if (typ === 'umlarven') {
-        tageUmlarven = Math.max(1, tageUmlarven + delta);
+        tageUmlarven = Math.max(0, tageUmlarven + delta);
         document.getElementById('tageUmlarvenVal').textContent = tageUmlarven;
+    } else if (typ === 'verschulen') {
+        tageVerschulen = Math.max(0, tageVerschulen + delta);
+        document.getElementById('tageVerschulenVal').textContent = tageVerschulen;
+    } else if (typ === 'schlupf') {
+        tageSchlupf = Math.max(0, tageSchlupf + delta);
+        document.getElementById('tageSchlupfVal').textContent = tageSchlupf;
     } else {
-        tageZusetzen = Math.max(1, tageZusetzen + delta);
+        tageZusetzen = Math.max(0, tageZusetzen + delta);
         document.getElementById('tageZusetzenVal').textContent = tageZusetzen;
     }
     berechneAlles();
@@ -825,11 +968,13 @@ function berechneAlles() {
     var sammelbrut = document.getElementById('zuchtSammel').value;
     if (!sammelbrut) return;
     var d = new Date(sammelbrut);
-    var u = new Date(d);
-    u.setDate(u.getDate() + tageUmlarven);
+    var u = new Date(d); u.setDate(u.getDate() + tageUmlarven);
     document.getElementById('zuchtUmlarven').value = u.toISOString().split('T')[0];
-    var z = new Date(u);
-    z.setDate(z.getDate() + tageZusetzen);
+    var vs = new Date(u); vs.setDate(vs.getDate() + tageVerschulen);
+    document.getElementById('zuchtVerschulen').value = vs.toISOString().split('T')[0];
+    var sc = new Date(vs); sc.setDate(sc.getDate() + tageSchlupf);
+    document.getElementById('zuchtSchlupf').value = sc.toISOString().split('T')[0];
+    var z = new Date(sc); z.setDate(z.getDate() + tageZusetzen);
     document.getElementById('zuchtZusetzen').value = z.toISOString().split('T')[0];
 }
 
@@ -847,6 +992,8 @@ async function saveZucht() {
 
     var sTs = new Date(sammelbrut).getTime();
     var uTs = new Date(document.getElementById('zuchtUmlarven').value).getTime();
+    var vsTs = new Date(document.getElementById('zuchtVerschulen').value).getTime();
+    var scTs = new Date(document.getElementById('zuchtSchlupf').value).getTime();
     var zTs = new Date(document.getElementById('zuchtZusetzen').value).getTime();
 
     var dbData = {
@@ -854,9 +1001,13 @@ async function saveZucht() {
         name: name,
         sammelbrut: sTs,
         umlarven: uTs,
+        verschulen: vsTs,
+        schlupf: scTs,
         zusetzen: zTs,
         notizen: notizen,
         tage_umlarven: tageUmlarven,
+        tage_verschulen: tageVerschulen,
+        tage_schlupf: tageSchlupf,
         tage_zusetzen: tageZusetzen,
         created_at: Date.now()
     };
@@ -931,10 +1082,14 @@ async function confirmDelete() {
 // ============================================
 function getPhase(plan) {
     if (plan.zusetzen_done) return '✅ Abgeschlossen';
+    if (plan.schlupf_done) return '🐣 Nach Schlupf';
+    if (plan.verschulen_done) return '🏠 Nach Verschulen';
     if (plan.umlarven_done) return '🔬 Nach Umlarven';
     if (plan.sammelbrut_done) return '📦 Sammelbrut ✓';
     var j = Date.now();
     if (j >= plan.zusetzen) return '✅ Abgeschlossen';
+    if (plan.schlupf && j >= plan.schlupf) return '🐣 Nach Schlupf';
+    if (plan.verschulen && j >= plan.verschulen) return '🏠 Nach Verschulen';
     if (j >= plan.umlarven) return '🔬 Nach Umlarven';
     if (j >= plan.sammelbrut) return '📦 Sammelbrut läuft';
     return '📋 Geplant';
@@ -973,6 +1128,86 @@ function showToast(msg, typ) {
     el.className = 'toast' + (typ ? ' ' + typ : '');
     requestAnimationFrame(function() { el.classList.add('show'); });
     setTimeout(function() { el.classList.remove('show'); }, 2500);
+}
+
+// ============================================
+// RÜCKWÄRTSRECHNER (Besamungstermin-Planer)
+// ============================================
+var rwTageUmlarven = 4, rwTageVerschulen = 10, rwTageSchlupf = 2, rwTageZusetzen = 7;
+
+function openRueckwaerts() {
+    rwTageUmlarven = 4; rwTageVerschulen = 10; rwTageSchlupf = 2; rwTageZusetzen = 7;
+    document.getElementById('rwUmlarvenVal').textContent = rwTageUmlarven;
+    document.getElementById('rwVerschulenVal').textContent = rwTageVerschulen;
+    document.getElementById('rwSchlupfVal').textContent = rwTageSchlupf;
+    document.getElementById('rwZusetzenVal').textContent = rwTageZusetzen;
+    document.getElementById('rueckDatum').value = '';
+    document.getElementById('rueckErgebnis').style.display = 'none';
+    document.getElementById('rueckwaertsModal').classList.add('active');
+}
+
+function changeRwTage(typ, delta) {
+    if (typ === 'umlarven') { rwTageUmlarven = Math.max(0, rwTageUmlarven + delta); document.getElementById('rwUmlarvenVal').textContent = rwTageUmlarven; }
+    else if (typ === 'verschulen') { rwTageVerschulen = Math.max(0, rwTageVerschulen + delta); document.getElementById('rwVerschulenVal').textContent = rwTageVerschulen; }
+    else if (typ === 'schlupf') { rwTageSchlupf = Math.max(0, rwTageSchlupf + delta); document.getElementById('rwSchlupfVal').textContent = rwTageSchlupf; }
+    else { rwTageZusetzen = Math.max(0, rwTageZusetzen + delta); document.getElementById('rwZusetzenVal').textContent = rwTageZusetzen; }
+    berechneRueckwaerts();
+}
+
+function berechneRueckwaerts() {
+    var zusetzenDatum = document.getElementById('rueckDatum').value;
+    if (!zusetzenDatum) { document.getElementById('rueckErgebnis').style.display = 'none'; return; }
+
+    var z = new Date(zusetzenDatum);
+    var sc = new Date(z); sc.setDate(sc.getDate() - rwTageZusetzen);
+    var vs = new Date(sc); vs.setDate(vs.getDate() - rwTageSchlupf);
+    var u = new Date(vs); u.setDate(u.getDate() - rwTageVerschulen);
+    var s = new Date(u); s.setDate(s.getDate() - rwTageUmlarven);
+
+    var gesamtTage = rwTageUmlarven + rwTageVerschulen + rwTageSchlupf + rwTageZusetzen;
+    var tageVerbl = Math.ceil((s.getTime() - Date.now()) / 86400000);
+    var startHinweis = '';
+    if (tageVerbl < 0) startHinweis = '<div style="color:#ef4444;font-weight:600;margin-top:.5rem">⚠️ Startdatum liegt in der Vergangenheit!</div>';
+    else if (tageVerbl === 0) startHinweis = '<div style="color:#F5A623;font-weight:600;margin-top:.5rem">🔴 Start wäre heute!</div>';
+    else if (tageVerbl <= 3) startHinweis = '<div style="color:#F5A623;font-weight:600;margin-top:.5rem">🟡 Nur noch ' + tageVerbl + ' Tage bis zum Start!</div>';
+
+    var ergebnis = document.getElementById('rueckErgebnis');
+    ergebnis.style.display = 'block';
+    ergebnis.innerHTML = '<div style="background:#fff;border:2px solid #F5A623;border-radius:.75rem;padding:1rem">'
+        + '<div style="font-weight:700;font-size:1rem;color:#1C1410;margin-bottom:.75rem">📋 Berechneter Zuchtplan <small style="color:#A69580">(' + gesamtTage + ' Tage gesamt)</small></div>'
+        + '<div style="display:grid;gap:.5rem">'
+        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#FFF8EE;border-radius:.35rem"><span>📦 Sammelbrut</span><strong>' + formatDatumKurz(s) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#EFF6FF;border-radius:.35rem"><span>🔬 Umlarven (+' + rwTageUmlarven + 'd)</span><strong>' + formatDatumKurz(u) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#F5F3FF;border-radius:.35rem"><span>🏠 Verschulen (+' + rwTageVerschulen + 'd)</span><strong>' + formatDatumKurz(vs) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#FDF2F8;border-radius:.35rem"><span>🐣 Schlupf (+' + rwTageSchlupf + 'd)</span><strong>' + formatDatumKurz(sc) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#ECFDF5;border-radius:.35rem"><span>👑 Zusetzen (+' + rwTageZusetzen + 'd)</span><strong>' + formatDatumKurz(z) + '</strong></div>'
+        + '</div>'
+        + startHinweis
+        + '<button class="btn btn-primary btn-block" style="margin-top:1rem" onclick="uebernehmePlan(\'' + s.toISOString().split('T')[0] + '\',' + rwTageUmlarven + ',' + rwTageVerschulen + ',' + rwTageSchlupf + ',' + rwTageZusetzen + ')">📋 Als Zuchtplan übernehmen</button>'
+        + '</div>';
+}
+
+function formatDatumKurz(d) {
+    return d.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function uebernehmePlan(sammelDatum, tU, tV, tS, tZ) {
+    document.getElementById('rueckwaertsModal').classList.remove('active');
+    tageUmlarven = tU;
+    tageVerschulen = tV;
+    tageSchlupf = tS;
+    tageZusetzen = tZ;
+    editId = null;
+    document.getElementById('zuchtModalTitle').textContent = '👑 Neuer Zuchtplan';
+    document.getElementById('zuchtName').value = '';
+    document.getElementById('zuchtSammel').value = sammelDatum;
+    document.getElementById('zuchtNotizen').value = '';
+    document.getElementById('tageUmlarvenVal').textContent = tageUmlarven;
+    document.getElementById('tageVerschulenVal').textContent = tageVerschulen;
+    document.getElementById('tageSchlupfVal').textContent = tageSchlupf;
+    document.getElementById('tageZusetzenVal').textContent = tageZusetzen;
+    berechneAlles();
+    document.getElementById('zuchtModal').classList.add('active');
 }
 
 // ============================================
