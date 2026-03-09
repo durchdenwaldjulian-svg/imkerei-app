@@ -8,6 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         /* === BEWERTUNG-SPECIFIC STYLES === */
@@ -279,7 +280,7 @@ async function init() {
         return {id:r.id, name:r.name};
     }).sort(function(a,b){ return a.name.localeCompare(b.name); });
     voelker = (results[1].data || []).map(function(r){
-        return {id:r.id, standortId:r.standort_id, name:r.name, status:r.status};
+        return {id:r.id, standortId:r.standort_id, name:r.name, status:r.status, typ:r.typ||'volk'};
     }).sort(function(a,b){ return a.name.localeCompare(b.name); });
     
     // Legacy-Bewertungen laden
@@ -321,6 +322,19 @@ async function init() {
     
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+
+    // URL-Parameter: direkt zum Volk-Profil springen
+    var urlParams = new URLSearchParams(window.location.search);
+    var volkParam = urlParams.get('volk');
+    if (volkParam) {
+        var gefunden = voelker.find(function(v){ return v.id === volkParam; });
+        if (gefunden) {
+            selectedStammbaumVolk = volkParam;
+            activeTab = 'standorte';
+            suchBegriff = gefunden.name;
+        }
+    }
+
     render();
 }
 
@@ -342,6 +356,15 @@ function render() {
         html += renderSuchergebnisse();
         html += '</div>';
         document.getElementById('app').innerHTML = html;
+        // QR-Code generieren
+        setTimeout(function(){
+            voelker.forEach(function(v){
+                var qrEl = document.getElementById('qrcode-' + v.id);
+                if (qrEl && !qrEl.firstChild) {
+                    new QRCode(qrEl, { text: 'https://www.bienenplan.de/bewertung.html?volk=' + v.id, width: 128, height: 128, colorDark: '#1C1410', colorLight: '#ffffff' });
+                }
+            });
+        }, 100);
         return;
     }
 
@@ -398,7 +421,8 @@ function renderStandorteTab() {
         html += '<div class="standort-card' + (selectedStandortFilter===s.id?' selected':'') + '" onclick="selectedStandortFilter=\'' + s.id + '\';render()">';
         html += '<div style="font-size:1.5rem;margin-bottom:.25rem">📍</div>';
         html += '<div style="font-weight:600;font-size:.85rem">' + s.name + '</div>';
-        html += '<div style="font-size:.75rem;color:#7A6652">' + cnt + ' Völker</div>';
+        html += '<div style="font-size:.75rem;color:#7A6652">' + cnt + ' V\u00f6lker</div>';
+        html += '<button onclick="event.stopPropagation();druckeAlleQR(\'' + s.id + '\')" style="background:none;border:1px solid #E8DFD4;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#7A6652;margin-top:.35rem" title="Alle QR-Codes drucken">\ud83c\udff7\ufe0f QR-Etiketten</button>';
         html += '</div>';
     });
     html += '</div>';
@@ -433,6 +457,7 @@ function renderVolkKarte(v) {
     // Header
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">';
     html += '<div>';
+    if (v.typ === 'ableger') html += '<span style="font-size:.65rem;background:#D1FAE5;color:#065F46;padding:.1rem .4rem;border-radius:.25rem;font-weight:600;display:inline-block;margin-bottom:.2rem">\ud83c\udf31 Ableger</span>';
     html += '<div style="font-weight:700;font-size:1rem">🐝 ' + v.name + '</div>';
     if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + s.name + '</div>';
     html += '</div>';
@@ -479,6 +504,8 @@ function renderVolkKarte(v) {
     } else {
         html += '<div style="font-size:.75rem;color:#A69580;padding-top:.35rem;border-top:1px solid #f5f0eb">Noch keine Durchsicht</div>';
     }
+
+    html += '<div style="margin-top:.5rem;text-align:right"><button onclick="event.stopPropagation();druckeStockkarte(\'' + v.id + '\')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:#7A6652" title="Stockkarte drucken">\ud83d\udda8\ufe0f</button></div>';
 
     html += '</div>';
     return html;
@@ -634,6 +661,15 @@ function renderVolkProfil(v) {
         if (volkDs.length > 10) html += '<div style="font-size:.75rem;color:#A69580;margin-top:.25rem">... und ' + (volkDs.length - 10) + ' weitere</div>';
         html += '</div>';
     }
+
+    // QR-Code Bereich
+    html += '<div style="margin-top:1rem;padding:1rem;background:#f5f0eb;border-radius:.75rem;text-align:center">';
+    html += '<div style="font-size:.85rem;font-weight:600;color:#3D2E1F;margin-bottom:.5rem">\ud83d\udcf1 QR-Code f\u00fcr dieses Volk</div>';
+    html += '<div id="qrcode-' + v.id + '" style="display:inline-block;background:#fff;padding:.75rem;border-radius:.5rem"></div>';
+    html += '<div style="margin-top:.75rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">';
+    html += '<button class="btn btn-sm btn-primary" onclick="druckeStockkarte(\'' + v.id + '\')">\ud83d\udda8\ufe0f Stockkarte drucken</button>';
+    html += '</div>';
+    html += '</div>';
 
     html += '</div>';
     return html;
@@ -1916,6 +1952,128 @@ function toast(msg, typ) {
     el.className = 'toast' + (typ ? ' ' + typ : '') + ' show';
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+// ============================================
+// DRUCK-FUNKTIONEN
+// ============================================
+function druckeStockkarte(volkId) {
+    var v = voelker.find(function(x){return x.id===volkId;});
+    if (!v) return;
+    var s = standorte.find(function(x){return x.id===v.standortId;});
+    var kInfo = koeniginnen[volkId] || {};
+    var volkDs = durchsichten.filter(function(d){return d.volkId===volkId;}).sort(function(a,b){return b.datum.localeCompare(a.datum);});
+    var letzteDs = volkDs[0];
+
+    var w = window.open('','_blank');
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + v.name + '</title>');
+    w.document.write('<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>');
+    w.document.write('<style>');
+    w.document.write('*{margin:0;padding:0;box-sizing:border-box}');
+    w.document.write('body{font-family:Arial,sans-serif;padding:2rem;color:#1C1410}');
+    w.document.write('h1{font-size:1.5rem;margin-bottom:.25rem}');
+    w.document.write('.subtitle{color:#7A6652;font-size:.9rem;margin-bottom:1.5rem}');
+    w.document.write('.grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}');
+    w.document.write('.box{border:1px solid #E8DFD4;border-radius:.5rem;padding:.75rem}');
+    w.document.write('.box h3{font-size:.85rem;color:#92400E;margin-bottom:.5rem;border-bottom:1px solid #E8DFD4;padding-bottom:.25rem}');
+    w.document.write('.box p{font-size:.8rem;margin-bottom:.25rem}');
+    w.document.write('.qr-section{text-align:center;margin-top:1.5rem;padding-top:1rem;border-top:2px solid #E8DFD4}');
+    w.document.write('.qr-section p{font-size:.7rem;color:#7A6652;margin-top:.5rem}');
+    w.document.write('.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}');
+    w.document.write('.header-left{flex:1}');
+    w.document.write('@media print{body{padding:1.5cm}}');
+    w.document.write('</style></head><body>');
+
+    w.document.write('<div class="header"><div class="header-left">');
+    w.document.write('<h1>\ud83d\udc1d ' + v.name + '</h1>');
+    w.document.write('<div class="subtitle">\ud83d\udccd ' + (s ? s.name : 'Unbekannt') + ' | Status: ' + (v.status || 'ok') + '</div>');
+    w.document.write('</div></div>');
+
+    w.document.write('<div class="grid">');
+    // K\u00f6nigin
+    w.document.write('<div class="box"><h3>\ud83d\udc51 K\u00f6nigin</h3>');
+    if (kInfo.begattung) {
+        w.document.write('<p>Begattung: ' + kInfo.begattung + '</p>');
+        if (kInfo.jahrgang) w.document.write('<p>Jahrgang: ' + kInfo.jahrgang + '</p>');
+        if (kInfo.farbe) w.document.write('<p>Farbe: ' + kInfo.farbe + '</p>');
+        if (kInfo.zuchtbuchNr) w.document.write('<p>Zuchtbuch: ' + kInfo.zuchtbuchNr + '</p>');
+        if (kInfo.nummer) w.document.write('<p>Nummer: ' + kInfo.nummer + '</p>');
+    } else {
+        w.document.write('<p style="color:#9CA3AF">Keine K\u00f6nigin-Daten</p>');
+    }
+    w.document.write('</div>');
+
+    // Letzte Durchsicht
+    w.document.write('<div class="box"><h3>\ud83d\udccb Letzte Durchsicht</h3>');
+    if (letzteDs) {
+        w.document.write('<p>Datum: ' + new Date(letzteDs.datum).toLocaleDateString('de-DE') + '</p>');
+        if (letzteDs.taetigkeiten && letzteDs.taetigkeiten.length) {
+            w.document.write('<p>T\u00e4tigkeiten: ' + letzteDs.taetigkeiten.map(function(t){return t.key;}).join(', ') + '</p>');
+        }
+        if (letzteDs.notizen) w.document.write('<p>Notizen: ' + letzteDs.notizen + '</p>');
+    } else {
+        w.document.write('<p style="color:#9CA3AF">Keine Durchsichten</p>');
+    }
+    w.document.write('</div>');
+    w.document.write('</div>');
+
+    // QR Code
+    w.document.write('<div class="qr-section"><div id="printQR"></div>');
+    w.document.write('<p>QR-Code scannen um dieses Volk in der App zu \u00f6ffnen</p>');
+    w.document.write('<p style="font-size:.65rem;color:#A69580">bienenplan.de | ' + v.name + ' | ' + (s ? s.name : '') + '</p>');
+    w.document.write('</div>');
+
+    w.document.write('<script>new QRCode(document.getElementById("printQR"),{text:"https://www.bienenplan.de/bewertung.html?volk=' + volkId + '",width:150,height:150,colorDark:"#1C1410",colorLight:"#ffffff"});setTimeout(function(){window.print();},600);<\/script>');
+    w.document.write('</body></html>');
+    w.document.close();
+}
+
+function druckeAlleQR(standortId) {
+    var s = standorte.find(function(x){return x.id===standortId;});
+    var sVoelker = voelker.filter(function(v){return v.standortId===standortId;});
+    if (!sVoelker.length) { toast('Keine V\u00f6lker an diesem Standort'); return; }
+
+    var w = window.open('','_blank');
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR-Etiketten ' + (s?s.name:'') + '</title>');
+    w.document.write('<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>');
+    w.document.write('<style>');
+    w.document.write('*{margin:0;padding:0;box-sizing:border-box}');
+    w.document.write('body{font-family:Arial,sans-serif;padding:1.5rem;color:#1C1410}');
+    w.document.write('h1{font-size:1.2rem;margin-bottom:.25rem}');
+    w.document.write('.subtitle{color:#7A6652;font-size:.8rem;margin-bottom:1.5rem}');
+    w.document.write('.etiketten{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}');
+    w.document.write('.etikett{border:1px dashed #E8DFD4;border-radius:.5rem;padding:.75rem;text-align:center;page-break-inside:avoid}');
+    w.document.write('.etikett h3{font-size:.85rem;margin-bottom:.25rem}');
+    w.document.write('.etikett .standort{font-size:.7rem;color:#7A6652;margin-bottom:.5rem}');
+    w.document.write('.etikett .qr{display:inline-block}');
+    w.document.write('.etikett .url{font-size:.55rem;color:#A69580;margin-top:.35rem;word-break:break-all}');
+    w.document.write('@media print{body{padding:1cm}.etiketten{gap:.75rem}}');
+    w.document.write('</style></head><body>');
+
+    w.document.write('<h1>\ud83c\udff7\ufe0f QR-Etiketten</h1>');
+    w.document.write('<div class="subtitle">\ud83d\udccd ' + (s?s.name:'Standort') + ' \u2014 ' + sVoelker.length + ' V\u00f6lker</div>');
+    w.document.write('<div class="etiketten">');
+
+    sVoelker.forEach(function(v) {
+        w.document.write('<div class="etikett">');
+        w.document.write('<h3>\ud83d\udc1d ' + v.name + '</h3>');
+        w.document.write('<div class="standort">' + (s?s.name:'') + '</div>');
+        w.document.write('<div class="qr" id="qr-' + v.id + '"></div>');
+        w.document.write('<div class="url">bienenplan.de</div>');
+        w.document.write('</div>');
+    });
+
+    w.document.write('</div>');
+
+    // Generate all QR codes
+    w.document.write('<script>');
+    sVoelker.forEach(function(v) {
+        w.document.write('new QRCode(document.getElementById("qr-' + v.id + '"),{text:"https://www.bienenplan.de/bewertung.html?volk=' + v.id + '",width:100,height:100,colorDark:"#1C1410",colorLight:"#ffffff"});');
+    });
+    w.document.write('setTimeout(function(){window.print();},800);');
+    w.document.write('<\/script>');
+    w.document.write('</body></html>');
+    w.document.close();
 }
 
 init();
