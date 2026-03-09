@@ -283,42 +283,67 @@
 
 <!-- === RÜCKWÄRTSRECHNER MODAL === -->
 <div id="rueckwaertsModal" class="modal modal-center">
-    <div class="modal-content" style="max-width:500px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
+    <div class="modal-content" style="max-width:520px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
         <div class="modal-header">
-            <h2>🔄 Besamungstermin-Planer</h2>
+            <h2>📅 Rückwärtsrechner</h2>
             <button class="close-btn" onclick="document.getElementById('rueckwaertsModal').classList.remove('active')">✕</button>
         </div>
         <div class="modal-body">
-            <div class="info-box" style="margin-bottom:1rem">💡 Gib deinen Besamungstermin ein und ich berechne rückwärts, wann du mit der Zucht starten musst.</div>
-            <div class="form-group">
-                <label class="form-label">📅 Besamungstermin (Zusetzen-Datum)</label>
-                <input type="date" id="rueckDatum" class="input" onchange="berechneRueckwaerts()">
+            <div class="info-box" style="margin-bottom:1.25rem">
+                <strong>Wie funktioniert's?</strong><br>
+                Du hast einen festen Termin, an dem die Königin zugesetzt werden soll (z.B. Besamungstermin)?<br>
+                Gib dieses Datum ein – der Rechner zeigt dir, <strong>wann du mit der Sammelbrut starten musst</strong>.
             </div>
+
             <div class="form-group">
-                <label class="form-label" style="font-size:.8rem;color:#7A6652">Tage-Parameter anpassen:</label>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
-                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
-                        Schlupf→Zusetzen<br><strong id="rwZusetzenVal">7</strong> Tage
-                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',-1)">−</button>
-                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',1)">+</button></div>
+                <label class="form-label">Wann soll die Königin zugesetzt werden?</label>
+                <input type="date" id="rueckDatum" class="input" onchange="berechneRueckwaerts()">
+                <small style="color:#A69580">Das ist dein Zieldatum – von hier wird rückwärts gerechnet.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Zeitabstände zwischen den Schritten</label>
+                <small style="color:#A69580;display:block;margin-bottom:.5rem">Standard-Werte voreingestellt – bei Bedarf anpassen:</small>
+                <div style="display:grid;gap:.5rem">
+                    <div style="background:#FFF8EE;padding:.6rem .75rem;border-radius:.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.85rem">
+                        <span>📦 Sammelbrut → 🔬 Umlarven</span>
+                        <div style="display:flex;align-items:center;gap:.35rem">
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',-1)">−</button>
+                            <strong id="rwUmlarvenVal" style="min-width:1.5rem;text-align:center">4</strong>
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',1)">+</button>
+                            <span style="color:#A69580;font-size:.75rem">Tage</span>
+                        </div>
                     </div>
-                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
-                        Verschulen→Schlupf<br><strong id="rwSchlupfVal">2</strong> Tage
-                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',-1)">−</button>
-                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',1)">+</button></div>
+                    <div style="background:#EFF6FF;padding:.6rem .75rem;border-radius:.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.85rem">
+                        <span>🔬 Umlarven → 🏠 Verschulen</span>
+                        <div style="display:flex;align-items:center;gap:.35rem">
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',-1)">−</button>
+                            <strong id="rwVerschulenVal" style="min-width:1.5rem;text-align:center">10</strong>
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',1)">+</button>
+                            <span style="color:#A69580;font-size:.75rem">Tage</span>
+                        </div>
                     </div>
-                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
-                        Umlarven→Verschulen<br><strong id="rwVerschulenVal">10</strong> Tage
-                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',-1)">−</button>
-                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('verschulen',1)">+</button></div>
+                    <div style="background:#F5F3FF;padding:.6rem .75rem;border-radius:.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.85rem">
+                        <span>🏠 Verschulen → 🐣 Schlupf</span>
+                        <div style="display:flex;align-items:center;gap:.35rem">
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',-1)">−</button>
+                            <strong id="rwSchlupfVal" style="min-width:1.5rem;text-align:center">2</strong>
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('schlupf',1)">+</button>
+                            <span style="color:#A69580;font-size:.75rem">Tage</span>
+                        </div>
                     </div>
-                    <div style="background:#f5f0eb;padding:.5rem;border-radius:.5rem;text-align:center;font-size:.8rem">
-                        Sammelbrut→Umlarven<br><strong id="rwUmlarvenVal">4</strong> Tage
-                        <div><button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',-1)">−</button>
-                        <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('umlarven',1)">+</button></div>
+                    <div style="background:#ECFDF5;padding:.6rem .75rem;border-radius:.5rem;display:flex;align-items:center;justify-content:space-between;font-size:.85rem">
+                        <span>🐣 Schlupf → 👑 Zusetzen</span>
+                        <div style="display:flex;align-items:center;gap:.35rem">
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',-1)">−</button>
+                            <strong id="rwZusetzenVal" style="min-width:1.5rem;text-align:center">7</strong>
+                            <button class="counter-btn" style="width:28px;height:28px;font-size:1rem" onclick="changeRwTage('zusetzen',1)">+</button>
+                            <span style="color:#A69580;font-size:.75rem">Tage</span>
+                        </div>
                     </div>
                 </div>
             </div>
+
             <div id="rueckErgebnis" style="display:none;margin-top:1rem"></div>
         </div>
     </div>
@@ -504,7 +529,7 @@ function render() {
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">';
     if (!isPreview) {
         html += '<button class="btn btn-primary btn-sm" onclick="openModal()">+ Neuer Zuchtplan</button>';
-        html += ' <button class="btn btn-blue btn-sm" onclick="openRueckwaerts()" style="margin-left:.5rem">🔄 Besamungstermin-Planer</button>';
+        html += ' <button class="btn btn-blue btn-sm" onclick="openRueckwaerts()" style="margin-left:.5rem">📅 Rückwärtsrechner</button>';
     } else {
         html += '<div></div>';
     }
@@ -1173,18 +1198,25 @@ function berechneRueckwaerts() {
 
     var ergebnis = document.getElementById('rueckErgebnis');
     ergebnis.style.display = 'block';
-    ergebnis.innerHTML = '<div style="background:#fff;border:2px solid #F5A623;border-radius:.75rem;padding:1rem">'
-        + '<div style="font-weight:700;font-size:1rem;color:#1C1410;margin-bottom:.75rem">📋 Berechneter Zuchtplan <small style="color:#A69580">(' + gesamtTage + ' Tage gesamt)</small></div>'
-        + '<div style="display:grid;gap:.5rem">'
-        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#FFF8EE;border-radius:.35rem"><span>📦 Sammelbrut</span><strong>' + formatDatumKurz(s) + '</strong></div>'
-        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#EFF6FF;border-radius:.35rem"><span>🔬 Umlarven (+' + rwTageUmlarven + 'd)</span><strong>' + formatDatumKurz(u) + '</strong></div>'
-        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#F5F3FF;border-radius:.35rem"><span>🏠 Verschulen (+' + rwTageVerschulen + 'd)</span><strong>' + formatDatumKurz(vs) + '</strong></div>'
-        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#FDF2F8;border-radius:.35rem"><span>🐣 Schlupf (+' + rwTageSchlupf + 'd)</span><strong>' + formatDatumKurz(sc) + '</strong></div>'
-        + '<div style="display:flex;justify-content:space-between;padding:.35rem .5rem;background:#ECFDF5;border-radius:.35rem"><span>👑 Zusetzen (+' + rwTageZusetzen + 'd)</span><strong>' + formatDatumKurz(z) + '</strong></div>'
+    ergebnis.innerHTML = ''
+        // Großer Starttermin-Hinweis
+        + '<div style="background:linear-gradient(135deg,#1C1410,#3D2E1F);border-radius:.75rem;padding:1.25rem;text-align:center;margin-bottom:.75rem">'
+        + '<div style="color:#C4A882;font-size:.8rem;margin-bottom:.25rem">Du musst spätestens starten am:</div>'
+        + '<div style="color:#F5A623;font-size:1.5rem;font-weight:700;font-family:DM Serif Display,serif">' + formatDatumKurz(s) + '</div>'
+        + '<div style="color:#C4A882;font-size:.75rem;margin-top:.35rem">' + gesamtTage + ' Tage bis zum Zusetzen</div>'
+        + startHinweis.replace('style="color:', 'style="color:#fca5a5;') // Warnungen heller auf dunklem Hintergrund
         + '</div>'
-        + startHinweis
-        + '<button class="btn btn-primary btn-block" style="margin-top:1rem" onclick="uebernehmePlan(\'' + s.toISOString().split('T')[0] + '\',' + rwTageUmlarven + ',' + rwTageVerschulen + ',' + rwTageSchlupf + ',' + rwTageZusetzen + ')">📋 Als Zuchtplan übernehmen</button>'
-        + '</div>';
+        // Alle Termine als Timeline
+        + '<div style="background:#fff;border:1px solid #E8DFD4;border-radius:.75rem;padding:1rem">'
+        + '<div style="font-weight:600;font-size:.85rem;color:#7A6652;margin-bottom:.5rem">Alle Termine im Überblick:</div>'
+        + '<div style="display:grid;gap:.35rem">'
+        + '<div style="display:flex;justify-content:space-between;padding:.4rem .6rem;background:#FFF8EE;border-radius:.35rem;border-left:3px solid #F5A623"><span style="font-size:.85rem">📦 Sammelbrut</span><strong style="font-size:.85rem">' + formatDatumKurz(s) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.4rem .6rem;background:#EFF6FF;border-radius:.35rem;border-left:3px solid #3b82f6"><span style="font-size:.85rem">🔬 Umlarven</span><strong style="font-size:.85rem">' + formatDatumKurz(u) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.4rem .6rem;background:#F5F3FF;border-radius:.35rem;border-left:3px solid #8b5cf6"><span style="font-size:.85rem">🏠 Verschulen</span><strong style="font-size:.85rem">' + formatDatumKurz(vs) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.4rem .6rem;background:#FDF2F8;border-radius:.35rem;border-left:3px solid #ec4899"><span style="font-size:.85rem">🐣 Schlupf</span><strong style="font-size:.85rem">' + formatDatumKurz(sc) + '</strong></div>'
+        + '<div style="display:flex;justify-content:space-between;padding:.4rem .6rem;background:#ECFDF5;border-radius:.35rem;border-left:3px solid #10b981"><span style="font-size:.85rem">👑 Zusetzen</span><strong style="font-size:.85rem">' + formatDatumKurz(z) + '</strong></div>'
+        + '</div></div>'
+        + '<button class="btn btn-primary btn-block" style="margin-top:1rem" onclick="uebernehmePlan(\'' + s.toISOString().split('T')[0] + '\',' + rwTageUmlarven + ',' + rwTageVerschulen + ',' + rwTageSchlupf + ',' + rwTageZusetzen + ')">Als Zuchtplan anlegen</button>';
 }
 
 function formatDatumKurz(d) {
