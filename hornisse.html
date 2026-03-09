@@ -472,6 +472,7 @@ function renderMeldeForm() {
         html += '<button onclick="meldeFormData.lat=null;meldeFormData.lng=null;renderMeldeForm()" style="background:none;border:none;cursor:pointer;font-size:.9rem">✕</button>';
         html += '</div>';
     }
+    html += '<div id="gpsStatus" style="font-size:.75rem;padding:.4rem .75rem;border-radius:.5rem;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;background:#f5f0eb;color:#7A6652">⏳ Standort wird geprüft...</div>';
     html += '<div style="display:flex;gap:.5rem;margin-bottom:.5rem">';
     html += '<button onclick="getGPS()" style="flex:1;padding:.5rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:.5rem;cursor:pointer;font-size:.8rem">📡 GPS</button>';
     html += '<button onclick="toggleMiniMapSize()" id="expandMapBtn" style="padding:.5rem .75rem;background:#fff;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.8rem">🔍 Karte vergrößern</button>';
@@ -583,14 +584,8 @@ function initMiniMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
     L.control.zoom({ position: 'topright' }).addTo(miniMap);
 
-    // Automatisch auf Standort des Users zentrieren (wenn noch keine Position gesetzt)
-    if (!meldeFormData.lat && !meldeFormData.lng && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-            if (miniMap && !meldeFormData.lat) {
-                miniMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
-            }
-        }, function(){}, { timeout: 5000 });
-    }
+    // Standort prüfen und Status anzeigen
+    checkGpsStatus();
 
     // Marker setzen falls Position vorhanden
     if (meldeFormData.lat && meldeFormData.lng) {
@@ -621,6 +616,47 @@ function initMiniMap() {
 
     // Map braucht kurz um sich korrekt zu rendern im Modal
     setTimeout(function(){ miniMap.invalidateSize(); }, 200);
+}
+
+function updateGpsStatusEl(icon, text, bg, color) {
+    var el = document.getElementById('gpsStatus');
+    if (el) { el.innerHTML = icon + ' ' + text; el.style.background = bg; el.style.color = color; }
+}
+
+function checkGpsStatus() {
+    var statusEl = document.getElementById('gpsStatus');
+    if (!statusEl) return;
+
+    if (!navigator.geolocation) {
+        updateGpsStatusEl('🚫', 'GPS nicht verfügbar in diesem Browser', '#FEF2F2', '#991B1B');
+        return;
+    }
+
+    if (!window.isSecureContext) {
+        updateGpsStatusEl('🔒', 'GPS benötigt HTTPS – Standort manuell auf Karte setzen', '#FEF2F2', '#991B1B');
+        return;
+    }
+
+    updateGpsStatusEl('⏳', 'Standort wird abgefragt...', '#f5f0eb', '#7A6652');
+
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            updateGpsStatusEl('✅', 'Standort freigegeben', '#F0FDF4', '#065F46');
+            if (miniMap && !meldeFormData.lat) {
+                miniMap.setView([pos.coords.latitude, pos.coords.longitude], 13);
+            }
+        },
+        function(err) {
+            if (err.code === 1) {
+                updateGpsStatusEl('❌', 'Standort blockiert – bitte in den Browser-Einstellungen freigeben oder Position manuell auf der Karte setzen', '#FEF2F2', '#991B1B');
+            } else if (err.code === 2) {
+                updateGpsStatusEl('⚠️', 'Standort nicht ermittelbar – Position manuell auf der Karte setzen', '#FFF3D6', '#92400E');
+            } else {
+                updateGpsStatusEl('⚠️', 'Standortabfrage Timeout – Position manuell auf der Karte setzen', '#FFF3D6', '#92400E');
+            }
+        },
+        { timeout: 8000, enableHighAccuracy: true }
+    );
 }
 
 function clearMiniPos() {
