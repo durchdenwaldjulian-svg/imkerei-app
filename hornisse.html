@@ -197,7 +197,7 @@ window.onload = async function() {
     markers = L.layerGroup().addTo(map);
 
     // Bei Zoom: Marker neu rendern damit Größe passt
-    map.on('zoomend', function() { renderMarkers(); });
+    map.on('zoomend', function() { renderMarkers(true); });
 
     // Klick auf Karte = Position wählen
     map.on('click', function(e) {
@@ -257,7 +257,7 @@ async function loadMeldungen() {
 // ============================================
 // MARKER RENDERN
 // ============================================
-function renderMarkers() {
+function renderMarkers(skipFitBounds) {
     markers.clearLayers();
 
     var filterTyp = document.getElementById('filterTyp').value;
@@ -319,8 +319,8 @@ function renderMarkers() {
         });
     }
 
-    // Karte auf Marker zoomen
-    if (filtered.length > 0) {
+    // Karte auf Marker zoomen (nur beim ersten Laden, nicht bei Zoom-Updates)
+    if (!skipFitBounds && filtered.length > 0) {
         var bounds = L.latLngBounds(filtered.filter(function(m){return m.lat && m.lng;}).map(function(m){return [m.lat, m.lng];}));
         if (bounds.isValid()) map.fitBounds(bounds, {padding: [30, 30], maxZoom: 10});
     }
