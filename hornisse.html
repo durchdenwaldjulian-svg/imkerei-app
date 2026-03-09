@@ -245,7 +245,7 @@ window.onload = async function() {
 // ============================================
 async function loadMeldungen() {
     var pubSb = createPublicClient();
-    var res = await pubSb.from('hornissen_meldungen').select('*').order('created_at', {ascending: false});
+    var res = await pubSb.from('hornissen_meldungen').select('id,user_id,melder_name,melder_ort,typ,datum,lat,lng,verhalten,nest_groesse,nest_hoehe,notizen,foto_url,status,bestaetigt_count,created_at').order('created_at', {ascending: false});
     if (res.error) {
         console.error('Fehler beim Laden:', res.error);
         meldungen = [];
@@ -747,7 +747,7 @@ async function bestaetigeMeldung(id) {
     var countRes = await sb.from('hornissen_bestaetigungen').select('id', { count: 'exact', head: true }).eq('meldung_id', id);
     var newCount = countRes.count || ((m.bestaetigt_count || 0) + 1);
     var newStatus = newCount >= 2 ? 'bestaetigt' : m.status;
-    await sb.from('hornissen_meldungen').update({ bestaetigt_count: newCount, status: newStatus }).eq('id', id);
+    await sb.rpc('update_hornissen_status', { meldung_id: id, new_count: newCount, new_status: newStatus });
     m.bestaetigt_count = newCount;
     m.status = newStatus;
     renderMarkers();
@@ -756,8 +756,9 @@ async function bestaetigeMeldung(id) {
 
 async function markiereEntfernt(id) {
     if (!confirm('Nest als entfernt markieren?')) return;
-    await sb.from('hornissen_meldungen').update({status: 'entfernt'}).eq('id', id);
     var m = meldungen.find(function(x){return x.id===id;});
+    var count = m ? (m.bestaetigt_count || 0) : 0;
+    await sb.rpc('update_hornissen_status', { meldung_id: id, new_count: count, new_status: 'entfernt' });
     if (m) m.status = 'entfernt';
     renderMarkers();
     toast('🏁 Als entfernt markiert', 'success');
@@ -765,6 +766,14 @@ async function markiereEntfernt(id) {
 
 async function deleteMeldung(id) {
     if (!confirm('Meldung wirklich löschen?')) return;
+    var m = meldungen.find(function(x){return x.id===id;});
+    // Foto aus Storage löschen falls vorhanden
+    if (m && m.foto_url) {
+        try {
+            var fotoPath = m.foto_url.split('/hornissen-fotos/').pop();
+            if (fotoPath) await sb.storage.from('hornissen-fotos').remove([fotoPath]);
+        } catch(e) { console.warn('Foto-Löschung fehlgeschlagen:', e); }
+    }
     await sb.from('hornissen_meldungen').delete().eq('id', id);
     meldungen = meldungen.filter(function(x){return x.id!==id;});
     renderMarkers();
