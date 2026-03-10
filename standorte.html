@@ -225,6 +225,16 @@ async function init() {
     });
 
     document.getElementById('loadingScreen').style.display = 'none';
+
+    // Deeplink: ?standort=ID&volk=ID
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('standort')) {
+        selectedStandortId = params.get('standort');
+        if (params.get('volk')) {
+            setTimeout(function() { openVolkModal(params.get('volk')); }, 300);
+        }
+    }
+
     render();
 }
 
@@ -685,6 +695,8 @@ function renderDetails() {
     '<button onclick="openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️ Bearbeiten</button>'+
     '</div></div>'+
 
+    renderSchwarmPrognose(s, sVoelker)+
+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">'+
     '<h2 style="margin:0">' + (function(){
         var nV = sVoelker.filter(function(v){return (v.typ||'volk')==='volk';}).length;
@@ -744,6 +756,54 @@ function quickRemoveVolk(standortId) {
     db.del('voelker', last.id);
     render();
     toast('🗑️ Volk entfernt', 'info');
+}
+
+// ============================================
+// SCHWARMTRIEB-PROGNOSE
+// ============================================
+function renderSchwarmPrognose(standort, sVoelker) {
+    var monat = new Date().getMonth() + 1;
+    var tag = new Date().getDate();
+    // Basis-Risiko nach Monat (Mitteleuropa)
+    var monatsRisiko = {1:0,2:0,3:5,4:25,5:70,6:60,7:30,8:10,9:5,10:0,11:0,12:0};
+    var basis = monatsRisiko[monat] || 0;
+    if (monat === 4 && tag > 15) basis += 15;
+    if (monat === 5 && tag < 15) basis += 10;
+    if (monat === 5 && tag >= 15) basis -= 5;
+    // Starke Völker = höheres Risiko
+    var starke = sVoelker.filter(function(v){return v.status==='ok'&&(v.typ||'volk')==='volk';}).length;
+    var total = sVoelker.filter(function(v){return (v.typ||'volk')==='volk';}).length || 1;
+    var risiko = Math.round(basis * (0.6 + (starke/total) * 0.6));
+    risiko = Math.max(0, Math.min(100, risiko));
+    // Texte
+    var info, intervall;
+    if (monat < 4) { info = 'Schwarmzeit beginnt voraussichtlich im April. Jetzt Vorbeuge planen.'; }
+    else if (monat >= 4 && monat <= 6) { info = 'Mitten in der Schwarmzeit! Regelmäßige Kontrolle empfohlen.'; }
+    else if (monat === 7) { info = 'Schwarmzeit klingt ab. Einzelne Nachschwärme möglich.'; }
+    else { info = 'Schwarmzeit ist vorbei. Nächste Saison ab April.'; }
+    if (risiko >= 60) intervall = 'Alle 7 Tage kontrollieren!';
+    else if (risiko >= 30) intervall = 'Alle 9 Tage kontrollieren';
+    else if (risiko >= 10) intervall = 'Alle 14 Tage kontrollieren';
+    else intervall = 'Keine Schwarmkontrolle nötig';
+    // Farben
+    var farbe, bg, border, emoji, stufe;
+    if (risiko >= 60) { farbe='#DC2626';bg='#FEF2F2';border='#FECACA';emoji='🔴';stufe='Hoch'; }
+    else if (risiko >= 30) { farbe='#D97706';bg='#FFFBEB';border='#FDE68A';emoji='🟡';stufe='Mittel'; }
+    else if (risiko >= 10) { farbe='#2563EB';bg='#EFF6FF';border='#BFDBFE';emoji='🔵';stufe='Niedrig'; }
+    else { farbe='#10b981';bg='#F0FDF4';border='#BBF7D0';emoji='🟢';stufe='Minimal'; }
+
+    var h = '<div style="background:'+bg+';border:2px solid '+border+';border-radius:.75rem;padding:1rem 1.25rem;margin:1rem 0">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">';
+    h += '<div style="font-weight:700;font-size:.95rem">🌪️ Schwarmtrieb-Prognose</div>';
+    h += '<div style="display:flex;align-items:center;gap:.375rem">'+emoji+'<span style="font-weight:700;color:'+farbe+'">'+stufe+' ('+risiko+'%)</span></div></div>';
+    h += '<div style="background:rgba(0,0,0,.08);height:8px;border-radius:4px;margin-bottom:.75rem;overflow:hidden">';
+    h += '<div style="height:100%;width:'+Math.max(5,risiko)+'%;background:'+farbe+';border-radius:4px;transition:width .5s"></div></div>';
+    h += '<div style="font-size:.82rem;color:#7A6652;margin-bottom:.5rem">'+info+'</div>';
+    h += '<div style="display:flex;gap:.75rem;flex-wrap:wrap">';
+    h += '<div style="background:#fff;padding:.4rem .75rem;border-radius:.5rem;font-size:.78rem;font-weight:600">⏱️ '+intervall+'</div>';
+    h += '<div style="background:#fff;padding:.4rem .75rem;border-radius:.5rem;font-size:.78rem">💪 '+starke+'/'+total+' Völker stark</div>';
+    h += '</div></div>';
+    return h;
 }
 
 function showDetails(id) {
