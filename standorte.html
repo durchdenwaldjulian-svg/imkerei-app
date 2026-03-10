@@ -719,7 +719,7 @@ function renderDetails() {
         var sl = statusLabels[v.status] || statusLabels.ok;
         var istAbleger = v.typ === 'ableger';
         var typBadge = istAbleger ? '<span style="font-size:.7rem;background:#E8F5EC;color:#059669;padding:.1rem .4rem;border-radius:999px;margin-left:.35rem">🌱 Ableger</span>' : '';
-        html += '<div class="volk-card'+(istAbleger ? ' ableger' : '')+'" onclick="openVolkModal(\''+v.id+'\')">'+
+        html += '<div class="volk-card'+(istAbleger ? ' ableger' : '')+'" onclick="window.location.href=\'bewertung.html?volk='+v.id+'\'">'+
         '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
         '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+v.name+typBadge+'</h3>'+
         '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div></div>'+
