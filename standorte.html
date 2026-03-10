@@ -674,6 +674,7 @@ function renderList() {
             // GTS Zeile (wird async nachgeladen)
             (s.lat && s.lng ? '<div id="gts_'+s.id+'"><div class="standort-gts-row" style="opacity:.5"><div class="standort-gts-value" style="color:#A69580">🌡️ ...</div><div style="flex:1"><div class="standort-gts-bar-bg"><div class="standort-gts-bar-fill" style="width:0%"></div></div><div class="standort-gts-next">GTS wird geladen...</div></div></div></div>'
             : '<div style="margin-top:.5rem;padding:.5rem .75rem;background:#FFF8EE;border-radius:.35rem;font-size:.75rem;color:#A69580">🌡️ GTS: Position setzen für Berechnung</div>')+
+            renderSchwarmPrognose(s, sVoelker)+
             '<div style="background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem">'+
             '<div style="font-weight:600;margin-bottom:.25rem">' + (function(){
                 var nVoelker = sVoelker.filter(function(v){return (v.typ||'volk')==='volk';}).length;
