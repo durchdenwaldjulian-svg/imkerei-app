@@ -2,47 +2,44 @@
 // IMKEREI TAGESPLANER – PRESENCE TRACKER
 // presence.js – meldet User als online im Supabase Presence Channel
 // Wird in allen Seiten eingebunden (nach config.js)
-// imkeradmin.html liest diesen Channel aus
+// imkermeister.html liest diesen Channel aus
 // ============================================
 
 (function(){
-    var retryCount = 0;
-    var maxRetries = 10;
-
-    function startPresence() {
-        if (typeof sb === 'undefined' || typeof currentUser === 'undefined' || !currentUser) {
-            retryCount++;
-            if (retryCount < maxRetries) {
-                setTimeout(startPresence, 1000);
-            }
+    // Warte bis Supabase und Auth geladen sind
+    function initPresence() {
+        if (typeof sb === 'undefined' || typeof currentUser === 'undefined') {
+            setTimeout(initPresence, 500);
+            return;
+        }
+        // Warte bis currentUser gesetzt ist (Auth abgeschlossen)
+        if (!currentUser) {
+            setTimeout(initPresence, 1000);
             return;
         }
 
         try {
-            var seite = window.location.pathname.split('/').pop() || 'app.html';
-            if (seite === '') seite = 'app.html';
+            var seite = window.location.pathname.split('/').pop() || 'index.html';
+            if (seite === '') seite = 'index.html';
 
             // Seitenname hübsch formatieren
             var seitenNamen = {
-                'app.html': 'Heute',
-                'standorte.html': 'Standorte',
+                'index.html': 'Heute',
+                'voelker.html': 'Völker & Standorte',
                 'behandlung.html': 'Behandlungen',
                 'tracht.html': 'Tracht',
                 'packliste.html': 'Packliste',
                 'zuchtplan.html': 'Königinnenzucht',
-                'bewertung.html': 'Bewertung',
                 'ernte.html': 'Honigernte',
                 'assistent.html': 'Assistent',
                 'bestandsbuch.html': 'Bestandsbuch',
                 'forum.html': 'Forum',
-                'trachtkarte.html': 'Trachtkarte',
-                'verein_trachten.html': 'Vereins-Trachten',
-                'hornisse.html': 'Hornissen-Melder'
+                'trachtkarte.html': 'Trachtkarte'
             };
             var seitenLabel = seitenNamen[seite] || seite;
 
-            // Hash-Page für app.html berücksichtigen
-            if (seite === 'app.html' && window.location.hash) {
+            // Hash-Page für index.html berücksichtigen
+            if (seite === 'index.html' && window.location.hash) {
                 var hash = window.location.hash.replace('#','');
                 var hashNamen = {
                     'heute': 'Heute', 'aufgaben': 'Aufgaben', 'kosten': 'Kosten',
@@ -59,12 +56,8 @@
                 userName = currentUser.email.split('@')[0];
             }
 
-            // Globalen presenceChannel aus config.js nutzen falls vorhanden, sonst neuen erstellen
-            if (typeof presenceChannel !== 'undefined' && presenceChannel) {
-                presenceChannel.untrack();
-            }
-            presenceChannel = sb.channel('online-users');
-
+            var presenceChannel = sb.channel('online-users');
+            
             presenceChannel.subscribe(function(status) {
                 if (status === 'SUBSCRIBED') {
                     presenceChannel.track({
@@ -78,12 +71,12 @@
 
             // Bei Seitenwechsel (Hash-Change) aktualisieren
             window.addEventListener('hashchange', function() {
-                var h = window.location.hash.replace('#','');
+                var hash = window.location.hash.replace('#','');
                 var hashNamen = {
                     'heute': 'Heute', 'aufgaben': 'Aufgaben', 'kosten': 'Kosten',
                     'einstellungen': 'Einstellungen', 'wetter': 'Wetter'
                 };
-                var neueSeite = hashNamen[h] || seitenLabel;
+                var neueSeite = hashNamen[hash] || seitenLabel;
                 presenceChannel.track({
                     user_id: currentUser.id,
                     name: userName,
@@ -96,11 +89,13 @@
             window.addEventListener('beforeunload', function() {
                 presenceChannel.untrack();
             });
+
+            console.log('🟢 Presence aktiv: ' + userName + ' auf ' + seitenLabel);
         } catch(e) {
             console.warn('Presence-Fehler:', e);
         }
     }
 
     // Start nach kurzer Verzögerung (Auth muss erst laden)
-    setTimeout(startPresence, 2000);
+    setTimeout(initPresence, 2000);
 })();

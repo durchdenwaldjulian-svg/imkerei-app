@@ -1,643 +1,2691 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#F5A623">
-<meta name="description" content="BienenPlan – Die Web-App für Imker. Völker verwalten, Behandlungen planen, Trachten kartieren, Königinnen züchten. Kostenlos starten.">
-<link rel="manifest" href="manifest.json">
-<title>BienenPlan – Deine Imkerei. Digital organisiert.</title>
-<link rel="stylesheet" href="/fonts/fonts.css">
-<style>
-:root {
-  --honey: #F5A623;
-  --honey-deep: #D4891C;
-  --honey-glow: #FFD980;
-  --cream: #FFFBF0;
-  --cream-dark: #FFF3D6;
-  --bark: #1C1410;
-  --bark-warm: #2D1F14;
-  --bark-mid: #3D2E1F;
-  --text: #4A3728;
-  --text-soft: #8B7355;
-  --forest: #3D7C47;
-  --forest-light: #E8F5E9;
-  --sky: #4A90D9;
-  --white: #fff;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;color:var(--text);background:var(--cream);overflow-x:hidden;-webkit-font-smoothing:antialiased}
-h1,h2,h3,.serif{font-family:'Fraunces',serif}
-a{color:inherit;text-decoration:none}
-img{max-width:100%;display:block}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Imkerei Tagesplaner</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css">
+    <style>
+        /* === INDEX.HTML SPECIFIC STYLES === */
+        body{padding-left:220px;padding-bottom:2rem}
+        
+        .container{max-width:800px;margin:0 auto;padding:1rem}
+        
+        /* === NAV (index-specific: sidebar layout) === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+        .footer{position:fixed;left:220px;bottom:0;right:0;background:#FFFBF0;border-top:1px solid rgba(245,166,35,0.12);padding:.4rem;text-align:center;font-size:.7rem;color:#7A6652;z-index:40}
+        
+        /* Timeline für Zuchtplan */
+        .timeline{position:relative;padding-left:2rem}
+        .timeline-item{position:relative;padding-bottom:1.5rem;border-left:2px solid #E8DFD4}
+        .timeline-item:last-child{border-left:none}
+        .timeline-dot{position:absolute;left:-7px;top:0;width:12px;height:12px;border-radius:50%;background:#F5A623;border:2px solid #fff;box-shadow:0 0 0 2px #E8DFD4}
+        .timeline-content{margin-left:1rem;background:#FFF8EE;padding:.75rem;border-radius:.5rem}
+        
+        /* Tracht Items */
+        /* .tracht-item → tracht.html */
+        
+        /* Völker-Grid CSS → standorte.html */
+        
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:68px}
+            .nav{display:none}
+            .footer{display:none}
+            .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
+            .option-grid{grid-template-columns:repeat(3,1fr)}
+            /* .volk-grid → standorte.html */
+            .mobile-nav{display:flex}
+            .mobile-menu-overlay{display:none}
+            .mobile-menu-overlay.active{display:flex}
+        }
 
-/* === FLOATING HEXES === */
-.bg-deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.bg-deco i{position:absolute;width:100px;height:100px;background:var(--honey);opacity:.025;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);animation:drift 30s ease-in-out infinite}
-.bg-deco i:nth-child(1){top:8%;left:4%;width:150px;height:150px;animation-delay:0s}
-.bg-deco i:nth-child(2){top:35%;right:6%;width:90px;height:90px;animation-delay:-7s}
-.bg-deco i:nth-child(3){top:65%;left:12%;width:70px;height:70px;animation-delay:-14s}
-.bg-deco i:nth-child(4){top:85%;right:18%;width:120px;height:120px;animation-delay:-20s}
-@keyframes drift{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-18px) rotate(4deg)}70%{transform:translateY(12px) rotate(-2deg)}}
+        /* === MOBILE NAV BAR === */
+        .mobile-nav{
+            display:none;
+            position:fixed;left:0;right:0;bottom:0;z-index:200;
+            background:#FFFBF0;border-top:2px solid rgba(245,166,35,0.12);
+            flex-direction:row;align-items:stretch;height:68px;
+            box-shadow:0 -4px 16px rgba(28,20,16,0.08);
+        }
+        .mobile-nav-btn{
+            flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+            border:none;background:none;cursor:pointer;color:#7A6652;
+            font-size:.7rem;font-weight:500;gap:3px;padding:.35rem 0;
+            border-top:3px solid transparent;transition:all .15s;
+        }
+        .mobile-nav-btn .mn-icon{font-size:1.4rem;line-height:1}
+        .mobile-nav-btn.active{color:#92400E;font-weight:700;border-top-color:#F5A623;background:#FFF8EE}
+        .mobile-nav-btn:active{background:rgba(245,166,35,0.1)}
+        .mobile-nav-btn.menu-btn{background:#F5A623;color:#fff;border-radius:.75rem;margin:.5rem .4rem;border-top:none;font-weight:700}
+        .mobile-nav-btn.menu-btn:active{background:#D4930D}
+        .mobile-nav-btn.menu-btn .mn-icon{font-size:1.6rem}
 
-/* === NAV === */
-.topnav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);background:rgba(255,251,240,.88);border-bottom:1px solid rgba(245,166,35,.1);transition:padding .3s,box-shadow .3s}
-.topnav.stick{padding:12px 32px;box-shadow:0 2px 12px rgba(28,20,16,.06)}
-.logo{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--bark)}
-.logo span{font-size:1.5rem}
-.nav-links{display:flex;gap:28px;align-items:center}
-.nav-links a{font-weight:500;font-size:.92rem;color:var(--text-soft);transition:color .2s}
-.nav-links a:hover{color:var(--honey-deep)}
-.btn-cta{display:inline-flex;align-items:center;gap:8px;background:var(--bark);color:var(--white);padding:11px 26px;border-radius:100px;font-weight:700;font-size:.9rem;transition:all .25s;border:none;cursor:pointer}
-.btn-cta:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
-.menu-btn{display:none;background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--bark)}
-@media(max-width:900px){.nav-links{display:none}.menu-btn{display:block}}
+        /* === MOBILE FULLSCREEN MENU === */
+        .mobile-menu-overlay{
+            display:none;position:fixed;inset:0;z-index:300;
+            background:rgba(28,20,16,0.5);
+            flex-direction:column;align-items:center;justify-content:center;
+        }
+        .mobile-menu-box{
+            background:#FFFBF0;border-radius:1.25rem;width:92%;max-width:400px;
+            max-height:85vh;overflow-y:auto;padding:1.25rem;
+            box-shadow:0 12px 40px rgba(28,20,16,0.25);
+            animation:menuSlideUp .25s ease;
+        }
+        @keyframes menuSlideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+        .mobile-menu-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:2px solid rgba(245,166,35,0.15)}
+        .mobile-menu-header h2{font-size:1.15rem;color:#1C1410;margin:0;display:flex;align-items:center;gap:.5rem}
+        .mobile-menu-close{width:36px;height:36px;border:none;background:#f5f0eb;border-radius:.5rem;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7A6652}
+        .mobile-menu-close:active{background:#E8DFD4}
+        .mobile-menu-section{font-size:.7rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .5rem;padding-left:.25rem}
+        .mobile-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+        .mobile-menu-item{
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:.75rem .5rem;border:2px solid #E8DFD4;border-radius:.75rem;
+            background:#fff;cursor:pointer;text-decoration:none;color:#1C1410;
+            font-size:.78rem;font-weight:500;gap:.3rem;transition:all .15s;min-height:70px;
+        }
+        .mobile-menu-item:active{border-color:#F5A623;background:#FFF8EE;transform:scale(0.96)}
+        .mobile-menu-item.mm-active{border-color:#F5A623;background:#FFF8EE;font-weight:700;color:#92400E}
+        .mobile-menu-item .mm-icon{font-size:1.5rem}
+        .mobile-menu-item.mm-danger{color:#ef4444;border-color:#fee2e2}
+        .mobile-menu-item.mm-danger:active{background:#fef2f2}
 
-/* === HERO === */
-.hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:130px 32px 80px;z-index:1}
-.hero-wrap{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;width:100%}
-.hero-text{animation:up .7s ease both}
-.pill{display:inline-flex;align-items:center;gap:8px;background:var(--cream-dark);color:var(--honey-deep);font-weight:600;font-size:.8rem;padding:7px 16px;border-radius:100px;margin-bottom:22px;letter-spacing:.03em}
-.pill i{width:7px;height:7px;background:var(--forest);border-radius:50%;animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-.hero h1{font-size:clamp(2.6rem,5vw,3.8rem);line-height:1.1;color:var(--bark);margin-bottom:20px;letter-spacing:-.02em;font-weight:900}
-.hero h1 em{font-style:italic;color:var(--honey-deep);font-weight:700}
-.hero p{font-size:1.1rem;line-height:1.7;color:var(--text-soft);max-width:460px;margin-bottom:36px}
-.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
-.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--honey);color:var(--bark);padding:15px 30px;border-radius:100px;font-weight:700;font-size:1rem;transition:all .3s;box-shadow:0 4px 16px rgba(245,166,35,.35);border:none;cursor:pointer}
-.btn-primary:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,166,35,.4)}
-.btn-ghost{display:inline-flex;align-items:center;gap:8px;padding:15px 30px;border-radius:100px;font-weight:600;font-size:1rem;transition:all .3s;border:2px solid rgba(28,20,16,.12);color:var(--text);background:transparent}
-.btn-ghost:hover{border-color:var(--honey);color:var(--honey-deep)}
+        /* === PACKLISTE MODULE STYLES === */
+        /* Packliste-CSS → packliste.html */
+        
+        /* === TRACHTKALENDER MODULE STYLES === */
+        /* Tracht-Timeline CSS → tracht.html */
+        .ausgeblendet-chip:hover{opacity:1;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+        .chip-close{font-size:1rem;font-weight:bold;color:#10b981}
+        
+        /* === ZUCHTPLAN MODULE STYLES === */
+        .zucht-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;transition:all .2s}
+        .zucht-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
+        .zucht-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:1rem}
+        .zucht-title{font-size:1.25rem;font-weight:bold;color:#1C1410}
+        .timeline-dot.completed{background:#10b981;box-shadow:0 0 0 2px #10b981}
+        .timeline-dot.active{background:#F5A623;box-shadow:0 0 0 2px #F5A623;animation:pulse 2s infinite}
+        .timeline-dot.upcoming{background:#E8DFD4}
+        .timeline-title{font-weight:bold;font-size:1rem;color:#1C1410;margin-bottom:.5rem}
+        .timeline-date{font-size:.9rem;color:#7A6652;margin-bottom:.25rem}
+        .timeline-note{font-size:.85rem;color:#5C4A38;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #E8DFD4}
+        .tage-counter{display:flex;align-items:center;gap:.75rem;background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem}
+        .counter-label{font-size:.85rem;color:#7A6652}
+        .badge-active{background:#10b981;color:#fff}
+        .badge-upcoming{background:#f59e0b;color:#fff}
+        .badge-completed{background:#7A6652;color:#fff}
+        .badge-repeat{background:#dbeafe;color:#1e40af}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        
+        /* === BEHANDLUNG MODULE STYLES === */
+        /* Behandlung-CSS → behandlung.html */
+        
+        .dauer-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin:.75rem 0}
 
-/* Hero Visual – App Mockup */
-.hero-visual{position:relative;animation:up .7s ease .15s both}
-.mockup{background:var(--white);border-radius:20px;box-shadow:0 24px 64px rgba(28,20,16,.1),0 0 0 1px rgba(245,166,35,.08);overflow:hidden}
-.mockup-bar{background:linear-gradient(135deg,var(--bark),var(--bark-warm));padding:14px 18px;display:flex;align-items:center;gap:8px}
-.mockup-dots{display:flex;gap:6px}
-.mockup-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}
-.mockup-dots span:first-child{background:#ef4444}
-.mockup-dots span:nth-child(2){background:#f59e0b}
-.mockup-dots span:last-child{background:#22c55e}
-.mockup-title{color:rgba(255,255,255,.7);font-size:.8rem;font-weight:500;margin-left:8px}
-.mockup-body{padding:20px;display:flex;flex-direction:column;gap:12px}
-.m-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--cream);border-radius:12px;border:1px solid rgba(245,166,35,.08)}
-.m-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
-.m-icon.g{background:#d1fae5}.m-icon.a{background:var(--cream-dark)}.m-icon.b{background:#dbeafe}.m-icon.p{background:#fce7f3}
-.m-label{font-weight:600;font-size:.88rem;color:var(--bark)}
-.m-sub{font-size:.75rem;color:var(--text-soft);margin-top:2px}
-.m-badge{margin-left:auto;font-size:.7rem;font-weight:600;padding:4px 10px;border-radius:100px;background:#d1fae5;color:#065f46;flex-shrink:0}
-.float-tag{position:absolute;padding:10px 16px;border-radius:14px;font-weight:600;font-size:.82rem;box-shadow:0 8px 24px rgba(28,20,16,.1);animation:bob 4s ease-in-out infinite;z-index:2}
-.float-tag.t1{top:-16px;right:24px;background:var(--white);color:var(--bark);animation-delay:0s}
-.float-tag.t2{bottom:30px;left:-20px;background:var(--bark);color:var(--honey);animation-delay:-2s}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-@keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-
-/* === SOCIAL PROOF === */
-.proof{position:relative;z-index:1;max-width:900px;margin:-20px auto 0;padding:0 32px}
-.proof-inner{display:flex;align-items:center;justify-content:center;gap:40px;padding:20px 0;flex-wrap:wrap}
-.proof-inner span{font-size:.88rem;color:var(--text-soft);font-weight:500;display:flex;align-items:center;gap:6px}
-.proof-inner span b{color:var(--bark);font-weight:700}
-
-/* === FEATURES === */
-.features{position:relative;z-index:1;padding:100px 32px}
-.section-inner{max-width:1100px;margin:0 auto}
-.tag{display:inline-block;background:var(--cream-dark);color:var(--honey-deep);font-weight:700;font-size:.78rem;padding:6px 14px;border-radius:100px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase}
-.section-title{font-size:clamp(2rem,4vw,2.8rem);color:var(--bark);line-height:1.15;margin-bottom:14px;font-weight:900}
-.section-sub{font-size:1.05rem;color:var(--text-soft);max-width:560px;line-height:1.6;margin-bottom:48px}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.feat-card{background:var(--white);border-radius:16px;padding:28px;border:1px solid rgba(245,166,35,.06);box-shadow:0 2px 8px rgba(28,20,16,.04);transition:all .25s;position:relative;overflow:hidden}
-.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--honey);transform:scaleX(0);transition:transform .3s;transform-origin:left}
-.feat-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,20,16,.08)}
-.feat-card:hover::before{transform:scaleX(1)}
-.feat-emoji{font-size:2rem;margin-bottom:14px}
-.feat-card h3{font-size:1.12rem;font-weight:700;color:var(--bark);margin-bottom:8px;font-family:'Outfit',sans-serif}
-.feat-card p{font-size:.88rem;line-height:1.6;color:var(--text-soft)}
-
-/* === TRACHTKARTE HIGHLIGHT === */
-.highlight{position:relative;z-index:1;padding:80px 32px;background:var(--bark);overflow:hidden}
-.highlight::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(245,166,35,.08),transparent 70%);border-radius:50%}
-.hl-wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.hl-text .tag{background:rgba(245,166,35,.15);color:var(--honey)}
-.hl-text h2{color:var(--white);font-size:clamp(1.8rem,3.5vw,2.5rem);margin-bottom:16px;font-weight:900}
-.hl-text p{color:rgba(255,255,255,.6);font-size:1rem;line-height:1.7;margin-bottom:28px}
-.hl-list{list-style:none;display:flex;flex-direction:column;gap:14px;margin-bottom:32px}
-.hl-list li{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.8);font-size:.92rem;font-weight:500}
-.hl-list li::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--honey);flex-shrink:0}
-.hl-visual{position:relative}
-.map-mock{background:var(--bark-warm);border-radius:16px;padding:24px;border:1px solid rgba(245,166,35,.12);min-height:340px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px}
-.map-mock .map-dot{width:14px;height:14px;border-radius:50%;position:absolute;border:3px solid var(--white);box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.map-pin{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);padding:10px 16px;border-radius:10px;color:rgba(255,255,255,.7);font-size:.85rem}
-.map-pin b{color:var(--honey)}
-
-/* === PRICING === */
-.pricing{position:relative;z-index:1;padding:100px 32px}
-.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:0 auto;align-items:start}
-.price-card{background:var(--white);border-radius:20px;padding:36px 28px;border:1px solid rgba(245,166,35,.08);box-shadow:0 2px 8px rgba(28,20,16,.04);text-align:center;position:relative;transition:all .25s}
-.price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(28,20,16,.08)}
-.price-card.popular{border:2px solid var(--honey);box-shadow:0 8px 32px rgba(245,166,35,.15);transform:scale(1.03);z-index:2}
-.price-card.popular:hover{transform:scale(1.03) translateY(-4px)}
-.popular-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--honey);color:var(--bark);font-size:.75rem;font-weight:700;padding:5px 16px;border-radius:100px;white-space:nowrap}
-.plan-emoji{font-size:2.2rem;margin-bottom:12px}
-.plan-name{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:900;color:var(--bark);margin-bottom:6px}
-.plan-desc{font-size:.85rem;color:var(--text-soft);margin-bottom:20px;line-height:1.5}
-.plan-price{display:flex;align-items:baseline;justify-content:center;gap:2px;margin-bottom:4px}
-.plan-price .currency{font-size:1.2rem;color:var(--text-soft);font-weight:600;align-self:flex-start;margin-top:8px}
-.plan-price .amount{font-family:'Fraunces',serif;font-size:3rem;font-weight:900;color:var(--bark);line-height:1}
-.plan-price .period{font-size:.9rem;color:var(--text-soft)}
-.plan-yearly{font-size:.8rem;color:var(--text-soft);margin-bottom:20px}
-.plan-divider{height:1px;background:rgba(28,20,16,.06);margin-bottom:20px}
-.plan-feats{list-style:none;text-align:left;margin-bottom:28px;display:flex;flex-direction:column;gap:10px}
-.plan-feats li{font-size:.88rem;color:var(--text);font-weight:500;display:flex;align-items:center;gap:10px}
-.plan-feats li::before{content:'✓';color:var(--forest);font-weight:800;font-size:.85rem;flex-shrink:0}
-.btn-plan{display:block;padding:13px 24px;border-radius:100px;font-weight:700;font-size:.92rem;text-align:center;transition:all .25s;cursor:pointer;text-decoration:none}
-.btn-plan.outline{background:transparent;border:2px solid rgba(28,20,16,.1);color:var(--bark)}
-.btn-plan.outline:hover{border-color:var(--honey);color:var(--honey-deep)}
-.btn-plan.filled{background:var(--honey);border:2px solid var(--honey);color:var(--bark)}
-.btn-plan.filled:hover{background:var(--honey-deep);color:var(--white);border-color:var(--honey-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
-.guarantee{display:flex;align-items:center;gap:14px;background:var(--forest-light);border:1px solid rgba(61,124,71,.12);border-radius:16px;padding:18px 24px;max-width:600px;margin:36px auto 0;text-align:left}
-.guarantee span{font-size:1.8rem;flex-shrink:0}
-.guarantee p{font-size:.85rem;color:var(--forest);line-height:1.5}
-.guarantee strong{color:var(--bark)}
-.plan-hint{font-size:.78rem;color:var(--text-soft);font-style:italic;margin-top:12px;line-height:1.5}
-
-/* === HIGHLIGHT ALT (Vereins-Block) === */
-.highlight-alt{position:relative;z-index:1;padding:80px 32px;background:linear-gradient(135deg,var(--bark-warm) 0%,var(--bark-mid) 100%);overflow:hidden}
-.highlight-alt::before{content:'';position:absolute;top:-30%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(245,166,35,.06),transparent 70%);border-radius:50%}
-.highlight-alt .hl-wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.highlight-alt .hl-text .tag{background:rgba(245,166,35,.15);color:var(--honey)}
-.highlight-alt .hl-text h2{color:var(--white);font-size:clamp(1.8rem,3.5vw,2.5rem);margin-bottom:16px;font-weight:900}
-.highlight-alt .hl-text p{color:rgba(255,255,255,.6);font-size:1rem;line-height:1.7;margin-bottom:28px}
-.verein-visual{position:relative}
-.verein-mock{background:rgba(255,255,255,.05);border-radius:16px;padding:28px;border:1px solid rgba(245,166,35,.1);display:flex;flex-direction:column;gap:14px}
-.verein-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);padding:12px 16px;border-radius:10px;color:rgba(255,255,255,.7);font-size:.88rem}
-.verein-item b{color:var(--honey)}
-
-/* === FAQ === */
-.faq{position:relative;z-index:1;padding:80px 32px 100px}
-.faq-list{max-width:700px;margin:40px auto 0}
-.faq-item{border-bottom:1px solid rgba(28,20,16,.06);overflow:hidden}
-.faq-q{padding:20px 0;font-weight:600;font-size:1rem;color:var(--bark);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
-.faq-q .arr{font-size:1.2rem;color:var(--text-soft);transition:transform .3s}
-.faq-item.open .faq-q .arr{transform:rotate(45deg)}
-.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;font-size:.92rem;color:var(--text-soft);line-height:1.7}
-.faq-item.open .faq-a{max-height:300px;padding-bottom:20px}
-
-/* === CTA === */
-.cta{position:relative;z-index:1;padding:80px 32px}
-.cta-box{max-width:900px;margin:0 auto;background:linear-gradient(135deg,var(--bark) 0%,var(--bark-warm) 100%);border-radius:24px;padding:64px 48px;text-align:center;position:relative;overflow:hidden}
-.cta-box::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='rgba(245,166,35,0.04)' stroke-width='1'/%3E%3C/svg%3E");opacity:.6}
-.cta-box h2{font-size:clamp(1.8rem,3.5vw,2.5rem);color:var(--white);margin-bottom:16px;position:relative;font-weight:900}
-.cta-box p{color:rgba(255,255,255,.6);font-size:1.05rem;margin-bottom:32px;position:relative}
-.cta-box .btn-primary{position:relative;font-size:1.05rem;padding:16px 36px}
-
-/* === FOOTER === */
-footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px}
-.footer-inner{max-width:1100px;margin:0 auto}
-.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;padding-bottom:40px;border-bottom:1px solid rgba(255,255,255,.06)}
-.footer-brand .logo{color:var(--honey);margin-bottom:12px}
-.footer-brand p{color:rgba(255,255,255,.4);font-size:.85rem;line-height:1.6;max-width:280px}
-.footer-col h4{color:rgba(255,255,255,.5);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
-.footer-col a{display:block;color:rgba(255,255,255,.45);font-size:.88rem;margin-bottom:10px;transition:color .2s}
-.footer-col a:hover{color:var(--honey)}
-.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;flex-wrap:wrap;gap:12px}
-.footer-bottom p,.footer-bottom a{color:rgba(255,255,255,.3);font-size:.8rem}
-.footer-bottom a:hover{color:var(--honey)}
-
-/* === REVEAL === */
-.rv{opacity:0;transform:translateY(24px);transition:all .55s ease-out}
-.rv.vis{opacity:1;transform:translateY(0)}
-
-/* === RESPONSIVE === */
-@media(max-width:900px){
-  .hero-wrap{grid-template-columns:1fr;gap:40px;text-align:center}
-  .hero p{margin-left:auto;margin-right:auto}
-  .hero-btns{justify-content:center}
-  .hero-visual{max-width:420px;margin:0 auto}
-  .feat-grid{grid-template-columns:1fr}
-  .hl-wrap{grid-template-columns:1fr;gap:40px}
-  .price-grid{grid-template-columns:1fr;max-width:400px}
-  .price-card.popular{transform:none}
-  .price-card.popular:hover{transform:translateY(-4px)}
-  .highlight-alt .hl-wrap{grid-template-columns:1fr;gap:40px}
-  .free-feats{grid-template-columns:1fr}
-  .footer-top{grid-template-columns:1fr 1fr;gap:28px}
-  .footer-bottom{flex-direction:column;text-align:center}
-  .float-tag.t2{display:none}
-}
-@media(min-width:901px) and (max-width:1100px){
-  .feat-grid{grid-template-columns:repeat(2,1fr)}
-  .price-grid{grid-template-columns:repeat(2,1fr)}
-}
-</style>
+    
+        /* Auth Styles */
+        .auth-container{max-width:400px;margin:10vh auto;padding:2rem}
+        .auth-card{background:#fff;border-radius:1.25rem;padding:2rem;box-shadow:0 4px 24px rgba(28,20,16,0.1);border:1px solid rgba(245,166,35,0.12)}
+        .auth-title{text-align:center;font-size:2.5rem;margin-bottom:.5rem}
+        .auth-subtitle{text-align:center;color:#7A6652;margin-bottom:2rem;font-size:.9rem}
+        .auth-tabs{display:flex;gap:0;margin-bottom:1.5rem;border:2px solid rgba(245,166,35,0.2);border-radius:.75rem;overflow:hidden}
+        .auth-tab{flex:1;padding:.75rem;text-align:center;cursor:pointer;font-weight:600;font-size:.9rem;border:none;background:#FFF8EE;color:#7A6652;transition:all .15s}
+        .auth-tab.active{background:#F5A623;color:#1C1410}
+        .auth-divider{text-align:center;color:#A69580;font-size:.8rem;margin:1rem 0;position:relative}
+        .auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:35%;height:1px;background:#E8DFD4}
+        .auth-divider::before{left:0}
+        .auth-divider::after{right:0}
+        .loading-overlay{position:fixed;inset:0;background:rgba(255,251,240,.95);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+        .spinner{width:50px;height:50px;border:4px solid rgba(245,166,35,0.2);border-top-color:#F5A623;border-radius:50%;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .save-indicator{position:fixed;top:.75rem;right:.75rem;background:#10b981;color:#fff;padding:.35rem .75rem;border-radius:.5rem;font-size:.75rem;font-weight:600;opacity:0;transition:opacity .3s;z-index:60}
+        .save-indicator.show{opacity:1}
+    </style>
 </head>
 <body>
+<div id="toast" class="toast"></div>
+<div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div><div style="margin-top:1rem;color:#7A6652;font-weight:600">Laden...</div></div>
+<div id="saveIndicator" class="save-indicator">💾 Gespeichert</div>
+<div id="app"></div>
+<div class="footer">Imkerei Durchdenwald 🐝 · v6.0 Cloud</div>
 
-<div class="bg-deco"><i></i><i></i><i></i><i></i></div>
-
-<!-- NAV -->
-<nav class="topnav" id="topnav">
-  <a href="#" class="logo"><img src="BienenPlanLogo.png" alt="BienenPlan" style="height:36px;vertical-align:middle"></a>
-  <div class="nav-links">
-    <a href="demo.html">Demo</a>
-    <a href="#features">Features</a>
-    <a href="#trachtkarte">Trachtkarte</a>
-    <a href="#pricing">Preise</a>
-    <a href="#faq">FAQ</a>
-    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
-  </div>
-  <button class="menu-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.textContent==='☰'?'✕':'☰'" aria-label="Menü">☰</button>
-  <div class="nav-links" style="display:none" id="mobileNav">
-    <a href="demo.html" onclick="closeMobile()">Demo</a>
-    <a href="#features" onclick="closeMobile()">Features</a>
-    <a href="#trachtkarte" onclick="closeMobile()">Trachtkarte</a>
-    <a href="#pricing" onclick="closeMobile()">Preise</a>
-    <a href="#faq" onclick="closeMobile()">FAQ</a>
-    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
-  </div>
-</nav>
-
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-wrap">
-    <div class="hero-text">
-      <div class="pill"><i></i> Kostenlos starten – jederzeit upgraden</div>
-      <h1>Deine Imkerei.<br><em>Digital organisiert.</em></h1>
-      <p>Völker verwalten, Behandlungen planen, Trachten kartieren, Ernten dokumentieren und Königinnen züchten – alles in einer Web-App. Starte kostenlos.</p>
-      <div class="hero-btns">
-        <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🍯</a>
-        <a href="demo.html" class="btn-ghost">Demo ansehen →</a>
-      </div>
-    </div>
-    <div class="hero-visual">
-      <div class="float-tag t1">🍯 Ernte: 38 kg</div>
-      <div class="float-tag t2">✅ 3 Aufgaben heute</div>
-      <div class="mockup">
-        <div class="mockup-bar">
-          <div class="mockup-dots"><span></span><span></span><span></span></div>
-          <div class="mockup-title">bienenplan.de – Heute</div>
+<!-- Auth Screen (shown when not logged in) -->
+<div id="authScreen" style="display:none">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-title">🐝</div>
+            <div style="text-align:center;font-size:1.25rem;font-weight:bold;color:#1C1410;margin-bottom:.25rem">Imkerei Tagesplaner</div>
+            <div class="auth-subtitle">Melde dich an oder erstelle einen Account</div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')">Anmelden</button>
+                <button class="auth-tab" onclick="showAuthTab('register')">Registrieren</button>
+            </div>
+            
+            <!-- Login -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">E-Mail</label>
+                    <input type="email" id="loginEmail" class="input" placeholder="deine@email.de">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passwort</label>
+                    <input type="password" id="loginPassword" class="input" placeholder="Dein Passwort">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="doLogin()">Anmelden</button>
+                <div style="text-align:center;margin-top:1rem">
+                    <a href="#" onclick="showAuthTab('forgot');return false" style="font-size:.85rem;color:#3b82f6">Passwort vergessen?</a>
+                </div>
+            </div>
+            
+            <!-- Register -->
+            <div id="registerForm" style="display:none">
+                <div class="form-group">
+                    <label class="form-label">Name *</label>
+                    <input type="text" id="regName" class="input" placeholder="Max Mustermann">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Imkerei (optional)</label>
+                    <input type="text" id="regImkerei" class="input" placeholder="Imkerei Durchdenwald">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-Mail *</label>
+                    <input type="email" id="regEmail" class="input" placeholder="deine@email.de">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passwort * (min. 6 Zeichen)</label>
+                    <input type="password" id="regPassword" class="input" placeholder="Sicheres Passwort">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passwort wiederholen *</label>
+                    <input type="password" id="regPassword2" class="input" placeholder="Passwort bestätigen">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="doRegister()">Account erstellen</button>
+            </div>
+            
+            <!-- Passwort vergessen -->
+            <div id="forgotForm" style="display:none">
+                <div class="form-group">
+                    <label class="form-label">E-Mail</label>
+                    <input type="email" id="forgotEmail" class="input" placeholder="deine@email.de">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="doForgotPassword()">Passwort-Reset senden</button>
+                <div style="text-align:center;margin-top:1rem">
+                    <a href="#" onclick="showAuthTab('login');return false" style="font-size:.85rem;color:#3b82f6">← Zurück zum Login</a>
+                </div>
+            </div>
+            
+            <!-- Neues Passwort setzen (nach Reset-Link) -->
+            <div id="resetForm" style="display:none">
+                <div style="text-align:center;margin-bottom:1rem">
+                    <div style="font-size:2rem;margin-bottom:.5rem">🔑</div>
+                    <h3>Neues Passwort setzen</h3>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Neues Passwort (min. 6 Zeichen)</label>
+                    <input type="password" id="resetNewPassword" class="input" placeholder="Neues Passwort">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passwort wiederholen</label>
+                    <input type="password" id="resetNewPassword2" class="input" placeholder="Passwort bestätigen">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="doSetNewPassword()">Passwort speichern</button>
+            </div>
+            
+            <div id="authError" style="display:none;margin-top:1rem;padding:.75rem;background:#fee2e2;border:1px solid #fca5a5;border-radius:.5rem;color:#991b1b;font-size:.85rem;text-align:center"></div>
         </div>
-        <div class="mockup-body">
-          <div class="m-card">
-            <div class="m-icon g">🐝</div>
-            <div><div class="m-label">12 Völker aktiv</div><div class="m-sub">3 Standorte verwaltet</div></div>
-            <div class="m-badge">Gesund</div>
-          </div>
-          <div class="m-card">
-            <div class="m-icon a">💉</div>
-            <div><div class="m-label">Varroa-Behandlung</div><div class="m-sub">Oxalsäure – in 3 Tagen</div></div>
-          </div>
-          <div class="m-card">
-            <div class="m-icon b">🌸</div>
-            <div><div class="m-label">Raps-Tracht aktiv</div><div class="m-sub">Seit 12.04 – geschätzt 18 kg</div></div>
-          </div>
-          <div class="m-card">
-            <div class="m-icon p">👑</div>
-            <div><div class="m-label">Umlarven morgen</div><div class="m-sub">Königin 2026-1 (Buckfast)</div></div>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
-</section>
-
-<!-- SOCIAL PROOF -->
-<div class="proof rv">
-  <div class="proof-inner">
-    <span>🐝 Für <b>Hobbyimker</b></span>
-    <span>🏔️ Für <b>Wanderimker</b></span>
-    <span>👑 Für <b>Züchter</b></span>
-    <span>📚 Für <b>Vereine</b></span>
-    <span>🌐 <b>100 % Web-basiert</b> – kein Download</span>
-  </div>
 </div>
 
-<!-- FEATURES -->
-<section class="features" id="features">
-  <div class="section-inner">
-    <div class="tag rv">Features</div>
-    <h2 class="section-title rv">Alles, was du als<br>Imker brauchst</h2>
-    <p class="section-sub rv">Vom Standort-Management über Behandlungspläne bis zur Erntedokumentation – eine App für deinen gesamten Imkeralltag.</p>
-    <div class="feat-grid">
-      <div class="feat-card rv">
-        <div class="feat-emoji">📍</div>
-        <h3>Standorte & Völker</h3>
-        <p>Verwalte alle Standorte mit GPS-Karte. Ordne jedem Standort deine Bienenvölker zu. Status, Königin-Info und Notizen auf einen Blick.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">💉</div>
-        <h3>Behandlungsplaner</h3>
-        <p>Varroa-Behandlungen mit automatischer Terminerstellung. Ameisensäure, Oxalsäure, Thymol – alle Methoden integriert. Schritte abhakbar.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">🌸</div>
-        <h3>Trachtkarte</h3>
-        <p>40+ Trachtpflanzen erfassen mit GPS. Blühzeiten als Gantt-Chart. Trachten auf öffentlicher Karte teilen und von der Community profitieren.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">👑</div>
-        <h3>Königinnenzucht</h3>
-        <p>Zuchtserien mit Timeline planen: Sammelbrut → Umlarven → Zusetzen. Automatische Datumsberechnung. Jeden Schritt einzeln abhaken.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">🍯</div>
-        <h3>Ernte & Kosten</h3>
-        <p>Honigmengen pro Volk erfassen. Ausgaben tracken mit Kategorien. Auswertungen und Statistiken für deine Imkerei-Bilanz.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">📋</div>
-        <h3>Packliste & Aufgaben</h3>
-        <p>Smarte Checklisten für den Bienenstand. Aufgaben mit Priorität und Fälligkeitsdatum. Alles auf der Heute-Seite im Überblick.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">📅</div>
-        <h3>Heute-Dashboard</h3>
-        <p>Alle fälligen Aufgaben, Behandlungstermine und Zuchtschritte auf einen Blick. 14-Tage Wettervorhersage, Bewertungssystem und Wetter-Vorschau für deine Standorte inklusive.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">📑</div>
-        <h3>Bestandsbuch PDF</h3>
-        <p>Veterinäramt-konformes Bestandsbuch als PDF generieren. Alle Behandlungen sauber dokumentiert – mit einem Klick.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">☁️</div>
-        <h3>Cloud & Backup</h3>
-        <p>Daten sicher in der Cloud gespeichert. Automatische Backups. Von überall zugreifen – Handy, Tablet oder PC.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">🏘️</div>
-        <h3>Imkerverein</h3>
-        <p>Verein gründen, Mitglieder einladen per Code, gemeinsame Trachtkarte, Meldungen & Kommentare – alles zentral verwaltet.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">🤖</div>
-        <h3>KI-Assistent</h3>
-        <p>Stresstest, Futterrechner, Diagnose-Hilfe – dein KI-gestützter Imkerei-Berater für schnelle Antworten und fundierte Entscheidungen.</p>
-      </div>
-      <div class="feat-card rv">
-        <div class="feat-emoji">💬</div>
-        <h3>Community-Forum</h3>
-        <p>Fragen stellen, Wissen teilen, Erfahrungsaustausch mit anderen Imkern – direkt in der App vernetzt.</p>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- Standort-Modal → standorte.html -->
 
-<!-- TRACHTKARTE HIGHLIGHT -->
-<section class="highlight" id="trachtkarte">
-  <div class="hl-wrap">
-    <div class="hl-text rv">
-      <div class="tag">Highlight-Feature</div>
-      <h2>Die Trachtkarte</h2>
-      <p>Teile dein Trachtwissen mit der Community – und profitiere vom Wissen anderer Imker in deiner Region.</p>
-      <ul class="hl-list">
-        <li>Trachten mit GPS-Standort erfassen</li>
-        <li>Sichtbar für alle Imker in der Region</li>
-        <li>Blühzeiten als Gantt-Chart anzeigen</li>
-        <li>Filter nach Monat und Pflanzenart</li>
-        <li>Gemeinsam regionales Wissen aufbauen</li>
-      </ul>
-      <a href="trachtkarte.html" class="btn-primary">Trachtkarte öffnen →</a>
-    </div>
-    <div class="hl-visual rv">
-      <div class="map-mock">
-        <div class="map-pin">🌼 <b>Löwenzahn</b> – Karlsruhe, aktiv</div>
-        <div class="map-pin">🌾 <b>Raps</b> – Bruchsal, geplant</div>
-        <div class="map-pin">🌸 <b>Obstblüte</b> – Ettlingen, aktiv</div>
-        <div class="map-pin">🌿 <b>Weide</b> – Pfinztal, vergangen</div>
-        <div class="map-pin">🌲 <b>Honigtau</b> – Schwarzwald, geplant</div>
-        <div style="margin-top:12px;color:rgba(255,255,255,.35);font-size:.8rem;font-style:italic">Echte Daten von der Community – kostenlos einsehbar</div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- Volk-Modal → standorte.html -->
 
-<!-- VEREINS-TRACHTEN HIGHLIGHT -->
-<section class="highlight-alt" id="verein">
-  <div class="hl-wrap">
-    <div class="hl-text rv">
-      <div class="tag">Vereins-Feature</div>
-      <h2>Gemeinsam stärker – Imkervereine</h2>
-      <p>Gründe deinen Verein digital, teile Einladungscodes und pflegt gemeinsam eure Trachtkarte. So profitiert die ganze Region.</p>
-      <ul class="hl-list">
-        <li>Einladungscodes für neue Mitglieder</li>
-        <li>Rollen-Management (Admin, Mitglied)</li>
-        <li>Gemeinsame Meldungen & Kommentare</li>
-        <li>Geteilte Vereins-Trachtkarte</li>
-        <li>Zentrale Vereinsverwaltung</li>
-      </ul>
-      <a href="verein_trachten.html" class="btn-primary">Verein gründen →</a>
+<!-- Aufgabe Modal -->
+<div id="aufgabeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="aufgabeModalTitle">✓ Neue Aufgabe</h2>
+            <button class="close-btn" onclick="app.closeModal('aufgabeModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Aufgaben-Typ wählen</label>
+                <div class="option-grid" id="aufgabeTypGrid"></div>
+            </div>
+            <div class="form-group" id="aufgabeStandortWrap" style="display:none">
+                <label class="form-label">📍 Standort</label>
+                <select id="aufgabeStandort" class="input">
+                    <option value="">-- Alle Standorte --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fälligkeit</label>
+                <input type="date" id="aufgabeDatum" class="input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Uhrzeit (optional – z.B. für Kundentermine)</label>
+                <input type="time" id="aufgabeUhrzeit" class="input" value="">
+            </div>
+            <div class="form-group" id="aufgabeIntervallWrap" style="display:none">
+                <label class="form-label">🔁 Wiederholung</label>
+                <div style="display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem">
+                    <button type="button" class="option-btn" onclick="app.setIntervall(0)">Einmalig</button>
+                    <button type="button" class="option-btn" onclick="app.setIntervall(7)">Wöchentlich</button>
+                    <button type="button" class="option-btn" onclick="app.setIntervall(14)">Alle 2 Wochen</button>
+                    <button type="button" class="option-btn" onclick="app.setIntervall(-1)">Eigene</button>
+                </div>
+                <div id="aufgabeIntervallCustom" style="display:none">
+                    <div style="display:flex;align-items:center;gap:.5rem">
+                        <span style="font-size:.85rem">Alle</span>
+                        <input type="number" id="aufgabeIntervallTage" class="input" style="width:80px" min="1" value="7">
+                        <span style="font-size:.85rem">Tage</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dauer (Minuten)</label>
+                <div class="dauer-btns">
+                    <button class="option-btn" onclick="app.setDauer(15)">15 Min</button>
+                    <button class="option-btn" onclick="app.setDauer(30)">30 Min</button>
+                    <button class="option-btn" onclick="app.setDauer(60)">1 Std</button>
+                    <button class="option-btn selected" onclick="app.setDauer(120)">2 Std</button>
+                </div>
+                <input type="number" id="aufgabeDauer" class="input" value="120" min="5" step="5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Priorität</label>
+                <div class="priority-btns">
+                    <button class="priority-btn" onclick="app.setPrio('low')">🟢 Niedrig</button>
+                    <button class="priority-btn selected medium" onclick="app.setPrio('medium')">🟡 Mittel</button>
+                    <button class="priority-btn" onclick="app.setPrio('high')">🔴 Hoch</button>
+                </div>
+            </div>
+            <div class="form-group" id="aufgabeCustomNameWrap" style="display:none">
+                <label class="form-label">Name der Aufgabe</label>
+                <input type="text" id="aufgabeCustomName" class="input" placeholder="z.B. Kunde Müller anrufen, Honig abfüllen...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notiz (optional)</label>
+                <input type="text" id="aufgabeNotiz" class="input" placeholder="Zusätzliche Hinweise...">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="app.saveAufgabe()">Aufgabe speichern</button>
+        </div>
     </div>
-    <div class="verein-visual rv">
-      <div class="verein-mock">
-        <div class="verein-item">🏘️ <b>Imkerverein Karlsruhe</b> – 24 Mitglieder</div>
-        <div class="verein-item">📨 <b>Einladungscode:</b> KARLS-2026</div>
-        <div class="verein-item">🗺️ <b>Vereins-Trachtkarte</b> – 38 Einträge</div>
-        <div class="verein-item">💬 <b>3 neue Meldungen</b> diese Woche</div>
-        <div class="verein-item">👥 <b>Rollen:</b> 2 Admins, 22 Mitglieder</div>
-        <div style="margin-top:8px;color:rgba(255,255,255,.35);font-size:.8rem;font-style:italic">Gemeinsam imkern – digital vernetzt</div>
-      </div>
-    </div>
-  </div>
-</section>
+</div>
 
-<!-- PRICING -->
-<section class="pricing" id="pricing">
-  <div class="section-inner" style="text-align:center">
-    <div class="tag rv">Preise</div>
-    <h2 class="section-title rv">Ein Plan für jeden Imker</h2>
-    <p class="section-sub rv" style="margin:0 auto 48px">Starte kostenlos und upgrade, wenn du bereit bist. 14 Tage gratis testen.</p>
+<!-- Kosten Modal -->
+<div id="kostenModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>💰 Neue Ausgabe</h2>
+            <button class="close-btn" onclick="app.closeModal('kostenModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Kategorie wählen</label>
+                <div class="option-grid" id="kostenKatGrid"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Häufige Ausgaben</label>
+                <div class="option-grid" id="kostenVorlagenGrid"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Beschreibung</label>
+                <input type="text" id="kostenBeschreibung" class="input" placeholder="z.B. Benzin für Standortfahrt">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Betrag (€)</label>
+                <input type="number" id="kostenBetrag" class="input" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Datum</label>
+                <input type="date" id="kostenDatum" class="input">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="app.saveKosten()">Ausgabe speichern</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Tracht Modal -->
+<!-- Tracht-Modal → tracht.html -->
+
+<!-- Behandlung Modal -->
+<!-- Behandlung-Modal → behandlung.html -->
+
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js"></script>
+
+
+
+<script src="config.js"></script>
+<script src="presence.js" defer></script>
+<script>
+// Hash früh speichern bevor Supabase Auth ihn entfernt
+var _startPageHash = window.location.hash ? window.location.hash.replace('#','') : null;
+console.log('🐝 INDEX VERSION: 27-Feb-2026 Session13 Packliste-Fix');
+
+// ============================================
+// AUTH FUNCTIONS (index.html specific)
+// ============================================
+function showAuthTab(tab) {
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    document.getElementById('forgotForm').style.display = tab === 'forgot' ? 'block' : 'none';
+    document.getElementById('resetForm').style.display = tab === 'reset' ? 'block' : 'none';
+    document.getElementById('authError').style.display = 'none';
+    document.querySelectorAll('.auth-tab').forEach(function(t,i) {
+        t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1));
+    });
+}
+
+function showAuthError(msg) {
+    var el = document.getElementById('authError');
+    el.textContent = msg; el.style.display = 'block';
+}
+
+async function doSetNewPassword() {
+    var pw1 = document.getElementById('resetNewPassword').value;
+    var pw2 = document.getElementById('resetNewPassword2').value;
+    if (!pw1 || pw1.length < 6) { showAuthError('Passwort muss mindestens 6 Zeichen haben'); return; }
+    if (pw1 !== pw2) { showAuthError('Passwörter stimmen nicht überein'); return; }
+    var result = await sb.auth.updateUser({password: pw1});
+    if (result.error) { showAuthError(result.error.message); return; }
+    showAuthError('');
+    document.getElementById('authError').style.display = 'block';
+    document.getElementById('authError').style.background = '#d1fae5';
+    document.getElementById('authError').style.borderColor = '#6ee7b7';
+    document.getElementById('authError').style.color = '#065f46';
+    document.getElementById('authError').textContent = '✅ Passwort erfolgreich geändert! Du wirst eingeloggt...';
+    setTimeout(async function(){
+        currentUser = result.data.user;
+        await startApp();
+    }, 1500);
+}
+
+async function doLogin() {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pw = document.getElementById('loginPassword').value;
+    if (!email || !pw) { showAuthError('Bitte E-Mail und Passwort eingeben'); return; }
     
-    <div class="price-grid">
-      <!-- STARTER -->
-      <div class="price-card rv">
-        <div class="plan-emoji">🐝</div>
-        <div class="plan-name">Starter</div>
-        <div class="plan-desc">Für Einsteiger und kleine Imkereien</div>
-        <div class="plan-price"><span class="currency">€</span><span class="amount">0</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">Für immer kostenlos</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-feats">
-          <li>Bis zu 3 Völker</li>
-          <li>1 Standort</li>
-          <li>Aufgaben & Packliste</li>
-          <li>Behandlungsplaner (ohne Auto-Termine)</li>
-          <li>3-Tage Wetter</li>
-          <li>Trachtkarte (Teaser)</li>
-        </ul>
-        <a href="app.html#register" class="btn-plan outline">Kostenlos starten</a>
-      </div>
-      
-      <!-- PRO -->
-      <div class="price-card popular rv">
-        <div class="popular-tag">Beliebteste Wahl</div>
-        <div class="plan-emoji">🍯</div>
-        <div class="plan-name">Imker Pro</div>
-        <div class="plan-desc">Für aktive Imker, die alles im Griff haben wollen</div>
-        <div class="plan-price"><span class="currency">€</span><span class="amount">4,99</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">oder 39,99€/Jahr (4 Monate gratis!)</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-feats">
-          <li>Unbegrenzt Völker</li>
-          <li>Bis zu 5 Standorte</li>
-          <li>14-Tage Wetter</li>
-          <li>Königinnenzucht-Planer</li>
-          <li>Ernte- & Kostenanalyse</li>
-          <li>Trachtkarte lesen & teilen</li>
-          <li>Bewertungssystem</li>
-          <li>Community-Forum (schreiben)</li>
-          <li>Datenexport & Backup</li>
-        </ul>
-        <a href="upgrade.html" class="btn-plan filled">14 Tage kostenlos testen →</a>
-      </div>
-      
-      <!-- MEISTER -->
-      <div class="price-card rv">
-        <div class="plan-emoji">👑</div>
-        <div class="plan-name">Imkermeister</div>
-        <div class="plan-desc">Für Profis & Erwerbsimker</div>
-        <div class="plan-price"><span class="currency">€</span><span class="amount">9,99</span><span class="period">/Monat</span></div>
-        <div class="plan-yearly">oder 89,99€/Jahr (3 Monate gratis!)</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-feats">
-          <li>Alles aus Imker Pro</li>
-          <li>Unbegrenzt Standorte</li>
-          <li>Veterinäramt-Bestandsbuch PDF</li>
-          <li>Multi-User / Team-Zugang</li>
-          <li>Prioritäts-Support</li>
-        </ul>
-        <a href="upgrade.html" class="btn-plan outline">14 Tage kostenlos testen →</a>
-      </div>
-    </div>
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    var result = await sb.auth.signInWithPassword({ email: email, password: pw });
+    if (result.error) {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        showAuthError(result.error.message === 'Invalid login credentials' ? 'Falsche E-Mail oder Passwort' : result.error.message);
+        return;
+    }
+    currentUser = result.data.user;
+    // Last login speichern
+    sb.from('profiles').update({last_login: new Date().toISOString()}).eq('user_id', currentUser.id);
+    // Alte localStorage Trachten aufräumen
+    localStorage.removeItem('imkerei_trachten');
+    await startApp();
+}
 
-    <!-- VEREIN CTA -->
-    <div style="max-width:700px;margin:32px auto 0;background:var(--white);border:1px solid rgba(245,166,35,.12);border-radius:16px;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px" class="rv">
-      <div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--bark)">🏘️ Imkerverein?</div>
-        <div style="font-size:.88rem;color:var(--text-soft)">Vereins-Plan auf Anfrage — 10 Mitglieder-Codes inklusive.</div>
-      </div>
-      <a href="mailto:info@imkershop-durchdenwald.de" style="background:var(--bark);color:var(--white);padding:10px 24px;border-radius:100px;font-weight:700;font-size:.88rem;text-decoration:none;white-space:nowrap">Kontakt aufnehmen →</a>
-    </div>
+async function doRegister() {
+    var name = document.getElementById('regName').value.trim();
+    var imkerei = document.getElementById('regImkerei').value.trim();
+    var email = document.getElementById('regEmail').value.trim();
+    var pw = document.getElementById('regPassword').value;
+    var pw2 = document.getElementById('regPassword2').value;
     
-    <div class="guarantee rv">
-      <span>🛡️</span>
-      <p><strong>14 Tage kostenlos testen. 30 Tage Geld-zurück-Garantie.</strong> Teste jeden bezahlten Plan risikofrei. Nicht zufrieden? Volle Erstattung.</p>
-    </div>
-  </div>
-</section>
+    if (!name) { showAuthError('Bitte Namen eingeben'); return; }
+    if (!email) { showAuthError('Bitte E-Mail eingeben'); return; }
+    if (pw.length < 6) { showAuthError('Passwort muss min. 6 Zeichen haben'); return; }
+    if (pw !== pw2) { showAuthError('Passwörter stimmen nicht überein'); return; }
+    
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    var result = await sb.auth.signUp({ email: email, password: pw });
+    if (result.error) {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        showAuthError(result.error.message); return;
+    }
+    currentUser = result.data.user;
+    
+    // Profil anlegen
+    await sb.from('profiles').insert({ id: currentUser.id, name: name, imkerei: imkerei, email: email });
+    
+    // Standard-Packliste erstellen
+    await packlisteMod.erstelleNeueItems();
+    
+    await startApp();
+}
 
-<!-- FAQ -->
-<section class="faq" id="faq">
-  <div class="section-inner" style="text-align:center">
-    <div class="tag rv">FAQ</div>
-    <h2 class="section-title rv">Häufige Fragen</h2>
-    <div class="faq-list">
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Ist der Starter-Plan wirklich dauerhaft kostenlos?<span class="arr">+</span></div>
-        <div class="faq-a">Ja! Der Starter-Plan ist und bleibt kostenlos – ohne Zeitlimit. Du kannst ihn so lange nutzen, wie du möchtest. Wenn du mehr Völker oder erweiterte Features brauchst, kannst du jederzeit upgraden.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Muss ich etwas installieren?<span class="arr">+</span></div>
-        <div class="faq-a">Nein. BienenPlan läuft komplett im Browser – auf Handy, Tablet und PC. Du kannst es aber auch als Web-App auf deinem Homescreen speichern, dann fühlt es sich an wie eine echte App.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich jederzeit kündigen?<span class="arr">+</span></div>
-        <div class="faq-a">Absolut. Keine Vertragsbindung, keine Kündigungsfrist. Du kannst jederzeit kündigen und dein Account wechselt zum kostenlosen Starter-Plan. Deine Daten bleiben erhalten.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Sind meine Daten sicher?<span class="arr">+</span></div>
-        <div class="faq-a">Deine Daten werden verschlüsselt auf europäischen Servern gespeichert (DSGVO-konform). Nur du hast Zugriff auf deine Imkerei-Daten. Wir verkaufen keine Daten an Dritte.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Wie funktioniert die Trachtkarte?<span class="arr">+</span></div>
-        <div class="faq-a">Du erfasst Trachten mit GPS-Position. Wenn du „Teilen" aktivierst, erscheint sie auf der öffentlichen Karte und hilft anderen Imkern in deiner Region. Die Karte ist auch ohne Account einsehbar.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Kann ich meine Daten exportieren?<span class="arr">+</span></div>
-        <div class="faq-a">Ja. Du kannst ein veterinäramt-konformes Bestandsbuch als PDF generieren und ein komplettes Backup deiner Daten erstellen und wiederherstellen.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was ist der Vereins-Tarif?<span class="arr">+</span></div>
-        <div class="faq-a">Der Vereins-Tarif richtet sich an Imkervereine. Er enthält 10 Mitglieder-Einladungscodes, eine gemeinsame Vereins-Trachtkarte, Meldungen & Kommentare und Rollen-Management (Admin/Mitglied). Weitere Codes können für 1,99 € pro Stück hinzugebucht werden. Für größere Vereine bieten wir Staffelpreise an – kontaktiere uns einfach.</div>
-      </div>
-      <div class="faq-item rv">
-        <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Was kann der KI-Assistent?<span class="arr">+</span></div>
-        <div class="faq-a">Der KI-Assistent ist dein digitaler Imkerei-Berater. Er bietet einen Stresstest für deine Völker, einen Futterrechner für die Einfütterung und Diagnose-Hilfe bei Krankheiten. Verfügbar ab dem Imker-Pro-Tarif.</div>
-      </div>
-    </div>
-  </div>
-</section>
+async function doForgotPassword() {
+    var email = document.getElementById('forgotEmail').value.trim();
+    if (!email) { showAuthError('Bitte E-Mail eingeben'); return; }
+    var result = await sb.auth.resetPasswordForEmail(email);
+    if (result.error) { showAuthError(result.error.message); return; }
+    showAuthError(''); 
+    document.getElementById('authError').style.display = 'block';
+    document.getElementById('authError').style.background = '#d1fae5';
+    document.getElementById('authError').style.borderColor = '#6ee7b7';
+    document.getElementById('authError').style.color = '#065f46';
+    document.getElementById('authError').textContent = '📧 Reset-Link wurde gesendet! Prüfe dein Postfach.';
+}
 
-<!-- CTA -->
-<section class="cta">
-  <div class="cta-box rv">
-    <h2>Bereit für eine<br>bessere Imkerei?</h2>
-    <p>Starte jetzt kostenlos – ohne Kreditkarte, ohne Haken.</p>
-    <a href="app.html#register" class="btn-primary">Kostenlos registrieren 🐝</a>
-  </div>
-</section>
+async function doLogout() {
+    await sb.auth.signOut();
+    currentUser = null;
+    document.getElementById('authScreen').style.display = 'block';
+    document.querySelector('.nav').style.display = 'none';
+    document.getElementById('app').innerHTML = '';
+    document.querySelector('.footer').style.display = 'none';
+}
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <div class="logo"><img src="BienenPlanLogo.png" alt="BienenPlan" style="height:32px;vertical-align:middle"></div>
-        <p>Die Web-App für moderne Imker. Gebaut mit Liebe zu Bienen und Technologie.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Produkt</h4>
-        <a href="demo.html">Live-Demo</a>
-        <a href="#features">Features</a>
-        <a href="#trachtkarte">Trachtkarte</a>
-        <a href="#faq">FAQ</a>
-        <a href="app.html#register">Registrieren</a>
-        <a href="app.html">Anmelden</a>
-      </div>
-      <div class="footer-col">
-        <h4>Community</h4>
-        <a href="trachtkarte.html">Trachtkarte ansehen</a>
-        <a href="verein_trachten.html">Vereins-Trachten</a>
-        <a href="forum.html">Forum</a>
-      </div>
-      <div class="footer-col">
-        <h4>Rechtliches</h4>
-        <a href="impressum.html">Impressum</a>
-        <a href="datenschutz.html">Datenschutz</a>
-        <a href="agb.html">AGB</a>
-      </div>
+// ============================================
+// APP START - Load all data from Supabase
+// ============================================
+async function startApp() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('authScreen').style.display = 'none';
+    document.querySelector('.nav').style.display = '';
+    document.querySelector('.footer').style.display = '';
+    
+    // Presence starten
+    if (typeof initPresence === 'function') initPresence(currentUser);
+    
+    // Load profile
+    var profileRes = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    app.data.user = profileRes.data || { name: currentUser.email, email: currentUser.email };
+    
+    // Kalender-Zustand aus Profil laden
+    if (profileRes.data && profileRes.data.kalender_offen !== undefined) {
+        trachtkalenderMod.kalenderOffen = profileRes.data.kalender_offen;
+    }
+    
+    // Wetter-Ort aus Profil laden
+    if (profileRes.data) {
+        if (profileRes.data.wetter_ort) wetterMod.customOrt = profileRes.data.wetter_ort;
+        if (profileRes.data.wetter_lat) wetterMod.customLat = profileRes.data.wetter_lat;
+        if (profileRes.data.wetter_lng) wetterMod.customLng = profileRes.data.wetter_lng;
+    }
+    
+    // UI-State aus Profil laden (Aufgaben ein-/zugeklappt)
+    var uiLoaded = false;
+    if (profileRes.data && profileRes.data.ui_state) {
+        var saved = profileRes.data.ui_state;
+        if (saved.ueberfaellig !== undefined) { app.uiState.ueberfaellig = saved.ueberfaellig; uiLoaded = true; }
+        if (saved.heute !== undefined) app.uiState.heute = saved.heute;
+        if (saved.naechste7 !== undefined) app.uiState.naechste7 = saved.naechste7;
+        if (saved.spaeter !== undefined) app.uiState.spaeter = saved.spaeter;
+        if (saved.packliste !== undefined) app.uiState.packliste = saved.packliste;
+    }
+    // Fallback: localStorage
+    if (!uiLoaded) {
+        try {
+            var local = JSON.parse(localStorage.getItem('imkerei_uiState'));
+            if (local) {
+                if (local.ueberfaellig !== undefined) app.uiState.ueberfaellig = local.ueberfaellig;
+                if (local.heute !== undefined) app.uiState.heute = local.heute;
+                if (local.naechste7 !== undefined) app.uiState.naechste7 = local.naechste7;
+                if (local.spaeter !== undefined) app.uiState.spaeter = local.spaeter;
+                if (local.packliste !== undefined) app.uiState.packliste = local.packliste;
+            }
+        } catch(e){}
+    }
+    
+    // Load all data in parallel
+    var results = await Promise.all([
+        sb.from('standorte').select('*').eq('user_id', currentUser.id),
+        sb.from('voelker').select('*').eq('user_id', currentUser.id),
+        sb.from('aufgaben').select('*').eq('user_id', currentUser.id),
+        sb.from('kosten').select('*').eq('user_id', currentUser.id),
+        sb.from('zuchtplaene').select('*').eq('user_id', currentUser.id),
+        sb.from('trachten').select('*').eq('user_id', currentUser.id),
+        sb.from('behandlungen').select('*').eq('user_id', currentUser.id),
+        sb.from('packliste').select('*').eq('user_id', currentUser.id),
+        sb.from('trachten_ausgeblendet').select('*').eq('user_id', currentUser.id)
+    ]);
+    
+    // Map DB rows to app format
+    app.data.standorte = (results[0].data || []).map(function(r) {
+        return { id: r.id, name: r.name, notizen: r.notizen, mapsLink: r.maps_link, lat: r.lat, lng: r.lng, created: r.created_at };
+    });
+    app.data.voelker = (results[1].data || []).map(function(r) {
+        return { id: r.id, standortId: r.standort_id, name: r.name, beutensystem: r.beutensystem, status: r.status, notizen: r.notizen, honigertrag: parseFloat(r.honigertrag)||0, created: r.created_at };
+    });
+    app.data.aufgaben = (results[2].data || []).map(function(r) {
+        return { id: r.id, typ: r.typ, notiz: r.notiz, faelligkeit: r.faelligkeit, dauer: r.dauer, prio: r.prio, erledigt: r.erledigt, standortId: r.standort_id||null, intervallTage: r.intervall_tage||0, created: r.created_at };
+    });
+    app.data.kosten = (results[3].data || []).map(function(r) {
+        return { id: r.id, beschreibung: r.beschreibung, betrag: parseFloat(r.betrag)||0, kat: r.kat, datum: r.datum };
+    });
+    zuchtplanMod.plaene = (results[4].data || []).map(function(r) {
+        return { id: r.id, name: r.name, sammelbrut: r.sammelbrut, umlarven: r.umlarven, zusetzen: r.zusetzen, notizen: r.notizen, tageUmlarven: r.tage_umlarven, tageZusetzen: r.tage_zusetzen, sammelbrut_done: r.sammelbrut_done||null, umlarven_done: r.umlarven_done||null, zusetzen_done: r.zusetzen_done||null, created: r.created_at };
+    });
+    trachtkalenderMod.trachten = (results[5].data || []).map(function(r) {
+        return { id: r.id, typ: r.typ, standort: r.standort, beginn: r.beginn, ende: r.ende, ertrag: parseFloat(r.ertrag)||0, notizen: r.notizen, lat: r.lat||null, lng: r.lng||null, shared: r.shared||false, created: r.created_at };
+    });
+    console.log('🌸 Trachten geladen:', trachtkalenderMod.trachten.length, trachtkalenderMod.trachten.map(function(t){return t.id+' ('+t.typ+')';}).join(', '));
+    if (results[5].error) console.error('❌ Trachten Lade-Fehler:', results[5].error);
+    behandlungMod.behandlungen = (results[6].data || []).map(function(r) {
+        return { id: r.id, voelkerIds: r.voelker_ids, voelkerLabel: r.voelker_label, methode: r.methode, methodeName: r.methode_name, datum: r.datum, intervall: r.intervall, intervallLabel: r.intervall_label, termine: r.termine, notizen: r.notizen, standortId: r.standort_id||null, menge: r.menge||'', verabreichung: r.verabreichung||'', lieferant: r.lieferant||'', wartezeit: r.wartezeit||'', behandler: r.behandler||'', created: r.created_at };
+    });
+    packlisteMod.items = (results[7].data || []).map(function(r) {
+        return { id: r.id, kategorie: r.kategorie, name: r.name, checked: r.checked, menge: r.menge, istSchnell: r.ist_schnell, schnellTyp: r.schnell_typ };
+    });
+    trachtkalenderMod.ausgeblendete = (results[8].data || []).map(function(r) { return r.tracht_name; });
+    console.log('📋 Geladene ausgeblendete Trachten:', trachtkalenderMod.ausgeblendete.length);
+    console.log('📋 Geladene ausgeblendete Trachten:', trachtkalenderMod.ausgeblendete.length);
+    
+    // If packliste is empty for new user, create defaults
+    if (packlisteMod.items.length === 0) {
+        await packlisteMod.erstelleNeueItems();
+    }
+    
+    document.getElementById('loadingOverlay').style.display = 'none';
+    app.initUI();
+    
+    // Hash-Navigation: z.B. index.html#tracht → direkt zur Tracht-Seite
+    if (_startPageHash && ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'].indexOf(_startPageHash) > -1) {
+        app.page = _startPageHash;
+        // Aktiven Nav-Link setzen
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){ b.classList.remove('active'); });
+        var navLink = document.querySelector('.nav .nav-item[href="index.html#'+_startPageHash+'"]');
+        if (navLink) navLink.classList.add('active');
+        history.replaceState(null, '', window.location.pathname); // Hash sauber entfernen
+    }
+    
+    app.render();
+    
+    // Wetter im Hintergrund laden
+    wetterMod.laden().then(function(){ app.render(); });
+    
+    // Verwaiste trachten_shared aufräumen (im Hintergrund)
+    (async function(){
+        try {
+            var sharedRes = await sb.from('trachten_shared').select('id').eq('user_id', currentUser.id);
+            var sharedIds = (sharedRes.data || []).map(function(r){ return r.id; });
+            var meineIds = trachtkalenderMod.trachten.map(function(t){ return t.id; });
+            var verwaiste = sharedIds.filter(function(sid){ return meineIds.indexOf(sid) === -1; });
+            if (verwaiste.length > 0) {
+                console.log('🧹 Räume '+verwaiste.length+' verwaiste geteilte Trachten auf:', verwaiste);
+                for (var i=0; i<verwaiste.length; i++) {
+                    await sb.from('trachten_shared').delete().eq('id', verwaiste[i]);
+                }
+            }
+        } catch(e){ console.warn('Aufräumen fehlgeschlagen:', e); }
+    })();
+}
+
+// Save indicator
+function showSaved() {
+    var el = document.getElementById('saveIndicator');
+    el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 1500);
+}
+
+// ============================================
+// AUTO-BACKUP VOR LÖSCHAKTIONEN
+// ============================================
+const autoBackup = {
+    // Erstellt ein Backup aller Daten in localStorage
+    create(grund) {
+        try {
+            var backup = {
+                datum: new Date().toISOString(),
+                grund: grund,
+                version: 1,
+                daten: {
+                    standorte: JSON.parse(JSON.stringify(app.data.standorte)),
+                    voelker: JSON.parse(JSON.stringify(app.data.voelker)),
+                    aufgaben: JSON.parse(JSON.stringify(app.data.aufgaben)),
+                    kosten: JSON.parse(JSON.stringify(app.data.kosten)),
+                    behandlungen: JSON.parse(JSON.stringify(behandlungMod.behandlungen)),
+                    zuchtplaene: JSON.parse(JSON.stringify(zuchtplanMod.plaene)),
+                    trachten: JSON.parse(JSON.stringify(trachtkalenderMod.trachten)),
+                    packliste: JSON.parse(JSON.stringify(packlisteMod.items))
+                }
+            };
+            
+            // Letzte 10 Backups behalten
+            var backups = JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
+            backups.unshift(backup);
+            if (backups.length > 10) backups = backups.slice(0, 10);
+            localStorage.setItem('imkerei_backups', JSON.stringify(backups));
+            console.log('✅ Auto-Backup erstellt:', grund);
+            return true;
+        } catch(e) {
+            console.error('Backup Fehler:', e);
+            return false;
+        }
+    },
+    
+    // Zeigt alle verfügbaren Backups
+    getAll() {
+        return JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
+    },
+    
+    // Stellt ein bestimmtes Backup wieder her
+    // Intelligent: Nur Tabellen überschreiben, die im Backup enthalten sind
+    async restore(index) {
+        var backups = this.getAll();
+        if (!backups[index]) { alert('Backup nicht gefunden!'); return; }
+        
+        var backup = backups[index];
+        var d = backup.daten;
+        
+        // Prüfe welche Daten im Backup enthalten sind
+        var tabellen = [];
+        if (d.standorte && d.standorte.length) tabellen.push('Standorte ('+d.standorte.length+')');
+        if (d.voelker && d.voelker.length) tabellen.push('Völker ('+d.voelker.length+')');
+        if (d.aufgaben && d.aufgaben.length) tabellen.push('Aufgaben ('+d.aufgaben.length+')');
+        if (d.kosten && d.kosten.length) tabellen.push('Kosten ('+d.kosten.length+')');
+        if (d.behandlungen && d.behandlungen.length) tabellen.push('Behandlungen ('+d.behandlungen.length+')');
+        if (d.zuchtplaene && d.zuchtplaene.length) tabellen.push('Zuchtpläne ('+d.zuchtplaene.length+')');
+        if (d.trachten && d.trachten.length) tabellen.push('Trachten ('+d.trachten.length+')');
+        if (d.packliste && d.packliste.length) tabellen.push('Packliste ('+d.packliste.length+')');
+        
+        if (tabellen.length === 0) { alert('Backup enthält keine Daten!'); return; }
+        
+        if (!confirm('Backup vom ' + new Date(backup.datum).toLocaleString('de-DE') + ' wiederherstellen?\n\nGrund: ' + backup.grund + '\n\nEnthaltene Daten:\n• ' + tabellen.join('\n• ') + '\n\n⚠️ Nur diese Bereiche werden überschrieben.\nAlle anderen Daten bleiben erhalten!')) return;
+        
+        // Nur Tabellen löschen und neu befüllen, die im Backup enthalten sind
+        if (d.standorte && d.standorte.length) {
+            await sb.from('standorte').delete().eq('user_id', currentUser.id);
+            await sb.from('standorte').insert(d.standorte.map(function(s){
+                return {id:s.id, user_id:currentUser.id, name:s.name, notizen:s.notizen, maps_link:s.mapsLink, lat:s.lat, lng:s.lng, created_at:s.created};
+            }));
+        }
+        if (d.voelker && d.voelker.length) {
+            await sb.from('voelker').delete().eq('user_id', currentUser.id);
+            await sb.from('voelker').insert(d.voelker.map(function(v){
+                return {id:v.id, user_id:currentUser.id, standort_id:v.standortId, name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen||'', honigertrag:v.honigertrag||0, created_at:v.created};
+            }));
+        }
+        if (d.aufgaben && d.aufgaben.length) {
+            await sb.from('aufgaben').delete().eq('user_id', currentUser.id);
+            await sb.from('aufgaben').insert(d.aufgaben.map(function(a){
+                return {id:a.id, user_id:currentUser.id, typ:a.typ, notiz:a.notiz, faelligkeit:a.faelligkeit, dauer:a.dauer, prio:a.prio, erledigt:a.erledigt||null, standort_id:a.standortId||null, intervall_tage:a.intervallTage||0, created_at:a.created};
+            }));
+        }
+        if (d.kosten && d.kosten.length) {
+            await sb.from('kosten').delete().eq('user_id', currentUser.id);
+            await sb.from('kosten').insert(d.kosten.map(function(k){
+                return {id:k.id, user_id:currentUser.id, beschreibung:k.beschreibung, betrag:k.betrag, kat:k.kat, datum:k.datum};
+            }));
+        }
+        if (d.behandlungen && d.behandlungen.length) {
+            await sb.from('behandlungen').delete().eq('user_id', currentUser.id);
+            await sb.from('behandlungen').insert(d.behandlungen.map(function(b){
+                return {id:b.id, user_id:currentUser.id, voelker_ids:b.voelkerIds, voelker_label:b.voelkerLabel, methode:b.methode, methode_name:b.methodeName, datum:b.datum, intervall:b.intervall, intervall_label:b.intervallLabel, termine:b.termine, notizen:b.notizen, standort_id:b.standortId||null, menge:b.menge||'', verabreichung:b.verabreichung||'', lieferant:b.lieferant||'', wartezeit:b.wartezeit||'', behandler:b.behandler||'', created_at:b.created};
+            }));
+        }
+        if (d.zuchtplaene && d.zuchtplaene.length) {
+            await sb.from('zuchtplaene').delete().eq('user_id', currentUser.id);
+            await sb.from('zuchtplaene').insert(d.zuchtplaene.map(function(z){
+                return {id:z.id, user_id:currentUser.id, name:z.name, sammelbrut:z.sammelbrut, umlarven:z.umlarven, zusetzen:z.zusetzen, notizen:z.notizen, tage_umlarven:z.tageUmlarven, tage_zusetzen:z.tageZusetzen, created_at:z.created};
+            }));
+        }
+        if (d.trachten && d.trachten.length) {
+            await sb.from('trachten').delete().eq('user_id', currentUser.id);
+            await sb.from('trachten').insert(d.trachten.map(function(t){
+                return {id:t.id, user_id:currentUser.id, typ:t.typ, standort:t.standort, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, lat:t.lat||null, lng:t.lng||null, shared:t.shared||false, created_at:t.created};
+            }));
+            // Geteilte Trachten auch in trachten_shared wiederherstellen
+            var geteilte = d.trachten.filter(function(t){ return t.shared && t.lat && t.lng; });
+            if (geteilte.length > 0) {
+                await sb.from('trachten_shared').delete().eq('user_id', currentUser.id);
+                var userName = app.data.user ? (app.data.user.name || app.data.user.email || 'Anonym') : 'Anonym';
+                await sb.from('trachten_shared').insert(geteilte.map(function(t){
+                    return {id:t.id, user_id:currentUser.id, user_name:userName, typ:t.typ, standort:t.standort, lat:t.lat, lng:t.lng, beginn:t.beginn, ende:t.ende, ertrag:t.ertrag, notizen:t.notizen, jahr:new Date().getFullYear()};
+                }));
+            }
+        }
+        if (d.packliste && d.packliste.length) {
+            await sb.from('packliste').delete().eq('user_id', currentUser.id);
+            await sb.from('packliste').insert(d.packliste.map(function(p){
+                return {id:p.id, user_id:currentUser.id, kategorie:p.kategorie, name:p.name, checked:p.checked, menge:p.menge, ist_schnell:p.istSchnell, schnell_typ:p.schnellTyp};
+            }));
+        }
+        
+        // Seite neu laden um alles frisch von Supabase zu holen
+        alert('✅ Backup wiederhergestellt! Seite wird neu geladen.');
+        location.reload();
+    },
+    
+    // Einzelnes Backup löschen
+    remove(index) {
+        var backups = this.getAll();
+        if (!backups[index]) return;
+        var d = new Date(backups[index].datum);
+        if (!confirm('Backup vom ' + d.toLocaleString('de-DE') + ' löschen?')) return;
+        backups.splice(index, 1);
+        localStorage.setItem('imkerei_backups', JSON.stringify(backups));
+        app.render();
+    },
+    
+    // Manuelles Backup als JSON-Datei herunterladen
+    download() {
+        var backup = {
+            datum: new Date().toISOString(),
+            grund: 'Manueller Export',
+            version: 1,
+            daten: {
+                standorte: app.data.standorte,
+                voelker: app.data.voelker,
+                aufgaben: app.data.aufgaben,
+                kosten: app.data.kosten,
+                behandlungen: behandlungMod.behandlungen,
+                zuchtplaene: zuchtplanMod.plaene,
+                trachten: trachtkalenderMod.trachten,
+                packliste: packlisteMod.items
+            }
+        };
+        var blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'imkerei_backup_' + new Date().toISOString().slice(0,10) + '.json';
+        a.click();
+    },
+    
+    // JSON-Datei hochladen und wiederherstellen
+    upload() {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var text = await file.text();
+            try {
+                var backup = JSON.parse(text);
+                if (!backup.daten) { alert('Ungültige Backup-Datei!'); return; }
+                // In Backup-Liste aufnehmen
+                var backups = JSON.parse(localStorage.getItem('imkerei_backups') || '[]');
+                backups.unshift(backup);
+                if (backups.length > 10) backups = backups.slice(0, 10);
+                localStorage.setItem('imkerei_backups', JSON.stringify(backups));
+                // Direkt wiederherstellen
+                autoBackup.restore(0);
+            } catch(err) {
+                alert('Fehler beim Lesen der Datei: ' + err.message);
+            }
+        };
+        input.click();
+    }
+};
+
+// ============================================
+// CONSTANTS
+// ============================================
+const TT={
+    futter:'🍯 Futter',durchsicht:'🔍 Durchsicht',varroabehandlung:'💉 Varroa',honigraum:'📦 Honigraum',absperrgitter:'⊞ Gitter',schwarmkontrolle:'👀 Schwarm',ableger:'🐝 Ableger',koenigin:'👑 Königin',mittelwaende:'▭ Mittelwand',waben:'◫ Waben',raehmchen:'🪵 Rähmchen',standort:'🚗 Standort',honigschleudern:'🍯 Schleudern',wachs:'🕯️ Wachs',equipmentwartung:'🔧 Wartung',beuten:'🏠 Beuten',varroa:'🔬 Varroa',gemülldiagnose:'🔍 Gemüll',winterfutter:'❄️ Winter',fluglochkeil:'🚪 Flugloch',maeusegitter:'🐭 Mäuse',custom:'📌 Aufgabe'
+};
+const KK=['Futter','Behandlung','Material','Werkzeug','Fahrtkosten','Verpackung','Energie','Versicherung','Fortbildung','Sonstiges'];
+const KOSTEN_VORLAGEN={
+    'Benzin':{kat:'Fahrtkosten',betrag:15.00},'Diesel':{kat:'Fahrtkosten',betrag:20.00},'Zucker 25kg':{kat:'Futter',betrag:25.00},'Apifonda':{kat:'Futter',betrag:35.00},'Ameisensäure':{kat:'Behandlung',betrag:15.00},'Oxalsäure':{kat:'Behandlung',betrag:12.00},'Mittelwände':{kat:'Material',betrag:30.00},'Gläser':{kat:'Verpackung',betrag:45.00},'Etiketten':{kat:'Verpackung',betrag:20.00},'Strom':{kat:'Energie',betrag:50.00}
+};
+const app={
+    data:{user:null,standorte:[],voelker:[],aufgaben:[],kosten:[]},
+    page:'heute',
+    pending:null,
+    editStandortId:null,
+    editVolkId:null,
+    editAufgabeId:null,
+    selectedIntervall:0,
+    editZuchtId:null,
+    selectedStandortId:null,
+    selectedVolkStatus:'ok',
+    selectedAufgabeTyp:null,
+    selectedPrio:'medium',
+    selectedDauer:120,
+    selectedKostenKat:null,
+    voelkerCount:2,
+    _toastTimer:null,
+    // UI-State: merkt sich ob Sektionen auf/zugeklappt sind
+    uiState:{
+        ueberfaellig: true,   // standardmäßig offen
+        heute: true,           // standardmäßig offen
+        naechste7: true,       // standardmäßig offen
+        spaeter: false,        // standardmäßig zu
+        packliste: false       // standardmäßig zu
+    },
+    
+    toggleUI(key){
+        this.uiState[key] = !this.uiState[key];
+        // Immer in localStorage speichern (sicherer Fallback)
+        try { localStorage.setItem('imkerei_uiState', JSON.stringify(this.uiState)); } catch(e){}
+        // Auch in Supabase versuchen
+        if (currentUser) {
+            var uid = currentUser.id;
+            var state = JSON.parse(JSON.stringify(this.uiState));
+            console.log('[toggleUI] ➡️ Update profiles SET ui_state =', state, 'WHERE id =', uid);
+            sb.from('profiles').update({ui_state: state}).eq('id', uid).select()
+                .then(function(res){ 
+                    console.log('[toggleUI] ⬅️ Response data:', res.data, 'error:', res.error, 'count:', res.count, 'status:', res.status);
+                    if(res.error) console.error('[toggleUI] ❌ Fehler:', res.error.message);
+                    else if(!res.data || res.data.length === 0) console.warn('[toggleUI] ⚠️ Kein Datensatz aktualisiert! Falsche ID oder RLS blockiert.');
+                    else console.log('[toggleUI] ✅ Gespeichert:', res.data[0].ui_state);
+                });
+        } else {
+            console.warn('[toggleUI] ⚠️ currentUser ist null!');
+        }
+        this.render();
+    },
+    
+    init(){
+        // Auth check handled externally
+    },
+    
+    initUI(){
+        const self=this;
+        
+        // Desktop-Sidebar: <a href="index.html#page"> Links abfangen
+        document.querySelectorAll('.nav .nav-item[href^="index.html#"]').forEach(function(link){
+            link.addEventListener('click',function(e){
+                e.preventDefault();
+                var page = link.getAttribute('href').replace('index.html#','');
+                document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+                link.classList.add('active');
+                self.page = page;
+                window.location.hash = page;
+                self.render();
+                window.scrollTo(0,0);
+            });
+        });
+        
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('aufgabeDatum').value = today;
+        document.getElementById('kostenDatum').value = today;
+        
+        this.renderAufgabeTypes();
+        this.renderKostenKategorien();
+        this.renderKostenVorlagen();
+    },
+    
+    toast(msg, type='success', duration=2500){
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'toast ' + type;
+        requestAnimationFrame(function(){
+            el.classList.add('show');
+        });
+        clearTimeout(this._toastTimer);
+        const self = this;
+        this._toastTimer = setTimeout(function(){
+            el.classList.remove('show');
+        }, duration);
+    },
+    
+    // === REGISTRATION ===
+    startReg(){
+        const n = document.getElementById('regName').value.trim();
+        const e = document.getElementById('regEmail').value.trim();
+        const ok = document.getElementById('regDatenschutz').checked;
+        
+        if(!n){alert('Bitte Namen eingeben!');return;}
+        if(!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){alert('Bitte gültige E-Mail eingeben!');return;}
+        if(!ok){alert('Bitte Datenschutz akzeptieren!');return;}
+        
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        this.pending = {
+            name: n,
+            imkerei: document.getElementById('regImkerei').value.trim(),
+            email: e,
+            code: code,
+            ts: Date.now()
+        };
+        
+        emailjs.send('service_rowhptg', 'template_oqn3t06', {
+            from_name: n,
+            imkerei: this.pending.imkerei || '-',
+            email: e,
+            datum: 'Dein Bestätigungscode: ' + code
+        }).then(() => {
+            this.toast('📧 Code gesendet!', 'success');
+        }).catch(() => {
+            this.toast('E-Mail Fehler', 'error');
+        });
+        
+        // registration handled by auth screen
+        document.getElementById('codeEmail').textContent = e;
+        document.getElementById('codeModal').classList.add('active');
+    },
+    
+    verifyCode(){
+        const c = document.getElementById('codeInput').value.trim();
+        if(!this.pending) return;
+        
+        if(c !== this.pending.code){
+            alert('Falscher Code!');
+            return;
+        }
+        
+        this.data.user = {
+            name: this.pending.name,
+            imkerei: this.pending.imkerei,
+            email: this.pending.email,
+            emailConfirmed: true,
+            registeredAt: this.pending.ts
+        };
+        
+        if(!this.data.registrations) this.data.registrations = [];
+        this.data.registrations.push({
+            id: 'r' + this.uid(),
+            name: this.pending.name,
+            imkerei: this.pending.imkerei,
+            email: this.pending.email,
+            emailConfirmed: true,
+            registeredAt: this.pending.ts
+        });
+        
+        emailjs.send('service_rowhptg', 'template_oqn3t06', {
+            from_name: this.pending.name,
+            imkerei: this.pending.imkerei || '-',
+            email: this.pending.email,
+            datum: 'Neue Registrierung: ' + this.fdt(Date.now())
+        }).catch(() => {});
+        
+        this.save();
+        document.getElementById('codeModal').classList.remove('active');
+        this.pending = null;
+        this.toast('Willkommen! 🐝', 'success', 3000);
+        this.render();
+    },
+    
+    resendCode(){
+        if(!this.pending) return;
+        
+        emailjs.send('service_rowhptg', 'template_oqn3t06', {
+            from_name: this.pending.name,
+            imkerei: this.pending.imkerei || '-',
+            email: this.pending.email,
+            datum: 'Dein Bestätigungscode: ' + this.pending.code
+        }).then(() => {
+            this.toast('📧 Erneut gesendet!', 'info');
+        }).catch(() => {
+            this.toast('Fehler', 'error');
+        });
+    },
+    
+    // === GRIDS FÜLLEN ===
+    renderAufgabeTypes(){
+        const grid = document.getElementById('aufgabeTypGrid');
+        grid.innerHTML = Object.entries(TT).map(function(entry){
+            const key = entry[0];
+            const label = entry[1];
+            const parts = label.split(' ');
+            const emoji = parts[0];
+            const text = parts.slice(1).join(' ');
+            return '<button class="option-btn" onclick="app.selectAufgabeTyp(\''+key+'\')"><span class="emoji">'+emoji+'</span>'+text+'</button>';
+        }).join('');
+    },
+    
+    renderKostenKategorien(){
+        const grid = document.getElementById('kostenKatGrid');
+        grid.innerHTML = KK.map(function(kat){
+            return '<button class="option-btn" onclick="app.selectKostenKat(\''+kat+'\')">'+kat+'</button>';
+        }).join('');
+    },
+    
+    renderKostenVorlagen(){
+        const grid = document.getElementById('kostenVorlagenGrid');
+        grid.innerHTML = Object.entries(KOSTEN_VORLAGEN).map(function(entry){
+            const name = entry[0];
+            const data = entry[1];
+            return '<button class="option-btn" onclick="app.useKostenVorlage(\''+name+'\')">'+name+'<br><small style="color:#7A6652">'+data.betrag.toFixed(2)+'€</small></button>';
+        }).join('');
+    },
+    
+    // === MODAL FUNKTIONEN ===
+    openModal(id){
+        document.getElementById(id).classList.add('active');
+    },
+    
+    closeModal(id){
+        document.getElementById(id).classList.remove('active');
+        
+        if(id === 'aufgabeModal'){
+            this.editAufgabeId = null;
+            this.selectedAufgabeTyp = null;
+            this.selectedPrio = 'medium';
+            document.getElementById('aufgabeNotiz').value = '';
+            document.querySelectorAll('#aufgabeTypGrid .option-btn').forEach(function(btn){
+                btn.classList.remove('selected');
+            });
+        }else if(id === 'kostenModal'){
+            this.selectedKostenKat = null;
+            document.getElementById('kostenBeschreibung').value = '';
+            document.getElementById('kostenBetrag').value = '';
+            document.querySelectorAll('#kostenKatGrid .option-btn').forEach(function(btn){
+                btn.classList.remove('selected');
+            });
+        }else if(id === 'standortModal'){
+            this.editStandortId = null;
+            this.voelkerCount = 2;
+        }else if(id === 'volkModal'){
+            this.editVolkId = null;
+            this.selectedVolkStatus = 'ok';
+        }
+        // Standort/Volk/Tracht Modals → eigene Seiten
+    },
+    
+    // === COUNTER ===
+    // === STANDORTE & VÖLKER → standorte.html ===
+    changeVoelkerCount(){},
+    openStandortModal(){ window.location.href='voelker.html'; },
+    initMapPicker(type){
+        if (type === 'standort') return;
+        var container = document.getElementById('trachtMapPicker');
+        if (!container) return;
+        if (container._mapInstance) { container._mapInstance.remove(); container._mapInstance = null; }
+        container.innerHTML = '';
+        var startLat = parseFloat(document.getElementById('trachtLatE').value) || 49.0;
+        var startLng = parseFloat(document.getElementById('trachtLngE').value) || 10.0;
+        var startZoom = document.getElementById('trachtLatE').value ? 14 : 6;
+        var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
+        container._mapInstance = map;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:19}).addTo(map);
+        var marker = null;
+        if (document.getElementById('trachtLatE').value) { marker = L.marker([startLat, startLng]).addTo(map); }
+        map.on('click', function(e){
+            document.getElementById('trachtLatE').value = e.latlng.lat;
+            document.getElementById('trachtLngE').value = e.latlng.lng;
+            document.getElementById('koordinatenStatus').innerHTML = '<span style="color:#10b981">✅ '+e.latlng.lat.toFixed(4)+', '+e.latlng.lng.toFixed(4)+'</span>';
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        });
+        setTimeout(function(){ map.invalidateSize(); }, 100);
+        setTimeout(function(){ map.invalidateSize(); }, 500);
+    },
+    saveStandort(){},
+    delStandort(){},
+    openVolkModal(){ window.location.href='voelker.html'; },
+    setVolkStatus(){},
+    saveVolk(){},
+    deleteVolk(){},
+    showStandortDetails(){ window.location.href='voelker.html'; },
+    
+    // === AUFGABEN ===
+    selectAufgabeTyp(typ){
+        this.selectedAufgabeTyp = typ;
+        document.querySelectorAll('#aufgabeTypGrid .option-btn').forEach(function(btn){
+            btn.classList.remove('selected');
+        });
+        event.target.closest('.option-btn').classList.add('selected');
+        
+        // Standort + Intervall anzeigen bei bestimmten Typen
+        var brauchtStandort = ['durchsicht','schwarmkontrolle','varroabehandlung','futter','honigraum','absperrgitter','varroa','gemülldiagnose','winterfutter','fluglochkeil','maeusegitter'].indexOf(typ) > -1;
+        document.getElementById('aufgabeStandortWrap').style.display = brauchtStandort ? 'block' : 'none';
+        document.getElementById('aufgabeIntervallWrap').style.display = brauchtStandort ? 'block' : 'none';
+        
+        // Standort-Dropdown füllen
+        if (brauchtStandort) {
+            var sel = document.getElementById('aufgabeStandort');
+            sel.innerHTML = '<option value="">-- Alle Standorte --</option>';
+            app.data.standorte.forEach(function(s){
+                sel.innerHTML += '<option value="'+s.id+'">'+s.name+'</option>';
+            });
+        }
+        
+        if(typ === 'custom'){
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'block';
+            document.getElementById('aufgabeCustomName').focus();
+        } else {
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'none';
+            document.getElementById('aufgabeCustomName').value = '';
+        }
+    },
+    
+    setIntervall(tage){
+        this.selectedIntervall = tage;
+        document.querySelectorAll('#aufgabeIntervallWrap .option-btn').forEach(function(btn){
+            btn.classList.remove('selected');
+        });
+        event.target.classList.add('selected');
+        document.getElementById('aufgabeIntervallCustom').style.display = tage === -1 ? 'block' : 'none';
+        if (tage > 0) document.getElementById('aufgabeIntervallTage').value = tage;
+    },
+    
+    setPrio(prio){
+        this.selectedPrio = prio;
+        document.querySelectorAll('.priority-btn').forEach(function(btn){
+            btn.classList.remove('selected', 'low', 'medium', 'high');
+        });
+        event.target.classList.add('selected', prio);
+    },
+    
+    setDauer(minuten){
+        this.selectedDauer = minuten;
+        document.getElementById('aufgabeDauer').value = minuten;
+        document.querySelectorAll('.dauer-btns .option-btn').forEach(function(btn){
+            btn.classList.remove('selected');
+        });
+        event.target.classList.add('selected');
+    },
+    
+    openAufgabeModal(id){
+        // Reset Standort/Intervall
+        document.getElementById('aufgabeStandortWrap').style.display = 'none';
+        document.getElementById('aufgabeIntervallWrap').style.display = 'none';
+        document.getElementById('aufgabeIntervallCustom').style.display = 'none';
+        this.selectedIntervall = 0;
+        document.querySelectorAll('#aufgabeIntervallWrap .option-btn').forEach(function(btn){ btn.classList.remove('selected'); });
+        
+        if(id){
+            const a = this.data.aufgaben.find(function(x){return x.id === id;});
+            if(a){
+                this.editAufgabeId = id;
+                this.selectedAufgabeTyp = a.typ;
+                this.selectedPrio = a.prio;
+                this.selectedDauer = a.dauer;
+                this.selectedIntervall = a.intervallTage || 0;
+                
+                document.getElementById('aufgabeModalTitle').textContent = '✓ Aufgabe bearbeiten';
+                document.getElementById('aufgabeDatum').value = new Date(a.faelligkeit).toISOString().split('T')[0];
+                // Uhrzeit vorausfüllen wenn gesetzt (nicht 00:00)
+                var editDate = new Date(a.faelligkeit);
+                if (editDate.getHours() !== 0 || editDate.getMinutes() !== 0) {
+                    document.getElementById('aufgabeUhrzeit').value = ('0'+editDate.getHours()).slice(-2)+':'+('0'+editDate.getMinutes()).slice(-2);
+                } else {
+                    document.getElementById('aufgabeUhrzeit').value = '';
+                }
+                document.getElementById('aufgabeDauer').value = a.dauer;
+                
+                const notizParts = a.notiz.split(' - ');
+                var notizText = notizParts.length > 1 ? notizParts[1] : '';
+                // Intervall-Hinweis aus Notiz entfernen
+                notizText = notizText.replace(/\s*\[🔁.*?\]\s*$/, '');
+                document.getElementById('aufgabeNotiz').value = notizText;
+                
+                // Standort setzen
+                if (a.standortId) {
+                    document.getElementById('aufgabeStandortWrap').style.display = 'block';
+                    document.getElementById('aufgabeIntervallWrap').style.display = 'block';
+                    var sel = document.getElementById('aufgabeStandort');
+                    sel.innerHTML = '<option value="">-- Alle Standorte --</option>';
+                    app.data.standorte.forEach(function(s){
+                        sel.innerHTML += '<option value="'+s.id+'">'+s.name+'</option>';
+                    });
+                    sel.value = a.standortId;
+                }
+                
+                // Intervall markieren
+                if (a.intervallTage > 0) {
+                    document.getElementById('aufgabeIntervallWrap').style.display = 'block';
+                    if (a.intervallTage === 7 || a.intervallTage === 14) {
+                        // Standard-Buttons markieren (nach timeout weil DOM noch nicht sichtbar)
+                    } else {
+                        document.getElementById('aufgabeIntervallCustom').style.display = 'block';
+                        document.getElementById('aufgabeIntervallTage').value = a.intervallTage;
+                    }
+                }
+                
+                // Typ button markieren
+                setTimeout(function(){
+                    document.querySelectorAll('#aufgabeTypGrid .option-btn').forEach(function(btn, idx){
+                        btn.classList.remove('selected');
+                        if(Object.keys(TT)[idx] === a.typ){
+                            btn.classList.add('selected');
+                        }
+                    });
+                }, 50);
+            }
+        }else{
+            this.editAufgabeId = null;
+            this.selectedIntervall = 0;
+            document.getElementById('aufgabeModalTitle').textContent = '✓ Neue Aufgabe';
+            document.getElementById('aufgabeStandort').value = '';
+            document.getElementById('aufgabeUhrzeit').value = '';
+            document.getElementById('aufgabeCustomNameWrap').style.display = 'none';
+            document.getElementById('aufgabeCustomName').value = '';
+        }
+        this.openModal('aufgabeModal');
+    },
+    
+    saveAufgabe(){
+        if(!this.selectedAufgabeTyp){
+            alert('Bitte wähle einen Aufgaben-Typ!');
+            return;
+        }
+        
+        const datum = document.getElementById('aufgabeDatum').value;
+        const uhrzeit = document.getElementById('aufgabeUhrzeit').value;
+        const dauer = parseInt(document.getElementById('aufgabeDauer').value);
+        const notiz = document.getElementById('aufgabeNotiz').value;
+        const customName = document.getElementById('aufgabeCustomName').value;
+        const standortId = document.getElementById('aufgabeStandort').value || null;
+        var intervallTage = this.selectedIntervall;
+        if (intervallTage === -1) intervallTage = parseInt(document.getElementById('aufgabeIntervallTage').value) || 0;
+        
+        // Timestamp mit Uhrzeit berechnen
+        var faelligTs;
+        if (uhrzeit) {
+            faelligTs = new Date(datum + 'T' + uhrzeit).getTime();
+        } else {
+            faelligTs = new Date(datum).getTime();
+        }
+        
+        // Standortname in Notiz aufnehmen
+        var standortName = '';
+        if (standortId) {
+            var s = this.data.standorte.find(function(x){return x.id===standortId;});
+            if (s) standortName = ' (📍 '+s.name+')';
+        }
+        var intervallHinweis = intervallTage > 0 ? ' [🔁 alle '+intervallTage+'d]' : '';
+        
+        if(this.editAufgabeId){
+            const a = this.data.aufgaben.find(function(x){return x.id === app.editAufgabeId;});
+            if(a){
+                a.typ = this.selectedAufgabeTyp;
+                a.notiz = (this.selectedAufgabeTyp === 'custom' && customName) ? customName + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis;
+                a.faelligkeit = faelligTs;
+                a.dauer = dauer;
+                a.prio = this.selectedPrio;
+                a.standortId = standortId;
+                a.intervallTage = intervallTage;
+                db.update('aufgaben', {typ:a.typ, notiz:a.notiz, faelligkeit:a.faelligkeit, dauer:a.dauer, prio:a.prio, standort_id:standortId, intervall_tage:intervallTage}, a.id);
+            }
+        }else{
+            const aufgabe = {
+                id: 'a' + this.uid(),
+                typ: this.selectedAufgabeTyp,
+                notiz: (this.selectedAufgabeTyp === 'custom' && customName) ? customName + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis : TT[this.selectedAufgabeTyp] + standortName + (notiz ? ' - ' + notiz : '') + intervallHinweis,
+                faelligkeit: faelligTs,
+                dauer: dauer,
+                prio: this.selectedPrio,
+                erledigt: false,
+                standortId: standortId,
+                intervallTage: intervallTage,
+                created: Date.now()
+            };
+            this.data.aufgaben.push(aufgabe);
+            db.insert('aufgaben', {id:aufgabe.id, user_id:currentUser.id, typ:aufgabe.typ, notiz:aufgabe.notiz, faelligkeit:aufgabe.faelligkeit, dauer:aufgabe.dauer, prio:aufgabe.prio, erledigt:null, standort_id:standortId, intervall_tage:intervallTage, created_at:aufgabe.created});
+        }
+        
+        this.closeModal('aufgabeModal');
+        this.render();
+    },
+    
+    doneA(id){
+        const a = this.data.aufgaben.find(function(x){return x.id === id;});
+        if(a){
+            a.erledigt = Date.now();
+            db.update('aufgaben', {erledigt: a.erledigt}, a.id);
+            
+            // Bei Intervall-Aufgabe: automatisch nächste erstellen
+            if (a.intervallTage && a.intervallTage > 0) {
+                var naechstesDatum = new Date(a.faelligkeit + a.intervallTage * 24*60*60*1000);
+                var neueAufgabe = {
+                    id: 'a' + app.uid(),
+                    typ: a.typ,
+                    notiz: a.notiz,
+                    faelligkeit: naechstesDatum.getTime(),
+                    dauer: a.dauer,
+                    prio: a.prio,
+                    erledigt: false,
+                    standortId: a.standortId,
+                    intervallTage: a.intervallTage,
+                    created: Date.now()
+                };
+                this.data.aufgaben.push(neueAufgabe);
+                db.insert('aufgaben', {id:neueAufgabe.id, user_id:currentUser.id, typ:neueAufgabe.typ, notiz:neueAufgabe.notiz, faelligkeit:neueAufgabe.faelligkeit, dauer:neueAufgabe.dauer, prio:neueAufgabe.prio, erledigt:null, standort_id:neueAufgabe.standortId, intervall_tage:neueAufgabe.intervallTage, created_at:neueAufgabe.created});
+                this.toast('✅ Erledigt! Nächste in '+a.intervallTage+' Tagen erstellt', 'success');
+            }
+            
+            this.render();
+        }
+    },
+    
+    undoneA(id){
+        const a = this.data.aufgaben.find(function(x){return x.id === id;});
+        if(a){
+            a.erledigt = null;
+            db.update('aufgaben', {erledigt: null}, a.id);
+            this.render();
+        }
+    },
+    
+    doneBehandlungTermin(behandlungId, terminTs){
+        var b = behandlungMod.behandlungen.find(function(x){return x.id === behandlungId;});
+        if (!b) return;
+        b.termine = (b.termine||[]).filter(function(t){ return t !== terminTs; });
+        sb.from('behandlungen').update({termine: b.termine}).eq('id', b.id).then(function(res){
+            if(res.error) console.error('Behandlung-Termin Fehler:', res.error);
+        });
+        this.toast('✅ Behandlungstermin erledigt!', 'success');
+        this.render();
+    },
+    
+    doneZuchtStep(planId, doneField){
+        var plan = zuchtplanMod.plaene.find(function(x){return x.id === planId;});
+        if (!plan) return;
+        var now = Date.now();
+        plan[doneField] = now;
+        var updateData = {};
+        updateData[doneField] = now;
+        sb.from('zuchtplaene').update(updateData).eq('id', planId).then(function(res){
+            if(res.error) console.error('Zucht-Step Fehler:', res.error);
+        });
+        this.toast('✅ Zuchtschritt erledigt!', 'success');
+        this.render();
+    },
+    
+    // === ZUCHTPLAN === (jetzt in zuchtplan.html)
+    openZuchtModal(id){
+        window.location.href = 'zuchtplan.html';
+    },
+    
+    saveZucht(){
+        // Nicht mehr verwendet – Zuchtplan-Verwaltung ist in zuchtplan.html
+    },
+    
+    // === TRACHT === (wird über trachtkalenderMod.saveTracht() gesteuert)
+    
+    // === KOSTEN ===
+    selectKostenKat(kat){
+        this.selectedKostenKat = kat;
+        document.querySelectorAll('#kostenKatGrid .option-btn').forEach(function(btn){
+            btn.classList.remove('selected');
+        });
+        event.target.closest('.option-btn').classList.add('selected');
+    },
+    
+    useKostenVorlage(name){
+        const vorlage = KOSTEN_VORLAGEN[name];
+        document.getElementById('kostenBeschreibung').value = name;
+        document.getElementById('kostenBetrag').value = vorlage.betrag.toFixed(2);
+        this.selectedKostenKat = vorlage.kat;
+        
+        document.querySelectorAll('#kostenKatGrid .option-btn').forEach(function(btn){
+            btn.classList.remove('selected');
+            if(btn.textContent === vorlage.kat){
+                btn.classList.add('selected');
+            }
+        });
+    },
+    
+    saveKosten(){
+        if(!this.selectedKostenKat){
+            alert('Bitte wähle eine Kategorie!');
+            return;
+        }
+        
+        const beschreibung = document.getElementById('kostenBeschreibung').value;
+        const betrag = parseFloat(document.getElementById('kostenBetrag').value);
+        const datum = document.getElementById('kostenDatum').value;
+        
+        if(!beschreibung || isNaN(betrag)){
+            alert('Bitte fülle alle Felder aus!');
+            return;
+        }
+        
+        const kosten = {
+            id: 'k' + this.uid(),
+            beschreibung: beschreibung,
+            betrag: betrag,
+            kat: this.selectedKostenKat,
+            datum: new Date(datum).getTime()
+        };
+        
+        this.data.kosten.push(kosten);
+        db.insert('kosten', {id:kosten.id, user_id:currentUser.id, beschreibung:kosten.beschreibung, betrag:kosten.betrag, kat:kosten.kat, datum:kosten.datum});
+        this.closeModal('kostenModal');
+        this.render();
+    },
+    
+    // === HILFSFUNKTIONEN ===
+    save(){
+        // Data is saved directly to Supabase in each operation
+    },
+    
+    uid(){
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    },
+    
+    fd(ts){
+        if(!ts) return '-';
+        const d = new Date(ts);
+        return d.toLocaleDateString('de-DE');
+    },
+    
+    fdt(ts){
+        if(!ts) return '-';
+        const d = new Date(ts);
+        return d.toLocaleString('de-DE');
+    },
+    
+    // === RENDER ===
+    render(){
+        const pages = {
+            heute: this.rHeute.bind(this),
+            standorte: this.selectedStandortId ? this.rStandortDetails.bind(this) : this.rStandorte.bind(this),
+            aufgaben: this.rAufgaben.bind(this),
+            kosten: this.rKosten.bind(this),
+            koeniginnen: this.rZuchtplanEnhanced.bind(this),
+            tracht: this.rTracht.bind(this),
+            ernte: this.rErnte.bind(this),
+            tagebuch: this.rPlaceholder.bind(this),
+            behandlung: this.rBehandlungen.bind(this),
+            packliste: this.rPackliste.bind(this),
+            datenexport: this.rDatenexport.bind(this),
+            einstellungen: this.rEinst.bind(this)
+        };
+        document.getElementById('app').innerHTML = pages[this.page] ? pages[this.page]() : '<div class="container"><h1>Seite nicht gefunden</h1></div>';
+        
+        // Mini-Maps initialisieren nach DOM-Update
+        if (this.page === 'standorte' && !this.selectedStandortId) {
+            this.initMiniMaps();
+        }
+    },
+    
+    initMiniMaps(){},
+
+    
+    // Fortsetzung folgt in Teil 2...
+    
+    rHeute(){
+        const self = this;
+        const heute = new Date();
+        const heuteStr = heute.toDateString();
+        const heuteTs = heute.getTime();
+        
+        // === ALLE EVENTS SAMMELN ===
+        var timeline = [];
+        
+        // 1. Aufgaben
+        this.data.aufgaben.forEach(function(a){
+            if (a.erledigt) return;
+            var ts = a.faelligkeit;
+            var tage = Math.ceil((ts - heuteTs)/(1000*60*60*24));
+            if (new Date(ts).toDateString() === heuteStr) tage = 0;
+            var status = tage < 0 ? 'overdue' : (tage === 0 ? 'today' : 'upcoming');
+            timeline.push({
+                typ: 'aufgabe',
+                ts: ts,
+                tage: tage,
+                status: status,
+                data: a
+            });
+        });
+        
+        // 2. Behandlungen (alle zukünftigen Termine)
+        behandlungMod.behandlungen.forEach(function(b){
+            (b.termine||[]).forEach(function(termin){
+                var tage = Math.ceil((termin - heuteTs)/(1000*60*60*24));
+                if (new Date(termin).toDateString() === heuteStr) tage = 0;
+                if (tage < -7) return; // Mehr als 7 Tage überfällig nicht zeigen
+                timeline.push({
+                    typ: 'behandlung',
+                    ts: termin,
+                    tage: tage,
+                    status: tage < 0 ? 'overdue' : (tage === 0 ? 'today' : 'upcoming'),
+                    data: b
+                });
+            });
+        });
+        
+        // 3. Zuchtplan-Termine (nur nicht-abgehakte Schritte)
+        zuchtplanMod.plaene.forEach(function(p){
+            [{name:'Umlarven',ts:p.umlarven,emoji:'🔬',doneField:'umlarven_done'},{name:'Zusetzen',ts:p.zusetzen,emoji:'👑',doneField:'zusetzen_done'}].forEach(function(step){
+                if (step.ts && !p[step.doneField]) {
+                    var tage = Math.ceil((step.ts - heuteTs)/(1000*60*60*24));
+                    if (tage >= -1 && tage <= 90) {
+                        timeline.push({
+                            typ: 'zucht',
+                            ts: step.ts,
+                            tage: tage,
+                            status: tage < 0 ? 'overdue' : (tage === 0 ? 'today' : 'upcoming'),
+                            data: {plan:p, step:step.name, emoji:step.emoji, doneField:step.doneField}
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Sortieren: überfällig zuerst (ältester zuerst), dann heute, dann upcoming
+        timeline.sort(function(a,b){
+            // Überfällig ganz oben
+            if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+            if (a.status !== 'overdue' && b.status === 'overdue') return 1;
+            // Dann heute
+            if (a.status === 'today' && b.status === 'upcoming') return -1;
+            if (a.status === 'upcoming' && b.status === 'today') return 1;
+            // Innerhalb gleicher Gruppe nach Datum
+            return a.ts - b.ts;
+        });
+        
+        // === GRUPPIEREN ===
+        var ueberfaellig = timeline.filter(function(e){return e.status === 'overdue';});
+        var heuteEvents = timeline.filter(function(e){return e.status === 'today';});
+        var naechste7 = timeline.filter(function(e){return e.status === 'upcoming' && e.tage <= 7;});
+        var spaeter = timeline.filter(function(e){return e.status === 'upcoming' && e.tage > 7;});
+        
+        // === RENDER HELPER ===
+        function renderEvent(e) {
+            var emoji, titel, sub, farbe, aktionen = '';
+            
+            if (e.typ === 'aufgabe') {
+                var a = e.data;
+                emoji = '✓';
+                titel = a.notiz;
+                var pc = a.prio === 'high' ? 'badge-red' : (a.prio === 'medium' ? 'badge-yellow' : 'badge-green');
+                var uhrzeitStr = '';
+                var aDate = new Date(a.faelligkeit);
+                if (aDate.getHours() !== 0 || aDate.getMinutes() !== 0) {
+                    uhrzeitStr = ' · 🕐 '+('0'+aDate.getHours()).slice(-2)+':'+('0'+aDate.getMinutes()).slice(-2);
+                }
+                sub = '⏱️ '+a.dauer+' Min'+uhrzeitStr+' · <span class="badge '+pc+'" style="font-size:.65rem">'+a.prio.toUpperCase()+'</span>';
+                aktionen = '<button class="btn btn-blue btn-xs" onclick="app.openAufgabeModal(\''+a.id+'\')">✏️</button>'+
+                    '<button class="btn btn-success btn-xs" onclick="app.doneA(\''+a.id+'\')">✓</button>';
+            } else if (e.typ === 'behandlung') {
+                var b = e.data;
+                var m = METHODEN[b.methode] || {name:b.methodeName,emoji:'💊'};
+                emoji = m.emoji;
+                titel = b.methodeName;
+                sub = b.voelkerLabel;
+                if (b.menge) sub += ' · '+b.menge;
+                aktionen = '<button class="btn btn-success btn-xs" onclick="app.doneBehandlungTermin(\''+b.id+'\','+e.ts+')">✓</button>';
+            } else if (e.typ === 'zucht') {
+                emoji = e.data.emoji;
+                titel = e.data.step + ': ' + e.data.plan.name;
+                sub = '👑 Zuchtplan';
+                aktionen = '<button class="btn btn-success btn-xs" onclick="app.doneZuchtStep(\''+e.data.plan.id+'\',\''+e.data.doneField+'\')">✓</button>';
+            }
+            
+            // Zeitlabel
+            var zeitLabel = '';
+            if (e.tage < -1) zeitLabel = Math.abs(e.tage)+' Tage überfällig';
+            else if (e.tage === -1) zeitLabel = 'Gestern';
+            else if (e.tage === 0) zeitLabel = 'Heute';
+            else if (e.tage === 1) zeitLabel = 'Morgen';
+            else if (e.tage <= 7) zeitLabel = new Date(e.ts).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short'});
+            else {
+                var wochen = Math.ceil(e.tage / 7);
+                zeitLabel = new Date(e.ts).toLocaleDateString('de-DE',{day:'numeric',month:'short'}) + ' ('+e.tage+'d)';
+            }
+            
+            var zeitFarbe = e.status === 'overdue' ? '#ef4444' : (e.status === 'today' ? '#10b981' : '#7A6652');
+            var borderColor = e.status === 'overdue' ? '#fca5a5' : (e.status === 'today' ? '#86efac' : '#E8DFD4');
+            
+            return '<div style="background:#fff;padding:.75rem;border-radius:.5rem;margin-bottom:.5rem;border:1px solid '+borderColor+'">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center">'+
+            '<div style="display:flex;align-items:center;gap:.5rem;flex:1;min-width:0">'+
+            '<span style="font-size:1.25rem;flex-shrink:0">'+emoji+'</span>'+
+            '<div style="min-width:0"><div style="font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+titel+'</div>'+
+            '<div style="font-size:.75rem;color:#7A6652">'+sub+'</div></div></div>'+
+            '<div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">'+
+            '<div style="font-size:.75rem;font-weight:600;color:'+zeitFarbe+';white-space:nowrap">'+zeitLabel+'</div>'+
+            aktionen+
+            '</div></div></div>';
+        }
+        
+        return '<div class="container">'+
+        '<h1>📅 Heute</h1>'+
+        '<div class="card">'+
+        '<h3>'+heute.toLocaleDateString('de-DE', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})+'</h3>'+
+        '</div>'+
+        
+        // Wetter
+        wetterMod.render()+
+        
+        // ⚠️ ÜBERFÄLLIG
+        (ueberfaellig.length ?
+            '<div class="card" style="background:linear-gradient(135deg,#fef2f2,#fff);border-left:4px solid #ef4444">'+
+            '<div data-toggle-ui="ueberfaellig" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">'+
+            '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<span style="font-size:.7rem;color:#ef4444">'+(app.uiState.ueberfaellig?'▼':'▶')+'</span>'+
+            '<h2 style="margin:0;color:#ef4444;font-size:1.1rem">⚠️ Überfällig ('+ueberfaellig.length+')</h2>'+
+            '</div></div>'+
+            '<div style="'+(app.uiState.ueberfaellig?'':'display:none;')+'margin-top:.75rem">'+
+            ueberfaellig.map(renderEvent).join('')+
+            '</div></div>'
+            : ''
+        )+
+        
+        // 🔥 HEUTE
+        '<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-left:4px solid #10b981">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div data-toggle-ui="heute" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;flex:1">'+
+        '<span style="font-size:.7rem;color:#10b981">'+(app.uiState.heute?'▼':'▶')+'</span>'+
+        '<h2 style="margin:0;font-size:1.1rem">🔥 Heute ('+heuteEvents.length+')</h2>'+
+        '</div>'+
+        '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();app.openAufgabeModal()">+ Aufgabe</button>'+
+        '</div>'+
+        '<div style="'+(app.uiState.heute?'':'display:none;')+'margin-top:.75rem">'+
+        (heuteEvents.length ?
+            heuteEvents.map(renderEvent).join('')
+            : '<div style="text-align:center;padding:1rem;color:#7A6652;font-size:.9rem">Nichts für heute geplant 🎉</div>'
+        )+
+        '</div></div>'+
+        
+        // 📅 NÄCHSTE 7 TAGE
+        (naechste7.length ?
+            '<div class="card" style="background:linear-gradient(135deg,#FFF8EE,#fff);border-left:4px solid #F5A623">'+
+            '<div data-toggle-ui="naechste7" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">'+
+            '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<span style="font-size:.7rem;color:#F5A623">'+(app.uiState.naechste7?'▼':'▶')+'</span>'+
+            '<h2 style="margin:0;font-size:1.1rem">📅 Nächste 7 Tage ('+naechste7.length+')</h2>'+
+            '</div></div>'+
+            '<div style="'+(app.uiState.naechste7?'':'display:none;')+'margin-top:.75rem">'+
+            naechste7.map(renderEvent).join('')+
+            '</div></div>'
+            : ''
+        )+
+        
+        // 🔮 SPÄTER
+        (spaeter.length ?
+            '<div class="card" style="border-left:4px solid #94a3b8">'+
+            '<div data-toggle-ui="spaeter" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">'+
+            '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.spaeter?'▼':'▶')+'</span>'+
+            '<h2 style="margin:0;font-size:1.1rem;color:#64748b">🔮 Später geplant ('+spaeter.length+')</h2>'+
+            '</div></div>'+
+            '<div style="'+(app.uiState.spaeter?'':'display:none;')+'margin-top:.75rem">'+
+            spaeter.map(renderEvent).join('')+
+            '</div></div>'
+            : ''
+        )+
+        
+        // Packliste
+        (function(){
+            var packItems = packlisteMod.items || [];
+            var total = packItems.length;
+            if (total === 0) return '';
+            var checkedCount = packItems.filter(function(i){return i.checked;}).length;
+            var prozent = total > 0 ? Math.round(checkedCount/total*100) : 0;
+            
+            var kategorien = {};
+            packItems.forEach(function(item){
+                var kat = item.kategorie || 'Sonstiges';
+                if (!kategorien[kat]) kategorien[kat] = [];
+                kategorien[kat].push(item);
+            });
+            
+            var detailHtml = checkedCount === total ?
+                '<div style="text-align:center;padding:.75rem;color:#10b981;font-weight:600">Alles eingepackt! ✅</div>'
+                :
+                Object.keys(kategorien).map(function(kat){
+                    return '<div style="margin-bottom:.5rem">'+
+                    '<div style="font-size:.7rem;font-weight:600;color:#7A6652;text-transform:uppercase;margin-bottom:.25rem">'+kat+'</div>'+
+                    kategorien[kat].map(function(item){
+                        var menge = item.menge || 1;
+                        var checkedStyle = item.checked ? 'text-decoration:line-through;color:#A69580' : '';
+                        return '<div style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px solid #FFFBF0">'+
+                        '<input type="checkbox" '+(item.checked?'checked':'')+' style="width:1rem;height:1rem;cursor:pointer;accent-color:#F5A623" onchange="packlisteMod.toggle(\''+item.id+'\')">'+
+                        '<span style="font-size:.85rem;'+checkedStyle+'">'+(menge>1?'<strong>'+menge+'x</strong> ':'')+item.name+'</span>'+
+                        '</div>';
+                    }).join('')+
+                    '</div>';
+                }).join('');
+            
+            return '<div class="card" style="background:linear-gradient(135deg,#f0f9ff,#fff);border-left:4px solid #3b82f6;padding:.75rem 1rem">'+
+            '<div data-toggle-ui="packliste" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer">'+
+            '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<span style="font-size:.7rem;color:#7A6652">'+(app.uiState.packliste?'▼':'▶')+'</span>'+
+            '<h2 style="margin:0;font-size:1rem">📦 Packliste</h2>'+
+            '</div>'+
+            '<div style="display:flex;align-items:center;gap:.5rem">'+
+            '<div style="width:60px;background:#E8DFD4;border-radius:999px;height:5px">'+
+            '<div style="background:#3b82f6;border-radius:999px;height:100%;width:'+prozent+'%"></div></div>'+
+            '<span class="badge '+(checkedCount===total?'badge-green':'badge-yellow')+'" style="font-size:.7rem">'+checkedCount+'/'+total+'</span>'+
+            '</div>'+
+            '</div>'+
+            '<div style="'+(app.uiState.packliste?'':'display:none;')+'margin-top:.75rem">'+
+            detailHtml+
+            '<div style="margin-top:.5rem;text-align:center">'+
+            '<button class="btn btn-blue btn-sm" style="font-size:.8rem;padding:.375rem .75rem" onclick="app.navigate(\'packliste\')">📋 Volle Packliste</button>'+
+            '</div>'+
+            '</div>'+
+            '</div>';
+        })()+
+        
+        // Schnellübersicht
+        '<div class="card">'+
+        '<h3>📊 Schnellübersicht</h3>'+
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-top:.75rem">'+
+        [
+            ['📍 Standorte', this.data.standorte.length],
+            ['🐝 Völker', this.data.voelker.length],
+            ['✓ Offene Aufgaben', this.data.aufgaben.filter(function(a){return !a.erledigt;}).length],
+            ['💉 Behandlungen', behandlungMod.behandlungen.length],
+            ['👑 Zuchtpläne', zuchtplanMod.plaene.length],
+            ['🍯 Honig (Gesamt)', this.data.voelker.reduce(function(s,v){return s+(v.honigertrag||0);}, 0).toFixed(1) + ' kg']
+        ].map(function(x){
+            return '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem">'+
+            '<div style="font-size:1.5rem;font-weight:bold;color:#1C1410">'+x[1]+'</div>'+
+            '<div style="font-size:.75rem;color:#7A6652;margin-top:.25rem">'+x[0]+'</div>'+
+            '</div>';
+        }).join('')+
+        '</div>'+
+        '</div>'+
+        '</div>';
+    },
+    
+    rStandorte(){
+        window.location.href = 'voelker.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    rStandortDetails(){
+        window.location.href = 'voelker.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    
+    rAufgaben(){
+        const self = this;
+        const offen = this.data.aufgaben.filter(function(a){return !a.erledigt;}).sort(function(a,b){return a.faelligkeit - b.faelligkeit;});
+        const erledigt = this.data.aufgaben.filter(function(a){return a.erledigt;}).sort(function(a,b){return b.erledigt - a.erledigt;}).slice(0, 10);
+        
+        return '<div class="container">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+        '<h1>✓ Aufgaben</h1>'+
+        '<button class="btn btn-primary btn-sm" onclick="app.openAufgabeModal()">+ Neue Aufgabe</button>'+
+        '</div>'+
+        '<h2>Offen ('+offen.length+')</h2>'+
+        offen.map(function(a){
+            const pc = a.prio === 'high' ? 'badge-red' : (a.prio === 'medium' ? 'badge-yellow' : 'badge-green');
+            const ueberfaellig = Date.now() > a.faelligkeit;
+            return '<div class="card" '+(ueberfaellig ? 'style="border-left:4px solid #ef4444"' : '')+'>'+
+            '<div style="display:flex;justify-content:space-between;align-items:start">'+
+            '<div style="flex:1">'+
+            '<div style="font-weight:600;margin-bottom:.25rem">'+a.notiz+'</div>'+
+            '<div style="font-size:.8rem;color:#7A6652">'+
+            '📅 '+self.fd(a.faelligkeit)+' · ⏱️ '+a.dauer+' Min · '+
+            '<span class="badge '+pc+'">'+a.prio.toUpperCase()+'</span>'+
+            (ueberfaellig ? ' · <span class="badge badge-red">ÜBERFÄLLIG</span>' : '')+
+            '</div>'+
+            '</div>'+
+            '<div style="display:flex;gap:.5rem">'+
+            '<button class="btn btn-blue btn-xs" onclick="app.openAufgabeModal(\''+a.id+'\')">✏️</button>'+
+            '<button class="btn btn-success btn-xs" onclick="app.doneA(\''+a.id+'\')">✓</button>'+
+            '<button class="btn btn-danger btn-xs" onclick="app.del(\'aufgaben\',\''+a.id+'\')">🗑️</button>'+
+            '</div>'+
+            '</div>'+
+            '</div>';
+        }).join('')+
+        (!offen.length ? '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Keine offenen Aufgaben 🎉</div>' : '')+
+        '<h2 style="margin-top:1.5rem">Erledigt</h2>'+
+        erledigt.map(function(a){
+            return '<div class="card" style="opacity:.6">'+
+            '<div style="display:flex;justify-content:space-between;align-items:start">'+
+            '<div style="flex:1">'+
+            '<div style="text-decoration:line-through">'+a.notiz+'</div>'+
+            '<div style="font-size:.75rem;color:#7A6652;margin-top:.25rem">✓ '+self.fd(a.erledigt)+'</div>'+
+            '</div>'+
+            '<div style="display:flex;gap:.5rem">'+
+            '<button class="btn btn-blue btn-xs" onclick="app.undoneA(\''+a.id+'\')" title="Wieder öffnen">↩️</button>'+
+            '<button class="btn btn-danger btn-xs" onclick="app.del(\'aufgaben\',\''+a.id+'\')" title="Löschen">🗑️</button>'+
+            '</div>'+
+            '</div>'+
+            '</div>';
+        }).join('')+
+        (!erledigt.length ? '<div class="card" style="text-align:center;color:#7A6652">Noch keine erledigten Aufgaben</div>' : '')+
+        '</div>';
+    },
+    
+    rZuchtplan(){
+        // Zuchtplan ist jetzt eine eigenständige Seite
+        window.location.href = 'zuchtplan.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    
+    rTracht(){
+        window.location.href = 'tracht.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    
+    
+    rErnte(){
+        const self = this;
+        const gesamtErtrag = this.data.voelker.reduce(function(s,v){return s + (v.honigertrag || 0);}, 0);
+        const trachtErtrag = this.data.trachten ? this.data.trachten.reduce(function(s,t){return s + (t.ertrag || 0);}, 0) : 0;
+        
+        // Group voelker by standort
+        var standortMap = {};
+        this.data.standorte.forEach(function(s){ standortMap[s.id] = {name:s.name, id:s.id, voelker:[], ertrag:0}; });
+        this.data.voelker.forEach(function(v){
+            var sid = v.standortId;
+            if (!standortMap[sid]) standortMap[sid] = {name:'Ohne Standort', id:sid, voelker:[], ertrag:0};
+            standortMap[sid].voelker.push(v);
+            standortMap[sid].ertrag += (v.honigertrag||0);
+        });
+        
+        if (!this._ernteOpen) this._ernteOpen = {};
+        
+        return '<div class="container">'+
+        '<h1>🍯 Honigernte</h1>'+
+        
+        '<div class="card">'+
+        '<h3 style="text-align:center;margin-bottom:1rem">Gesamtertrag '+new Date().getFullYear()+'</h3>'+
+        '<div style="text-align:center">'+
+        '<div style="font-size:3rem;font-weight:bold;color:#F5A623">'+gesamtErtrag.toFixed(1)+' kg</div>'+
+        '<div style="font-size:.85rem;color:#7A6652;margin-top:.5rem">Aus '+self.data.voelker.length+' Völkern an '+self.data.standorte.length+' Standorten</div>'+
+        '</div>'+
+        '</div>'+
+        
+        (trachtErtrag > 0 ? 
+            '<div class="card">'+
+            '<h3>Nach Trachten</h3>'+
+            '<div style="background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem">'+
+            '<div style="font-size:1.25rem;font-weight:bold">'+trachtErtrag.toFixed(1)+' kg</div>'+
+            '<div style="font-size:.75rem;color:#7A6652">Erfasst über Trachten</div>'+
+            '</div>'+
+            '</div>'
+            : ''
+        )+
+        
+        Object.entries(standortMap).map(function(entry){
+            var sid = entry[0]; var data = entry[1];
+            if (data.voelker.length === 0) return '';
+            var isOpen = self._ernteOpen[sid] || false;
+            var sortiert = data.voelker.sort(function(a,b){return (b.honigertrag||0) - (a.honigertrag||0);});
+            return '<div class="card" style="padding:0;overflow:hidden">'+
+            
+            // Standort Header - klickbar zum Aufklappen
+            '<div onclick="app.toggleErnte(\''+sid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem;cursor:pointer;transition:background .15s;user-select:none" onmouseover="this.style.background=\'#FFF8EE\'" onmouseout="this.style.background=\'\'">'+
+            '<div style="display:flex;align-items:center;gap:.75rem">'+
+            '<span style="font-size:1.25rem;transition:transform .2s;transform:rotate('+(isOpen?'90':'0')+'deg)">▶</span>'+
+            '<div>'+
+            '<h2 style="margin:0">📍 '+data.name+'</h2>'+
+            '<div style="font-size:.8rem;color:#7A6652;margin-top:.25rem">'+data.voelker.length+' Völker · Klicken für Details</div>'+
+            '</div>'+
+            '</div>'+
+            '<div style="text-align:right">'+
+            '<div style="font-size:1.75rem;font-weight:bold;color:#F5A623">'+data.ertrag.toFixed(1)+' kg</div>'+
+            '</div>'+
+            '</div>'+
+            
+            // Aufklappbarer Bereich
+            '<div style="display:'+(isOpen?'block':'none')+';border-top:2px solid #FFFBF0">'+
+            
+            // Standort-Ertrag schnell eingeben
+            '<div style="padding:1rem;background:#FFF8EE">'+
+            '<div style="font-weight:600;margin-bottom:.75rem">🍯 Ertrag für ganzen Standort eintragen</div>'+
+            '<div style="display:flex;gap:.5rem;align-items:center">'+
+            '<input type="number" id="ernteStandort_'+sid+'" class="input" placeholder="kg gesamt" step="0.1" min="0" style="flex:1;margin:0" value="">'+
+            '<button class="btn btn-primary btn-sm" onclick="app.verteilErnteStandort(\''+sid+'\')">Gleichmäßig verteilen</button>'+
+            '</div>'+
+            '<div style="font-size:.75rem;color:#7A6652;margin-top:.5rem">Wird gleichmäßig auf alle '+data.voelker.length+' Völker aufgeteilt</div>'+
+            '</div>'+
+            
+            // Einzelne Völker
+            '<div style="padding:.5rem 1rem">'+
+            sortiert.map(function(v){
+                var pct = gesamtErtrag > 0 ? ((v.honigertrag||0)/gesamtErtrag*100) : 0;
+                return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid #FFFBF0">'+
+                '<div style="flex:1">'+
+                '<div style="font-weight:600">'+v.name+'</div>'+
+                '<div style="background:#E8DFD4;height:.375rem;border-radius:.25rem;margin-top:.375rem;max-width:200px">'+
+                '<div style="background:#F5A623;height:100%;border-radius:.25rem;width:'+Math.min(100,pct)+'%"></div>'+
+                '</div>'+
+                '</div>'+
+                '<div style="display:flex;align-items:center;gap:.5rem">'+
+                '<input type="number" style="width:70px;padding:.375rem;border:1px solid #d1d5db;border-radius:.375rem;text-align:right;font-weight:600" value="'+(v.honigertrag||0).toFixed(1)+'" step="0.1" min="0" onchange="app.updateVolkErtrag(\''+v.id+'\',this.value)">'+
+                '<span style="font-size:.85rem;color:#7A6652">kg</span>'+
+                '</div>'+
+                '</div>';
+            }).join('')+
+            '</div>'+
+            '</div>'+
+            
+            '</div>';
+        }).join('')+
+        
+        (!this.data.standorte.length ? 
+            '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">'+
+            '<div style="font-size:3rem;margin-bottom:1rem">🍯</div>'+
+            '<p>Erstelle zuerst Standorte und Völker, um Erträge zu erfassen.</p>'+
+            '</div>'
+            : ''
+        )+
+        
+        '<div class="info-box" style="margin-top:1rem">'+
+        '💡 Du kannst den Ertrag pro Volk direkt bearbeiten oder für den ganzen Standort auf einmal eingeben.'+
+        '</div>'+
+        '</div>';
+    },
+    
+    toggleErnte(sid){
+        if (!this._ernteOpen) this._ernteOpen = {};
+        this._ernteOpen[sid] = !this._ernteOpen[sid];
+        this.render();
+    },
+    
+    updateVolkErtrag(vid, val){
+        var v = this.data.voelker.find(function(x){return x.id===vid;});
+        if (v) {
+            v.honigertrag = parseFloat(val) || 0;
+            db.update('voelker', {honigertrag: v.honigertrag}, v.id);
+        }
+    },
+    
+    verteilErnteStandort(sid){
+        var input = document.getElementById('ernteStandort_'+sid);
+        var gesamt = parseFloat(input.value);
+        if (!gesamt || gesamt <= 0) { alert('Bitte eine gültige kg-Zahl eingeben'); return; }
+        var voelker = this.data.voelker.filter(function(v){return v.standortId===sid;});
+        if (voelker.length === 0) return;
+        var pro = Math.round((gesamt / voelker.length) * 10) / 10;
+        voelker.forEach(function(v){
+            v.honigertrag = (v.honigertrag||0) + pro;
+            db.update('voelker', {honigertrag: v.honigertrag}, v.id);
+        });
+        input.value = '';
+        this.render();
+        app.toast('✓ '+gesamt+' kg auf '+voelker.length+' Völker verteilt (je +'+pro+' kg)','success');
+    },
+    
+    
+
+    /* shareTracht/unshareTracht → tracht.html */
+
+    
+    rKosten(){
+        const self = this;
+        const k = this.data.kosten.sort(function(a,b){return b.datum - a.datum;});
+        const total = k.reduce(function(s,x){return s + x.betrag;}, 0);
+        const byKat = {};
+        k.forEach(function(x){
+            byKat[x.kat] = (byKat[x.kat] || 0) + x.betrag;
+        });
+        
+        return '<div class="container">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+        '<h1>💰 Kosten</h1>'+
+        '<button class="btn btn-primary btn-sm" onclick="app.openModal(\'kostenModal\')">+ Neue Ausgabe</button>'+
+        '</div>'+
+        '<div class="card">'+
+        '<div style="text-align:center">'+
+        '<div style="font-size:2.5rem;font-weight:bold;color:#1C1410">'+total.toFixed(2)+' €</div>'+
+        '<div style="font-size:.85rem;color:#7A6652">Gesamtausgaben</div>'+
+        '</div>'+
+        '<div style="margin-top:1rem;padding-top:1rem;border-top:2px solid #FFFBF0">'+
+        Object.entries(byKat).sort(function(a,b){return b[1] - a[1];}).map(function(x){
+            return '<div style="display:flex;justify-content:space-between;padding:.4rem 0;font-size:.9rem">'+
+            '<span>'+x[0]+'</span>'+
+            '<strong>'+x[1].toFixed(2)+' €</strong>'+
+            '</div>';
+        }).join('')+
+        '</div>'+
+        '</div>'+
+        k.map(function(x){
+            return '<div class="card">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center">'+
+            '<div style="flex:1">'+
+            '<div style="font-weight:600">'+x.beschreibung+' – '+x.betrag.toFixed(2)+' €</div>'+
+            '<div style="font-size:.75rem;color:#7A6652;margin-top:.25rem">'+x.kat+' · '+self.fd(x.datum)+'</div>'+
+            '</div>'+
+            '<button class="btn btn-danger btn-xs" onclick="app.del(\'kosten\',\''+x.id+'\')">🗑️</button>'+
+            '</div>'+
+            '</div>';
+        }).join('')+
+        (!k.length ? '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Noch keine Ausgaben erfasst</div>' : '')+
+        '</div>';
+    },
+    
+    rEinst(){
+        return '<div class="container">'+
+        '<h1>⚙️ Einstellungen</h1>'+
+        (this.data.user ? 
+            '<div class="card">'+
+            '<h3>👤 Profil</h3>'+
+            '<div style="font-size:.9rem;color:#7A6652;margin-top:.75rem">'+
+            '<div style="margin-bottom:.5rem"><strong>Name:</strong> '+this.data.user.name+'</div>'+
+            (this.data.user.imkerei ? '<div style="margin-bottom:.5rem"><strong>Imkerei:</strong> '+this.data.user.imkerei+'</div>' : '')+
+            '<div style="margin-bottom:.5rem"><strong>E-Mail:</strong> '+this.data.user.email+' '+
+            (this.data.user.emailConfirmed ? '<span class="badge badge-green">✓ Bestätigt</span>' : '<span class="badge badge-yellow">Nicht bestätigt</span>')+
+            '</div>'+
+            '<div><strong>Registriert:</strong> '+this.fd(this.data.user.registeredAt)+'</div>'+
+            '</div>'+
+            '</div>' 
+            : ''
+        )+
+        '<div class="card">'+
+        '<h3>📊 Statistik</h3>'+
+        '<div style="font-size:.9rem;color:#7A6652;margin-top:.75rem">'+
+        '<div style="margin-bottom:.4rem">Standorte: <strong>'+this.data.standorte.length+'</strong></div>'+
+        '<div style="margin-bottom:.4rem">Völker: <strong>'+this.data.voelker.length+'</strong></div>'+
+        '<div style="margin-bottom:.4rem">Aufgaben: <strong>'+this.data.aufgaben.length+'</strong></div>'+
+        '<div style="margin-bottom:.4rem">Zuchtpläne: <strong>'+zuchtplanMod.plaene.length+'</strong></div>'+
+        '<div style="margin-bottom:.4rem">Trachten: <strong>'+trachtkalenderMod.trachten.length+'</strong></div>'+
+        '<div style="margin-bottom:.4rem">Kosten: <strong>'+this.data.kosten.length+'</strong></div>'+
+        '</div>'+
+        '</div>'+
+        '<div class="card">'+
+        '<h3>💾 Backup & Wiederherstellung</h3>'+
+        '<p style="font-size:.85rem;color:#7A6652;margin:.5rem 0">Vor jeder Löschaktion wird automatisch ein Backup erstellt. Du kannst auch manuell Backups erstellen und herunterladen.</p>'+
+        '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">'+
+        '<button class="btn btn-primary btn-sm" onclick="autoBackup.create(\'Manuelles Backup\');app.render()">💾 Backup jetzt erstellen</button>'+
+        '<button class="btn btn-blue btn-sm" onclick="autoBackup.download()">📥 Als Datei speichern</button>'+
+        '<button class="btn btn-success btn-sm" onclick="autoBackup.upload()">📤 Datei hochladen</button>'+
+        '</div>'+
+        (function(){
+            var backups = autoBackup.getAll();
+            if (!backups.length) return '<div style="text-align:center;padding:1rem;color:#7A6652;font-size:.85rem">Noch keine Backups vorhanden</div>';
+            return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">'+
+            '<div style="font-weight:600;font-size:.9rem">Letzte Backups ('+backups.length+'):</div>'+
+            '<button class="btn btn-danger btn-xs" onclick="if(confirm(\'Alle Backups löschen?\')){localStorage.removeItem(\'imkerei_backups\');app.render();}">🗑️ Alle löschen</button>'+
+            '</div>'+
+            backups.map(function(b, i){
+                var d = new Date(b.datum);
+                var datum = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                var counts = b.daten ? (b.daten.standorte||[]).length + ' Standorte, ' + (b.daten.voelker||[]).length + ' Völker' : '?';
+                return '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem;background:#FFF8EE;border-radius:.5rem;margin-bottom:.35rem;font-size:.85rem">'+
+                '<div><div style="font-weight:500">'+datum+'</div>'+
+                '<div style="font-size:.75rem;color:#7A6652">'+b.grund+' · '+counts+'</div></div>'+
+                '<div style="display:flex;gap:.35rem">'+
+                '<button class="btn btn-success btn-xs" onclick="autoBackup.restore('+i+')">↩️</button>'+
+                '<button class="btn btn-danger btn-xs" onclick="autoBackup.remove('+i+')">🗑️</button>'+
+                '</div></div>';
+            }).join('');
+        })()+
+        '</div>'+
+        '<div class="card">'+
+        '<h3>ℹ️ App-Version</h3>'+
+        '<p style="font-size:.9rem;color:#7A6652;margin-top:.5rem">Imkerei Tagesplaner v5.0</p>'+
+        '<p style="font-size:.85rem;color:#F5A623;font-weight:600;margin-top:.25rem">Imkerei Durchdenwald 🐝</p>'+
+        '<p style="font-size:.8rem;color:#10b981;margin-top:.5rem">☁️ Cloud-Version – Daten sicher gespeichert</p>'+
+        '</div>'+
+        '<div class="card">'+
+        '<button class="btn btn-danger btn-block" onclick="doLogout()">🚪 Abmelden</button>'+
+        '</div>'+
+        '</div>';
+    },
+    
+
+    rPackliste(){
+        window.location.href = 'packliste.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    
+    /* rTrachtkalender → tracht.html */
+
+    
+    rZuchtplanEnhanced(){
+        // Zuchtplan ist jetzt eine eigenständige Seite
+        window.location.href = 'zuchtplan.html';
+        return '<div class="container" style="max-width:900px;text-align:center;padding:3rem"><div style="font-size:3rem;margin-bottom:1rem">👑</div><p>Weiterleitung zur Königinnenzucht...</p></div>';
+    },
+    
+    rBehandlungen(){
+        window.location.href = 'behandlung.html';
+        return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
+    },
+    
+    
+    rDatenexport(){
+        var self = this;
+        return '<div class="container">'+
+        '<h1>📊 Datenexport</h1>'+
+        '<div class="card">'+
+        '<h3>📋 Daten als JSON exportieren</h3>'+
+        '<p style="font-size:.9rem;color:#7A6652;margin:.75rem 0">Exportiere alle deine Imkerei-Daten als JSON-Datei zur Sicherung.</p>'+
+        '<button class="btn btn-primary btn-block" onclick="(function(){var d=JSON.stringify(app.data,null,2);var b=new Blob([d],{type:\'application/json\'});var a=document.createElement(\'a\');a.href=URL.createObjectURL(b);a.download=\'imkerei_backup_\'+new Date().toISOString().split(\'T\')[0]+\'.json\';a.click();app.toast(\'✓ Export erfolgreich!\',\'success\');})()">📥 Daten exportieren (JSON)</button>'+
+        '</div>'+
+        '<div class="card">'+
+        '<h3>📊 Statistik-Übersicht</h3>'+
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-top:.75rem">'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+this.data.standorte.length+'</div><div style="font-size:.75rem;color:#7A6652">Standorte</div></div>'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+this.data.voelker.length+'</div><div style="font-size:.75rem;color:#7A6652">Völker</div></div>'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+zuchtplanMod.plaene.length+'</div><div style="font-size:.75rem;color:#7A6652">Zuchtpläne</div></div>'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+behandlungMod.behandlungen.length+'</div><div style="font-size:.75rem;color:#7A6652">Behandlungen</div></div>'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+trachtkalenderMod.trachten.length+'</div><div style="font-size:.75rem;color:#7A6652">Trachten</div></div>'+
+        '<div style="text-align:center;padding:1rem;background:#FFF8EE;border-radius:.75rem"><div style="font-size:1.5rem;font-weight:bold">'+packlisteMod.items.length+'</div><div style="font-size:.75rem;color:#7A6652">Packlisten-Items</div></div>'+
+        '</div></div></div>';
+    },
+    
+    rPlaceholder(){
+        return '<div class="container">'+
+        '<h1>🚧 In Entwicklung</h1>'+
+        '<div class="card" style="text-align:center;padding:3rem">'+
+        '<div style="font-size:4rem;margin-bottom:1rem">🐝</div>'+
+        '<p style="color:#7A6652">Diese Funktion wird bald verfügbar sein!</p>'+
+        '</div>'+
+        '</div>';
+    },
+    
+    del(col, id){
+        if(!confirm('Wirklich löschen?')) return;
+        var item = this.data[col] ? this.data[col].find(function(x){return x.id === id;}) : null;
+        autoBackup.create(col + ' gelöscht: ' + (item ? (item.notiz || item.beschreibung || item.name || id) : id));
+        this.data[col] = this.data[col].filter(function(x){return x.id !== id;});
+        db.del(col, id);
+        this.render();
+    }
+};
+
+
+// ============================================
+// MODUL: PACKLISTE
+// ============================================
+/* PACKLISTE_ITEMS → packliste.html */
+
+// ============================================
+// WETTER MODUL (Open-Meteo, 14 Tage)
+// ============================================
+const wetterMod = {
+    daten: null,
+    datenProStandort: {},
+    loading: false,
+    error: null,
+    letzterAbruf: null,
+    customOrt: null,
+    customLat: null,
+    customLng: null,
+    _karte: null,
+    _marker: null,
+    
+    getStandortKoords(){
+        // Zuerst custom Ort aus Profil
+        if (this.customLat && this.customLng) {
+            return {lat: this.customLat, lng: this.customLng, name: this.customOrt || 'Mein Standort'};
+        }
+        // Fallback: Ersten Standort mit Koordinaten nehmen
+        var standorte = app.data.standorte || [];
+        for (var i=0; i<standorte.length; i++) {
+            if (standorte[i].lat && standorte[i].lng) return {lat:standorte[i].lat, lng:standorte[i].lng, name:standorte[i].name};
+        }
+        return null;
+    },
+    
+    async ortAendern(){
+        document.getElementById('wetterOrtModal').classList.add('active');
+        var liste = document.getElementById('wetterStandortListe');
+        var standorte = app.data.standorte || [];
+        var gpsStandorte = standorte.filter(function(s){ return s.lat && s.lng; });
+        if (gpsStandorte.length > 0) {
+            var html = '';
+            gpsStandorte.forEach(function(s){
+                var istAktiv = wetterMod.customOrt === s.name;
+                html += '<button class="btn '+(istAktiv?'btn-primary':'btn-outline')+' btn-sm" style="margin:.25rem" onclick="wetterMod.ortWaehlen(\''+s.name+'\','+s.lat+','+s.lng+')">📍 '+s.name+'</button>';
+            });
+            liste.innerHTML = html;
+        } else {
+            liste.innerHTML = '<div style="font-size:.8rem;color:#94a3b8">Keine Standorte mit GPS vorhanden</div>';
+        }
+        document.getElementById('wetterSuchErgebnis').innerHTML = '';
+        document.getElementById('wetterOrtSuche').value = '';
+        document.getElementById('wetterKarteInfo').innerHTML = 'Klicke auf die Karte um einen Standort zu wählen';
+        setTimeout(function(){
+            var container = document.getElementById('wetterKarte');
+            if (wetterMod._karte) { wetterMod._karte.remove(); wetterMod._karte = null; }
+            var startLat = wetterMod.customLat || 49.0;
+            var startLng = wetterMod.customLng || 8.4;
+            var karte = L.map('wetterKarte').setView([startLat, startLng], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:18}).addTo(karte);
+            wetterMod._karte = karte;
+            wetterMod._marker = null;
+            if (wetterMod.customLat && wetterMod.customLng) {
+                wetterMod._marker = L.marker([wetterMod.customLat, wetterMod.customLng]).addTo(karte);
+            }
+            gpsStandorte.forEach(function(s){
+                L.circleMarker([s.lat, s.lng], {radius:6, color:'#F5A623', fillColor:'#F5A623', fillOpacity:0.8}).bindTooltip(s.name).addTo(karte);
+            });
+            karte.on('click', async function(e){
+                var lat = e.latlng.lat;
+                var lng = e.latlng.lng;
+                if (wetterMod._marker) karte.removeLayer(wetterMod._marker);
+                wetterMod._marker = L.marker([lat, lng]).addTo(karte);
+                var ortName = 'Standort ('+lat.toFixed(4)+', '+lng.toFixed(4)+')';
+                document.getElementById('wetterKarteInfo').innerHTML = '📍 '+ortName+' <button class="btn btn-primary btn-sm" style="margin-left:.5rem" onclick="wetterMod.ortWaehlen(\''+ortName+'\','+lat+','+lng+')">✓ Übernehmen</button>';
+            });
+        }, 300);
+    },
+    
+    async ortSuchen(){
+        var ort = document.getElementById('wetterOrtSuche').value.trim();
+        if (!ort) return;
+        var ergebnis = document.getElementById('wetterSuchErgebnis');
+        ergebnis.innerHTML = '⏳ Suche...';
+        try {
+            var resp = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(ort)+'&count=5&language=de');
+            var data = await resp.json();
+            if (!data.results || data.results.length === 0) {
+                ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Kein Ergebnis für "'+ort+'"</div>';
+                return;
+            }
+            var html = '';
+            data.results.forEach(function(r){
+                var label = r.name + (r.admin1 ? ', '+r.admin1 : '') + (r.country ? ' ('+r.country+')' : '');
+                html += '<button class="btn btn-outline btn-sm" style="margin:.25rem;display:block;width:100%;text-align:left" onclick="wetterMod.ortWaehlen(\''+r.name.replace(/'/g,"\\'")+'\','+r.latitude+','+r.longitude+')">📍 '+label+'</button>';
+            });
+            ergebnis.innerHTML = html;
+        } catch(e) {
+            ergebnis.innerHTML = '<div style="color:#ef4444;font-size:.85rem">Fehler bei der Suche</div>';
+        }
+    },
+    
+    async ortWaehlen(name, lat, lng){
+        this.customOrt = name;
+        this.customLat = lat;
+        this.customLng = lng;
+        await sb.from('profiles').update({wetter_ort: name, wetter_lat: lat, wetter_lng: lng}).eq('id', currentUser.id);
+        document.getElementById('wetterOrtModal').classList.remove('active');
+        if (this._karte) { this._karte.remove(); this._karte = null; }
+        this.daten = null;
+        this.letzterAbruf = null;
+        await this.laden();
+        app.render();
+        app.toast('✅ Wetter-Standort: '+name, 'success');
+    },
+    
+    async ladenFuerStandort(standortId, lat, lng){
+        var key = standortId;
+        var cached = this.datenProStandort[key];
+        if (cached && cached._ts && (Date.now() - cached._ts < 30*60*1000)) return cached;
+        try {
+            var url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lng+
+                '&current=temperature_2m,weather_code,wind_speed_10m'+
+                '&timezone=Europe%2FBerlin';
+            var resp = await fetch(url);
+            var data = await resp.json();
+            data._ts = Date.now();
+            this.datenProStandort[key] = data;
+            return data;
+        } catch(e) { return null; }
+    },
+    
+    async laden(){
+        var koords = this.getStandortKoords();
+        if (!koords) { this.error = 'nostandort'; return; }
+        
+        // Nur alle 30 Min neu laden
+        if (this.daten && this.letzterAbruf && (Date.now() - this.letzterAbruf < 30*60*1000)) return;
+        
+        this.loading = true;
+        this.error = null;
+        try {
+            var url = 'https://api.open-meteo.com/v1/forecast?latitude='+koords.lat+'&longitude='+koords.lng+
+                '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,wind_speed_10m_max'+
+                '&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m'+
+                '&timezone=Europe%2FBerlin&forecast_days=14';
+            var resp = await fetch(url);
+            var data = await resp.json();
+            this.daten = data;
+            this.daten._standortName = koords.name;
+            this.letzterAbruf = Date.now();
+            this.error = null;
+        } catch(e) {
+            this.error = 'fetch';
+            console.error('Wetter-Fehler:', e);
+        }
+        this.loading = false;
+        
+        // Auch für alle Standorte mit GPS laden
+        var standorte = app.data.standorte || [];
+        for (var i=0; i<standorte.length; i++) {
+            var s = standorte[i];
+            if (s.lat && s.lng) {
+                this.ladenFuerStandort(s.id, s.lat, s.lng);
+            }
+        }
+    },
+    
+    renderMini(standortId){
+        var data = this.datenProStandort[standortId];
+        if (!data || !data.current) return '';
+        var c = data.current;
+        var flug = this.bienenFlugWetter(c.temperature_2m, 0, c.wind_speed_10m);
+        return '<div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;padding:.5rem;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border-radius:.5rem;font-size:.8rem">'+
+            '<span style="font-size:1.25rem">'+this.wetterIcon(c.weather_code)+'</span>'+
+            '<span style="font-weight:600">'+Math.round(c.temperature_2m)+'°C</span>'+
+            '<span style="color:#7A6652">💨'+Math.round(c.wind_speed_10m)+'km/h</span>'+
+            '<span style="font-size:.75rem;font-weight:600;color:'+flug.color+';margin-left:auto">'+flug.label+'</span>'+
+            '</div>';
+    },
+    
+    wetterIcon(code){
+        if (code <= 1) return '☀️';
+        if (code <= 3) return '⛅';
+        if (code <= 48) return '☁️';
+        if (code <= 57) return '🌧️';
+        if (code <= 67) return '🌧️';
+        if (code <= 77) return '🌨️';
+        if (code <= 82) return '🌧️';
+        if (code <= 86) return '🌨️';
+        if (code <= 99) return '⛈️';
+        return '🌤️';
+    },
+    
+    wetterText(code){
+        if (code === 0) return 'Klar';
+        if (code <= 3) return 'Bewölkt';
+        if (code <= 48) return 'Nebel';
+        if (code <= 57) return 'Niesel';
+        if (code <= 67) return 'Regen';
+        if (code <= 77) return 'Schnee';
+        if (code <= 82) return 'Schauer';
+        if (code <= 86) return 'Schneeschauer';
+        if (code <= 99) return 'Gewitter';
+        return '?';
+    },
+    
+    bienenFlugWetter(tMax, niederschlag, wind){
+        // Bienen fliegen ab ~12°C, nicht bei starkem Regen/Wind
+        if (tMax >= 15 && niederschlag < 1 && wind < 30) return {status:'gut', label:'🐝 Gutes Flugwetter', color:'#10b981'};
+        if (tMax >= 12 && niederschlag < 5 && wind < 40) return {status:'ok', label:'🐝 Bedingt Flugwetter', color:'#f59e0b'};
+        return {status:'schlecht', label:'❌ Kein Flugwetter', color:'#ef4444'};
+    },
+    
+    render(){
+        try {
+        if (this.error === 'nostandort') return '<div class="card" style="border-left:4px solid #7A6652">'+
+            '<h2 style="margin:0 0 .5rem">🌤️ Wetter</h2>'+
+            '<div style="color:#7A6652;font-size:.85rem">Lege einen Standort mit GPS-Position an, um Wetterdaten zu sehen.</div></div>';
+        if (this.loading && !this.daten) return '<div class="card"><h2 style="margin:0 0 .5rem">🌤️ Wetter</h2><div style="color:#7A6652">Laden...</div></div>';
+        if (this.error === 'fetch') return '<div class="card"><h2 style="margin:0 0 .5rem">🌤️ Wetter</h2><div style="color:#ef4444;font-size:.85rem">Wetterdaten konnten nicht geladen werden.</div></div>';
+        if (!this.daten) return '';
+        
+        var d = this.daten;
+        var c = d.current;
+        var daily = d.daily;
+        var standortName = d._standortName || 'Standort';
+        var self = this;
+        
+        // Aktuelles Wetter
+        var jetztFlug = this.bienenFlugWetter(c.temperature_2m, 0, c.wind_speed_10m);
+        
+        var html = '<div class="card" style="border-left:4px solid #0ea5e9">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">'+
+            '<h2 style="margin:0">🌤️ Wetter</h2>'+
+            '<span style="font-size:.75rem;color:#7A6652;cursor:pointer" onclick="wetterMod.ortAendern()" title="Ort ändern">📍 '+standortName+' ✏️</span>'+
+            '</div>'+
+            
+            // Aktuell
+            '<div style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);padding:1rem;border-radius:.75rem;margin-bottom:1rem">'+
+            '<div style="font-size:2.5rem">'+this.wetterIcon(c.weather_code)+'</div>'+
+            '<div style="flex:1">'+
+            '<div style="font-size:1.5rem;font-weight:700">'+Math.round(c.temperature_2m)+'°C</div>'+
+            '<div style="font-size:.8rem;color:#7A6652">'+this.wetterText(c.weather_code)+' · 💨 '+Math.round(c.wind_speed_10m)+' km/h · 💧 '+c.relative_humidity_2m+'%</div>'+
+            '</div>'+
+            '<div style="text-align:right;font-size:.8rem;font-weight:600;color:'+jetztFlug.color+'">'+jetztFlug.label+'</div>'+
+            '</div>'+
+            
+            // 14-Tage Vorschau
+            '<div style="overflow-x:auto;margin:0 -.25rem">'+
+            '<div style="display:flex;gap:.5rem;padding:.25rem">';
+        
+        for (var i=0; i<daily.time.length; i++) {
+            var datum = new Date(daily.time[i]);
+            var tag = datum.toLocaleDateString('de-DE',{weekday:'short'});
+            var tagNum = datum.getDate()+'.'+(datum.getMonth()+1)+'.';
+            var tMax = Math.round(daily.temperature_2m_max[i]);
+            var tMin = Math.round(daily.temperature_2m_min[i]);
+            var niederschlag = daily.precipitation_sum[i];
+            var wind = daily.wind_speed_10m_max[i];
+            var code = daily.weather_code[i];
+            var flug = this.bienenFlugWetter(tMax, niederschlag, wind);
+            var isHeute = i === 0;
+            
+            html += '<div style="min-width:72px;text-align:center;padding:.5rem .375rem;border-radius:.5rem;'+
+                'background:'+(isHeute?'#dbeafe':'#FFF8EE')+';border:1px solid '+(isHeute?'#93c5fd':'#E8DFD4')+
+                ';flex-shrink:0">'+
+                '<div style="font-size:.7rem;font-weight:600;color:'+(isHeute?'#2563eb':'#7A6652')+'">'+
+                (isHeute?'Heute':tag)+'</div>'+
+                '<div style="font-size:.65rem;color:#A69580">'+tagNum+'</div>'+
+                '<div style="font-size:1.25rem;margin:.25rem 0">'+this.wetterIcon(code)+'</div>'+
+                '<div style="font-size:.8rem;font-weight:700">'+tMax+'°</div>'+
+                '<div style="font-size:.7rem;color:#A69580">'+tMin+'°</div>'+
+                (niederschlag > 0 ? '<div style="font-size:.65rem;color:#3b82f6;margin-top:.125rem">💧'+niederschlag.toFixed(1)+'</div>' : '')+
+                '<div style="width:8px;height:8px;border-radius:50%;background:'+flug.color+';margin:.25rem auto 0" title="'+flug.label+'"></div>'+
+                '</div>';
+        }
+        
+        html += '</div></div>'+
+            '<div style="display:flex;align-items:center;gap:.75rem;margin-top:.75rem;font-size:.7rem;color:#A69580">'+
+            '<span>🟢 Flugwetter</span><span>🟡 Bedingt</span><span>🔴 Kein Flug</span>'+
+            '</div>'+
+            '</div>';
+        
+        return html;
+        } catch(e) { console.error('Wetter render Fehler:', e); return ''; }
+    }
+};
+
+const packlisteMod = {
+    items: [],
+    schnellCounter: {},
+    init() { this.items = []; },
+    async erstelleNeueItems() {
+        var PACK = {'Schutzkleidung':['Imkeranzug / Imkerjacke','Imkerhandschuhe','Imkerhut mit Schleier','Feste Schuhe / Stiefel'],'Werkzeuge':['Stockmeißel','Smoker (Raucher)','Abkehrbesen','Wabenzange','Entdeckelungsgabel','Stockkarte & Stift','Messer / Entdeckelungsmesser'],'Rauchmaterial':['Holzspäne / Holzpellets','Heu / Stroh','Karton / Eierkarton','Anzünder','Feuerzeug / Streichhölzer'],'Futter':['Futterteig (Apifonda)','Zuckerwasser','Futtertaschen','Futterzarge'],'Behandlung':['Ameisensäure','Oxalsäure','Puderzucker (für Diagnose)','Diagnosebrett / Windel','Schutzhandschuhe für Säure','Dosierer / Verdampfer'],'Material':['Rähmchen','Mittelwände','Absperrgitter','Fluglochkeil','Mäusegitter','Draht zum Einlöten'],'Ernte':['Honigschleuder','Entdeckelungsgeschirr','Sieb (doppelt)','Honigeimer / Hobbock','Honigrefraktometer','Gläser & Deckel','Etiketten'],'Beuten & Zargen':['Boden / Bodenbrett','Brutraum(zarge)','Honigraum(zarge)','Absperrgitter','Innendeckel','Außendeckel / Blechdeckel'],'Sonstiges':['Erste-Hilfe-Set','Wasser / Getränk','Transportbox / Kiste','Müllsack','Desinfektionsmittel','Handy / Kamera']};
+        this.items = [];
+        Object.entries(PACK).forEach(function(e){ var k=e[0]; e[1].forEach(function(n){ packlisteMod.items.push({id:'pack_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),kategorie:k,name:n,checked:false,istSchnell:false}); }); });
+        this.speichern();
+    },
+    speichern() {
+        if (!currentUser) return;
+        var rows = this.items.map(function(i){ return {id:i.id,user_id:currentUser.id,kategorie:i.kategorie,name:i.name,checked:i.checked||false,menge:i.menge||1,ist_schnell:i.istSchnell||false,schnell_typ:i.schnellTyp||null}; });
+        if (rows.length > 0) sb.from('packliste').upsert(rows);
+    },
+    toggle(id) {
+        var item = this.items.find(function(i){return i.id===id;});
+        if (item) {
+            item.checked = !item.checked;
+            var row = {id:item.id, user_id:currentUser.id, kategorie:item.kategorie, name:item.name, checked:item.checked, menge:item.menge||1, ist_schnell:item.istSchnell||false, schnell_typ:item.schnellTyp||null};
+            sb.from('packliste').upsert(row).select().then(function(res){
+                if(res.error) console.error('Packliste Toggle Fehler:', res.error);
+                else console.log('Packliste Toggle OK:', item.name, '→', item.checked);
+            });
+            app.render();
+        }
+    },
+    getStatistik() { var a=this.items.filter(function(i){return i.checked;}).length; return {abgehakt:a,offen:this.items.length-a,gesamt:this.items.length}; }
+};
+
+// ============================================
+// MODUL: TRACHTKALENDER (Mini-Helfer für Heute-Seite + Export)
+// Vollständige Verwaltung → tracht.html
+// ============================================
+const trachtkalenderMod = {
+    trachten: [],
+    ausgeblendete: [],
+    kalenderOffen: false,
+    init() { this.trachten = []; this.ausgeblendete = []; },
+    formatDatum(ts) { if (!ts) return '-'; return new Date(ts).toLocaleDateString('de-DE'); }
+};
+
+
+// ============================================
+// MODUL: ZUCHTPLAN (nur Daten-Helfer für Heute-Seite)
+// Volle Zuchtplan-Verwaltung ist in zuchtplan.html
+// ============================================
+const zuchtplanMod = {
+    plaene: [],
+    
+    formatDatum(ts) { return new Date(ts).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}); },
+    
+    getPhase(plan) {
+        if (plan.zusetzen_done) return 'Abgeschlossen';
+        if (plan.umlarven_done) return 'Nach Umlarven';
+        if (plan.sammelbrut_done) return 'Sammelbrut läuft';
+        var j = Date.now();
+        if (j < plan.sammelbrut) return 'Geplant';
+        return 'Fällig';
+    },
+    
+    getTageVerbleibend(d) { var t = Math.ceil((d - Date.now())/(1000*60*60*24)); if (t<0) return null; if (t===0) return 'Heute!'; if (t===1) return 'Morgen'; return 'In '+t+' Tagen'; }
+};
+
+// ============================================
+// MODUL: BEHANDLUNGEN
+// ============================================
+// ============================================
+// MODUL: BEHANDLUNGEN (Mini-Helfer für Heute-Seite)
+// Vollständige Verwaltung → behandlung.html
+// ============================================
+const METHODEN = {
+    'ameisensaeure60':{name:'Ameisensäure 60%',emoji:'🧪',farbe:'#ef4444'},
+    'ameisensaeure85':{name:'Ameisensäure 85%',emoji:'🧪',farbe:'#dc2626'},
+    'oxalsaeure':{name:'Oxalsäure',emoji:'💧',farbe:'#3b82f6'},
+    'oxalstreifen':{name:'Oxalsäure-Streifen',emoji:'📋',farbe:'#60a5fa'},
+    'milchsaeure':{name:'Milchsäure',emoji:'🥛',farbe:'#f59e0b'},
+    'thymol':{name:'Thymol',emoji:'🌿',farbe:'#10b981'},
+    'brutentnahme':{name:'Totale Brutentnahme',emoji:'🍯',farbe:'#8b5cf6'},
+    'andere':{name:'Andere Methode',emoji:'✏️',farbe:'#7A6652'}
+};
+const behandlungMod = {
+    behandlungen: [],
+    init() { this.behandlungen = []; },
+    formatDatum(ts) { return new Date(ts).toLocaleDateString('de-DE'); },
+    getTerminStatus(termin) {
+        var diff = termin - Date.now();
+        var tage = Math.ceil(diff/(1000*60*60*24));
+        if (tage < 0) return {status:'completed',label:'Erledigt'};
+        if (tage === 0) return {status:'active',label:'Heute!'};
+        if (tage === 1) return {status:'upcoming',label:'Morgen'};
+        return {status:'upcoming',label:'In '+tage+' Tagen'};
+    }
+};
+
+
+packlisteMod.init();
+trachtkalenderMod.init();
+// zuchtplanMod: Daten werden via Supabase in loadData geladen (Zeile ~1037)
+behandlungMod.init();
+
+
+// ============================================
+// APP STARTUP - Check auth state
+// ============================================
+(async function() {
+    // Check if this is a password recovery link
+    var hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+        // Supabase wird den Token automatisch verarbeiten
+        // onAuthStateChange feuert PASSWORD_RECOVERY
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('authScreen').style.display = 'block';
+        document.querySelector('.nav').style.display = 'none';
+        document.querySelector('.footer').style.display = 'none';
+        showAuthTab('reset');
+        return;
+    }
+    
+    // Check if user is already logged in
+    var session = await sb.auth.getSession();
+    if (session.data.session) {
+        currentUser = session.data.session.user;
+        await startApp();
+    } else {
+        // Show auth screen
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('authScreen').style.display = 'block';
+        document.querySelector('.nav').style.display = 'none';
+        document.querySelector('.footer').style.display = 'none';
+    }
+    
+    // Listen for auth changes
+    sb.auth.onAuthStateChange(function(event, session) {
+        if (event === 'PASSWORD_RECOVERY') {
+            // User hat auf den Reset-Link geklickt
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('authScreen').style.display = 'block';
+            document.querySelector('.nav').style.display = 'none';
+            document.querySelector('.footer').style.display = 'none';
+            showAuthTab('reset');
+        }
+        if (event === 'SIGNED_OUT') {
+            currentUser = null;
+            document.getElementById('authScreen').style.display = 'block';
+            document.querySelector('.nav').style.display = 'none';
+            document.getElementById('app').innerHTML = '';
+        }
+    });
+})();
+
+</script>
+
+<!-- Wetter-Standort Modal -->
+<div id="wetterOrtModal" class="modal modal-center">
+    <div class="modal-content" style="max-width:600px;height:auto;max-height:90vh;border-radius:1rem;margin:auto;overflow-y:auto">
+        <div class="modal-header">
+            <h2>🌤️ Wetter-Standort wählen</h2>
+            <button class="close-btn" onclick="document.getElementById('wetterOrtModal').classList.remove('active')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">📍 Aus deinen Standorten wählen</label>
+                <div id="wetterStandortListe"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🔍 Oder Ort suchen</label>
+                <div style="display:flex;gap:.5rem">
+                    <input type="text" id="wetterOrtSuche" class="input" placeholder="z.B. Karlsruhe, München..." style="flex:1">
+                    <button class="btn btn-primary" onclick="wetterMod.ortSuchen()">Suchen</button>
+                </div>
+                <div id="wetterSuchErgebnis" style="margin-top:.5rem"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🗺️ Oder auf der Karte klicken</label>
+                <div id="wetterKarte" style="height:250px;border-radius:.75rem;border:2px solid #E8DFD4"></div>
+                <div id="wetterKarteInfo" style="font-size:.8rem;color:#7A6652;margin-top:.5rem"></div>
+            </div>
+        </div>
     </div>
-    <div class="footer-bottom">
-      <p>&copy; 2026 BienenPlan. Mit 🍯 gemacht in Deutschland.</p>
-      <a href="mailto:info@imkershop-durchdenwald.de">info@imkershop-durchdenwald.de</a>
-    </div>
-  </div>
-</footer>
+</div>
 
 <script>
-// Recovery-Link erkennen und zu app.html weiterleiten
-if (window.location.hash && window.location.hash.includes('type=recovery')) {
-    window.location.href = 'app.html' + window.location.hash;
-}
-// Auch Login-Tokens weiterleiten
-if (window.location.hash && window.location.hash.includes('access_token')) {
-    window.location.href = 'app.html' + window.location.hash;
-}
+// === TOGGLE UI: Event Delegation (fängt ALLE Klicks auf data-toggle-ui ab) ===
+document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-toggle-ui]');
+    if (el) {
+        var key = el.getAttribute('data-toggle-ui');
+        console.log('[EVENT] Klick auf data-toggle-ui:', key);
+        app.toggleUI(key);
+    }
+});
 
-// Reveal on scroll
-var rvs=document.querySelectorAll('.rv');
-var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)e.target.classList.add('vis')})},{threshold:.08,rootMargin:'0px 0px -40px 0px'});
-rvs.forEach(function(el){obs.observe(el)});
+// === MOBILE MENU ===
+// Mobile Navigation → nav.js (mobileMenuOpen, mobileMenuClose, data-mpage, data-mmpage)
 
-// Nav shrink
-window.addEventListener('scroll',function(){document.getElementById('topnav').classList.toggle('stick',window.scrollY>40)});
+// === SWIPE NAVIGATION (Mobile) ===
+(function(){
+    var swipePages = ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'];
+    var touchStartX = 0;
+    var touchStartY = 0;
+    var touchEndX = 0;
+    var touchEndY = 0;
+    var minSwipe = 80;
 
-// Smooth scroll
-document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+    document.addEventListener('touchstart', function(e){
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    }, {passive:true});
 
-// Mobile nav
-function closeMobile(){var m=document.getElementById('mobileNav');if(m)m.style.display='none'}
-document.querySelector('.menu-btn').addEventListener('click',function(){var m=document.getElementById('mobileNav');m.style.display=m.style.display==='flex'?'none':'flex'});
+    document.addEventListener('touchend', function(e){
+        touchEndX = e.changedTouches[0].screenX;
+        touchEndY = e.changedTouches[0].screenY;
+        var diffX = touchEndX - touchStartX;
+        var diffY = Math.abs(touchEndY - touchStartY);
+        if (Math.abs(diffX) < minSwipe || diffY > Math.abs(diffX)) return;
+        if (document.querySelector('.modal.active')) return;
+        if (document.getElementById('mobileMenuOverlay').classList.contains('active')) return;
+        
+        var current = app.page;
+        var idx = swipePages.indexOf(current);
+        if (idx === -1) return;
+        
+        var newIdx;
+        if (diffX < 0) { newIdx = idx + 1; } else { newIdx = idx - 1; }
+        if (newIdx < 0 || newIdx >= swipePages.length) return;
+        
+        document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
+        var btn = document.querySelector('.nav .nav-item[href="index.html#'+swipePages[newIdx]+'"]');
+        if (btn) btn.classList.add('active');
+        app.page = swipePages[newIdx];
+        app.render();
+        updateMobileNav(swipePages[newIdx]);
+    }, {passive:true});
+})();
 </script>
+
 </body>
 </html>
