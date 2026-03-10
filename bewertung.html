@@ -66,6 +66,10 @@
         .sp-footer{display:flex;gap:.5rem;padding:1rem 1.25rem;border-top:2px solid rgba(245,166,35,0.12);background:#FFFBF0}
         .sp-footer .btn{flex:1}
         .sp-hint{font-size:.75rem;color:#94a3b8;text-align:center;margin-top:.5rem;line-height:1.4}
+        .sp-dictate-area{width:100%;min-height:80px;border:2px dashed rgba(245,166,35,0.3);border-radius:.75rem;padding:.75rem;font-size:.95rem;font-family:inherit;resize:vertical;background:#FFFBF0;color:#1C1410;margin:.75rem 0}
+        .sp-dictate-area:focus{border-color:#F5A623;outline:none}
+        .sp-dictate-btn{width:100%;padding:.625rem;border:none;border-radius:.5rem;background:linear-gradient(135deg,#F5A623,#E8960C);color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:.5rem}
+        .sp-dictate-btn:active{transform:scale(.98)}
 
         @media(max-width:768px){
             #speechPanel{width:100%;top:0}
@@ -106,12 +110,11 @@
             <div class="sp-volk-placeholder">🎤 Sage ein Volk: <em>"Volk 1"</em></div>
         </div>
         <div id="spKriterien"></div>
-        <div id="spTranscript" class="sp-transcript">
-            <span style="color:#94a3b8">Warte auf Sprache...</span>
-        </div>
+        <!-- Wird je nach Browser befüllt: Web Speech API oder Diktier-Fallback -->
+        <div id="spInputArea"></div>
         <div class="sp-hint">
             💡 "Volk 1, Sanftmut 4, Wabensitz gut, kein Schwarmtrieb..."<br>
-            "Ableger von Volk 1" · "Notiz: sehr ruhig heute" · "Speichern" · "Fertig"
+            "Ableger von Volk 1" · "Notiz: sehr ruhig heute"
         </div>
         <div id="spLog" class="sp-log"></div>
     </div>
@@ -745,6 +748,8 @@ SPECIAL_PHRASES.sort(function(a, b) { return b[0].length - a[0].length; });
 var ZAHLWOERTER = {eins:1,zwei:2,drei:3,vier:4,fünf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,
     ein:1,erste:1,zweite:2,dritte:3,vierte:4,fünfte:5};
 
+var useFallback = false; // true = Safari/iOS Diktier-Modus
+
 function toggleSpeech() {
     if (speechActive) {
         stopSpeech();
@@ -755,53 +760,7 @@ function toggleSpeech() {
 
 function startSpeech() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        alert('Spracheingabe wird von deinem Browser nicht unterstützt. Bitte Chrome oder Edge verwenden.');
-        return;
-    }
-
-    recognition = new SpeechRecognition();
-    recognition.lang = 'de-DE';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-
-    recognition.onresult = function(event) {
-        var interim = '';
-        for (var i = event.resultIndex; i < event.results.length; i++) {
-            var text = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                processSpeechResult(text);
-            } else {
-                interim = text;
-            }
-        }
-        // Live-Anzeige
-        var el = document.getElementById('spTranscript');
-        if (interim) {
-            el.innerHTML = '<span class="interim">🎤 ' + interim + '</span>';
-        }
-    };
-
-    recognition.onerror = function(event) {
-        if (event.error === 'no-speech') return; // Normal, ignorieren
-        if (event.error === 'aborted') return;
-        addSprachLog('⚠️ Fehler: ' + event.error);
-    };
-
-    recognition.onend = function() {
-        // Automatisch neustarten wenn noch aktiv (Mobile bricht oft ab)
-        if (speechActive) {
-            try { recognition.start(); } catch(e) {}
-        }
-    };
-
-    try {
-        recognition.start();
-    } catch(e) {
-        alert('Mikrofon konnte nicht gestartet werden: ' + e.message);
-        return;
-    }
+    useFallback = !SpeechRecognition;
 
     speechActive = true;
     currentSprachVolk = null;
@@ -809,8 +768,70 @@ function startSpeech() {
     sprachLogEntries = [];
     document.getElementById('speechFab').classList.add('active');
     document.getElementById('speechPanel').classList.add('active');
+
+    if (useFallback) {
+        // Safari/iOS: Diktier-Textfeld anzeigen
+        document.getElementById('spInputArea').innerHTML =
+            '<textarea id="spDictateBox" class="sp-dictate-area" placeholder="Hier tippen oder 🎤 Diktiertaste auf der Tastatur nutzen...\n\nBeispiel: Volk 1, Sanftmut 4, Wabensitz gut, kein Schwarmtrieb" rows="4"></textarea>' +
+            '<button class="sp-dictate-btn" onclick="parseDictation()">✨ Auswerten</button>';
+        addSprachLog('📱 Safari-Modus: Nutze die 🎤 Diktiertaste auf deiner Tastatur');
+        // Textfeld fokussieren damit Tastatur aufgeht
+        setTimeout(function() {
+            var box = document.getElementById('spDictateBox');
+            if (box) box.focus();
+        }, 400);
+    } else {
+        // Chrome/Edge: Web Speech API
+        document.getElementById('spInputArea').innerHTML =
+            '<div id="spTranscript" class="sp-transcript"><span style="color:#94a3b8">🎤 Warte auf Sprache...</span></div>';
+
+        recognition = new SpeechRecognition();
+        recognition.lang = 'de-DE';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = function(event) {
+            var interim = '';
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                var text = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    processSpeechResult(text);
+                } else {
+                    interim = text;
+                }
+            }
+            var el = document.getElementById('spTranscript');
+            if (el && interim) {
+                el.innerHTML = '<span class="interim">🎤 ' + interim + '</span>';
+            }
+        };
+
+        recognition.onerror = function(event) {
+            if (event.error === 'no-speech') return;
+            if (event.error === 'aborted') return;
+            addSprachLog('⚠️ Fehler: ' + event.error);
+        };
+
+        recognition.onend = function() {
+            if (speechActive) {
+                try { recognition.start(); } catch(e) {}
+            }
+        };
+
+        try {
+            recognition.start();
+        } catch(e) {
+            alert('Mikrofon konnte nicht gestartet werden: ' + e.message);
+            speechActive = false;
+            document.getElementById('speechFab').classList.remove('active');
+            document.getElementById('speechPanel').classList.remove('active');
+            return;
+        }
+        addSprachLog('🎤 Sprachmodus gestartet');
+    }
+
     updateSpeechPanel();
-    addSprachLog('🎤 Sprachmodus gestartet');
 }
 
 function stopSpeech() {
@@ -821,19 +842,42 @@ function stopSpeech() {
     }
     document.getElementById('speechFab').classList.remove('active');
     document.getElementById('speechPanel').classList.remove('active');
-    // Letzte Bewertung speichern falls vorhanden
     if (currentSprachVolk) {
         autoSaveSprachBewertung();
     }
     render();
 }
 
+// Safari-Fallback: Diktiertes Textfeld auswerten
+function parseDictation() {
+    var box = document.getElementById('spDictateBox');
+    if (!box || !box.value.trim()) {
+        addSprachLog('⚠️ Kein Text zum Auswerten');
+        updateSpeechPanel();
+        return;
+    }
+    // Text in Sätze/Segmente aufteilen und nacheinander verarbeiten
+    var text = box.value.trim();
+    var segments = text.split(/[.,;\n]+/);
+    segments.forEach(function(seg) {
+        seg = seg.trim();
+        if (seg) processSpeechResult(seg);
+    });
+    // Textfeld leeren für nächste Eingabe
+    box.value = '';
+    box.placeholder = 'Weiterdiktieren oder nächstes Volk...';
+    box.focus();
+    addSprachLog('✨ Text ausgewertet');
+    updateSpeechPanel();
+}
+
 function processSpeechResult(text) {
     var lower = text.toLowerCase().trim();
     if (!lower) return;
 
-    // Transcript anzeigen
-    document.getElementById('spTranscript').innerHTML = '💬 <em>"' + text.trim() + '"</em>';
+    // Transcript anzeigen (nur im Web Speech Modus)
+    var spTr = document.getElementById('spTranscript');
+    if (spTr) spTr.innerHTML = '💬 <em>"' + text.trim() + '"</em>';
 
     // Voice-Commands
     if (lower.match(/^(stopp|stop|fertig|beenden)$/)) {
