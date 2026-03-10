@@ -1,0 +1,1 @@
+﻿Error: Failed to run sql query: ERROR: 42601: syntax error at or near "id" LINE 6: id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES auth.users(id), ^

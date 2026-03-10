@@ -9,7 +9,16 @@
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="shared-styles.css">
 <link rel="stylesheet" href="zucht/zucht-styles.css">
-<style>body{padding-left:220px;padding-bottom:2rem}</style>
+<style>body{padding-left:220px;padding-bottom:2rem}
+/* === NAV === */
+.nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+.nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+.nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+.nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+.nav-item:hover{background:rgba(245,166,35,0.06)}
+.nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+@media(max-width:768px){body{padding-left:0;padding-bottom:68px}.nav{display:none}.mobile-nav{display:flex}}
+</style>
 </head>
 <body>
 <nav class="nav" id="mainNav"></nav>
