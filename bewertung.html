@@ -386,15 +386,24 @@ async function init() {
     document.getElementById('loadingOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'block';
 
-    // URL-Parameter: direkt zum Volk-Profil springen
+    // URL-Parameter: direkt zum Volk springen und Stockkarte aufklappen
     var urlParams = new URLSearchParams(window.location.search);
     var volkParam = urlParams.get('volk');
     if (volkParam) {
         var gefunden = voelker.find(function(v){ return v.id === volkParam; });
         if (gefunden) {
-            selectedStammbaumVolk = volkParam;
             activeTab = 'standorte';
-            suchBegriff = gefunden.name;
+            openVolkDetail = volkParam;
+            // Standort aufklappen falls eingeklappt
+            var stId = gefunden.standortId;
+            if (collapsedStandorte.indexOf(stId) > -1) {
+                collapsedStandorte.splice(collapsedStandorte.indexOf(stId), 1);
+            }
+            // Nach Render zum Volk scrollen
+            setTimeout(function() {
+                var el = document.querySelector('.volk-detail');
+                if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+            }, 300);
         }
     }
 
