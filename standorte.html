@@ -6,21 +6,21 @@
     <title>📍 Standorte – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="/fonts/fonts.css">
+    <link rel="stylesheet" href="fonts/fonts.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:2rem}
-        /* === NAV === */
+        .container{max-width:900px;margin:0 auto;padding:1rem}
+
         .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
         .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
         .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
         .nav-item:hover{background:rgba(245,166,35,0.06)}
         .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
-        .container{max-width:900px;margin:0 auto;padding:1rem}
 
         .volk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
         .volk-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;cursor:pointer;transition:all .2s}
@@ -51,27 +51,23 @@
         .badge-green{background:#E8F5EC;color:#2D8A4E}
         .badge-blue{background:#EEF2FF;color:#3B82F6}
 
-        .volk-card.ableger{border-color:#A7F3D0;background:#F0FFF4}
-        .volk-card.ableger:hover{border-color:#34D399;box-shadow:0 4px 12px rgba(16,185,129,.2)}
-
-        /* Toast kommt aus shared-styles.css */
+        .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1C1410;color:#fff;padding:.75rem 1.5rem;border-radius:999px;font-size:.85rem;z-index:9999;display:none;animation:fadeIn .3s}
+        .toast.show{display:block}
+        .toast.success{background:#2D8A4E}
+        .toast.error{background:#DC2626}
+        .toast.info{background:#3B82F6}
+        @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
         .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
         .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}
 
-        /* GTS Styles */
-        .standort-gts-row{display:flex;align-items:center;gap:.75rem;margin-top:.75rem;padding:.75rem;background:#FFFBF0;border-radius:.5rem;border:1.5px solid #E8DFD4}
-        .standort-gts-value{font-weight:700;font-size:1.1rem;min-width:75px}
-        .standort-gts-bar-bg{background:#E8DFD4;border-radius:999px;height:.5rem;overflow:hidden}
-        .standort-gts-bar-fill{height:100%;border-radius:999px;transition:width .8s ease}
-        .standort-gts-next{font-size:.75rem;color:#7A6652;margin-top:.35rem}
-        .standort-gts-status{font-size:.7rem;color:#A69580}
-
         @media(max-width:768px){
             body{padding-left:0;padding-bottom:90px}
-            .nav{display:none}
-            .mobile-nav{display:flex}
+            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
+            .nav-brand,.nav-section{display:none}
+            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
+            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
             .volk-grid{grid-template-columns:1fr}
             .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
             .option-grid{grid-template-columns:repeat(2,1fr)}
@@ -153,16 +149,6 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Typ</label>
-                <div class="option-grid" id="volkTypGrid">
-                    <button class="option-btn selected" onclick="setVolkTyp('volk',this)">🐝 Volk</button>
-                    <button class="option-btn" onclick="setVolkTyp('ableger',this)">🌱 Ableger</button>
-                </div>
-                <div id="volkHochstufenWrap" style="display:none;margin-top:.5rem">
-                    <button onclick="hochstufenZuVolk()" style="width:100%;padding:.5rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.85rem">⬆️ Zu Volk hochstufen</button>
-                </div>
-            </div>
-            <div class="form-group">
                 <label class="form-label">Status</label>
                 <div class="option-grid" id="volkStatusGrid">
                     <button class="option-btn selected" onclick="setVolkStatus('ok',this)">✅ Gut</button>
@@ -200,7 +186,6 @@ var selectedStandortId = null;
 var editStandortId = null;
 var editVolkId = null;
 var selectedVolkStatus = 'ok';
-var selectedVolkTyp = 'volk';
 var voelkerCount = 2;
 
 // ============================================
@@ -221,10 +206,21 @@ async function init() {
         return { id: r.id, name: r.name, notizen: r.notizen, mapsLink: r.maps_link, lat: r.lat, lng: r.lng, created: r.created_at };
     });
     voelker = (results[1].data || []).map(function(r) {
-        return { id: r.id, standortId: r.standort_id, name: r.name, beutensystem: r.beutensystem, status: r.status, typ: r.typ||'volk', notizen: r.notizen, honigertrag: parseFloat(r.honigertrag)||0, created: r.created_at };
+        return { id: r.id, standortId: r.standort_id, name: r.name, beutensystem: r.beutensystem, status: r.status, notizen: r.notizen, honigertrag: parseFloat(r.honigertrag)||0, created: r.created_at };
     });
 
     document.getElementById('loadingScreen').style.display = 'none';
+
+    // Deeplink: ?standort=ID&volk=ID
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('standort')) {
+        selectedStandortId = params.get('standort');
+        if (params.get('volk')) {
+            // Nach Render das Volk-Modal öffnen
+            setTimeout(function() { openVolkModal(params.get('volk')); }, 300);
+        }
+    }
+
     render();
 }
 
@@ -240,136 +236,6 @@ function toast(msg, type) {
     el.className = 'toast ' + type + ' show';
     clearTimeout(window._toastTimer);
     window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
-}
-
-// ============================================
-// GTS MODULE
-// ============================================
-var GTS_SCHWELLEN = {
-    'Schneeglöckchen':50,'Haselnuss':80,'Erle':90,'Huflattich':100,'Krokus':100,
-    'Weide':130,'Kornelkirsche':130,'Schlehe':150,'Pflaume':190,
-    'Kirsche':200,'Löwenzahn':200,'Obstblüte':200,'Birne':210,'Apfel':220,
-    'Raps':250,'Flieder':280,'Rosskastanie':280,'Weißdorn':300,
-    'Himbeere':320,'Akazie (Robinie)':350,'Klee (Weiß)':350,
-    'Brombeere':400,'Klee (Rot)':400,'Fichte (Honigtau)':400,'Kornblume':400,
-    'Eiche (Honigtau)':420,'Phacelia':450,'Edelkastanie':450,
-    'Linde (Sommer)':500,'Lavendel':500,'Goldrute':500,
-    'Springkraut (Indisches)':550,'Linde (Winter)':550,'Sonnenblume':550,
-    'Heide':700,'Herbstastern':700,'Efeu':900
-};
-
-var gtsCache = {};
-
-function berechneGTS(temperaturen) {
-    // temperaturen = Array von {date:'YYYY-MM-DD', temp: number}
-    var summe = 0;
-    temperaturen.forEach(function(t) {
-        if (t.temp <= 0) return;
-        var monat = parseInt(t.date.split('-')[1]);
-        var faktor = monat === 1 ? 0.5 : (monat === 2 ? 0.75 : 1.0);
-        summe += t.temp * faktor;
-    });
-    return Math.round(summe * 10) / 10;
-}
-
-async function ladeGTS(lat, lng) {
-    var key = lat.toFixed(2) + '_' + lng.toFixed(2);
-    var heute = new Date().toISOString().split('T')[0];
-    var cacheKey = 'gts_' + key + '_' + heute;
-
-    // localStorage Cache prüfen (1x pro Tag)
-    try {
-        var cached = localStorage.getItem(cacheKey);
-        if (cached) return JSON.parse(cached);
-    } catch(e) {}
-
-    var jahr = new Date().getFullYear();
-    var startDate = jahr + '-01-01';
-    // Gestern als Enddatum (heutige Daten evtl. noch nicht komplett)
-    var gestern = new Date(Date.now() - 86400000);
-    var endDate = gestern.toISOString().split('T')[0];
-
-    try {
-        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng +
-            '&daily=temperature_2m_mean&start_date=' + startDate + '&end_date=' + endDate + '&timezone=Europe/Berlin';
-        var resp = await fetch(url);
-        if (!resp.ok) throw new Error('API Fehler');
-        var data = await resp.json();
-        if (!data.daily || !data.daily.time) throw new Error('Keine Daten');
-
-        var temperaturen = data.daily.time.map(function(d, i) {
-            return { date: d, temp: data.daily.temperature_2m_mean[i] };
-        });
-
-        var gts = berechneGTS(temperaturen);
-        var result = { gts: gts, datum: heute, lat: lat, lng: lng };
-
-        try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e) {}
-        gtsCache[key] = result;
-        return result;
-    } catch(e) {
-        console.warn('GTS Laden fehlgeschlagen:', e);
-        return null;
-    }
-}
-
-function getGtsColor(gts) {
-    if (gts < 100) return '#EF4444';
-    if (gts < 200) return '#F59E0B';
-    return '#10B981';
-}
-
-function getGtsStatus(gts) {
-    if (gts < 100) return { text: 'Winter / Vorfrühling', emoji: '❄️' };
-    if (gts < 200) return { text: 'Frühling beginnt', emoji: '🌱' };
-    if (gts < 350) return { text: 'Vegetation aktiv', emoji: '🌿' };
-    if (gts < 500) return { text: 'Vollfrühling/Sommer', emoji: '☀️' };
-    return { text: 'Hochsommer', emoji: '🌻' };
-}
-
-function getNextTracht(gts) {
-    var sorted = Object.entries(GTS_SCHWELLEN).sort(function(a,b){ return a[1]-b[1]; });
-    for (var i = 0; i < sorted.length; i++) {
-        if (sorted[i][1] > gts) {
-            return { name: sorted[i][0], gts: sorted[i][1], diff: Math.round(sorted[i][1] - gts) };
-        }
-    }
-    return null;
-}
-
-function renderGtsZeile(gts) {
-    var color = getGtsColor(gts);
-    var status = getGtsStatus(gts);
-    var next = getNextTracht(gts);
-    var pct = Math.min(100, (gts / 600) * 100);
-
-    var html = '<div class="standort-gts-row">' +
-        '<div>' +
-        '<div class="standort-gts-value" style="color:' + color + '">🌡️ ' + Math.round(gts) + '°C</div>' +
-        '<div class="standort-gts-status">' + status.emoji + ' ' + status.text + '</div>' +
-        '</div>' +
-        '<div style="flex:1">' +
-        '<div class="standort-gts-bar-bg"><div class="standort-gts-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>';
-
-    if (next) {
-        html += '<div class="standort-gts-next">Nächste Tracht: ' + next.name + ' (ab ~' + next.gts + '°C – noch ' + next.diff + '°C)</div>';
-    } else {
-        html += '<div class="standort-gts-next" style="color:#059669">✅ Alle Haupttrachten erreichbar</div>';
-    }
-    html += '</div></div>';
-    return html;
-}
-
-async function ladeAlleGTS() {
-    var promises = standorte.filter(function(s){ return s.lat && s.lng; }).map(function(s) {
-        return ladeGTS(s.lat, s.lng).then(function(result) {
-            if (result) {
-                var el = document.getElementById('gts_' + s.id);
-                if (el) el.innerHTML = renderGtsZeile(result.gts);
-            }
-        });
-    });
-    await Promise.all(promises);
 }
 function openModal(id) {
     // Leaflet-Container erzeugen hohe z-index Werte - diese beim Modal unterdrücken
@@ -481,9 +347,9 @@ function saveStandort() {
 
             if (diff > 0) {
                 for (var i = 0; i < diff; i++) {
-                    var nv = { id: 'v' + uid(), standortId: editStandortId, name: 'Volk ' + (aktuelleVoelker.length + i + 1), beutensystem: 'Dadant', status: 'ok', typ: 'volk', notizen: '', honigertrag: 0, created: Date.now() };
+                    var nv = { id: 'v' + uid(), standortId: editStandortId, name: 'Volk ' + (aktuelleVoelker.length + i + 1), beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
                     voelker.push(nv);
-                    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, typ:nv.typ, notizen:'', honigertrag:0, created_at:nv.created});
+                    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
                 }
             } else if (diff < 0) {
                 var zuLoeschen = aktuelleVoelker.slice(diff);
@@ -501,9 +367,9 @@ function saveStandort() {
         db.upsert('standorte', {id:standortId, user_id:currentUser.id, name:name, notizen:notizen, maps_link:'', lat:lat, lng:lng, created_at:Date.now()});
 
         for (var i = 1; i <= voelkerCount; i++) {
-            var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + i, beutensystem: 'Dadant', status: 'ok', typ: 'volk', notizen: '', honigertrag: 0, created: Date.now() };
+            var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + i, beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
             voelker.push(nv);
-            db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, typ:nv.typ, notizen:'', honigertrag:0, created_at:nv.created});
+            db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
         }
     }
 
@@ -531,18 +397,10 @@ function openVolkModal(id) {
     if (!v) return;
     editVolkId = id;
     selectedVolkStatus = v.status || 'ok';
-    selectedVolkTyp = v.typ || 'volk';
-    var typEmoji = selectedVolkTyp === 'ableger' ? '🌱' : '🐝';
-    document.getElementById('volkModalTitle').textContent = typEmoji + ' ' + v.name;
+    document.getElementById('volkModalTitle').textContent = '🐝 ' + v.name;
     document.getElementById('volkName').value = v.name;
     document.getElementById('volkBeute').value = v.beutensystem || 'Dadant';
     document.getElementById('volkNotizen').value = v.notizen || '';
-
-    // Typ-Buttons setzen
-    document.querySelectorAll('#volkTypGrid .option-btn').forEach(function(btn){ btn.classList.remove('selected'); });
-    var typBtns = document.querySelectorAll('#volkTypGrid .option-btn');
-    if (selectedVolkTyp === 'ableger') { typBtns[1].classList.add('selected'); } else { typBtns[0].classList.add('selected'); }
-    document.getElementById('volkHochstufenWrap').style.display = selectedVolkTyp === 'ableger' ? 'block' : 'none';
 
     document.getElementById('volkHonigInfo').textContent = 'Lade...';
     sb.from('ernten').select('menge').eq('user_id', currentUser.id).eq('volk_id', id).then(function(res){
@@ -566,22 +424,6 @@ function setVolkStatus(status, btn) {
     if (btn) btn.classList.add('selected');
 }
 
-function setVolkTyp(typ, btn) {
-    selectedVolkTyp = typ;
-    document.querySelectorAll('#volkTypGrid .option-btn').forEach(function(b){ b.classList.remove('selected'); });
-    if (btn) btn.classList.add('selected');
-    document.getElementById('volkHochstufenWrap').style.display = typ === 'ableger' ? 'block' : 'none';
-}
-
-function hochstufenZuVolk() {
-    selectedVolkTyp = 'volk';
-    document.querySelectorAll('#volkTypGrid .option-btn').forEach(function(b){ b.classList.remove('selected'); });
-    var typBtns = document.querySelectorAll('#volkTypGrid .option-btn');
-    typBtns[0].classList.add('selected');
-    document.getElementById('volkHochstufenWrap').style.display = 'none';
-    toast('⬆️ Typ auf Volk gesetzt – bitte speichern!', 'info');
-}
-
 function saveVolk() {
     if (!editVolkId) return;
     var v = voelker.find(function(x){return x.id === editVolkId;});
@@ -589,9 +431,8 @@ function saveVolk() {
     v.name = document.getElementById('volkName').value.trim();
     v.beutensystem = document.getElementById('volkBeute').value;
     v.status = selectedVolkStatus;
-    v.typ = selectedVolkTyp;
     v.notizen = document.getElementById('volkNotizen').value.trim();
-    db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, typ:v.typ, notizen:v.notizen}, v.id);
+    db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, notizen:v.notizen}, v.id);
     closeModal('volkModal');
     render();
     toast('✓ Volk aktualisiert!', 'success');
@@ -637,18 +478,8 @@ function renderList() {
             '<button onclick="event.stopPropagation();delStandort(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem">🗑️</button>'+
             '</div></div>'+
             (s.lat && s.lng ? '<div id="minimap_'+s.id+'" style="height:150px;border-radius:.75rem;border:2px solid #E8DFD4;margin-bottom:.5rem;overflow:hidden" onclick="event.stopPropagation()"></div>' : '')+
-            // GTS Zeile (wird async nachgeladen)
-            (s.lat && s.lng ? '<div id="gts_'+s.id+'"><div class="standort-gts-row" style="opacity:.5"><div class="standort-gts-value" style="color:#A69580">🌡️ ...</div><div style="flex:1"><div class="standort-gts-bar-bg"><div class="standort-gts-bar-fill" style="width:0%"></div></div><div class="standort-gts-next">GTS wird geladen...</div></div></div></div>'
-            : '<div style="margin-top:.5rem;padding:.5rem .75rem;background:#FFF8EE;border-radius:.35rem;font-size:.75rem;color:#A69580">🌡️ GTS: Position setzen für Berechnung</div>')+
             '<div style="background:#FFF8EE;padding:.75rem;border-radius:.5rem;margin-top:.5rem">'+
-            '<div style="font-weight:600;margin-bottom:.25rem">' + (function(){
-                var nVoelker = sVoelker.filter(function(v){return (v.typ||'volk')==='volk';}).length;
-                var nAbleger = sVoelker.filter(function(v){return v.typ==='ableger';}).length;
-                var parts = [];
-                if (nVoelker) parts.push('🐝 ' + nVoelker + ' Völker');
-                if (nAbleger) parts.push('🌱 ' + nAbleger + ' Ableger');
-                return parts.length ? parts.join(', ') : '🐝 0 Völker';
-            })() + '</div>'+
+            '<div style="font-weight:600;margin-bottom:.25rem">🐝 '+sVoelker.length+' Völker</div>'+
             '<div style="font-size:.8rem;color:#7A6652">Klicken für Details</div>'+
             '</div></div>';
         });
@@ -663,7 +494,6 @@ function renderList() {
     html += '</div>';
     document.getElementById('app').innerHTML = html;
     initMiniMaps();
-    ladeAlleGTS();
 }
 
 function renderDetails() {
@@ -685,19 +515,13 @@ function renderDetails() {
     '<button onclick="openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️ Bearbeiten</button>'+
     '</div></div>'+
 
+    renderSchwarmPrognose(s, sVoelker)+
+
     '<div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 1rem">'+
-    '<h2 style="margin:0">' + (function(){
-        var nV = sVoelker.filter(function(v){return (v.typ||'volk')==='volk';}).length;
-        var nA = sVoelker.filter(function(v){return v.typ==='ableger';}).length;
-        var parts = [];
-        if (nV) parts.push('🐝 ' + nV + ' Völker');
-        if (nA) parts.push('🌱 ' + nA + ' Ableger');
-        return parts.length ? parts.join(', ') : '🐝 Völker (0)';
-    })() + '</h2>'+
+    '<h2 style="margin:0">🐝 Völker ('+sVoelker.length+')</h2>'+
     '<div style="display:flex;gap:.5rem">'+
     '<button onclick="quickRemoveVolk(\''+s.id+'\')" style="padding:.3rem .6rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">− Volk</button>'+
-    '<button onclick="quickAddVolk(\''+s.id+'\',\'volk\')" style="padding:.3rem .6rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">🐝 + Volk</button>'+
-    '<button onclick="quickAddVolk(\''+s.id+'\',\'ableger\')" style="padding:.3rem .6rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">🌱 + Ableger</button>'+
+    '<button onclick="quickAddVolk(\''+s.id+'\')" style="padding:.3rem .6rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.35rem;cursor:pointer;font-size:.75rem;font-weight:600">+ Volk</button>'+
     '</div></div>'+
 
     '<div class="volk-grid">';
@@ -705,11 +529,9 @@ function renderDetails() {
     sVoelker.forEach(function(v){
         var sc = statusColors[v.status] || statusColors.ok;
         var sl = statusLabels[v.status] || statusLabels.ok;
-        var istAbleger = v.typ === 'ableger';
-        var typBadge = istAbleger ? '<span style="font-size:.7rem;background:#E8F5EC;color:#059669;padding:.1rem .4rem;border-radius:999px;margin-left:.35rem">🌱 Ableger</span>' : '';
-        html += '<div class="volk-card'+(istAbleger ? ' ableger' : '')+'" onclick="openVolkModal(\''+v.id+'\')">'+
+        html += '<div class="volk-card" onclick="openVolkModal(\''+v.id+'\')">'+
         '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
-        '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+v.name+typBadge+'</h3>'+
+        '<h3 style="margin:0;font-size:.95rem">'+v.name+'</h3>'+
         '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div></div>'+
         '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.25rem">'+v.beutensystem+'</div>'+
         '<div style="font-size:.75rem;margin-bottom:.5rem">'+sl+'</div>'+
@@ -723,16 +545,13 @@ function renderDetails() {
     document.getElementById('app').innerHTML = html;
 }
 
-function quickAddVolk(standortId, typ) {
-    typ = typ || 'volk';
+function quickAddVolk(standortId) {
     var sVoelker = voelker.filter(function(v){return v.standortId === standortId;});
-    var label = typ === 'ableger' ? 'Ableger' : 'Volk';
-    var sameTyp = sVoelker.filter(function(v){return (v.typ||'volk') === typ;});
-    var nv = { id: 'v' + uid(), standortId: standortId, name: label + ' ' + (sameTyp.length + 1), beutensystem: 'Dadant', status: 'ok', typ: typ, notizen: '', honigertrag: 0, created: Date.now() };
+    var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + (sVoelker.length + 1), beutensystem: 'Dadant', status: 'ok', notizen: '', honigertrag: 0, created: Date.now() };
     voelker.push(nv);
-    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, typ:nv.typ, notizen:'', honigertrag:0, created_at:nv.created});
+    db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, notizen:'', honigertrag:0, created_at:nv.created});
     render();
-    toast('✓ ' + label + ' hinzugefügt', 'success');
+    toast('✓ Volk hinzugefügt', 'success');
 }
 
 function quickRemoveVolk(standortId) {
@@ -744,6 +563,92 @@ function quickRemoveVolk(standortId) {
     db.del('voelker', last.id);
     render();
     toast('🗑️ Volk entfernt', 'info');
+}
+
+// ============================================
+// SCHWARMTRIEB-PROGNOSE
+// ============================================
+function renderSchwarmPrognose(standort, sVoelker) {
+    var monat = new Date().getMonth() + 1; // 1-12
+    var tag = new Date().getDate();
+
+    // Basis-Schwarmwahrscheinlichkeit nach Monat (Mitteleuropa)
+    var monatsRisiko = {
+        1: 0, 2: 0, 3: 5, 4: 25, 5: 70, 6: 60, 7: 30, 8: 10, 9: 5, 10: 0, 11: 0, 12: 0
+    };
+    var basisRisiko = monatsRisiko[monat] || 0;
+
+    // Feinabstufung innerhalb des Monats
+    if (monat === 4 && tag > 15) basisRisiko += 15;
+    if (monat === 5 && tag < 15) basisRisiko += 10;
+    if (monat === 5 && tag >= 15) basisRisiko -= 5;
+
+    // Modifikatoren basierend auf Völker-Status
+    var starkeVoelker = sVoelker.filter(function(v) { return v.status === 'ok'; }).length;
+    var total = sVoelker.length || 1;
+    var staerkeFaktor = starkeVoelker / total; // 0-1, mehr starke = höheres Risiko
+
+    // Risiko berechnen (0-100)
+    var risiko = Math.round(basisRisiko * (0.6 + staerkeFaktor * 0.6));
+    risiko = Math.max(0, Math.min(100, risiko));
+
+    // Nächste Schwarmzeit berechnen
+    var schwarmStart = '';
+    var schwarmInfo = '';
+    if (monat < 4) {
+        schwarmStart = 'April';
+        schwarmInfo = 'Schwarmzeit beginnt voraussichtlich im April. Jetzt Schwarmvorbeuge planen.';
+    } else if (monat >= 4 && monat <= 6) {
+        schwarmInfo = 'Wir sind mitten in der Schwarmzeit! Regelmäßige Schwarmkontrolle alle 7-9 Tage empfohlen.';
+    } else if (monat === 7) {
+        schwarmInfo = 'Schwarmzeit klingt ab. Einzelne Nachschwärme möglich.';
+    } else {
+        schwarmStart = 'nächstes Jahr April';
+        schwarmInfo = 'Schwarmzeit ist vorbei. Nächste Saison ab April.';
+    }
+
+    // Kontrollintervall-Empfehlung
+    var intervall = '';
+    if (risiko >= 60) intervall = 'Alle 7 Tage kontrollieren!';
+    else if (risiko >= 30) intervall = 'Alle 9 Tage kontrollieren';
+    else if (risiko >= 10) intervall = 'Alle 14 Tage kontrollieren';
+    else intervall = 'Keine Schwarmkontrolle nötig';
+
+    // Farben
+    var farbe, hintergrund, borderFarbe, emoji, stufe;
+    if (risiko >= 60) {
+        farbe = '#DC2626'; hintergrund = '#FEF2F2'; borderFarbe = '#FECACA'; emoji = '🔴'; stufe = 'Hoch';
+    } else if (risiko >= 30) {
+        farbe = '#D97706'; hintergrund = '#FFFBEB'; borderFarbe = '#FDE68A'; emoji = '🟡'; stufe = 'Mittel';
+    } else if (risiko >= 10) {
+        farbe = '#2563EB'; hintergrund = '#EFF6FF'; borderFarbe = '#BFDBFE'; emoji = '🔵'; stufe = 'Niedrig';
+    } else {
+        farbe = '#10b981'; hintergrund = '#F0FDF4'; borderFarbe = '#BBF7D0'; emoji = '🟢'; stufe = 'Minimal';
+    }
+
+    // Balken
+    var balkenBreite = Math.max(5, risiko);
+
+    var html = '<div style="background:'+hintergrund+';border:2px solid '+borderFarbe+';border-radius:.75rem;padding:1rem 1.25rem;margin:1rem 0">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">';
+    html += '<div style="font-weight:700;font-size:.95rem">🌪️ Schwarmtrieb-Prognose</div>';
+    html += '<div style="display:flex;align-items:center;gap:.375rem"><span>'+emoji+'</span><span style="font-weight:700;color:'+farbe+'">'+stufe+' ('+risiko+'%)</span></div>';
+    html += '</div>';
+
+    // Balken
+    html += '<div style="background:rgba(0,0,0,.08);height:8px;border-radius:4px;margin-bottom:.75rem;overflow:hidden">';
+    html += '<div style="height:100%;width:'+balkenBreite+'%;background:'+farbe+';border-radius:4px;transition:width .5s"></div>';
+    html += '</div>';
+
+    // Info
+    html += '<div style="font-size:.82rem;color:#7A6652;margin-bottom:.5rem">'+schwarmInfo+'</div>';
+    html += '<div style="display:flex;gap:.75rem;flex-wrap:wrap">';
+    html += '<div style="background:#fff;padding:.4rem .75rem;border-radius:.5rem;font-size:.78rem;font-weight:600">⏱️ '+intervall+'</div>';
+    html += '<div style="background:#fff;padding:.4rem .75rem;border-radius:.5rem;font-size:.78rem">💪 '+starkeVoelker+'/'+total+' Völker stark</div>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
 }
 
 function showDetails(id) {

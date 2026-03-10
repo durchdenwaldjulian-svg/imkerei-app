@@ -280,7 +280,7 @@ function renderBewerten() {
             
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid #FFFBF0">';
             html += '<div>';
-            html += '<div style="font-weight:600">🐝 '+v.name+'</div>';
+            html += '<div style="font-weight:600"><a href="standorte.html?standort='+v.standortId+'&volk='+v.id+'" style="color:inherit;text-decoration:none;border-bottom:1px dashed #E8DFD4">🐝 '+v.name+'</a></div>';
             if (letzte) {
                 var datum = new Date(letzte.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
                 html += '<div style="font-size:.75rem;color:#7A6652">Letzte: '+datum+' · '+renderMiniStars(schnitt)+'</div>';
@@ -758,9 +758,15 @@ function toggleSpeech() {
     }
 }
 
+function isSafari() {
+    var ua = navigator.userAgent;
+    return /Safari/.test(ua) && !/Chrome/.test(ua) && !/Chromium/.test(ua) && !/CriOS/.test(ua) && !/EdgA/.test(ua) && !/Edg/.test(ua);
+}
+
 function startSpeech() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    useFallback = !SpeechRecognition;
+    // Safari meldet SpeechRecognition als vorhanden, aber es funktioniert nicht zuverlässig
+    useFallback = !SpeechRecognition || isSafari();
 
     speechActive = true;
     currentSprachVolk = null;
@@ -770,12 +776,18 @@ function startSpeech() {
     document.getElementById('speechPanel').classList.add('active');
 
     if (useFallback) {
-        // Safari/iOS: Diktier-Textfeld anzeigen
+        // Safari/iOS/Firefox: Diktier-Textfeld mit iOS-Tastatur-Diktierfunktion
         document.getElementById('spInputArea').innerHTML =
+            '<div style="background:#FFF8EE;border:2px solid rgba(245,166,35,0.2);border-radius:.75rem;padding:.75rem;margin-bottom:.75rem">' +
+            '<div style="font-weight:600;font-size:.9rem;margin-bottom:.5rem">📱 So geht\'s:</div>' +
+            '<div style="font-size:.8rem;color:#7A6652;line-height:1.5">' +
+            '1. Tippe ins Textfeld unten<br>' +
+            '2. Drücke die <strong>🎤 Taste</strong> auf deiner Tastatur<br>' +
+            '3. Sprich deine Bewertung<br>' +
+            '4. Drücke <strong>"✨ Auswerten"</strong></div></div>' +
             '<textarea id="spDictateBox" class="sp-dictate-area" placeholder="Hier tippen oder 🎤 Diktiertaste auf der Tastatur nutzen...\n\nBeispiel: Volk 1, Sanftmut 4, Wabensitz gut, kein Schwarmtrieb" rows="4"></textarea>' +
             '<button class="sp-dictate-btn" onclick="parseDictation()">✨ Auswerten</button>';
-        addSprachLog('📱 Safari-Modus: Nutze die 🎤 Diktiertaste auf deiner Tastatur');
-        // Textfeld fokussieren damit Tastatur aufgeht
+        addSprachLog('📱 Diktier-Modus: Nutze die 🎤 Taste auf deiner Tastatur');
         setTimeout(function() {
             var box = document.getElementById('spDictateBox');
             if (box) box.focus();
