@@ -581,11 +581,16 @@ function getActivityStatus(lastLogin, userId) {
         return { cls:'online', label:'🟢 Online', badge:'badge-green' };
     }
     if (!lastLogin) return { cls:'inactive', label:'Nie eingeloggt', badge:'badge-gray' };
-    var diff = Date.now() - new Date(lastLogin).getTime();
-    var hours = diff / 3600000;
-    var days = hours / 24;
-    if (hours < 24) return { cls:'today', label:'Heute aktiv', badge:'badge-green' };
-    if (days < 2) return { cls:'yesterday', label:'Gestern', badge:'badge-yellow' };
+    var loginDate = new Date(lastLogin);
+    var heute = new Date();
+    var gestern = new Date();
+    gestern.setDate(gestern.getDate() - 1);
+    var istHeute = loginDate.getFullYear() === heute.getFullYear() && loginDate.getMonth() === heute.getMonth() && loginDate.getDate() === heute.getDate();
+    var istGestern = loginDate.getFullYear() === gestern.getFullYear() && loginDate.getMonth() === gestern.getMonth() && loginDate.getDate() === gestern.getDate();
+    var diff = Date.now() - loginDate.getTime();
+    var days = diff / 86400000;
+    if (istHeute) return { cls:'today', label:'Heute aktiv', badge:'badge-green' };
+    if (istGestern) return { cls:'yesterday', label:'Gestern', badge:'badge-yellow' };
     if (days < 7) return { cls:'week', label:'Diese Woche', badge:'badge-yellow' };
     if (days < 30) return { cls:'inactive', label:Math.floor(days)+' T. inaktiv', badge:'badge-gray' };
     return { cls:'inactive', label:'Inaktiv >30T', badge:'badge-red' };
