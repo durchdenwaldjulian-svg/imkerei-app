@@ -115,6 +115,15 @@
                 <div class="info-box">Die Völker werden automatisch erstellt</div>
             </div>
             <div class="form-group">
+                <label class="form-label">Anzahl Ableger</label>
+                <div class="counter">
+                    <button class="counter-btn" onclick="changeAblegerCount(-1)">−</button>
+                    <div class="counter-value" id="standortAblegerCount">0</div>
+                    <button class="counter-btn" onclick="changeAblegerCount(1)">+</button>
+                </div>
+                <div class="info-box">Ableger werden als eigene Einheiten erstellt</div>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Notizen (optional)</label>
                 <textarea id="standortNotizen" class="input" placeholder="z.B. Südseite, geschützter Bereich"></textarea>
             </div>
@@ -202,6 +211,7 @@ var editVolkId = null;
 var selectedVolkStatus = 'ok';
 var selectedVolkTyp = 'volk';
 var voelkerCount = 2;
+var ablegerCount = 0;
 
 // ============================================
 // INIT
@@ -431,6 +441,10 @@ function changeVoelkerCount(delta) {
     voelkerCount = Math.max(0, voelkerCount + delta);
     document.getElementById('standortVoelkerCount').textContent = voelkerCount;
 }
+function changeAblegerCount(delta) {
+    ablegerCount = Math.max(0, ablegerCount + delta);
+    document.getElementById('standortAblegerCount').textContent = ablegerCount;
+}
 
 function openStandortModal(id) {
     if (id) {
@@ -442,6 +456,9 @@ function openStandortModal(id) {
             var vAnzahl = voelker.filter(function(v){return v.standortId === id;}).length;
             voelkerCount = vAnzahl;
             document.getElementById('standortVoelkerCount').textContent = vAnzahl;
+            var aAnzahl = voelker.filter(function(v){return v.standortId === id && v.typ === 'ableger';}).length;
+            ablegerCount = aAnzahl;
+            document.getElementById('standortAblegerCount').textContent = aAnzahl;
             document.getElementById('standortNotizen').value = s.notizen || '';
             document.getElementById('standortLat').value = s.lat || '';
             document.getElementById('standortLng').value = s.lng || '';
@@ -449,9 +466,11 @@ function openStandortModal(id) {
     } else {
         editStandortId = null;
         voelkerCount = 2;
+        ablegerCount = 0;
         document.getElementById('standortModalTitle').textContent = '📍 Neuer Standort';
         document.getElementById('standortName').value = '';
         document.getElementById('standortVoelkerCount').textContent = '2';
+        document.getElementById('standortAblegerCount').textContent = '0';
         document.getElementById('standortNotizen').value = '';
         document.getElementById('standortLat').value = '';
         document.getElementById('standortLng').value = '';
@@ -475,7 +494,7 @@ function saveStandort() {
             planManager.showLimitReached('standorte');
             return;
         }
-        if (!planManager.checkLimit('voelker', voelker.length + voelkerCount)) {
+        if (!planManager.checkLimit('voelker', voelker.length + voelkerCount + ablegerCount)) {
             planManager.showLimitReached('voelker');
             return;
         }
@@ -514,6 +533,11 @@ function saveStandort() {
             var nv = { id: 'v' + uid(), standortId: standortId, name: 'Volk ' + i, beutensystem: 'Dadant', status: 'ok', typ: 'volk', notizen: '', honigertrag: 0, created: Date.now() };
             voelker.push(nv);
             db.upsert('voelker', {id:nv.id, user_id:currentUser.id, standort_id:nv.standortId, name:nv.name, beutensystem:nv.beutensystem, status:nv.status, typ:nv.typ, notizen:'', honigertrag:0, created_at:nv.created});
+        }
+        for (var j = 1; j <= ablegerCount; j++) {
+            var na = { id: 'v' + uid(), standortId: standortId, name: 'Ableger ' + j, beutensystem: 'Dadant', status: 'ok', typ: 'ableger', notizen: '', honigertrag: 0, created: Date.now() };
+            voelker.push(na);
+            db.upsert('voelker', {id:na.id, user_id:currentUser.id, standort_id:na.standortId, name:na.name, beutensystem:na.beutensystem, status:na.status, typ:na.typ, notizen:'', honigertrag:0, created_at:na.created});
         }
     }
 
