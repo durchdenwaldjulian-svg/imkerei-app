@@ -63,8 +63,7 @@
     function buildDesktopNav() {
         var h = '';
         h += '<div class="nav-brand">';
-        h += '<div style="font-size:1.5rem;font-weight:bold;color:#F5A623">🐝</div>';
-        h += '<div style="font-size:.85rem;font-weight:600;color:#1C1410;margin-top:.25rem">Imkerei</div>';
+        h += '<img src="BienenPlanLogo.png" alt="BienenPlan" style="width:140px;height:auto;margin-bottom:.25rem">';
         h += '<div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>';
         h += '</div>';
 
@@ -164,7 +163,7 @@
         ];
 
         var h = '<div class="mobile-menu-box">';
-        h += '<div class="mobile-menu-header"><h2>🐝 Navigation</h2>';
+        h += '<div class="mobile-menu-header"><h2><img src="BienenPlanLogo.png" alt="BienenPlan" style="height:28px;vertical-align:middle;margin-right:.35rem"> Navigation</h2>';
         h += '<button class="mobile-menu-close" onclick="mobileMenuClose()">✕</button></div>';
 
         groups.forEach(function(g) {
