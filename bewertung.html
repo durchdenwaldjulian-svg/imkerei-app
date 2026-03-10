@@ -441,9 +441,8 @@ function render() {
     }
 
     html += '<div class="tab-bar" style="flex-wrap:wrap">';
-    html += '<button class="tab-btn '+(activeTab==='standorte'?'active':'')+'" onclick="switchTab(\'standorte\')">📍 Standorte</button>';
+    html += '<button class="tab-btn '+(activeTab==='standorte'?'active':'')+'" onclick="switchTab(\'standorte\')">🐝 Völker</button>';
     html += '<button class="tab-btn '+(activeTab==='durchsicht'?'active':'')+'" onclick="switchTab(\'durchsicht\')">📋 Durchsicht</button>';
-    html += '<button class="tab-btn '+(activeTab==='bewerten'?'active':'')+'" onclick="switchTab(\'bewerten\')">⭐ Bewertung</button>';
     html += '<button class="tab-btn '+(activeTab==='ranking'?'active':'')+'" onclick="switchTab(\'ranking\')">🏆 Ranking</button>';
     html += '<button class="tab-btn '+(activeTab==='historie'?'active':'')+'" onclick="switchTab(\'historie\')">📜 Historie</button>';
     html += '<button class="tab-btn '+(activeTab==='stammbaum'?'active':'')+'" onclick="switchTab(\'stammbaum\')">🌳 Stammbaum</button>';
@@ -451,7 +450,6 @@ function render() {
 
     if (activeTab === 'standorte') html += renderStandorteTab();
     else if (activeTab === 'durchsicht') html += renderDurchsicht();
-    else if (activeTab === 'bewerten') html += renderBewerten();
     else if (activeTab === 'ranking') html += renderRanking();
     else if (activeTab === 'historie') html += renderHistorie();
     else if (activeTab === 'stammbaum') html += renderStammbaum();
@@ -524,7 +522,7 @@ function renderVolkKarte(v) {
     var volkDs = getDurchsichtenFuerVolk(v.id);
     var letzte = volkDs.length ? volkDs[0] : null;
 
-    var html = '<div class="volk-grid-card" onclick="suchBegriff=\'' + v.name.replace(/'/g,"\\'") + '\';render()" style="cursor:pointer">';
+    var html = '<div class="volk-grid-card" onclick="goToVolk(\'' + v.id + '\')" style="cursor:pointer">';
 
     // Header
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">';
@@ -1004,7 +1002,7 @@ function renderBewerten() {
             html += '<div style="padding:.5rem 0;border-bottom:1px solid #f5f0eb">';
             html += '<div style="display:flex;justify-content:space-between;align-items:center">';
             html += '<div>';
-            html += '<div style="font-weight:600">🐝 ' + v.name + '</div>';
+            html += '<div style="font-weight:600;cursor:pointer;border-bottom:1px dashed #E8DFD4;display:inline-block" onclick="goToVolk(\'' + v.id + '\')">🐝 ' + v.name + '</div>';
             if (schnitt !== null) {
                 html += '<div style="font-size:.75rem;color:#7A6652">' + fmtDate(letzte.datum) + ' · ' + renderMiniStars(schnitt) + ' <span style="font-weight:600">' + schnitt.toFixed(1) + '</span></div>';
             } else {
@@ -1072,7 +1070,7 @@ function renderRanking() {
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.375rem">';
         html += '<div style="display:flex;align-items:center;gap:.5rem">';
         html += '<span style="font-size:1.25rem;width:2rem;text-align:center">' + medal + '</span>';
-        html += '<div><div style="font-weight:600">' + item.volk.name + '</div>';
+        html += '<div><div style="font-weight:600;cursor:pointer;border-bottom:1px dashed #E8DFD4;display:inline-block" onclick="goToVolk(\'' + item.volk.id + '\')">' + item.volk.name + '</div>';
         html += '<div style="font-size:.75rem;color:#7A6652">📍 ' + item.standortName + '</div></div>';
         html += '</div>';
         html += '<div style="font-size:1.25rem;font-weight:bold;color:' + barColor + '">' + item.schnitt.toFixed(1) + '</div>';
@@ -2230,6 +2228,26 @@ function druckeAlleQR(standortId) {
     w.document.write('<\/script>');
     w.document.write('</body></html>');
     w.document.close();
+}
+
+// ============================================
+// VOLK-NAVIGATION (aus jedem Tab zur Stockkarte springen)
+// ============================================
+function goToVolk(volkId) {
+    var v = voelker.find(function(x){return x.id === volkId;});
+    if (!v) return;
+    // Standort aufklappen falls eingeklappt
+    var stId = v.standortId;
+    if (collapsedStandorte.indexOf(stId) > -1) {
+        collapsedStandorte.splice(collapsedStandorte.indexOf(stId), 1);
+    }
+    activeTab = 'standorte';
+    openVolkDetail = volkId;
+    render();
+    setTimeout(function() {
+        var el = document.querySelector('.volk-detail');
+        if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 150);
 }
 
 // ============================================
