@@ -392,13 +392,9 @@ async function init() {
     if (volkParam) {
         var gefunden = voelker.find(function(v){ return v.id === volkParam; });
         if (gefunden) {
-            activeTab = 'standorte';
+            selectedStandortFilter = gefunden.standortId;
+            activeTab = 'durchsicht';
             openVolkDetail = volkParam;
-            // Standort aufklappen falls eingeklappt
-            var stId = gefunden.standortId;
-            if (collapsedStandorte.indexOf(stId) > -1) {
-                collapsedStandorte.splice(collapsedStandorte.indexOf(stId), 1);
-            }
             // Nach Render zum Volk scrollen
             setTimeout(function() {
                 var el = document.querySelector('.volk-detail');
@@ -2236,12 +2232,9 @@ function druckeAlleQR(standortId) {
 function goToVolk(volkId) {
     var v = voelker.find(function(x){return x.id === volkId;});
     if (!v) return;
-    // Standort aufklappen falls eingeklappt
-    var stId = v.standortId;
-    if (collapsedStandorte.indexOf(stId) > -1) {
-        collapsedStandorte.splice(collapsedStandorte.indexOf(stId), 1);
-    }
-    activeTab = 'standorte';
+    // Standort-Filter auf diesen Standort setzen
+    selectedStandortFilter = v.standortId;
+    activeTab = 'durchsicht';
     openVolkDetail = volkId;
     render();
     setTimeout(function() {
