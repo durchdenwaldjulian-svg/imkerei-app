@@ -8,8 +8,8 @@
     <meta name="theme-color" content="#DC2626">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="vendor/leaflet.min.css">
+    <script src="vendor/supabase.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:0;margin:0;overflow:hidden;height:100vh}
@@ -154,7 +154,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="vendor/leaflet.min.js"></script>
 <script src="config.js"></script>
 <script src="plan.js"></script>
 <script src="presence.js"></script>
@@ -192,7 +192,7 @@ window.onload = async function() {
     // Map initialisieren
     map = L.map('map').setView([51.1657, 10.4515], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 18
     }).addTo(map);
     markers = L.layerGroup().addTo(map);
@@ -581,8 +581,8 @@ function initMiniMap() {
     // Expanded-Zustand beibehalten
     if (miniMapExpanded) container.style.height = '450px';
 
-    miniMap = L.map(container, { zoomControl: false, attributionControl: false }).setView([startLat, startLng], startZoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+    miniMap = L.map(container, { zoomControl: false }).setView([startLat, startLng], startZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19 }).addTo(miniMap);
     L.control.zoom({ position: 'topright' }).addTo(miniMap);
 
     // Standort prüfen und Status anzeigen

@@ -8,9 +8,9 @@
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="vendor/supabase.min.js"></script>
+    <link rel="stylesheet" href="vendor/leaflet.min.css" />
+    <script src="vendor/leaflet.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         /* === INDEX.HTML SPECIFIC STYLES === */
@@ -1036,7 +1036,7 @@ const app={
         var startZoom = document.getElementById('trachtLatE').value ? 14 : 6;
         var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
         container._mapInstance = map;
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:19}).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19}).addTo(map);
         var marker = null;
         if (document.getElementById('trachtLatE').value) { marker = L.marker([startLat, startLng]).addTo(map); }
         map.on('click', function(e){
@@ -2148,7 +2148,7 @@ const wetterMod = {
             var startLat = wetterMod.customLat || 49.0;
             var startLng = wetterMod.customLng || 8.4;
             var karte = L.map('wetterKarte').setView([startLat, startLng], 8);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:18}).addTo(karte);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:18}).addTo(karte);
             wetterMod._karte = karte;
             wetterMod._marker = null;
             if (wetterMod.customLat && wetterMod.customLng) {

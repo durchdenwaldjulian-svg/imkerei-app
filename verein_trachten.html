@@ -8,9 +8,9 @@
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="vendor/supabase.min.js"></script>
+    <link rel="stylesheet" href="vendor/leaflet.min.css" />
+    <script src="vendor/leaflet.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:2rem}
@@ -222,7 +222,7 @@
             .filter-bar{gap:.35rem}
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="vendor/emailjs.min.js"></script>
 </head>
 <body>
 
@@ -1005,7 +1005,7 @@ function renderKarte() {
     if (vereinMap) { vereinMap.remove(); vereinMap = null; }
     vereinMap = L.map('vereinMap').setView([49.0069, 8.4037], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OSM', maxZoom: 18
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 18
     }).addTo(vereinMap);
     addMeldungenToMap();
 }
@@ -1127,7 +1127,7 @@ function openMeldungModal() {
         mapContainer.style.visibility = 'visible';
         modalMap = L.map('modalMap').setView([49.0069, 8.4037], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OSM', maxZoom: 18
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 18
         }).addTo(modalMap);
 
         modalMap.on('click', function(e) {

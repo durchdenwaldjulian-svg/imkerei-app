@@ -1,215 +1,49 @@
-﻿Du hast recht. Die nav.js im Überarbeitung-Ordner war eine alte Version mit weniger Einträgen, und ich habe die
-  bearbeitet statt die aktuelle.
-                                                                                                                       Vorschlag: Ich nehme die vollständige nav.js aus imkerei-app-main (die hat alle Einträge inkl. Inzuchtrechner,
-  Upgrade, Abo, Abmelden), passe dort app.html → index.html und standorte.html → voelker.html an, und füge das Logo    ein. Dann kopiere ich sie in den Überarbeitung-Ordner.
-
-  Soll ich das so machen?
-
-> nein ich mache dir ein vorschlag ich lösche hier alles raus und du bekommst die gesamten datein nochmal            
-● Ja, mach das. Dann arbeite ich auf den richtigen Dateien und mache nur die nötigen Änderungen – und bespreche
-  vorher alles mit dir.
-                                                                                                                     > JETZT ARBEITE UND KEINE FEHLER MEHR UND FRAGE MICH WENN DU WAS WISSEN MÖCHTEST                                     
-● Read 2 files (ctrl+o to expand)
-
-● Gut, frische Dateien. Ich sehe jetzt:
-  - index.html ist 38KB – das ist die Landing Page (richtig)
-  - app.html ist 137KB – das ist die App
-  - nav.js ist 18KB – die vollständige Version                                                                         - bewertung.html ist 144KB – das Original
-  - standorte.html ist 47KB – das Original                                                                           
-  Ich lese jetzt die aktuelle nav.js um zu wissen was drin ist, bevor ich etwas ändere.
-
-● Read 1 file (ctrl+o to expand)
-
-● Jetzt sehe ich die vollständige Navigation. Die Änderungen die nötig sind:
-
-  1. Zeile 14: standorte.html → voelker.html
-  2. Zeile 22: bewertung.html (Stockkarte) → voelker.html (oder entfernen, weil Stockkarte jetzt Teil von              voelker.html ist)
-                                                                                                                       Frage an dich: Die Stockkarte (bewertung.html) ist jetzt in voelker.html integriert. Soll ich den
-  Stockkarte-Eintrag aus der Navigation entfernen (weil er jetzt unter "Völker & Standorte" erreichbar ist), oder
-  soll er als separater Link auf voelker.html bleiben?
-
-> mach das was der Profi machen würde                                                                                
-● Ein Profi würde keine zwei Links auf die gleiche Seite setzen. Die Stockkarte ist jetzt ein Tab in voelker.html,
-  also wird der separate Eintrag entfernt. Ich mache jetzt nur diese minimalen Änderungen:
-                                                                                                                     ● Read 1 file (ctrl+o to expand)
-
-● Gut, jetzt sehe ich alles. 4 Änderungen nötig, alle nur standorte.html → voelker.html und bewertung.html entfernen:
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\nav.js)
-  ⎿  Added 1 line, removed 2 lines
-      11      var sections = [                                                                                             12          { title: 'Übersicht', items: [
-      13              { href: 'app.html#heute', icon: '📅', label: 'Heute' },                                              14 -            { href: 'standorte.html', icon: '📍', label: 'Standorte' },
-      14 +            { href: 'voelker.html', icon: '📍', label: 'Völker & Standorte' },
-      15              { href: 'app.html#aufgaben', icon: '📝', label: 'Aufgaben' }
-      16          ]},
-      17          { title: 'Völker', items: [
-     ...
-      19              { href: 'zuchtberater.html', icon: '🧬' , label: 'Zuchtberater' },
-      20              { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzuchtrechner' },
-      21              { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
-      22 -            { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' },
-      22              { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
-      23              { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
-      24          ]},
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\nav.js)
-  ⎿  Added 2 lines, removed 2 lines
-      101          if (isIndex) {                                                                                          102              // Auf app.html: Buttons die app.page steuern
-      103              h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅                  </span>Heute</button>';
-      104 -            h += '<a href="standorte.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>St
-          -andorte</a>';
-      104 +            h += '<a href="voelker.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Völk
-          +er</a>';
-      105              h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="m
-           n-icon">☰</span>Menü</button>';
-      106              h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</sp
-           an>Aufgaben</button>';
-      107              h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️
-           </span>Mehr</button>';
-      108          } else {
-      109              // Auf eigenständigen Seiten: alles als Links
-      110              h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>He
-           ute</a>';
-      111 -            h += '<a href="standorte.html" class="mobile-nav-btn'+(currentFile==='standorte.html'?'
-          - active':'')+'"><span class="mn-icon">📍</span>Standorte</a>';
-      111 +            h += '<a href="voelker.html" class="mobile-nav-btn'+(currentFile==='voelker.html'?' act
-          +ive':'')+'"><span class="mn-icon">📍</span>Völker</a>';
-      112              h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="m
-           n-icon">☰</span>Menü</button>';
-      113              h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span
-           >Aufgaben</a>';
-      114              h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</
-           span>Mehr</a>';
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\nav.js)
-  ⎿  Added 2 lines, removed 3 lines
-      122          var groups = [                                                                                          123              { title: 'Übersicht', items: [
-      124                  { page: 'heute', icon: '📅', label: 'Heute' },                                                  125 -                { href: 'standorte.html', icon: '📍', label: 'Standorte' },
-      125 +                { href: 'voelker.html', icon: '📍', label: 'Völker' },
-      126                  { page: 'aufgaben', icon: '📝', label: 'Aufgaben' }
-      127              ]},
-      128              { title: 'Völker', items: [
-      129                  { href: 'zuchtplan.html', icon: '👑', label: 'Zucht' },
-      130                  { href: 'zuchtberater.html', icon: '🧬' , label: 'Zuchtberater' },
-      131                  { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzucht' },
-      132 -                { href: 'behandlung.html', icon: '💉', label: 'Behandlung' },
-      133 -                { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' }
-      132 +                { href: 'behandlung.html', icon: '💉', label: 'Behandlung' }
-      133              ]},
-      134              { title: 'Tools', items: [
-      135                  { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
-
-● Jetzt app.html, presence.js, sw.js:
-
-● Searched for 1 pattern, read 1 file (ctrl+o to expand)
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\app.html)
-  ⎿  Added 1 line, removed 1 line
-      1023      // === COUNTER ===
-      1024      // === STANDORTE & VÖLKER → standorte.html ===                                                             1025      changeVoelkerCount(){},
-      1026 -    openStandortModal(){ window.location.href='standorte.html'; },                                             1026 +    openStandortModal(){ window.location.href='voelker.html'; },
-      1027      initMapPicker(type){
-      1028          if (type === 'standort') return;
-      1029          var container = document.getElementById('trachtMapPicker');
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\app.html)
-  ⎿  Added 1 line, removed 1 line
-      1050      },                                                                                                         1051      saveStandort(){},
-      1052      delStandort(){},                                                                                           1053 -    openVolkModal(){ window.location.href='standorte.html'; },
-      1053 +    openVolkModal(){ window.location.href='voelker.html'; },
-      1054      setVolkStatus(){},
-      1055      saveVolk(){},
-      1056      deleteVolk(){},
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\app.html)
-  ⎿  Added 1 line, removed 1 line
-      1054      setVolkStatus(){},                                                                                         1055      saveVolk(){},
-      1056      deleteVolk(){},                                                                                            1057 -    showStandortDetails(){ window.location.href='standorte.html'; },
-      1057 +    showStandortDetails(){ window.location.href='voelker.html'; },
-      1058
-      1059      // === AUFGABEN ===
-      1060      selectAufgabeTyp(typ){
-
-● Read 1 file (ctrl+o to expand)
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\app.html)
-  ⎿  Added 2 lines, removed 2 lines
-      1698      },
-      1699                                                                                                                 1700      rStandorte(){
-      1701 -        window.location.href = 'standorte.html';                                                               1701 +        window.location.href = 'voelker.html';
-      1702          return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...<
-            /p></div>';
-      1703      },
-      1704      rStandortDetails(){
-      1705 -        window.location.href = 'standorte.html';
-      1705 +        window.location.href = 'voelker.html';
-      1706          return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...<
-            /p></div>';
-      1707      },
-      1708
-
-● Jetzt presence.js und sw.js:
-
-● Read 1 file (ctrl+o to expand)
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\presence.js)
-  ⎿  Added 1 line, removed 2 lines
-      25              // Seitenname hübsch formatieren
-      26              var seitenNamen = {                                                                                  27                  'app.html': 'Heute',
-      28 -                'standorte.html': 'Standorte',                                                                   28 +                'voelker.html': 'Völker & Standorte',
-      29                  'behandlung.html': 'Behandlungen',
-      30                  'tracht.html': 'Tracht',
-      31                  'packliste.html': 'Packliste',
-      32                  'zuchtplan.html': 'Königinnenzucht',
-      33 -                'bewertung.html': 'Bewertung',
-      33                  'ernte.html': 'Honigernte',
-      34                  'assistent.html': 'Assistent',
-      35                  'bestandsbuch.html': 'Bestandsbuch',
-
-● Read 1 file (ctrl+o to expand)
-
-● Update(E:\ProjektBienenPlan\Überarbeitung Bienenplan\sw.js)
-  ⎿  Added 1 line, removed 1 line
-       5  const APP_SHELL = [
-       6    './',                                                                                                           7    './app.html',
-       8 -  './bewertung.html',                                                                                             8 +  './voelker.html',
-       9    './ernte.html',
-      10    './assistent.html',
-      11    './bestandsbuch.html',
-
-● Jetzt die neuen Modul-Dateien und Redirects erstellen. Ich muss die voelker.html und die 8 JS-Module nochmal neu
-  erstellen, weil die beim Aufräumen gelöscht wurden:
-                                                                                                                     ● Searched for 1 pattern (ctrl+o to expand)
-
-● Ja, die sind alle weg. Ich muss die 9 neuen Dateien + 2 Redirects neu erstellen. Die Originale liegen noch in
-  imkerei-app-main/ von meiner früheren Arbeit. Allerdings waren die auf Basis der alten imkerei-app-main-Dateien
-  erstellt – die bewertung.html und standorte.html hier sind andere Versionen.
-                                                                                                                       Frage: Soll ich die Module aus der aktuellen bewertung.html (144KB) und standorte.html (47KB) in diesem Ordner neu
-  extrahieren? Oder sind die inhaltlich gleich wie die in imkerei-app-main?                                          
-✻ Brewed for 2m 5s
-
-> mach sie neu                                                                                                       
-● 6 Explore agents finished (ctrl+o to expand)
-   ├─ Read bewertung.html part 1 · 1 tool use · 7.9k tokens
-   │  ⎿  Done
-   ├─ Read bewertung.html part 2 · 1 tool use · 7.9k tokens
-   │  ⎿  Done
-   ├─ Read bewertung.html part 3 · 1 tool use · 7.9k tokens
-   │  ⎿  Done
-   ├─ Read bewertung.html part 4 · 2 tool uses · 19.7k tokens
-   │  ⎿  Done
-   ├─ Read bewertung.html part 5 · 1 tool use · 7.9k tokens
-   │  ⎿  Done
-   └─ Read standorte.html full · 7 tool uses · 14.0k tokens
-      ⎿  Done
-  ⎿  Context limit reached · /compact or /clear to continue
-
-✻ Crunched for 4m 0s
-                                                                                                                     > was muss ich mahen?                                                                                                  ⎿  Context limit reached · /compact or /clear to continue
-
-> /compact                                                                                                             ⎿  Error: Error during compaction: Error: Conversation too long. Press esc twice to go up a few messages and try
-     again.
-
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-> 
-─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  ⏵⏵ accept edits on (shift+tab to cycle)
+﻿ich möchte den bienenplan.de jetzt scharf schalten aber folgendes gilt es noch umzusetzen. You are a senior EU web compliance engineer.
+Audit and modify this Progressive Web App so it becomes legally compliant with German and EU law (GDPR / TTDSG / DDG).
+Project type: Static HTML + JavaScript PWA.
+Detected external services:
+Supabase backend Stripe payment processing EmailJS email service Open-Meteo weather API OpenStreetMap / Nominatim geocoding Cloudflare CDN libraries Google Fonts
+Tasks:
+1. REMOVE GOOGLE FONTS
+Replace any fonts loaded from:
+fonts.googleapis.com
+with locally hosted font files.
+1. SELF HOST LIBRARIES
+Replace CDN imports with local files for:
+leaflet jspdf jspdf-autotable qrcodejs
+Store them inside:
+/vendor/
+and load locally.
+1. COOKIE CONSENT SYSTEM
+Create a lightweight cookie consent system.
+Requirements:
+show banner on first visit store decision in localStorage block external APIs until consent
+Banner text (German):
+"Diese Web-App verwendet technisch notwendige Cookies sowie externe Dienste für Karten, Wetterdaten und Zahlungsabwicklung. Weitere Informationen finden Sie in der Datenschutzerklärung."
+Buttons:
+Akzeptieren Ablehnen Einstellungen
+Store result:
+localStorage.cookieConsent = accepted | rejected
+1. PRIVACY POLICY UPDATE
+Modify datenschutz.html and add sections for:
+Supabase backend processing Stripe payment processing EmailJS email transmission Open-Meteo weather API OpenStreetMap maps and geocoding LocalStorage and sessionStorage Service Worker offline cache
+Legal basis:
+Art. 6 Abs. 1 lit. f DSGVO
+1. MAP ATTRIBUTION
+Ensure every Leaflet map displays:
+© OpenStreetMap contributors
+1. SERVICE WORKER DISCLOSURE
+Add explanation in privacy policy that the app uses:
+service workers offline caching local device storage
+Explain users can remove stored data by clearing browser storage.
+1. SECURITY CHECK
+Check config.js and ensure:
+no secret API keys no supabase service role key only public anon key
+1. PAYMENT DISCLOSURE
+Add a Stripe section explaining that payment data is processed by Stripe and that Stripe is responsible for financial transactions.
+1. IMPRESSUM FIX
+Remove placeholder text about VAT ID if no VAT ID exists.
+1. FOOTER LEGAL LINKS
+Ensure every page footer contains links to:
+Impressum Datenschutz AGB
+Return all modified code snippets and files.

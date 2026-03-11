@@ -38,12 +38,6 @@
         ]}
     ];
 
-    var legalItems = [
-        { href: 'impressum.html', label: 'Impressum' },
-        { href: 'datenschutz.html', label: 'Datenschutz' },
-        { href: 'agb.html', label: 'AGB' }
-    ];
-
     function isActive(href) {
         if (href.indexOf('#') > -1) {
             var file = href.split('#')[0] || 'app.html';
@@ -83,10 +77,11 @@
         h += '<button id="navPortalBtn" onclick="openCustomerPortal()" class="nav-item" style="display:none;font-size:.75rem;padding:.4rem .75rem;color:#8B7355;margin-top:.3rem">Abo verwalten →</button>';
         h += '</div>';
 
-        h += '<div class="nav-section">Rechtliches</div>';
-        legalItems.forEach(function(item) {
-            h += '<a href="' + item.href + '" class="nav-item" style="font-size:.75rem;padding:.4rem 1rem;color:#A69580">' + item.label + '</a>';
-        });
+        h += '<div style="margin-top:auto;padding:1rem;border-top:2px solid rgba(245,166,35,0.12);font-size:.7rem;color:#A69580;display:flex;flex-wrap:wrap;gap:.5rem .75rem">';
+        h += '<a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>';
+        h += '<a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>';
+        h += '<a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>';
+        h += '</div>';
 
         h += '<a href="app.html#einstellungen" class="nav-item' + (isActive('app.html#einstellungen') ? ' active' : '') + '">⚙️ Einstellungen</a>';
         h += '<button class="nav-item" style="color:#ef4444" onclick="if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';">🚪 Abmelden</button>';
@@ -152,11 +147,6 @@
                 { href: 'upgrade.html', icon: '⭐', label: 'Upgrade', id: 'mobileUpgradeBtn' },
                 { special: 'portal', icon: '💳', label: 'Abo verwalten', id: 'mobilePortalBtn' },
                 { special: 'logout', icon: '🚪', label: 'Abmelden' }
-            ]},
-            { title: 'Rechtliches', items: [
-                { href: 'impressum.html', icon: '📄', label: 'Impressum', small: true },
-                { href: 'datenschutz.html', icon: '🔒', label: 'Datenschutz', small: true },
-                { href: 'agb.html', icon: '📋', label: 'AGB', small: true }
             ]}
         ];
 
@@ -189,6 +179,11 @@
             });
             h += '</div>';
         });
+        h += '<div style="padding:.75rem 1rem;border-top:1px solid #E8DFD4;font-size:.7rem;color:#A69580;display:flex;gap:.75rem;justify-content:center">';
+        h += '<a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>';
+        h += '<a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>';
+        h += '<a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>';
+        h += '</div>';
         h += '</div>';
         return h;
     }

@@ -162,7 +162,7 @@ function initMapPicker() {
     var startZoom = document.getElementById('standortLat').value ? 14 : 6;
     var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
     container._mapInstance = map;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM', maxZoom:19}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19}).addTo(map);
     var marker = null;
     if (document.getElementById('standortLat').value) {
         marker = L.marker([startLat, startLng]).addTo(map);
@@ -192,9 +192,9 @@ function initMiniMaps() {
                 try {
                     var map = L.map(el, {
                         zoomControl:false, dragging:false, scrollWheelZoom:false,
-                        doubleClickZoom:false, touchZoom:false, attributionControl:false
+                        doubleClickZoom:false, touchZoom:false
                     }).setView([s.lat, s.lng], 14);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:17}).addTo(map);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:17}).addTo(map);
                     L.marker([s.lat, s.lng]).addTo(map);
                     setTimeout(function(){ map.invalidateSize(); }, 300);
                 } catch(e) { console.warn('Minimap Error:', e); }

@@ -142,6 +142,16 @@
     <p>
         Die App nutzt den localStorage des Browsers, um die Authentifizierungs-Session und UI-Einstellungen zu speichern. Es handelt sich um technisch notwendige Daten, die nicht an Dritte übermittelt werden. Ein Cookie-Banner ist dafür nicht erforderlich, da es sich um technisch notwendige Speicherungen handelt (§ 25 Abs. 2 TDDDG).
     </p>
+    <p>
+        <strong>Service Worker und Offline-Cache:</strong> Die App verwendet einen Service Worker, um Inhalte (HTML, CSS, JavaScript, Bilder) auf deinem Gerät zwischenzuspeichern. Dies ermöglicht eine schnellere Ladezeit und eingeschränkte Offline-Nutzung. Es werden dabei keine personenbezogenen Daten gespeichert – lediglich statische App-Dateien. Du kannst den Cache jederzeit über die Browser-Einstellungen („Websitedaten löschen") entfernen.
+    </p>
+</div>
+
+<div class="legal-card">
+    <h2>12a. Online-Status (Presence)</h2>
+    <p>
+        Wenn du eingeloggt bist, wird dein Online-Status (aktuelle Seite, Anzeigename) über den Supabase Realtime-Dienst an den Server übermittelt. Dies dient der Anzeige aktiver Nutzer für administrative Zwecke. Die Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Betriebsüberwachung). Die Daten werden nicht dauerhaft gespeichert und sind nur während deiner aktiven Sitzung sichtbar.
+    </p>
 </div>
 
 <div class="legal-card">

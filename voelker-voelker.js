@@ -284,7 +284,7 @@ function druckeStockkarte(volkId) {
     var w = window.open('','_blank');
     var h = '';
     h += '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + v.name + '</title>';
-    h += '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>';
+    h += '<script src="vendor/qrcode.min.js"><\/script>';
     h += '<style>';
     h += '*{margin:0;padding:0;box-sizing:border-box}';
     h += 'body{font-family:Arial,sans-serif;padding:1.5rem;color:#1C1410;font-size:.8rem}';
@@ -420,7 +420,7 @@ function druckeAlleQR(standortId) {
 
     var w = window.open('','_blank');
     w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR-Etiketten ' + (s?s.name:'') + '</title>');
-    w.document.write('<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>');
+    w.document.write('<script src="vendor/qrcode.min.js"><\/script>');
     w.document.write('<style>');
     w.document.write('*{margin:0;padding:0;box-sizing:border-box}');
     w.document.write('body{font-family:Arial,sans-serif;padding:1.5rem;color:#1C1410}');

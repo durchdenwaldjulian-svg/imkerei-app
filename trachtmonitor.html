@@ -8,9 +8,9 @@
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="/fonts/fonts.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="vendor/supabase.min.js"></script>
+    <link rel="stylesheet" href="vendor/leaflet.min.css" />
+    <script src="vendor/leaflet.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <style>
         body{padding-left:220px;padding-bottom:0;overflow:hidden}
@@ -207,7 +207,7 @@ function initRadarMap(){
     var mitK=standorte.filter(function(s){return s.lat&&s.lng;});
     if(mitK.length===1){center=[mitK[0].lat,mitK[0].lng];zoom=12;}
     radarMap=L.map('radarMap',{zoomControl:true}).setView(center,zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(radarMap);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19}).addTo(radarMap);
     markersLayer=L.layerGroup().addTo(radarMap);
     if(mitK.length>1){var bounds=L.latLngBounds(mitK.map(function(s){return[s.lat,s.lng];}));trachtquellen.forEach(function(t){if(t.lat&&t.lng)bounds.extend([t.lat,t.lng]);});radarMap.fitBounds(bounds.pad(0.15));}
 }
@@ -274,7 +274,7 @@ function initModalMap(){
 
     var map = L.map(container, {zoomControl:true}).setView([startLat, startLng], startZoom);
     container._mapInstance = map;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19}).addTo(map);
 
     var marker = null;
     map.on('click', function(e){

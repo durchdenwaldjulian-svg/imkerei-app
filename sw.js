@@ -28,11 +28,12 @@ const APP_SHELL = [
   './manifest.json'
 ];
 
-// Externe Ressourcen (Fonts, Libraries)
+// Lokale Vendor-Bibliotheken
 const EXTERNAL_CACHE = [
-  'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
+  'vendor/leaflet.min.css',
+  'vendor/leaflet.min.js',
+  'vendor/supabase.min.js',
+  'vendor/qrcode.min.js'
 ];
 
 // Install: Cache App-Shell
