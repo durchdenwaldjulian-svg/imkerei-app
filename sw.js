@@ -18,6 +18,7 @@ const APP_SHELL = [
   './voelker-durchsicht.js',
   './voelker-koenigin.js',
   './voelker-ranking.js',
+  './voelker-scanner.js',
   './voelker-sprache.js',
   './nav.js',
   './shared-styles.css',

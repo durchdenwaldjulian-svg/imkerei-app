@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
     <link rel="stylesheet" href="voelker.css">
 </head>
@@ -30,6 +31,18 @@
 
 <div id="app" style="display:none"></div>
 <div id="toast" class="toast"></div>
+
+<!-- QR Scanner FAB + Overlay -->
+<button id="scanFab" onclick="openScanner()" title="QR-Code scannen">📷</button>
+<div id="scannerOverlay">
+    <div id="scannerReader"></div>
+    <div id="scannerTopBar">
+        <div style="font-weight:700;font-size:1.1rem">📷 QR-Scanner</div>
+        <button class="scanner-close-btn" onclick="closeScanner()">✕</button>
+    </div>
+    <div class="scanner-hint">Halte die Kamera über den QR-Code am Bienenstock</div>
+    <div id="scannerResult"></div>
+</div>
 
 <!-- Spracheingabe FAB + Panel -->
 <button id="speechFab" onclick="toggleSpeech()" title="Sprachmodus starten">🎤</button>
@@ -184,6 +197,7 @@
 <script src="voelker-durchsicht.js"></script>
 <script src="voelker-koenigin.js"></script>
 <script src="voelker-ranking.js"></script>
+<script src="voelker-scanner.js"></script>
 <script src="voelker-sprache.js"></script>
 </body>
 </html>
