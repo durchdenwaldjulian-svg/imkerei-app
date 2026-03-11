@@ -1,49 +1,275 @@
-﻿ich möchte den bienenplan.de jetzt scharf schalten aber folgendes gilt es noch umzusetzen. You are a senior EU web compliance engineer.
-Audit and modify this Progressive Web App so it becomes legally compliant with German and EU law (GDPR / TTDSG / DDG).
-Project type: Static HTML + JavaScript PWA.
-Detected external services:
-Supabase backend Stripe payment processing EmailJS email service Open-Meteo weather API OpenStreetMap / Nominatim geocoding Cloudflare CDN libraries Google Fonts
-Tasks:
-1. REMOVE GOOGLE FONTS
-Replace any fonts loaded from:
-fonts.googleapis.com
-with locally hosted font files.
-1. SELF HOST LIBRARIES
-Replace CDN imports with local files for:
-leaflet jspdf jspdf-autotable qrcodejs
-Store them inside:
-/vendor/
-and load locally.
-1. COOKIE CONSENT SYSTEM
-Create a lightweight cookie consent system.
-Requirements:
-show banner on first visit store decision in localStorage block external APIs until consent
-Banner text (German):
-"Diese Web-App verwendet technisch notwendige Cookies sowie externe Dienste für Karten, Wetterdaten und Zahlungsabwicklung. Weitere Informationen finden Sie in der Datenschutzerklärung."
-Buttons:
-Akzeptieren Ablehnen Einstellungen
-Store result:
-localStorage.cookieConsent = accepted | rejected
-1. PRIVACY POLICY UPDATE
-Modify datenschutz.html and add sections for:
-Supabase backend processing Stripe payment processing EmailJS email transmission Open-Meteo weather API OpenStreetMap maps and geocoding LocalStorage and sessionStorage Service Worker offline cache
-Legal basis:
-Art. 6 Abs. 1 lit. f DSGVO
-1. MAP ATTRIBUTION
-Ensure every Leaflet map displays:
-© OpenStreetMap contributors
-1. SERVICE WORKER DISCLOSURE
-Add explanation in privacy policy that the app uses:
-service workers offline caching local device storage
-Explain users can remove stored data by clearing browser storage.
-1. SECURITY CHECK
-Check config.js and ensure:
-no secret API keys no supabase service role key only public anon key
-1. PAYMENT DISCLOSURE
-Add a Stripe section explaining that payment data is processed by Stripe and that Stripe is responsible for financial transactions.
-1. IMPRESSUM FIX
-Remove placeholder text about VAT ID if no VAT ID exists.
-1. FOOTER LEGAL LINKS
-Ensure every page footer contains links to:
-Impressum Datenschutz AGB
-Return all modified code snippets and files.
+﻿1. Was bereits rechtlich gut umgesetzt ist ✅
+Impressum vorhanden
+
+Datei: impressum.html
+
+Enthält:
+
+Name
+
+Anschrift
+
+E-Mail
+
+USt-ID
+
+Verantwortlicher nach MStV
+
+Hinweis Streitbeilegung
+
+Das erfüllt grundsätzlich:
+
+§5 DDG (Digitale-Dienste-Gesetz)
+
+§18 MStV
+
+Formell korrekt.
+
+Datenschutzerklärung vorhanden
+
+Datei: datenschutz.html
+
+Positiv:
+
+Verantwortlicher genannt
+
+Hosting erklärt (GitHub Pages)
+
+Rechtsgrundlagen DSGVO genannt
+
+Supabase erwähnt
+
+Registrierung und Datenarten erklärt
+
+öffentliche Daten (Trachtkarte / Forum) erklärt
+
+Das ist deutlich besser als bei vielen Webapps.
+
+Auftragsverarbeitung erwähnt
+
+Du erwähnst:
+
+Supabase
+
+GitHub
+
+Das ist DSGVO-relevant und korrekt aufgenommen.
+
+2. Rechtliche Risiken / Lücken ⚠️
+1. Cookie / Consent-Banner fehlt
+
+Deine App verwendet vermutlich:
+
+localStorage
+
+Supabase Auth
+
+evtl. Session-Tokens
+
+Auch wenn keine Tracking-Cookies vorhanden sind:
+
+Nach TTDSG §25 kann bereits notwendig sein:
+
+Consent oder
+
+zumindest Information über Storage
+
+Empfehlung:
+
+Cookie / Consent Banner
+
+oder Hinweis: nur technisch notwendige Speicherungen
+
+2. EmailJS Verarbeitung nicht vollständig erklärt
+
+Du nutzt:
+
+vendor/emailjs.min.js
+
+Das bedeutet:
+
+Daten gehen an EmailJS Server
+
+In der Datenschutzerklärung fehlt:
+
+genaue Datenübermittlung
+
+Serverstandort
+
+Rechtsgrundlage
+
+Auftragsverarbeitung
+
+Ergänzen:
+
+EmailJS (EmailJS Inc.)
+Übermittlung von Formulardaten
+Serverstandort / Drittland
+Rechtsgrundlage Art. 6 Abs.1 lit.b oder f
+3. Leaflet / Karten (OpenStreetMap)
+
+Du nutzt:
+
+leaflet
+
+Bei Karten werden typischerweise geladen:
+
+Tile-Server
+
+IP-Adresse
+
+Das muss in Datenschutz erwähnt werden.
+
+Fehlt aktuell.
+
+4. Forum = personenbezogene Inhalte
+
+Du hast:
+
+Community Forum
+
+Das erzeugt rechtlich zusätzliche Pflichten:
+
+Empfohlen ergänzen
+
+Moderationsrecht
+
+Löschrecht
+
+Netiquette
+
+Haftung für Nutzerinhalte
+
+5. Nutzungsbedingungen (AGB)
+
+Es gibt zwar:
+
+agb.html
+
+Aber prüfen solltest du:
+
+Haftungsbegrenzung
+
+Nutzung der Plattform
+
+Account-Sperrung
+
+Communityregeln
+
+Bei Webapps ist das sehr wichtig.
+
+6. PWA / App Nutzung
+
+Du hast:
+
+manifest.json
+
+und App-Struktur → Progressive Web App.
+
+Empfohlen im Datenschutz zu ergänzen:
+
+Installation der Web-App
+
+lokale Datenspeicherung
+
+Offline-Cache
+
+7. GPS-Standorte (sehr sensibel)
+
+Du speicherst laut Datenschutz:
+
+GPS-Koordinaten von Standorten
+
+Das ist personenbezogene Standortdaten.
+
+Empfohlen:
+
+klarer Hinweis
+
+Möglichkeit zur Löschung
+
+Hinweis auf freiwillige Eingabe
+
+3. Technische Punkte mit rechtlichem Einfluss
+Fonts lokal gehostet
+
+Sehr gut.
+
+Du nutzt:
+
+/fonts/*.woff2
+
+Damit kein Google-Fonts DSGVO-Problem.
+
+Hosting GitHub Pages
+
+Ist erlaubt.
+
+Aber du solltest zusätzlich erwähnen:
+
+GitHub kann Logs speichern
+
+US-Übermittlung
+
+Du hast das bereits teilweise.
+
+Assetlinks (Android)
+.well-known/assetlinks.json
+
+Unproblematisch.
+
+4. Mittlere Risiken ⚠️
+
+Diese Punkte sind nicht illegal, aber sollten verbessert werden:
+
+Thema	Risiko
+Consent Banner	mittel
+EmailJS	mittel
+Karten (Leaflet/OSM)	mittel
+Forum-Moderation	mittel
+GPS-Daten	mittel
+5. Was aktuell kein Problem ist
+
+Impressum
+
+DSGVO-Struktur
+
+lokale Fonts
+
+EU-Hosting Supabase
+
+klare Verantwortliche
+
+Rechtsgrundlagen genannt
+
+Viele Apps haben das deutlich schlechter.
+
+6. Gesamtbewertung
+
+Rechtliche Sicherheit deiner App:
+
+ca. 70–80 % DSGVO-konform
+
+Fehlende Punkte sind hauptsächlich:
+
+Consent / Cookies
+
+EmailJS Erklärung
+
+Kartenanbieter
+
+Forum-Regeln
+
+Diese sind relativ leicht zu beheben.
+
+7. Wenn du willst, kann ich dir zusätzlich
+
+eine 100 % rechtssichere DSGVO-Datenschutzerklärung für deine App erstellen
+
+einen minimalen Cookie-Banner (DSGVO-konform)
+
+Forum-AGB
+
+eine Impressum + Datenschutz Checkliste für Apps
+
+Dann wäre dein Projekt nahezu abmahnsicher für Deutschland/EU.

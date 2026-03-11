@@ -1140,6 +1140,19 @@ function mobileMenuOpen() {
 function mobileMenuClose() {
   document.getElementById('mobileMenuOverlay').classList.remove('active');
 }
+// Cookie/Storage Hinweis
+(function(){
+    if(localStorage.getItem('cookie_notice_accepted'))return;
+    var b=document.createElement('div');
+    b.innerHTML='<div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">'
+        +'<p style="flex:1;margin:0;font-size:.88rem;line-height:1.5;color:#3D2E1F">Diese Website verwendet ausschließlich <strong>technisch notwendige Speicherungen</strong> (localStorage, Service Worker). Es werden keine Tracking-Cookies gesetzt. '
+        +'<a href="datenschutz.html" style="color:#F5A623;text-decoration:underline">Mehr erfahren</a></p>'
+        +'<button onclick="localStorage.setItem(\'cookie_notice_accepted\',\'1\');this.parentElement.parentElement.remove()" '
+        +'style="background:#1C1410;color:#fff;border:none;padding:10px 24px;border-radius:100px;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap">Verstanden</button>'
+        +'</div>';
+    b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#FFFBF0;padding:16px 24px;box-shadow:0 -2px 12px rgba(28,20,16,.1);border-top:2px solid #F5A623;z-index:9999';
+    document.body.appendChild(b);
+})();
 </script>
 </body>
 </html>
