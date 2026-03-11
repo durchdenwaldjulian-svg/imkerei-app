@@ -1023,7 +1023,7 @@ const app={
     // === COUNTER ===
     // === STANDORTE & VÖLKER → standorte.html ===
     changeVoelkerCount(){},
-    openStandortModal(){ window.location.href='standorte.html'; },
+    openStandortModal(){ window.location.href='voelker.html'; },
     initMapPicker(type){
         if (type === 'standort') return;
         var container = document.getElementById('trachtMapPicker');
@@ -1050,11 +1050,11 @@ const app={
     },
     saveStandort(){},
     delStandort(){},
-    openVolkModal(){ window.location.href='standorte.html'; },
+    openVolkModal(){ window.location.href='voelker.html'; },
     setVolkStatus(){},
     saveVolk(){},
     deleteVolk(){},
-    showStandortDetails(){ window.location.href='standorte.html'; },
+    showStandortDetails(){ window.location.href='voelker.html'; },
     
     // === AUFGABEN ===
     selectAufgabeTyp(typ){
@@ -1698,11 +1698,11 @@ const app={
     },
     
     rStandorte(){
-        window.location.href = 'standorte.html';
+        window.location.href = 'voelker.html';
         return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
     rStandortDetails(){
-        window.location.href = 'standorte.html';
+        window.location.href = 'voelker.html';
         return '<div class="container" style="text-align:center;padding:3rem"><p>Weiterleitung...</p></div>';
     },
     

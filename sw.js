@@ -1,16 +1,25 @@
 // Imkerei Planer – Service Worker v1.0
-const CACHE_NAME = 'imkerei-planer-v4';
+const CACHE_NAME = 'imkerei-planer-v5';
 
 // Dateien die gecacht werden sollen (App-Shell)
 const APP_SHELL = [
   './',
   './app.html',
-  './bewertung.html',
+  './voelker.html',
   './ernte.html',
   './assistent.html',
   './bestandsbuch.html',
   './trachtkarte.html',
   './index.html',
+  './voelker.css',
+  './voelker-core.js',
+  './voelker-standorte.js',
+  './voelker-voelker.js',
+  './voelker-durchsicht.js',
+  './voelker-koenigin.js',
+  './voelker-ranking.js',
+  './voelker-sprache.js',
+  './nav.js',
   './shared-styles.css',
   './config.js',
   './icon-192.png',

@@ -25,12 +25,11 @@
             // Seitenname hübsch formatieren
             var seitenNamen = {
                 'app.html': 'Heute',
-                'standorte.html': 'Standorte',
+                'voelker.html': 'Völker & Standorte',
                 'behandlung.html': 'Behandlungen',
                 'tracht.html': 'Tracht',
                 'packliste.html': 'Packliste',
                 'zuchtplan.html': 'Königinnenzucht',
-                'bewertung.html': 'Bewertung',
                 'ernte.html': 'Honigernte',
                 'assistent.html': 'Assistent',
                 'bestandsbuch.html': 'Bestandsbuch',

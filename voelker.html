@@ -3,227 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐝 Völker – Imkerei Tagesplaner</title>
+    <title>🐝 Völker & Standorte – Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="/fonts/fonts.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="shared-styles.css">
-    <style>
-        /* === LAYOUT === */
-        body{padding-left:220px;padding-bottom:2rem}
-        .container{max-width:900px;margin:0 auto;padding:1rem}
-
-        /* === SIDEBAR NAV === */
-        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none}
-        .nav-item:hover{background:rgba(245,166,35,0.06)}
-        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
-
-        /* === MODAL OVERRIDE (höherer z-index für Leaflet-Kompatibilität) === */
-        .modal{position:fixed;inset:0;background:rgba(28,20,16,.5);display:none;z-index:10000;overflow-y:auto;padding:1rem}
-        .modal.active{display:flex;align-items:center;justify-content:center}
-        .modal-content{background:#FFFBF0;border-radius:1rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;margin:auto;position:relative;z-index:10001}
-        .modal-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid #E8DFD4}
-        .modal-header h2{margin:0;font-size:1.1rem}
-        .modal-body{padding:1.25rem}
-
-        /* === VOLK GRID + CARD (Standort-Detail) === */
-        .volk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
-        .volk-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;cursor:pointer;transition:all .2s}
-        .volk-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
-        .volk-card.ableger{border-color:#A7F3D0;background:#F0FDF4}
-
-        /* === LOADING === */
-        .loading-screen{position:fixed;inset:0;background:#FFFBF0;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:1rem}
-        .spinner{width:40px;height:40px;border:4px solid #E8DFD4;border-top-color:#F5A623;border-radius:50%;animation:spin .8s linear infinite}
-
-        /* === SUCHLEISTE === */
-        .such-bar{display:flex;align-items:center;gap:.5rem;background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.5rem .75rem;margin-bottom:1rem}
-        .such-bar:focus-within{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
-        .such-icon{font-size:1rem;color:#A69580}
-        .such-bar input{flex:1;border:none;outline:none;font-size:.9rem;font-family:inherit;background:none}
-        .such-clear{background:none;border:none;font-size:1rem;cursor:pointer;color:#7A6652;padding:.15rem .35rem;border-radius:.25rem}
-        .such-clear:hover{background:#f5f0eb}
-
-        /* === STANDORT-KACHELN (Völker-Tab Filter) === */
-        .standort-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:.875rem;text-align:center;cursor:pointer;transition:all .2s}
-        .standort-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
-        .standort-card.selected{border-color:#F5A623;background:#FFF8EE;font-weight:600}
-
-        /* === VOLK-GRID-CARD (Völker-Tab Karten) === */
-        .volk-grid-card{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1rem;transition:all .2s}
-        .volk-grid-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,166,35,.2)}
-
-        /* === SUCH-ERGEBNIS (Einzelprofil) === */
-        .such-ergebnis{background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem}
-
-        /* === VOLK ROW + DETAIL (Durchsicht-Tab) === */
-        .volk-row-clickable{padding:.75rem .5rem;cursor:pointer;transition:background .15s}
-        .volk-row-clickable:hover{background:#FFFBF0}
-        .volk-detail{background:#f5f0eb;padding:1rem;border-radius:.5rem;margin:.25rem 0 .5rem;animation:fadeInDetail .2s ease}
-        @keyframes fadeInDetail{from{opacity:0;max-height:0}to{opacity:1;max-height:3000px}}
-
-        /* === HISTORIE === */
-        .historie-entry{padding:.5rem 0;border-bottom:1px solid #f5f0eb}
-        .historie-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.25rem}
-        .historie-tag{font-size:.7rem;padding:.15rem .4rem;background:#f5f0eb;border-radius:.25rem;color:#7A6652}
-
-        /* === STARS (Bewertung) === */
-        .stars{display:flex;gap:2px;cursor:pointer}
-        .stars .star{font-size:1.5rem;color:#E8DFD4;transition:color .15s;user-select:none}
-        .stars .star.active{color:#F5A623}
-        .stars .star:hover{color:#f7bc5e}
-
-        /* === TÄTIGKEITEN GRID (Durchsicht-Modal) === */
-        .taetig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem;margin-bottom:1rem}
-        .taetig-chip{display:flex;align-items:center;gap:.35rem;padding:.5rem .65rem;border:2px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.82rem;transition:all .15s}
-        .taetig-chip:hover{border-color:#F5A623;background:#FFF8EE}
-        .taetig-chip.selected{border-color:#F5A623;background:#FFF8EE;font-weight:600}
-        .tc-icon{font-size:1.1rem}
-
-        /* === SUB-OPTIONS (Durchsicht-Modal) === */
-        .sub-options{background:#f5f0eb;border-radius:.5rem;padding:.5rem .75rem;margin-bottom:.75rem}
-        .sub-chip{display:inline-block;padding:.25rem .5rem;border:1.5px solid #E8DFD4;border-radius:.35rem;background:#fff;cursor:pointer;font-size:.75rem;margin:.15rem;transition:all .15s}
-        .sub-chip:hover{border-color:#F5A623}
-        .sub-chip.selected{border-color:#F5A623;background:#FFF8EE;font-weight:600}
-
-        /* === MENGE (Durchsicht-Modal) === */
-        .menge-row{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;margin-bottom:.5rem}
-        .menge-label{font-size:.82rem;color:#7A6652;white-space:nowrap}
-        .menge-input{width:80px;padding:.35rem .5rem;border:2px solid #E8DFD4;border-radius:.5rem;font-size:.9rem;text-align:center;font-family:inherit}
-        .menge-input:focus{border-color:#F5A623;outline:none}
-
-        /* === FARB-PILLEN (Königin-Markierung) === */
-        .color-pills{display:flex;gap:.75rem;justify-content:center;padding:.5rem 0}
-        .color-pill{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid #E8DFD4;transition:all .15s}
-        .color-pill:hover{transform:scale(1.15)}
-        .color-pill.selected{border-color:#1C1410;box-shadow:0 2px 8px rgba(0,0,0,.2);transform:scale(1.1)}
-        .c-weiss{background:#fff}
-        .c-gelb{background:#facc15}
-        .c-rot{background:#ef4444}
-        .c-gruen{background:#22c55e}
-        .c-blau{background:#3b82f6}
-
-        /* === VARROA RESULT === */
-        .varroa-result{text-align:center;font-size:1.75rem;font-weight:700;padding:.75rem;border-radius:.75rem;margin:.75rem 0 .25rem}
-        .varroa-result.low{background:#f0fdf4;color:#10b981}
-        .varroa-result.medium{background:#fefce8;color:#D97706}
-        .varroa-result.high{background:#fff7ed;color:#EA580C}
-        .varroa-result.critical{background:#fef2f2;color:#DC2626}
-
-        /* === ZUCHTWERT-KARTE === */
-        .zw-card{background:linear-gradient(135deg,#FFFBF0,#fff);border:2px solid rgba(245,166,35,0.15);border-radius:.75rem;padding:.75rem 1rem;margin-bottom:.75rem}
-        .zw-card h4{font-size:.88rem;color:#92400E;margin-bottom:.5rem}
-        .zw-nr{font-size:.72rem;color:#7A6652;font-family:monospace;margin-bottom:.5rem}
-        .zw-row{display:flex;align-items:center;gap:.5rem;padding:.2rem 0;font-size:.78rem}
-        .zw-row .zw-label{width:80px;color:#7A6652;white-space:nowrap}
-        .zw-row .zw-value{width:36px;text-align:right;font-weight:600;font-size:.82rem}
-        .zw-bar-bg{flex:1;height:8px;background:#f5f0eb;border-radius:4px;position:relative;overflow:hidden}
-        .zw-bar-ref{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#ccc}
-        .zw-bar-fill{height:100%;border-radius:4px;transition:width .3s}
-
-        /* === GTS (Grünlandtemperatursumme) === */
-        .standort-gts-row{display:flex;align-items:center;gap:1rem;padding:.75rem 0}
-        .standort-gts-value{font-size:1.1rem;font-weight:700;white-space:nowrap}
-        .standort-gts-status{font-size:.78rem;color:#7A6652;margin-top:.15rem}
-        .standort-gts-bar-bg{height:8px;background:#f5f0eb;border-radius:4px;overflow:hidden}
-        .standort-gts-bar-fill{height:100%;border-radius:4px;transition:width .5s}
-        .standort-gts-next{font-size:.72rem;color:#7A6652;margin-top:.25rem}
-
-        /* === STAMMBAUM === */
-        .stammbaum-tree{display:flex;flex-direction:column;align-items:center;overflow-x:auto;padding:1rem 0}
-        .stammbaum-connector{display:flex;flex-direction:column;align-items:center}
-        .stammbaum-node-card{border:2px solid #E8DFD4;border-radius:1rem;padding:.75rem 1rem;min-width:180px;max-width:280px;text-align:center;position:relative;margin-bottom:.25rem;background:#fff;cursor:pointer;transition:all .15s}
-        .stammbaum-node-card:hover{border-color:#F5A623;transform:translateY(-1px)}
-        .stammbaum-node-card.root{border-color:#F5A623;border-width:3px;background:#FFFBF0}
-        .stammbaum-vline{width:2px;height:20px;background:#ccc}
-        .stammbaum-eltern{display:flex;justify-content:center;gap:1.5rem;flex-wrap:wrap;position:relative}
-        .stammbaum-eltern::before{content:"";position:absolute;top:-10px;left:25%;right:25%;height:2px;background:#ccc}
-        .stammbaum-zweig{display:flex;flex-direction:column;align-items:center;flex:1;min-width:200px}
-        .stammbaum-label{font-size:.65rem;font-weight:700;text-transform:uppercase;padding:.2rem .5rem;border-radius:999px;margin-bottom:.25rem;display:inline-block}
-        .stammbaum-label.mutter{background:#FFF3CD;color:#92400E}
-        .stammbaum-label.drohne{background:#DBEAFE;color:#1E40AF}
-        .stammbaum-badge{display:inline-block;font-size:.6rem;padding:.1rem .3rem;border-radius:.2rem}
-        .stammbaum-gen{font-size:.55rem;color:#999;position:absolute;top:-.4rem;right:-.4rem;background:#f5f5f5;padding:.1rem .25rem;border-radius:.2rem}
-
-        /* === BADGE ERWEITERUNG === */
-        .badge-gray{background:#f5f0eb;color:#7A6652}
-
-        /* === SPRACHEINGABE FAB === */
-        #speechFab{position:fixed;bottom:2rem;right:2rem;width:60px;height:60px;border-radius:50%;border:none;background:linear-gradient(135deg,#F5A623,#E8960C);color:#fff;font-size:1.6rem;cursor:pointer;box-shadow:0 4px 16px rgba(245,166,35,0.4);z-index:100;transition:all .2s;display:flex;align-items:center;justify-content:center}
-        #speechFab:hover{transform:scale(1.08)}
-        #speechFab.active{background:linear-gradient(135deg,#ef4444,#dc2626);animation:fabPulse 1.5s infinite}
-        @keyframes fabPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}50%{box-shadow:0 0 0 14px rgba(239,68,68,0)}}
-
-        /* === SPRACHEINGABE PANEL === */
-        #speechPanel{position:fixed;top:0;right:0;bottom:0;width:420px;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,0.15);z-index:200;display:none;flex-direction:column;animation:spSlideIn .3s ease}
-        #speechPanel.active{display:flex}
-        @keyframes spSlideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
-        .sp-header{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:2px solid rgba(245,166,35,0.12);background:#FFFBF0}
-        .sp-dot{width:10px;height:10px;background:#ef4444;border-radius:50%;display:inline-block;animation:spBlink 1s infinite}
-        @keyframes spBlink{0%,100%{opacity:1}50%{opacity:.3}}
-        .sp-body{flex:1;overflow-y:auto;padding:1rem 1.25rem}
-        .sp-volk-box{padding:.75rem 1rem;background:linear-gradient(135deg,#FFFBF0,#fff);border:2px solid rgba(245,166,35,0.15);border-radius:.75rem;margin-bottom:1rem}
-        .sp-volk-name{font-size:1.1rem;font-weight:700;color:#1C1410}
-        .sp-volk-standort{font-size:.8rem;color:#7A6652}
-        .sp-volk-placeholder{color:#94a3b8;font-size:.9rem}
-        .sp-krit-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;border-bottom:1px solid #f5f0eb;font-size:.85rem}
-        .sp-krit-row.changed{background:#fefce8;margin:0 -.25rem;padding:.4rem .25rem;border-radius:.25rem}
-        .sp-krit-stars{color:#F5A623;letter-spacing:1px}
-        .sp-krit-stars .off{color:#E8DFD4}
-        .sp-transcript{background:#f8f6f3;border-radius:.75rem;padding:.75rem 1rem;margin:1rem 0;min-height:60px;max-height:100px;overflow-y:auto;font-size:.85rem;color:#7A6652;line-height:1.5}
-        .sp-transcript .interim{color:#94a3b8;font-style:italic}
-        .sp-log{font-size:.78rem;max-height:140px;overflow-y:auto;margin-top:.75rem}
-        .sp-log-entry{padding:.3rem 0;border-bottom:1px solid #f5f0eb;color:#7A6652}
-        .sp-footer{display:flex;gap:.5rem;padding:1rem 1.25rem;border-top:2px solid rgba(245,166,35,0.12);background:#FFFBF0}
-        .sp-footer .btn{flex:1}
-        .sp-hint{font-size:.75rem;color:#94a3b8;text-align:center;margin-top:.5rem;line-height:1.4}
-        .sp-dictate-area{width:100%;min-height:80px;border:2px dashed rgba(245,166,35,0.3);border-radius:.75rem;padding:.75rem;font-size:.95rem;font-family:inherit;resize:vertical;background:#FFFBF0;color:#1C1410;margin:.75rem 0}
-        .sp-dictate-area:focus{border-color:#F5A623;outline:none}
-        .sp-dictate-btn{width:100%;padding:.625rem;border:none;border-radius:.5rem;background:linear-gradient(135deg,#F5A623,#E8960C);color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:.5rem}
-        .sp-dictate-btn:active{transform:scale(.98)}
-
-        /* === MOBILE === */
-        @media(max-width:768px){
-            body{padding-left:0;padding-bottom:90px}
-            .nav{left:0;right:0;top:auto;bottom:0;width:100%;height:auto;flex-direction:row;border-right:none;border-top:2px solid rgba(245,166,35,0.12);overflow-x:auto;overflow-y:hidden}
-            .nav-brand,.nav-section{display:none}
-            .nav-item{flex:0 0 auto;padding:.5rem .6rem;font-size:.6rem;text-align:center;border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
-            .nav-item.active{border-left:none;border-bottom-color:#F5A623}
-            .volk-grid{grid-template-columns:1fr}
-            .modal-content{max-width:100%;border-radius:1rem 1rem 0 0}
-            #speechPanel{width:100%;top:0}
-            #speechFab{bottom:5.5rem;right:1rem}
-        }
-    </style>
+    <link rel="stylesheet" href="voelker.css">
 </head>
 <body>
 
-<!-- ===== NAVIGATION ===== -->
 <nav class="nav" id="mainNav"></nav>
 <div class="mobile-nav" id="mobileNavBar"></div>
 <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
 <script src="nav.js"></script>
 
-<!-- ===== LOADING ===== -->
 <div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
     <div style="text-align:center;color:#7A6652">
         <div style="font-size:3rem;margin-bottom:1rem">🐝</div>
-        <div>Daten laden...</div>
+        <div>Lade Völker & Standorte...</div>
     </div>
 </div>
 
-<!-- ===== APP CONTAINER ===== -->
 <div id="app" style="display:none"></div>
 <div id="toast" class="toast"></div>
 
-<!-- ===== STANDORT MODAL ===== -->
+<!-- Spracheingabe FAB + Panel -->
+<button id="speechFab" onclick="toggleSpeech()" title="Sprachmodus starten">🎤</button>
+<div id="speechPanel">
+    <div class="sp-header">
+        <div style="display:flex;align-items:center;gap:.5rem">
+            <span class="sp-dot"></span>
+            <strong>Sprachmodus</strong>
+        </div>
+        <button class="close-btn" onclick="toggleSpeech()">✕</button>
+    </div>
+    <div class="sp-body">
+        <div id="spVolkBox" class="sp-volk-box">
+            <div style="color:#94a3b8;font-size:.9rem">🎤 Sage ein Volk: <em>"Volk 1"</em></div>
+        </div>
+        <div id="spKriterien"></div>
+        <div id="spInputArea"></div>
+        <div class="sp-hint">
+            💡 "Volk 1, Sanftmut 4, Wabensitz gut, kein Schwarmtrieb..."<br>
+            "Ableger von Volk 1" · "Notiz: sehr ruhig heute"
+        </div>
+        <div id="spLog" class="sp-log"></div>
+    </div>
+    <div class="sp-footer">
+        <button class="btn btn-primary" onclick="saveCurrentSprachBewertung()">💾 Speichern</button>
+        <button class="btn" style="background:#ef4444;color:#fff" onclick="toggleSpeech()">⏹ Stopp</button>
+    </div>
+</div>
+
+<!-- Durchsicht Modal -->
+<div id="durchsichtModal" class="modal">
+    <div class="modal-content" style="display:flex;flex-direction:column">
+        <div class="modal-header">
+            <h2 id="modalTitle">📋 Neue Durchsicht</h2>
+            <button class="close-btn" onclick="closeDurchsichtModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody" style="flex:1;overflow-y:auto"></div>
+        <div class="modal-footer-sticky">
+            <button class="btn btn-success" style="width:100%" onclick="saveDurchsicht()">💾 Speichern</button>
+        </div>
+    </div>
+</div>
+
+<!-- Standort Modal -->
 <div id="standortModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -236,21 +86,22 @@
                 <input type="text" id="standortName" class="input" placeholder="z.B. Heimstand Garten">
             </div>
             <div class="form-group">
-                <label class="form-label">🐝 Anzahl Völker</label>
+                <label class="form-label">Anzahl Völker</label>
                 <div class="counter">
                     <button class="counter-btn" onclick="changeVoelkerCount(-1)">−</button>
                     <div class="counter-value" id="standortVoelkerCount">2</div>
                     <button class="counter-btn" onclick="changeVoelkerCount(1)">+</button>
                 </div>
+                <div class="info-box">Die Völker werden automatisch erstellt</div>
             </div>
             <div class="form-group">
-                <label class="form-label">🌱 Anzahl Ableger</label>
+                <label class="form-label">Anzahl Ableger</label>
                 <div class="counter">
                     <button class="counter-btn" onclick="changeAblegerCount(-1)">−</button>
                     <div class="counter-value" id="standortAblegerCount">0</div>
                     <button class="counter-btn" onclick="changeAblegerCount(1)">+</button>
                 </div>
-                <div class="info-box">Die Völker und Ableger werden automatisch erstellt</div>
+                <div class="info-box">Ableger werden als eigene Einheiten erstellt</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Notizen (optional)</label>
@@ -269,7 +120,7 @@
     </div>
 </div>
 
-<!-- ===== VOLK MODAL ===== -->
+<!-- Volk Modal -->
 <div id="volkModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -282,16 +133,6 @@
                 <input type="text" id="volkName" class="input" placeholder="z.B. Volk 1">
             </div>
             <div class="form-group">
-                <label class="form-label">Typ</label>
-                <div class="option-grid" id="volkTypGrid">
-                    <button class="option-btn selected" onclick="setVolkTyp('volk',this)">🐝 Volk</button>
-                    <button class="option-btn" onclick="setVolkTyp('ableger',this)">🌱 Ableger</button>
-                </div>
-                <div id="volkHochstufenWrap" style="display:none;margin-top:.5rem">
-                    <button class="btn btn-sm btn-primary" style="width:100%" onclick="hochstufenZuVolk()">⬆️ Zu Volk hochstufen</button>
-                </div>
-            </div>
-            <div class="form-group">
                 <label class="form-label">Beutensystem</label>
                 <select id="volkBeute" class="input">
                     <option value="Dadant">Dadant</option>
@@ -299,6 +140,16 @@
                     <option value="Deutsch Normal">Deutsch Normal</option>
                     <option value="Langstroth">Langstroth</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Typ</label>
+                <div class="option-grid" id="volkTypGrid">
+                    <button class="option-btn selected" onclick="setVolkTyp('volk',this)">🐝 Volk</button>
+                    <button class="option-btn" onclick="setVolkTyp('ableger',this)">🌱 Ableger</button>
+                </div>
+                <div id="volkHochstufenWrap" style="display:none;margin-top:.5rem">
+                    <button onclick="hochstufenZuVolk()" style="width:100%;padding:.5rem;background:#E8F5EC;border:1.5px solid #A7F3D0;border-radius:.5rem;cursor:pointer;font-weight:600;font-size:.85rem">⬆️ Zu Volk hochstufen</button>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Status</label>
@@ -324,63 +175,15 @@
     </div>
 </div>
 
-<!-- ===== DURCHSICHT MODAL ===== -->
-<div id="durchsichtModal" class="modal">
-    <div class="modal-content" style="max-width:560px">
-        <div class="modal-header">
-            <h2 id="modalTitle">📋 Neue Durchsicht</h2>
-            <button class="close-btn" onclick="closeDurchsichtModal()">✕</button>
-        </div>
-        <div class="modal-body" id="modalBody"></div>
-        <div style="padding:0 1.25rem 1.25rem;display:flex;gap:.5rem">
-            <button class="btn btn-primary" style="flex:1" onclick="saveDurchsicht()">💾 Speichern</button>
-            <button class="btn btn-danger btn-sm" onclick="if(editDurchsicht){deleteDurchsicht(editDurchsicht)}else{closeDurchsichtModal()}">🗑️</button>
-        </div>
-    </div>
-</div>
-
-<!-- ===== SPRACHEINGABE FAB + PANEL ===== -->
-<button id="speechFab" onclick="toggleSpeech()" title="Sprachmodus starten">🎤</button>
-
-<div id="speechPanel">
-    <div class="sp-header">
-        <div style="display:flex;align-items:center;gap:.5rem">
-            <span class="sp-dot"></span>
-            <strong>Sprachmodus</strong>
-        </div>
-        <button class="close-btn" onclick="toggleSpeech()">✕</button>
-    </div>
-    <div class="sp-body">
-        <div id="spVolkBox" class="sp-volk-box">
-            <div class="sp-volk-placeholder">🎤 Sage ein Volk: <em>"Volk 1"</em></div>
-        </div>
-        <div id="spKriterien"></div>
-        <div id="spInputArea"></div>
-        <div class="sp-hint">
-            💡 "Volk 1, Sanftmut 4, Wabensitz gut, kein Schwarmtrieb..."<br>
-            "Ableger von Volk 1" · "Notiz: sehr ruhig heute"
-        </div>
-        <div id="spLog" class="sp-log"></div>
-    </div>
-    <div class="sp-footer">
-        <button class="btn btn-primary" onclick="saveCurrentSprachBewertung()">💾 Speichern</button>
-        <button class="btn" style="background:#ef4444;color:#fff" onclick="toggleSpeech()">⏹ Stopp</button>
-    </div>
-</div>
-
-<!-- ===== SCRIPTS (Reihenfolge wichtig!) ===== -->
 <script src="config.js"></script>
 <script src="plan.js"></script>
 <script src="presence.js" defer></script>
-<script src="voelker-helpers.js"></script>
-<script src="standort-view.js"></script>
-<script src="stockkarte-view.js"></script>
-<script src="durchsicht-modal.js"></script>
-<script src="voelker-tabs.js"></script>
-<script src="speech-module.js"></script>
-<script src="druck-module.js"></script>
-<!-- voelker-data.js ZULETZT (ruft init() auf) -->
-<script src="voelker-data.js"></script>
-
+<script src="voelker-core.js"></script>
+<script src="voelker-standorte.js"></script>
+<script src="voelker-voelker.js"></script>
+<script src="voelker-durchsicht.js"></script>
+<script src="voelker-koenigin.js"></script>
+<script src="voelker-ranking.js"></script>
+<script src="voelker-sprache.js"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@
     var sections = [
         { title: 'Übersicht', items: [
             { href: 'app.html#heute', icon: '📅', label: 'Heute' },
-            { href: 'standorte.html', icon: '📍', label: 'Standorte' },
+            { href: 'voelker.html', icon: '📍', label: 'Völker & Standorte' },
             { href: 'app.html#aufgaben', icon: '📝', label: 'Aufgaben' }
         ]},
         { title: 'Völker', items: [
@@ -19,7 +19,6 @@
             { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
             { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzuchtrechner' },
             { href: 'behandlung.html', icon: '💉', label: 'Behandlungen' },
-            { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' },
             { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
             { href: 'bestandsbuch.html', icon: '📋', label: 'Bestandsbuch' }
         ]},
@@ -102,14 +101,14 @@
         if (isIndex) {
             // Auf app.html: Buttons die app.page steuern
             h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>';
-            h += '<a href="standorte.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Standorte</a>';
+            h += '<a href="voelker.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Völker</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
             h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>';
             h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>';
         } else {
             // Auf eigenständigen Seiten: alles als Links
             h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>Heute</a>';
-            h += '<a href="standorte.html" class="mobile-nav-btn'+(currentFile==='standorte.html'?' active':'')+'"><span class="mn-icon">📍</span>Standorte</a>';
+            h += '<a href="voelker.html" class="mobile-nav-btn'+(currentFile==='voelker.html'?' active':'')+'"><span class="mn-icon">📍</span>Völker</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
             h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span>Aufgaben</a>';
             h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</span>Mehr</a>';
@@ -123,15 +122,14 @@
         var groups = [
             { title: 'Übersicht', items: [
                 { page: 'heute', icon: '📅', label: 'Heute' },
-                { href: 'standorte.html', icon: '📍', label: 'Standorte' },
+                { href: 'voelker.html', icon: '📍', label: 'Völker' },
                 { page: 'aufgaben', icon: '📝', label: 'Aufgaben' }
             ]},
             { title: 'Völker', items: [
                 { href: 'zuchtplan.html', icon: '👑', label: 'Zucht' },
                 { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
                 { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzucht' },
-                { href: 'behandlung.html', icon: '💉', label: 'Behandlung' },
-                { href: 'bewertung.html', icon: '🗂️', label: 'Stockkarte' }
+                { href: 'behandlung.html', icon: '💉', label: 'Behandlung' }
             ]},
             { title: 'Tools', items: [
                 { href: 'assistent.html', icon: '🤖', label: 'Assistent' },
