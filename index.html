@@ -52,6 +52,10 @@ img{max-width:100%;display:block}
 .nav-links a:hover{color:var(--honey-deep)}
 .btn-cta{display:inline-flex;align-items:center;gap:8px;background:var(--bark);color:var(--white);padding:11px 26px;border-radius:100px;font-weight:700;font-size:.9rem;transition:all .25s;border:none;cursor:pointer}
 .btn-cta:hover{background:var(--honey-deep);color:var(--white);transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,166,35,.3)}
+.btn-login{font-weight:600;font-size:.9rem;color:var(--text);padding:10px 20px;border-radius:100px;border:2px solid rgba(28,20,16,.1);transition:all .25s}
+.btn-login:hover{border-color:var(--honey);color:var(--honey-deep)}
+.btn-upgrade{background:var(--honey)!important;color:var(--bark)!important}
+.btn-upgrade:hover{background:var(--honey-deep)!important;color:var(--white)!important}
 .menu-btn{display:none;background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--bark)}
 @media(max-width:900px){.nav-links{display:none}.menu-btn{display:block}}
 
@@ -238,14 +242,17 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
 
 <!-- NAV -->
 <nav class="topnav" id="topnav">
-  <a href="#" class="logo"><span style="color:var(--bark)">Bienen</span><span style="color:var(--honey)">Plan</span><span style="color:var(--bark)">.de</span></a>
+  <a href="#" class="logo"><span style="color:var(--bark)">Bienen</span><!--
+--><span style="color:var(--honey)">Plan</span><!--
+--><span style="color:var(--bark)">.de</span></a>
   <div class="nav-links">
     <a href="demo.html">Demo</a>
     <a href="#features">Features</a>
     <a href="#trachtkarte">Trachtkarte</a>
     <a href="#pricing">Preise</a>
     <a href="#faq">FAQ</a>
-    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
+    <a href="app.html" class="btn-login">Anmelden</a>
+    <a href="upgrade.html" class="btn-cta btn-upgrade">Jetzt upgraden →</a>
   </div>
   <button class="menu-btn" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.textContent==='☰'?'✕':'☰'" aria-label="Menü">☰</button>
   <div class="nav-links" style="display:none" id="mobileNav">
@@ -254,7 +261,8 @@ footer{position:relative;z-index:1;background:var(--bark);padding:48px 32px 28px
     <a href="#trachtkarte" onclick="closeMobile()">Trachtkarte</a>
     <a href="#pricing" onclick="closeMobile()">Preise</a>
     <a href="#faq" onclick="closeMobile()">FAQ</a>
-    <a href="app.html#register" class="btn-cta">Kostenlos starten →</a>
+    <a href="app.html" onclick="closeMobile()" class="btn-login">Anmelden</a>
+    <a href="upgrade.html" class="btn-cta btn-upgrade">Jetzt upgraden →</a>
   </div>
 </nav>
 
