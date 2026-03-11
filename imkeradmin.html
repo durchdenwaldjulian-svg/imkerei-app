@@ -787,8 +787,11 @@ function populateStandortFilter() {
 function renderStats() {
     var totalKostenSum = allKostenRaw.reduce(function(s,k){return s+(parseFloat(k.betrag)||0);},0);
     var totalErtrag = allVoelkerRaw.reduce(function(s,v){return s+(parseFloat(v.honigertrag)||0);},0);
+    var heute = new Date();
     var todayActive = allUsers.filter(function(u) {
-        return u.lastLogin && (Date.now() - new Date(u.lastLogin).getTime()) < 86400000;
+        if (!u.lastLogin) return false;
+        var d = new Date(u.lastLogin);
+        return d.getFullYear() === heute.getFullYear() && d.getMonth() === heute.getMonth() && d.getDate() === heute.getDate();
     }).length;
     document.getElementById('statsGrid').innerHTML = 
         '<div class="stat-card"><div class="stat-number">'+allUsers.length+'</div><div class="stat-label">👥 Benutzer</div></div>'+
