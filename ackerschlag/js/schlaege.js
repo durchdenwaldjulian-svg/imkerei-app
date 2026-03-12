@@ -116,6 +116,16 @@ const Schlaege = {
       notiz: document.getElementById('schlagNotiz').value.trim()
     };
 
+    // Polygon from map drawing
+    if (Karte._pendingPolygon) {
+      schlag.polygon = Karte._pendingPolygon;
+      Karte._pendingPolygon = null;
+    } else if (this.editId) {
+      // Preserve existing polygon on edit
+      const existing = await Storage.getSchlag(this.editId);
+      if (existing && existing.polygon) schlag.polygon = existing.polygon;
+    }
+
     await Storage.saveSchlag(schlag);
     closeModal('schlagModal');
     showToast(this.editId ? 'Schlag aktualisiert' : 'Schlag angelegt', 'success');

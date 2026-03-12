@@ -237,7 +237,8 @@
         <h1>Karte</h1>
         <p>Schläge auf der Karte verorten</p>
       </div>
-      <div style="display:flex;gap:0.4rem">
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+        <button class="btn btn-primary" id="drawStartBtn" onclick="Karte.startDrawing()"><span class="btn-svg-icon" data-icon="plus"></span> Feld zeichnen</button>
         <select class="form-select" id="karteLayerSelect" onchange="Karte.switchLayer(this.value)" style="width:auto;min-width:140px;font-size:0.8rem;padding:0.45rem 0.7rem">
           <option value="voyager">Standard</option>
           <option value="satellite">Satellit</option>
@@ -248,6 +249,33 @@
       </div>
     </div>
     <div id="karteInfo"></div>
+
+    <!-- Draw Toolbar -->
+    <div id="drawToolbar" class="draw-toolbar" style="display:none">
+      <div class="draw-toolbar-inner">
+        <span class="draw-toolbar-label">Feld zeichnen</span>
+        <span class="draw-toolbar-area" id="drawArea" style="display:none">0,00 ha</span>
+        <div class="draw-toolbar-actions">
+          <button class="btn btn-sm btn-secondary" onclick="Karte.undoDrawPoint()">Rückgängig</button>
+          <button class="btn btn-sm btn-primary" onclick="Karte.finishDrawing()">Abschließen</button>
+          <button class="btn btn-sm btn-outline" onclick="Karte.cancelDrawing()">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Toolbar -->
+    <div id="editToolbar" class="draw-toolbar" style="display:none">
+      <div class="draw-toolbar-inner">
+        <span class="draw-toolbar-label">Feldgrenze bearbeiten</span>
+        <span class="draw-toolbar-area" id="editArea">0,00 ha</span>
+        <div class="draw-toolbar-actions">
+          <button class="btn btn-sm btn-primary" onclick="Karte.saveEditPolygon()">Speichern</button>
+          <button class="btn btn-sm btn-danger" onclick="Karte.deleteFieldPolygon()">Grenze löschen</button>
+          <button class="btn btn-sm btn-outline" onclick="Karte.cancelEdit(); Karte.updateFields();">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
     <div class="karte-layout">
       <div class="karte-sidebar" id="karteSidebar">
         <div class="karte-sidebar-header">

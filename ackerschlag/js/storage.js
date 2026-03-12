@@ -26,24 +26,21 @@ const Storage = {
   },
 
   async saveSchlag(schlag) {
+    const row = {
+      name: schlag.name, groesse: schlag.groesse, flurstueck: schlag.flurstueck,
+      bodenart: schlag.bodenart, bodenpunkte: schlag.bodenpunkte || null,
+      lat: schlag.lat, lng: schlag.lng, notiz: schlag.notiz,
+      polygon: schlag.polygon || null
+    };
+
     if (schlag.id) {
       // Update
-      const { error } = await sb.from('ask_schlaege')
-        .update({
-          name: schlag.name, groesse: schlag.groesse, flurstueck: schlag.flurstueck,
-          bodenart: schlag.bodenart, bodenpunkte: schlag.bodenpunkte || null,
-          lat: schlag.lat, lng: schlag.lng, notiz: schlag.notiz
-        }).eq('id', schlag.id);
+      const { error } = await sb.from('ask_schlaege').update(row).eq('id', schlag.id);
       if (error) console.error('saveSchlag update:', error);
     } else {
       // Insert
-      const { data, error } = await sb.from('ask_schlaege')
-        .insert({
-          user_id: this._uid(),
-          name: schlag.name, groesse: schlag.groesse, flurstueck: schlag.flurstueck,
-          bodenart: schlag.bodenart, bodenpunkte: schlag.bodenpunkte || null,
-          lat: schlag.lat, lng: schlag.lng, notiz: schlag.notiz
-        }).select().single();
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_schlaege').insert(row).select().single();
       if (error) console.error('saveSchlag insert:', error);
       if (data) schlag.id = data.id;
     }
