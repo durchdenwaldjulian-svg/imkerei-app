@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ackerschlag Admin</title>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <meta name="theme-color" content="#0A1F10">
+  <style>
+    :root {
+      --green-50: #ECFDF3; --green-100: #D1FAE5; --green-200: #A7F3D0;
+      --green-400: #34D370; --green-500: #16A34A; --green-600: #15803D;
+      --green-700: #166534; --green-800: #14532D;
+      --stone-50: #F8FAFC; --stone-100: #F1F5F9; --stone-200: #E2E8F0;
+      --stone-300: #CBD5E1; --stone-400: #94A3B8; --stone-500: #64748B;
+      --stone-600: #475569; --stone-700: #334155; --stone-800: #1E293B;
+      --stone-900: #0F172A;
+      --danger: #DC2626; --warning: #D97706; --info: #2563EB;
+      --bg: #F5F7FA; --bg-card: #FFFFFF;
+      --text-primary: var(--stone-900); --text-secondary: var(--stone-600);
+      --text-tertiary: var(--stone-500);
+      --border-default: var(--stone-200); --border-subtle: #EDF0F4;
+      --accent: var(--green-600);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+      --shadow-lg: 0 12px 32px -4px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.03);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14.5px; line-height: 1.6;
+      color: var(--text-primary); background: var(--bg);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; line-height: 1.2; }
+
+    /* Auth */
+    .auth-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
+    .auth-box { width: 100%; max-width: 400px; }
+    .auth-logo { text-align: center; margin-bottom: 2rem; }
+    .auth-logo h1 { font-size: 1.6rem; margin-top: 0.5rem; }
+    .auth-logo p { color: var(--text-tertiary); font-size: 0.85rem; }
+    .auth-error { padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 500; background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; margin-bottom: 1rem; text-align: center; display: none; }
+
+    /* Layout */
+    .admin-header {
+      background: var(--stone-900); color: white; padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .admin-header h1 { font-size: 1.2rem; color: white; display: flex; align-items: center; gap: 0.6rem; }
+    .admin-header h1 span { font-family: 'Outfit', sans-serif; font-size: 0.6rem; background: var(--green-600); padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+      padding: 1rem 1.15rem; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--stone-200); }
+    .stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--green-400), var(--green-600)); }
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #3B82F6, #2563EB); }
+    .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #FBBF24, #D97706); }
+    .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #F87171, #DC2626); }
+    .stat-card:nth-child(5)::before { background: linear-gradient(90deg, #8B5CF6, #7C3AED); }
+    .stat-card:nth-child(6)::before { background: linear-gradient(90deg, #14B8A6, #0D9488); }
+    .stat-value { font-size: 1.5rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .stat-label { font-size: 0.7rem; color: var(--text-tertiary); margin-top: 0.25rem; font-weight: 500; }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex; background: var(--stone-100); border-radius: var(--radius-md);
+      padding: 4px; margin-bottom: 1.5rem; overflow-x: auto; gap: 2px;
+    }
+    .tab-btn {
+      flex: 1; padding: 0.55rem 0.85rem; border: none; background: none; border-radius: 8px;
+      font-family: 'Outfit', sans-serif; font-size: 0.8rem; font-weight: 500;
+      color: var(--text-tertiary); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active { background: var(--bg-card); color: var(--text-primary); font-weight: 600; box-shadow: var(--shadow-sm); }
+
+    /* Card */
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg);
+      padding: 1.25rem; margin-bottom: 0.85rem; box-shadow: var(--shadow-sm);
+    }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); background: var(--bg-card); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead { background: var(--stone-50); }
+    th { padding: 0.7rem 0.85rem; text-align: left; font-weight: 600; color: var(--text-tertiary); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1.5px solid var(--border-default); }
+    td { padding: 0.65rem 0.85rem; border-top: 1px solid var(--border-subtle); color: var(--text-primary); }
+    tr:hover { background: var(--stone-50); }
+
+    /* Badges */
+    .badge { display: inline-flex; padding: 0.18rem 0.55rem; border-radius: 20px; font-size: 0.65rem; font-weight: 600; }
+    .badge-green { background: #DCFCE7; color: #15803D; }
+    .badge-blue { background: #DBEAFE; color: #1E40AF; }
+    .badge-yellow { background: #FEF3C7; color: #92400E; }
+    .badge-red { background: #FEE2E2; color: #991B1B; }
+    .badge-gray { background: var(--stone-100); color: var(--text-tertiary); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600;
+      font-family: 'Outfit', sans-serif; border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: linear-gradient(145deg, var(--green-600), var(--green-700)); color: white; box-shadow: 0 1px 3px rgba(22,101,52,0.3); }
+    .btn-primary:hover { background: linear-gradient(145deg, var(--green-700), var(--green-800)); transform: translateY(-1px); }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-default); }
+    .btn-secondary:hover { background: var(--stone-50); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #B91C1C; }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.75rem; }
+    .btn-logout { background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 0.35rem 0.8rem; }
+    .btn-logout:hover { color: white; border-color: rgba(255,255,255,0.4); }
+
+    /* Forms */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.35rem; }
+    .form-input, .form-select {
+      width: 100%; padding: 0.6rem 0.85rem; border: 1.5px solid var(--border-default);
+      border-radius: var(--radius-sm); font-size: 0.88rem; font-family: 'Outfit', sans-serif;
+      color: var(--text-primary); background: var(--bg-card);
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--green-500); box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
+
+    /* Search */
+    .search-bar { margin-bottom: 1rem; }
+    .search-bar input { max-width: 320px; }
+
+    /* Tab content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* User detail */
+    .user-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+    .user-detail-item label { display: block; font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .user-detail-item span { font-size: 0.9rem; font-weight: 500; }
+
+    /* Activity dot */
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; }
+    .activity-dot.online { background: #16A34A; box-shadow: 0 0 6px rgba(22,163,74,0.5); }
+    .activity-dot.today { background: #3B82F6; }
+    .activity-dot.recent { background: #FBBF24; }
+    .activity-dot.inactive { background: var(--stone-300); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .admin-wrap { padding: 1rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .admin-header { padding: 0.75rem 1rem; }
+      .tab-btn { font-size: 0.72rem; padding: 0.45rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== AUTH ========== -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div style="width:56px;height:56px;margin:0 auto;background:linear-gradient(145deg,var(--green-600),var(--green-800));border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(22,101,52,0.3)">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="1.8"><path d="M12 3v8"/><path d="M8 6.5c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5"/><path d="M6 10c0-2 2.7-4.5 6-4.5s6 2.5 6 4.5"/><path d="M5 21l2-9h10l2 9z"/></svg>
+      </div>
+      <h1>Ackerschlag Admin</h1>
+      <p>Administrations-Bereich</p>
+    </div>
+    <div id="authError" class="auth-error"></div>
+    <div class="card" style="padding:1.5rem">
+      <div class="form-group">
+        <label class="form-label">E-Mail</label>
+        <input class="form-input" id="loginEmail" type="email" placeholder="admin@email.de">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Passwort</label>
+        <input class="form-input" id="loginPw" type="password" placeholder="Passwort">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem" onclick="adminLogin()">Anmelden</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADMIN APP ========== -->
+<div id="adminApp" style="display:none">
+
+  <div class="admin-header">
+    <h1>Ackerschlag <span>Admin</span></h1>
+    <button class="btn btn-logout" onclick="adminLogout()">Abmelden</button>
+  </div>
+
+  <div class="admin-wrap">
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-value" id="statUsers">-</div><div class="stat-label">Benutzer</div></div>
+      <div class="stat-card"><div class="stat-value" id="statActive">-</div><div class="stat-label">Heute aktiv</div></div>
+      <div class="stat-card"><div class="stat-value" id="statSchlaege">-</div><div class="stat-label">Schläge</div></div>
+      <div class="stat-card"><div class="stat-value" id="statFlaeche">-</div><div class="stat-label">Gesamtfläche (ha)</div></div>
+      <div class="stat-card"><div class="stat-value" id="statKulturen">-</div><div class="stat-label">Kulturen</div></div>
+      <div class="stat-card"><div class="stat-value" id="statMassnahmen">-</div><div class="stat-label">Maßnahmen</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar" id="tabBar">
+      <button class="tab-btn active" onclick="switchTab('users')">Benutzer</button>
+      <button class="tab-btn" onclick="switchTab('schlaege')">Schläge</button>
+      <button class="tab-btn" onclick="switchTab('kulturen')">Kulturen</button>
+      <button class="tab-btn" onclick="switchTab('massnahmen')">Maßnahmen</button>
+      <button class="tab-btn" onclick="switchTab('admins')">Admins</button>
+    </div>
+
+    <!-- Tab: Benutzer -->
+    <div id="tab-users" class="tab-content active">
+      <div class="search-bar">
+        <input class="form-input" id="userSearch" placeholder="Benutzer suchen..." oninput="renderUsers()">
+      </div>
+      <div id="usersTable"></div>
+    </div>
+
+    <!-- Tab: Schläge -->
+    <div id="tab-schlaege" class="tab-content">
+      <div class="search-bar" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select class="form-select" id="schlaegeUserFilter" onchange="renderSchlaege()" style="max-width:280px">
+          <option value="">Alle Benutzer</option>
+        </select>
+        <input class="form-input" id="schlaegeSearch" placeholder="Schlag suchen..." oninput="renderSchlaege()" style="max-width:280px">
+      </div>
+      <div id="schlaegeTable"></div>
+    </div>
+
+    <!-- Tab: Kulturen -->
+    <div id="tab-kulturen" class="tab-content">
+      <div class="search-bar" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select class="form-select" id="kulturenUserFilter" onchange="renderKulturen()" style="max-width:280px">
+          <option value="">Alle Benutzer</option>
+        </select>
+      </div>
+      <div id="kulturenTable"></div>
+    </div>
+
+    <!-- Tab: Maßnahmen -->
+    <div id="tab-massnahmen" class="tab-content">
+      <div class="search-bar" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select class="form-select" id="massnahmenUserFilter" onchange="renderMassnahmen()" style="max-width:280px">
+          <option value="">Alle Benutzer</option>
+        </select>
+        <select class="form-select" id="massnahmenTypFilter" onchange="renderMassnahmen()" style="max-width:200px">
+          <option value="">Alle Typen</option>
+          <option value="duengung">Düngung</option>
+          <option value="pflanzenschutz">Pflanzenschutz</option>
+          <option value="bodenbearbeitung">Bodenbearbeitung</option>
+          <option value="aussaat">Aussaat</option>
+          <option value="ernte">Ernte</option>
+          <option value="sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div id="massnahmenTable"></div>
+    </div>
+
+    <!-- Tab: Admins -->
+    <div id="tab-admins" class="tab-content">
+      <div id="adminsContent"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="vendor/supabase.min.js"></script>
+<script>
+  // ========== CONFIG ==========
+  const SUPABASE_URL = "https://reyswuedptkyfdkmdpft.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJleXN3dWVkcHRreWZka21kcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NjM0MDQsImV4cCI6MjA4NzQzOTQwNH0.mrqs7lPs3S7B62sKpTbuzuxAcodil04RQ7HUjuQHuKI";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let adminUser = null;
+  let allUsers = [];
+  let allSchlaege = [];
+  let allKulturen = [];
+  let allMassnahmen = [];
+  let adminList = [];
+
+  // ========== AUTH ==========
+  async function adminLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    if (!email || !pw) { showAuthError('Bitte E-Mail und Passwort eingeben'); return; }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) { showAuthError('Falsche Anmeldedaten'); return; }
+
+    adminUser = data.user;
+    await checkAdmin();
+  }
+
+  async function checkAdmin() {
+    try {
+      const { data: admins, error } = await sb.from('admins').select('*');
+
+      if (error) {
+        // admins table might not exist
+        showAuthError('Admin-Tabelle nicht gefunden. Erstelle sie zuerst im Supabase SQL Editor.');
+        return;
+      }
+
+      if (admins.length === 0) {
+        // First admin setup
+        if (confirm('Keine Admins eingetragen. Möchtest du dich als ersten Admin hinzufügen?')) {
+          await sb.from('admins').insert({ user_id: adminUser.id, email: adminUser.email });
+          showAdmin();
+        }
+        return;
+      }
+
+      if (!admins.some(a => a.user_id === adminUser.id)) {
+        showAuthError('Du bist kein Administrator.');
+        await sb.auth.signOut();
+        return;
+      }
+
+      adminList = admins;
+      showAdmin();
+    } catch (e) {
+      showAuthError('Fehler: ' + e.message);
+    }
+  }
+
+  function showAuthError(msg) {
+    const el = document.getElementById('authError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function adminLogout() {
+    await sb.auth.signOut();
+    adminUser = null;
+    document.getElementById('adminApp').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+
+  async function showAdmin() {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    await loadAllData();
+  }
+
+  // ========== DATA LOADING ==========
+  async function loadAllData() {
+    // Load users from auth (via profiles or directly)
+    // Since we can't list auth.users from client, we collect unique user_ids from data
+    const [schlaege, kulturen, massnahmen, admins] = await Promise.all([
+      sb.from('ask_schlaege').select('*').order('created_at', { ascending: false }),
+      sb.from('ask_kulturen').select('*').order('created_at', { ascending: false }),
+      sb.from('ask_massnahmen').select('*').order('datum', { ascending: false }),
+      sb.from('admins').select('*')
+    ]);
+
+    allSchlaege = schlaege.data || [];
+    allKulturen = kulturen.data || [];
+    allMassnahmen = massnahmen.data || [];
+    adminList = admins.data || [];
+
+    // Build user list from unique user_ids
+    const userIds = new Set();
+    allSchlaege.forEach(s => userIds.add(s.user_id));
+    allKulturen.forEach(k => userIds.add(k.user_id));
+    allMassnahmen.forEach(m => userIds.add(m.user_id));
+
+    // Try to get profiles (if exists)
+    let profiles = [];
+    try {
+      const { data } = await sb.from('profiles').select('id, email, name, created_at, last_login');
+      if (data) profiles = data;
+    } catch(e) {}
+
+    allUsers = Array.from(userIds).map(uid => {
+      const profile = profiles.find(p => p.id === uid);
+      const userSchlaege = allSchlaege.filter(s => s.user_id === uid);
+      const userKulturen = allKulturen.filter(k => k.user_id === uid);
+      const userMassnahmen = allMassnahmen.filter(m => m.user_id === uid);
+      const totalFlaeche = userSchlaege.reduce((s, f) => s + (parseFloat(f.groesse) || 0), 0);
+
+      return {
+        id: uid,
+        email: profile ? (profile.email || profile.name || uid.slice(0,8)) : uid.slice(0,8),
+        name: profile ? profile.name : null,
+        created_at: profile ? profile.created_at : userSchlaege[0]?.created_at,
+        last_login: profile ? profile.last_login : null,
+        schlaege: userSchlaege.length,
+        kulturen: userKulturen.length,
+        massnahmen: userMassnahmen.length,
+        flaeche: totalFlaeche
+      };
+    });
+
+    updateStats();
+    renderUsers();
+    populateUserFilters();
+    renderSchlaege();
+    renderKulturen();
+    renderMassnahmen();
+    renderAdmins();
+  }
+
+  // ========== STATS ==========
+  function updateStats() {
+    document.getElementById('statUsers').textContent = allUsers.length;
+    document.getElementById('statSchlaege').textContent = allSchlaege.length;
+    document.getElementById('statKulturen').textContent = allKulturen.length;
+    document.getElementById('statMassnahmen').textContent = allMassnahmen.length;
+
+    const totalFlaeche = allSchlaege.reduce((s, f) => s + (parseFloat(f.groesse) || 0), 0);
+    document.getElementById('statFlaeche').textContent = totalFlaeche.toFixed(1);
+
+    // Active today
+    const today = new Date().toISOString().slice(0, 10);
+    const activeToday = allUsers.filter(u => u.last_login && u.last_login.slice(0, 10) === today).length;
+    document.getElementById('statActive').textContent = activeToday;
+  }
+
+  // ========== TABS ==========
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      const tabs = ['users', 'schlaege', 'kulturen', 'massnahmen', 'admins'];
+      b.classList.toggle('active', tabs[i] === name);
+    });
+  }
+
+  // ========== USER FILTERS ==========
+  function populateUserFilters() {
+    const opts = allUsers.map(u => `<option value="${u.id}">${esc(u.email)}</option>`).join('');
+    ['schlaegeUserFilter', 'kulturenUserFilter', 'massnahmenUserFilter'].forEach(id => {
+      const el = document.getElementById(id);
+      const first = el.querySelector('option');
+      el.innerHTML = '';
+      el.appendChild(first);
+      el.innerHTML += opts;
+    });
+  }
+
+  // ========== RENDER: USERS ==========
+  function renderUsers() {
+    const search = (document.getElementById('userSearch').value || '').toLowerCase();
+    let users = allUsers;
+    if (search) users = users.filter(u => (u.email + ' ' + (u.name || '')).toLowerCase().includes(search));
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+
+    document.getElementById('usersTable').innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Status</th><th>Benutzer</th><th>Registriert</th><th>Letzter Login</th>
+            <th>Schläge</th><th>Fläche (ha)</th><th>Kulturen</th><th>Maßnahmen</th><th>Aktionen</th>
+          </tr></thead>
+          <tbody>
+            ${users.length ? users.map(u => {
+              let activity = 'inactive', label = 'Inaktiv';
+              if (u.last_login) {
+                const ll = u.last_login.slice(0, 10);
+                if (ll === todayStr) { activity = 'today'; label = 'Heute'; }
+                else {
+                  const diff = (now - new Date(u.last_login)) / 86400000;
+                  if (diff < 7) { activity = 'recent'; label = 'Diese Woche'; }
+                }
+              }
+              return `<tr>
+                <td><span class="activity-dot ${activity}"></span>${label}</td>
+                <td><strong>${esc(u.email)}</strong>${u.name ? `<br><span style="font-size:0.75rem;color:var(--text-tertiary)">${esc(u.name)}</span>` : ''}</td>
+                <td>${u.created_at ? fmtDate(u.created_at) : '-'}</td>
+                <td>${u.last_login ? fmtDateTime(u.last_login) : '-'}</td>
+                <td>${u.schlaege}</td>
+                <td>${u.flaeche.toFixed(1)}</td>
+                <td>${u.kulturen}</td>
+                <td>${u.massnahmen}</td>
+                <td>
+                  <button class="btn btn-sm btn-secondary" onclick="showUserDetail('${u.id}')">Details</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteUserData('${u.id}', '${esc(u.email)}')">Daten löschen</button>
+                </td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-tertiary)">Keine Benutzer gefunden</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  async function showUserDetail(uid) {
+    const u = allUsers.find(x => x.id === uid);
+    if (!u) return;
+
+    const userSchlaege = allSchlaege.filter(s => s.user_id === uid);
+    const userKulturen = allKulturen.filter(k => k.user_id === uid);
+    const userMassnahmen = allMassnahmen.filter(m => m.user_id === uid);
+
+    const bodenLabels = { sand: 'Sand', lehm: 'Lehm', ton: 'Ton', schluff: 'Schluff', moor: 'Moor', loess: 'Löss' };
+    const typLabels = { duengung: 'Düngung', pflanzenschutz: 'Pflanzenschutz', bodenbearbeitung: 'Bodenbearbeitung', aussaat: 'Aussaat', ernte: 'Ernte', sonstiges: 'Sonstiges' };
+
+    const html = `
+      <div class="card" style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h2 style="margin:0">${esc(u.email)}</h2>
+          <button class="btn btn-sm btn-secondary" onclick="renderUsers()">Zurück</button>
+        </div>
+        <div class="user-detail-grid">
+          <div class="user-detail-item"><label>User-ID</label><span style="font-size:0.72rem;word-break:break-all">${uid}</span></div>
+          <div class="user-detail-item"><label>Registriert</label><span>${u.created_at ? fmtDate(u.created_at) : '-'}</span></div>
+          <div class="user-detail-item"><label>Letzter Login</label><span>${u.last_login ? fmtDateTime(u.last_login) : '-'}</span></div>
+          <div class="user-detail-item"><label>Schläge</label><span>${u.schlaege}</span></div>
+          <div class="user-detail-item"><label>Fläche</label><span>${u.flaeche.toFixed(2)} ha</span></div>
+          <div class="user-detail-item"><label>Kulturen</label><span>${u.kulturen}</span></div>
+          <div class="user-detail-item"><label>Maßnahmen</label><span>${u.massnahmen}</span></div>
+        </div>
+      </div>
+
+      ${userSchlaege.length ? `
+        <h3 style="margin-bottom:0.75rem">Schläge (${userSchlaege.length})</h3>
+        <div class="table-wrap" style="margin-bottom:1.5rem">
+          <table>
+            <thead><tr><th>Name</th><th>Fläche</th><th>Bodenart</th><th>Polygon</th><th>Erstellt</th></tr></thead>
+            <tbody>${userSchlaege.map(s => `<tr>
+              <td><strong>${esc(s.name)}</strong></td>
+              <td>${parseFloat(s.groesse).toFixed(2)} ha</td>
+              <td>${bodenLabels[s.bodenart] || s.bodenart || '-'}</td>
+              <td>${s.polygon && s.polygon.length >= 3 ? `<span class="badge badge-green">${s.polygon.length} Punkte</span>` : '<span class="badge badge-gray">Nein</span>'}</td>
+              <td>${fmtDate(s.created_at)}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      ` : ''}
+
+      ${userKulturen.length ? `
+        <h3 style="margin-bottom:0.75rem">Kulturen (${userKulturen.length})</h3>
+        <div class="table-wrap" style="margin-bottom:1.5rem">
+          <table>
+            <thead><tr><th>Jahr</th><th>Kultur</th><th>Sorte</th><th>Ertrag</th></tr></thead>
+            <tbody>${userKulturen.map(k => `<tr>
+              <td>${k.jahr}</td>
+              <td><strong>${esc(k.kultur)}</strong></td>
+              <td>${esc(k.sorte) || '-'}</td>
+              <td>${k.ertrag ? k.ertrag + ' dt/ha' : '-'}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      ` : ''}
+
+      ${userMassnahmen.length ? `
+        <h3 style="margin-bottom:0.75rem">Maßnahmen (${userMassnahmen.length})</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Datum</th><th>Typ</th><th>Mittel</th><th>Menge</th><th>Kosten</th></tr></thead>
+            <tbody>${userMassnahmen.map(m => `<tr>
+              <td>${fmtDate(m.datum)}</td>
+              <td><span class="badge badge-blue">${typLabels[m.typ] || m.typ}</span></td>
+              <td>${esc(m.mittel) || '-'}</td>
+              <td>${m.menge ? m.menge + ' ' + (m.einheit || '') : '-'}</td>
+              <td>${m.kosten ? m.kosten.toFixed(2) + ' €' : '-'}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+      ` : ''}
+    `;
+
+    document.getElementById('usersTable').innerHTML = html;
+  }
+
+  async function deleteUserData(uid, email) {
+    if (!confirm(`ALLE Daten von ${email} löschen? (Schläge, Kulturen, Maßnahmen)\n\nDas Benutzerkonto bleibt bestehen.`)) return;
+    if (!confirm('Bist du sicher? Das kann nicht rückgängig gemacht werden!')) return;
+
+    // Delete in order (massnahmen → kulturen → schlaege due to FK constraints)
+    await sb.from('ask_massnahmen').delete().eq('user_id', uid);
+    await sb.from('ask_kulturen').delete().eq('user_id', uid);
+    await sb.from('ask_schlaege').delete().eq('user_id', uid);
+
+    alert('Daten gelöscht.');
+    await loadAllData();
+  }
+
+  // ========== RENDER: SCHLÄGE ==========
+  function renderSchlaege() {
+    const userFilter = document.getElementById('schlaegeUserFilter').value;
+    const search = (document.getElementById('schlaegeSearch').value || '').toLowerCase();
+
+    let data = allSchlaege;
+    if (userFilter) data = data.filter(s => s.user_id === userFilter);
+    if (search) data = data.filter(s => s.name.toLowerCase().includes(search));
+
+    const bodenLabels = { sand: 'Sand', lehm: 'Lehm', ton: 'Ton', schluff: 'Schluff', moor: 'Moor', loess: 'Löss' };
+
+    document.getElementById('schlaegeTable').innerHTML = `
+      <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:0.75rem">${data.length} Schläge</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Benutzer</th><th>Name</th><th>Fläche</th><th>Bodenart</th><th>Koordinaten</th><th>Polygon</th><th>Erstellt</th></tr></thead>
+          <tbody>
+            ${data.length ? data.map(s => {
+              const user = allUsers.find(u => u.id === s.user_id);
+              return `<tr>
+                <td>${user ? esc(user.email) : s.user_id.slice(0,8)}</td>
+                <td><strong>${esc(s.name)}</strong>${s.flurstueck ? `<br><span style="font-size:0.72rem;color:var(--text-tertiary)">${esc(s.flurstueck)}</span>` : ''}</td>
+                <td>${parseFloat(s.groesse).toFixed(2)} ha</td>
+                <td>${bodenLabels[s.bodenart] || s.bodenart || '-'}</td>
+                <td style="font-size:0.75rem">${s.lat && s.lng ? `${parseFloat(s.lat).toFixed(4)}, ${parseFloat(s.lng).toFixed(4)}` : '-'}</td>
+                <td>${s.polygon && s.polygon.length >= 3 ? `<span class="badge badge-green">${s.polygon.length} Pkt.</span>` : '<span class="badge badge-gray">-</span>'}</td>
+                <td>${fmtDate(s.created_at)}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-tertiary)">Keine Schläge</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ========== RENDER: KULTUREN ==========
+  function renderKulturen() {
+    const userFilter = document.getElementById('kulturenUserFilter').value;
+    let data = allKulturen;
+    if (userFilter) data = data.filter(k => k.user_id === userFilter);
+
+    document.getElementById('kulturenTable').innerHTML = `
+      <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:0.75rem">${data.length} Kulturen</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Benutzer</th><th>Schlag</th><th>Jahr</th><th>Kultur</th><th>Sorte</th><th>Aussaat</th><th>Ernte</th><th>Ertrag</th></tr></thead>
+          <tbody>
+            ${data.length ? data.map(k => {
+              const user = allUsers.find(u => u.id === k.user_id);
+              const schlag = allSchlaege.find(s => s.id === k.schlag_id);
+              return `<tr>
+                <td>${user ? esc(user.email) : k.user_id.slice(0,8)}</td>
+                <td>${schlag ? esc(schlag.name) : k.schlag_id.slice(0,8)}</td>
+                <td><strong>${k.jahr}</strong></td>
+                <td>${esc(k.kultur)}</td>
+                <td>${esc(k.sorte) || '-'}</td>
+                <td>${k.aussaat ? fmtDate(k.aussaat) : '-'}</td>
+                <td>${k.ernte ? fmtDate(k.ernte) : '-'}</td>
+                <td>${k.ertrag ? k.ertrag + ' dt/ha' : '-'}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-tertiary)">Keine Kulturen</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ========== RENDER: MASSNAHMEN ==========
+  function renderMassnahmen() {
+    const userFilter = document.getElementById('massnahmenUserFilter').value;
+    const typFilter = document.getElementById('massnahmenTypFilter').value;
+    let data = allMassnahmen;
+    if (userFilter) data = data.filter(m => m.user_id === userFilter);
+    if (typFilter) data = data.filter(m => m.typ === typFilter);
+
+    const typLabels = { duengung: 'Düngung', pflanzenschutz: 'Pflanzenschutz', bodenbearbeitung: 'Bodenbearbeitung', aussaat: 'Aussaat', ernte: 'Ernte', sonstiges: 'Sonstiges' };
+    const totalKosten = data.reduce((s, m) => s + (parseFloat(m.kosten) || 0), 0);
+
+    document.getElementById('massnahmenTable').innerHTML = `
+      <p style="font-size:0.8rem;color:var(--text-tertiary);margin-bottom:0.75rem">${data.length} Maßnahmen · Gesamtkosten: ${totalKosten.toFixed(2)} €</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Benutzer</th><th>Schlag</th><th>Datum</th><th>Typ</th><th>Mittel</th><th>Menge</th><th>Kosten</th><th>Beschreibung</th></tr></thead>
+          <tbody>
+            ${data.length ? data.map(m => {
+              const user = allUsers.find(u => u.id === m.user_id);
+              const schlag = allSchlaege.find(s => s.id === m.schlag_id);
+              return `<tr>
+                <td>${user ? esc(user.email) : m.user_id.slice(0,8)}</td>
+                <td>${schlag ? esc(schlag.name) : m.schlag_id.slice(0,8)}</td>
+                <td>${fmtDate(m.datum)}</td>
+                <td><span class="badge badge-blue">${typLabels[m.typ] || m.typ}</span></td>
+                <td>${esc(m.mittel) || '-'}</td>
+                <td>${m.menge ? m.menge + ' ' + (m.einheit || '') : '-'}</td>
+                <td>${m.kosten ? parseFloat(m.kosten).toFixed(2) + ' €' : '-'}</td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(m.beschreibung) || '-'}</td>
+              </tr>`;
+            }).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-tertiary)">Keine Maßnahmen</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ========== RENDER: ADMINS ==========
+  function renderAdmins() {
+    document.getElementById('adminsContent').innerHTML = `
+      <div class="card">
+        <h3 style="margin-bottom:1rem">Admin-Verwaltung</h3>
+        <div class="table-wrap" style="margin-bottom:1.5rem">
+          <table>
+            <thead><tr><th>E-Mail</th><th>User-ID</th><th>Hinzugefügt</th><th>Aktion</th></tr></thead>
+            <tbody>
+              ${adminList.map(a => `<tr>
+                <td><strong>${esc(a.email || a.user_id.slice(0,8))}</strong></td>
+                <td style="font-size:0.72rem">${a.user_id}</td>
+                <td>${a.created_at ? fmtDate(a.created_at) : '-'}</td>
+                <td>${a.user_id === adminUser.id
+                  ? '<span style="font-size:0.75rem;color:var(--text-tertiary)">Du</span>'
+                  : `<button class="btn btn-sm btn-danger" onclick="removeAdmin('${a.id}', '${esc(a.email || '')}')">Entfernen</button>`
+                }</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-bottom:0.75rem">Admin hinzufügen</h3>
+        <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="margin:0;flex:1;min-width:200px">
+            <select class="form-select" id="newAdminSelect">
+              <option value="">Benutzer wählen...</option>
+              ${allUsers.filter(u => !adminList.some(a => a.user_id === u.id)).map(u =>
+                `<option value="${u.id}">${esc(u.email)}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="addAdmin()">Hinzufügen</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function addAdmin() {
+    const uid = document.getElementById('newAdminSelect').value;
+    if (!uid) { alert('Bitte Benutzer wählen'); return; }
+    const user = allUsers.find(u => u.id === uid);
+
+    const { error } = await sb.from('admins').insert({ user_id: uid, email: user ? user.email : uid });
+    if (error) { alert('Fehler: ' + error.message); return; }
+
+    alert('Admin hinzugefügt');
+    await loadAllData();
+  }
+
+  async function removeAdmin(id, email) {
+    if (!confirm(`Admin "${email}" wirklich entfernen?`)) return;
+    await sb.from('admins').delete().eq('id', id);
+    await loadAllData();
+  }
+
+  // ========== HELPERS ==========
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  function fmtDateTime(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ========== INIT ==========
+  (async () => {
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      adminUser = data.session.user;
+      await checkAdmin();
+    }
+
+    // Enter key for login
+    document.getElementById('loginPw').addEventListener('keydown', e => {
+      if (e.key === 'Enter') adminLogin();
+    });
+  })();
+</script>
+</body>
+</html>
