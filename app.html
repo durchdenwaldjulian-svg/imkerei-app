@@ -7,11 +7,12 @@
     <title>Imkerei Tagesplaner</title>
     <meta name="theme-color" content="#F5A623">
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="/fonts/fonts.css">
+    <script src="theme.js?v=2"></script>
+<link rel="stylesheet" href="/fonts/fonts.css">
     <script src="vendor/supabase.min.js"></script>
     <link rel="stylesheet" href="vendor/leaflet.min.css" />
     <script src="vendor/leaflet.min.js"></script>
-    <link rel="stylesheet" href="shared-styles.css">
+    <link rel="stylesheet" href="shared-styles.css?v=2">
     <style>
         /* === INDEX.HTML SPECIFIC STYLES === */
         body{padding-left:220px;padding-bottom:2rem}
@@ -103,7 +104,7 @@
 <nav class="nav" id="mainNav"></nav>
 <div class="mobile-nav" id="mobileNavBar"></div>
 <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
-<script src="nav.js"></script>
+<script src="nav.js?v=2"></script>
 
 <div id="toast" class="toast"></div>
 <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div><div style="margin-top:1rem;color:#7A6652;font-weight:600">Laden...</div></div>
@@ -1960,8 +1961,19 @@ const app={
     },
     
     rEinst(){
+        var proActive = (typeof themeManager !== 'undefined') && themeManager.isPro();
         return '<div class="container">'+
-        '<h1>⚙️ Einstellungen</h1>'+
+        '<h1>'+(proActive ? themeManager.getIconByName('settings')+' ' : '⚙️ ')+'Einstellungen</h1>'+
+        '<div class="card">'+
+        '<h3>'+(proActive ? themeManager.getIconByName('palette')+' ' : '🎨 ')+'Design</h3>'+
+        '<p style="font-size:.85rem;color:#7A6652;margin:.5rem 0">Wechsle zwischen dem Standard-Design mit Emojis und der professionellen Ansicht mit schlanken Icons.</p>'+
+        '<div style="display:flex;align-items:center;gap:1rem;margin-top:.75rem">'+
+        '<button class="btn '+(proActive ? 'btn-primary' : '')+' btn-sm" onclick="themeManager.toggle()" style="min-width:180px">'+
+        (proActive ? 'Zum Standard-Design' : 'Zur Profi-Ansicht')+
+        '</button>'+
+        '<span style="font-size:.8rem;color:#7A6652">Aktuell: <strong>'+(proActive ? 'Profi' : 'Standard')+'</strong></span>'+
+        '</div>'+
+        '</div>'+
         (this.data.user ? 
             '<div class="card">'+
             '<h3>👤 Profil</h3>'+
