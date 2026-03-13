@@ -108,6 +108,10 @@ const Massnahmen = {
     schlagSelect.innerHTML = '<option value="">Schlag wählen...</option>' +
       schlaege.map(s => `<option value="${s.id}">${s.name} (${formatNumber(s.groesse)} ha)</option>`).join('');
 
+    // Dynamische Felder zurücksetzen
+    this.toggleDuengungFelder('');
+    document.getElementById('massPsmWarnung').style.display = 'none';
+
     if (id) {
       const allMassnahmen = await Storage.getMassnahmen();
       const m = allMassnahmen.find(x => x.id === id);
@@ -121,6 +125,17 @@ const Massnahmen = {
         document.getElementById('massEinheit').value = m.einheit || '';
         document.getElementById('massBeschreibung').value = m.beschreibung || '';
         document.getElementById('massKosten').value = m.kosten || '';
+        // Düngung-Felder
+        if (m.typ === 'duengung') {
+          this.toggleDuengungFelder('duengung');
+          document.getElementById('massNGehalt').value = m.n_gehalt || '';
+          document.getElementById('massPGehalt').value = m.p_gehalt || '';
+          document.getElementById('massKGehalt').value = m.k_gehalt || '';
+          document.getElementById('massDuengerTyp').value = m.duenger_typ || '';
+        }
+        if (m.typ === 'pflanzenschutz') {
+          this.toggleDuengungFelder('pflanzenschutz');
+        }
       }
     } else {
       document.getElementById('massModalTitle').textContent = 'Neue Maßnahme';
@@ -128,6 +143,61 @@ const Massnahmen = {
     }
 
     openModal('massnahmeModal');
+  },
+
+  onTypChange(typ) {
+    this.toggleDuengungFelder(typ);
+  },
+
+  toggleDuengungFelder(typ) {
+    const duengFelder = document.getElementById('massDuengungFelder');
+    const psmFelder = document.getElementById('massPsmFelder');
+    if (duengFelder) duengFelder.style.display = typ === 'duengung' ? 'block' : 'none';
+    if (psmFelder) psmFelder.style.display = typ === 'pflanzenschutz' ? 'block' : 'none';
+  },
+
+  onDuengerSelect(name) {
+    if (!name || !Duengeplaner) return;
+    const stamm = Duengeplaner.duengerStamm[name];
+    if (stamm) {
+      const menge = parseFloat(document.getElementById('massMenge').value) || 0;
+      if (stamm.N) document.getElementById('massNGehalt').value = (menge * stamm.N / 100).toFixed(1);
+      if (stamm.P) document.getElementById('massPGehalt').value = (menge * stamm.P / 100).toFixed(1);
+      if (stamm.K) document.getElementById('massKGehalt').value = (menge * stamm.K / 100).toFixed(1);
+      document.getElementById('massDuengerTyp').value = stamm.typ || '';
+    }
+  },
+
+  async checkPSMWarnung() {
+    const mittel = document.getElementById('massMittel').value.trim();
+    const schlagId = document.getElementById('massSchlag').value;
+    const warnDiv = document.getElementById('massPsmWarnung');
+    if (!mittel || !schlagId || !warnDiv) return;
+
+    // Kultur für diesen Schlag ermitteln
+    const kulturen = await Storage.getKulturen();
+    const jahr = new Date().getFullYear();
+    const kultur = kulturen.find(k => k.schlagId === schlagId && parseInt(k.jahr) === jahr);
+    const kulturName = kultur ? kultur.kultur : null;
+
+    if (typeof Pflanzenschutz !== 'undefined') {
+      const result = Pflanzenschutz.checkZulassung(mittel, kulturName);
+      if (result && result.warnings.length > 0) {
+        warnDiv.innerHTML = '⚠️ ' + result.warnings.join('<br>');
+        warnDiv.style.display = 'block';
+        return;
+      }
+      // Aufwandmenge prüfen
+      if (result && result.psm && result.psm.max_aufwand) {
+        const menge = parseFloat(document.getElementById('massMenge').value) || 0;
+        if (menge > result.psm.max_aufwand) {
+          warnDiv.innerHTML = `⚠️ Aufwandmenge ${menge} ${result.psm.einheit || ''} überschreitet Maximum von ${result.psm.max_aufwand} ${result.psm.einheit || ''}!`;
+          warnDiv.style.display = 'block';
+          return;
+        }
+      }
+    }
+    warnDiv.style.display = 'none';
   },
 
   async save() {
@@ -148,7 +218,11 @@ const Massnahmen = {
       menge: document.getElementById('massMenge').value,
       einheit: document.getElementById('massEinheit').value,
       beschreibung: document.getElementById('massBeschreibung').value.trim(),
-      kosten: parseFloat(document.getElementById('massKosten').value) || null
+      kosten: parseFloat(document.getElementById('massKosten').value) || null,
+      n_gehalt: typ === 'duengung' ? (parseFloat(document.getElementById('massNGehalt').value) || null) : null,
+      p_gehalt: typ === 'duengung' ? (parseFloat(document.getElementById('massPGehalt').value) || null) : null,
+      k_gehalt: typ === 'duengung' ? (parseFloat(document.getElementById('massKGehalt').value) || null) : null,
+      duenger_typ: typ === 'duengung' ? (document.getElementById('massDuengerTyp').value || null) : null
     };
 
     await Storage.saveMassnahme(data);

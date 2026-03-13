@@ -5,7 +5,7 @@
 
 const Storage = {
   // Lokaler Cache (wird bei jeder Abfrage aktualisiert)
-  _cache: { schlaege: null, kulturen: null, massnahmen: null },
+  _cache: { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null },
 
   _uid() { return currentUser ? currentUser.id : null; },
 
@@ -135,6 +135,129 @@ const Storage = {
     });
   },
 
+  // =========== DÜNGEPLANUNG ===========
+  async getDuengeplanung(jahr) {
+    const { data, error } = await sb.from('ask_duengeplanung')
+      .select('*').eq('jahr', jahr).order('created_at');
+    if (error) { console.error('getDuengeplanung:', error); return []; }
+    return (data || []).map(d => ({ ...d, schlagId: d.schlag_id }));
+  },
+
+  async saveDuengeplanung(dp) {
+    const row = {
+      schlag_id: dp.schlagId, jahr: dp.jahr,
+      n_bedarf: dp.n_bedarf || 0, p_bedarf: dp.p_bedarf || 0, k_bedarf: dp.k_bedarf || 0,
+      n_zufuhr: dp.n_zufuhr || 0, p_zufuhr: dp.p_zufuhr || 0, k_zufuhr: dp.k_zufuhr || 0
+    };
+    if (dp.id) {
+      const { error } = await sb.from('ask_duengeplanung').update(row).eq('id', dp.id);
+      if (error) console.error('saveDuengeplanung:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_duengeplanung').insert(row).select().single();
+      if (error) console.error('saveDuengeplanung:', error);
+      if (data) dp.id = data.id;
+    }
+    this._cache.duengeplanung = null;
+    return dp;
+  },
+
+  async deleteDuengeplanung(id) {
+    await sb.from('ask_duengeplanung').delete().eq('id', id);
+    this._cache.duengeplanung = null;
+  },
+
+  // =========== PFLANZENSCHUTZ DB ===========
+  async getPflanzenschutzDB() {
+    if (this._cache.pflanzenschutz) return this._cache.pflanzenschutz;
+    const { data, error } = await sb.from('ask_pflanzenschutz_db')
+      .select('*').order('produkt');
+    if (error) { console.error('getPflanzenschutzDB:', error); return []; }
+    this._cache.pflanzenschutz = data || [];
+    return this._cache.pflanzenschutz;
+  },
+
+  async savePflanzenschutzDB(psm) {
+    const row = {
+      produkt: psm.produkt, wirkstoff: psm.wirkstoff || '',
+      typ: psm.typ || '', kulturen_zugelassen: psm.kulturen_zugelassen || [],
+      max_aufwand: psm.max_aufwand || null, einheit: psm.einheit || 'l/ha',
+      wartezeit_tage: psm.wartezeit_tage || null
+    };
+    if (psm.id) {
+      const { error } = await sb.from('ask_pflanzenschutz_db').update(row).eq('id', psm.id);
+      if (error) console.error('savePSM:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_pflanzenschutz_db').insert(row).select().single();
+      if (error) console.error('savePSM:', error);
+      if (data) psm.id = data.id;
+    }
+    this._cache.pflanzenschutz = null;
+    return psm;
+  },
+
+  async deletePflanzenschutzDB(id) {
+    await sb.from('ask_pflanzenschutz_db').delete().eq('id', id);
+    this._cache.pflanzenschutz = null;
+  },
+
+  // =========== MARKTPREISE ===========
+  async getMarktpreise(jahr) {
+    const { data, error } = await sb.from('ask_marktpreise')
+      .select('*').eq('jahr', jahr).order('kultur');
+    if (error) { console.error('getMarktpreise:', error); return []; }
+    return data || [];
+  },
+
+  async saveMarktpreis(mp) {
+    const row = { kultur: mp.kultur, jahr: mp.jahr, preis_pro_dt: mp.preis_pro_dt };
+    if (mp.id) {
+      const { error } = await sb.from('ask_marktpreise').update(row).eq('id', mp.id);
+      if (error) console.error('saveMarktpreis:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_marktpreise').insert(row).select().single();
+      if (error) console.error('saveMarktpreis:', error);
+      if (data) mp.id = data.id;
+    }
+    this._cache.marktpreise = null;
+    return mp;
+  },
+
+  async deleteMarktpreis(id) {
+    await sb.from('ask_marktpreise').delete().eq('id', id);
+    this._cache.marktpreise = null;
+  },
+
+  // =========== STOFFSTROMBILANZ ===========
+  async getStoffstrombilanz(jahr) {
+    const { data, error } = await sb.from('ask_stoffstrombilanz')
+      .select('*').eq('jahr', jahr).single();
+    if (error && error.code !== 'PGRST116') console.error('getStoffstrom:', error);
+    return data || null;
+  },
+
+  async saveStoffstrombilanz(ssb) {
+    const row = {
+      jahr: ssb.jahr,
+      n_zufuhr: ssb.n_zufuhr || 0, p_zufuhr: ssb.p_zufuhr || 0,
+      n_abfuhr: ssb.n_abfuhr || 0, p_abfuhr: ssb.p_abfuhr || 0,
+      n_saldo: ssb.n_saldo || 0, p_saldo: ssb.p_saldo || 0
+    };
+    if (ssb.id) {
+      const { error } = await sb.from('ask_stoffstrombilanz').update(row).eq('id', ssb.id);
+      if (error) console.error('saveStoffstrom:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_stoffstrombilanz').insert(row).select().single();
+      if (error) console.error('saveStoffstrom:', error);
+      if (data) ssb.id = data.id;
+    }
+    this._cache.stoffstrom = null;
+    return ssb;
+  },
+
   // =========== EXPORT / IMPORT ===========
   async exportAll() {
     const [schlaege, kulturen, massnahmen] = await Promise.all([
@@ -191,7 +314,7 @@ const Storage = {
     }
 
     // Cache invalidieren
-    this._cache = { schlaege: null, kulturen: null, massnahmen: null };
+    this._cache = { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null };
   },
 
   async saveMassnahme(m) {
@@ -199,7 +322,11 @@ const Storage = {
       schlag_id: m.schlagId, typ: m.typ, datum: m.datum,
       mittel: m.mittel || '', menge: m.menge || null,
       einheit: m.einheit || '', beschreibung: m.beschreibung || '',
-      kosten: m.kosten || null
+      kosten: m.kosten || null,
+      n_gehalt: m.n_gehalt || null,
+      p_gehalt: m.p_gehalt || null,
+      k_gehalt: m.k_gehalt || null,
+      duenger_typ: m.duenger_typ || null
     };
 
     if (m.id) {

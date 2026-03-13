@@ -105,6 +105,21 @@ const Icons = {
     <circle cx="36" cy="69.5" r="2.5" fill="#DCFCE7"/>
   </svg>`,
 
+  // Feature Icons
+  duengeplaner: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6" opacity="0.4"/><path d="M8 5h8"/><path d="M6 8h12v4l-2 2v6a2 2 0 01-2 2h-4a2 2 0 01-2-2v-6l-2-2V8z" fill="currentColor" opacity="0.08"/><path d="M6 8h12v4l-2 2v6a2 2 0 01-2 2h-4a2 2 0 01-2-2v-6l-2-2V8z"/><path d="M9 15h6" opacity="0.4"/><path d="M9 18h6" opacity="0.4"/></svg>`,
+
+  pflanzenschutzNav: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" opacity="0.1"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v5"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>`,
+
+  humusbilanz: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22h20"/><path d="M4 22v-4c0-1 1-2 2-2h1c1 0 2 1 2 2v4" fill="currentColor" opacity="0.08"/><path d="M4 22v-4c0-1 1-2 2-2h1c1 0 2 1 2 2v4"/><path d="M10 22V12c0-1 1-2 2-2h1c1 0 2 1 2 2v10" fill="currentColor" opacity="0.12"/><path d="M10 22V12c0-1 1-2 2-2h1c1 0 2 1 2 2v10"/><path d="M16 22V8c0-1 1-2 2-2h1c1 0 2 1 2 2v14" fill="currentColor" opacity="0.06"/><path d="M16 22V8c0-1 1-2 2-2h1c1 0 2 1 2 2v14"/><circle cx="6.5" cy="12" r="2" fill="currentColor" opacity="0.15" stroke="none"/><circle cx="12.5" cy="6" r="2" fill="currentColor" opacity="0.15" stroke="none"/></svg>`,
+
+  deckungsbeitrag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" opacity="0.06"/><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20" opacity="0.3"/><path d="M12 14v2" opacity="0.4"/><circle cx="12" cy="14" r="3" fill="currentColor" opacity="0.1"/><circle cx="12" cy="14" r="3"/><path d="M11 13.5v1.5h1.5" stroke-width="1.5"/></svg>`,
+
+  stoffstrom: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 2 5-7" stroke-width="2"/><circle cx="7" cy="16" r="1.5" fill="currentColor" opacity="0.2"/><circle cx="11" cy="12" r="1.5" fill="currentColor" opacity="0.2"/><circle cx="15" cy="14" r="1.5" fill="currentColor" opacity="0.2"/><circle cx="20" cy="7" r="1.5" fill="currentColor" opacity="0.2"/></svg>`,
+
+  importIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" opacity="0.06"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l3 3 3-3" opacity="0.6"/><path d="M12 12v6" opacity="0.6"/></svg>`,
+
+  pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" opacity="0.06"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h2a1 1 0 001-1v-1a1 1 0 00-1-1H8v4" stroke-width="1.3"/><path d="M13 12h1.5a1.5 1.5 0 010 3H13v-3v4" stroke-width="1.3"/></svg>`,
+
   // Helper: render icon with size
   render(name, size = 20, cls = '') {
     const svg = this[name];

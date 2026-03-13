@@ -4,7 +4,7 @@
 
 const App = {
   currentPage: 'dashboard',
-  pages: ['dashboard', 'schlaege', 'karte', 'kulturen', 'massnahmen', 'auswertung'],
+  pages: ['dashboard', 'schlaege', 'karte', 'kulturen', 'massnahmen', 'auswertung', 'duengeplaner', 'pflanzenschutz', 'humusbilanz', 'deckungsbeitrag', 'stoffstrom'],
   mobileMenuOpen: false,
 
   init() {
@@ -12,7 +12,18 @@ const App = {
     this.bindNav();
     this.bindMobileNav();
     this.handleRoute();
+    this.initDuengerVorlage();
     window.addEventListener('hashchange', () => this.handleRoute());
+    // Dropzone für Flächenimport initialisieren
+    setTimeout(() => { if (typeof Flaechenimport !== 'undefined') Flaechenimport.initDropzone(); }, 100);
+  },
+
+  initDuengerVorlage() {
+    const sel = document.getElementById('massDuengerVorlage');
+    if (sel && typeof Duengeplaner !== 'undefined') {
+      sel.innerHTML = '<option value="">Manuell eingeben...</option>' +
+        Object.keys(Duengeplaner.duengerStamm).map(name => `<option value="${name}">${name}</option>`).join('');
+    }
   },
 
   initIcons() {
@@ -65,6 +76,11 @@ const App = {
       case 'kulturen': await Kulturen.render(); break;
       case 'massnahmen': await Massnahmen.render(); break;
       case 'auswertung': await Auswertung.render(); break;
+      case 'duengeplaner': await Duengeplaner.render(); break;
+      case 'pflanzenschutz': await Pflanzenschutz.render(); break;
+      case 'humusbilanz': await Humusbilanz.render(); break;
+      case 'deckungsbeitrag': await Deckungsbeitrag.render(); break;
+      case 'stoffstrom': await Stoffstrom.render(); break;
     }
   },
 

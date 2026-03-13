@@ -1659,3 +1659,61 @@ body.auth-mode .mobile-nav { display: none; }
   color: #1E40AF;
   border-color: #BFDBFE;
 }
+
+/* === AMPEL BADGES (Düngeplaner, Humusbilanz) === */
+.ampel-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ampel-gruen {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.ampel-gelb {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.ampel-rot {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.ampel-grau {
+  background: var(--stone-100);
+  color: var(--text-soft);
+}
+
+/* === DROPZONE (Flächenimport) === */
+.dropzone {
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--stone-50);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--green-400);
+  background: var(--green-50);
+}
+
+.dropzone.dragover {
+  box-shadow: var(--shadow-green-glow);
+}
+
+/* === PDF EXPORT BUTTONS === */
+.pdf-btn-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
