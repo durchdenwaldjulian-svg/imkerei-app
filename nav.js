@@ -5,11 +5,29 @@
 // ============================================
 
 (function(){
+    // === Fallback: themeManager definieren falls theme.js nicht geladen wurde ===
+    if (typeof window.themeManager === 'undefined') {
+        window.themeManager = {
+            current: function(){ return localStorage.getItem('bp_theme') || 'standard'; },
+            isPro: function(){ return this.current() === 'pro'; },
+            toggle: function(){
+                var next = this.isPro() ? 'standard' : 'pro';
+                localStorage.setItem('bp_theme', next);
+                if (next === 'pro') { document.documentElement.classList.add('theme-pro'); }
+                else { document.documentElement.classList.remove('theme-pro'); }
+                location.reload();
+            },
+            icon: function(emoji){ return emoji; },
+            getIconByName: function(){ return ''; },
+            ICONS: {}
+        };
+    }
+
     var currentFile = window.location.pathname.split('/').pop() || 'app.html';
     if (currentFile === '') currentFile = 'app.html';
 
     // === Theme-Helper: Icon je nach Modus ===
-    var isPro = (typeof themeManager !== 'undefined') && themeManager.isPro();
+    var isPro = themeManager.isPro();
     function ti(emoji) {
         if (!isPro || typeof themeManager === 'undefined') return emoji;
         return themeManager.icon(emoji);
