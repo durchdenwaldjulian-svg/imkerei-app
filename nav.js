@@ -7,6 +7,10 @@
 (function(){
     // === Fallback: themeManager definieren falls theme.js nicht geladen wurde ===
     if (typeof window.themeManager === 'undefined') {
+        // Theme sofort anwenden
+        if (localStorage.getItem('bp_theme') === 'pro') {
+            document.documentElement.classList.add('theme-pro');
+        }
         window.themeManager = {
             current: function(){ return localStorage.getItem('bp_theme') || 'standard'; },
             isPro: function(){ return this.current() === 'pro'; },
@@ -21,6 +25,11 @@
             getIconByName: function(){ return ''; },
             ICONS: {}
         };
+    } else {
+        // theme.js geladen, aber sicherheitshalber Klasse setzen
+        if (themeManager.isPro()) {
+            document.documentElement.classList.add('theme-pro');
+        }
     }
 
     var currentFile = window.location.pathname.split('/').pop() || 'app.html';
