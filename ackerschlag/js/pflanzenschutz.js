@@ -173,12 +173,14 @@ const Pflanzenschutz = {
 
   // Wird vom Maßnahmen-Modal aufgerufen um Warnungen zu prüfen
   checkZulassung(produktName, kulturName) {
-    const allPSM = [...this.defaultPSM];
+    // Defaults + User-PSM aus Cache durchsuchen
+    const cachedUserPSM = Storage._cache.pflanzenschutz || [];
+    const allPSM = [...this.defaultPSM, ...cachedUserPSM];
     const psm = allPSM.find(p => p.produkt.toLowerCase() === produktName.toLowerCase());
     if (!psm) return null;
 
     const warnings = [];
-    if (kulturName && Array.isArray(psm.kulturen_zugelassen) && !psm.kulturen_zugelassen.includes(kulturName)) {
+    if (kulturName && Array.isArray(psm.kulturen_zugelassen) && psm.kulturen_zugelassen.length > 0 && !psm.kulturen_zugelassen.includes(kulturName)) {
       warnings.push(`${psm.produkt} ist nicht für ${kulturName} zugelassen!`);
     }
     return { psm, warnings };

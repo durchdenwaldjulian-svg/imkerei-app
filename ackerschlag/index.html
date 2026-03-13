@@ -116,6 +116,20 @@
   <button class="nav-item" data-page="stoffstrom">
     <span class="nav-icon" data-icon="stoffstrom"></span> Stoffstrom
   </button>
+  <button class="nav-item" data-page="bodenproben">
+    <span class="nav-icon" data-icon="bodenproben"></span> Bodenproben
+  </button>
+  <button class="nav-item" data-page="fruchtfolge">
+    <span class="nav-icon" data-icon="fruchtfolge"></span> Fruchtfolge
+  </button>
+
+  <div class="nav-section">Betrieb</div>
+  <button class="nav-item" data-page="wetter">
+    <span class="nav-icon" data-icon="wetter"></span> Wetter
+  </button>
+  <button class="nav-item" data-page="lager">
+    <span class="nav-icon" data-icon="lager"></span> Lagerbestände
+  </button>
 
   <div class="sidebar-footer">
     <div style="margin-bottom:0.6rem;display:flex;gap:0.4rem;justify-content:center">
@@ -191,6 +205,18 @@
     </div>
     <div class="mobile-menu-item" data-page="stoffstrom">
       <span class="menu-icon" data-icon="stoffstrom"></span>Stoffstrom
+    </div>
+    <div class="mobile-menu-item" data-page="bodenproben">
+      <span class="menu-icon" data-icon="bodenproben"></span>Bodenproben
+    </div>
+    <div class="mobile-menu-item" data-page="fruchtfolge">
+      <span class="menu-icon" data-icon="fruchtfolge"></span>Fruchtfolge
+    </div>
+    <div class="mobile-menu-item" data-page="wetter">
+      <span class="menu-icon" data-icon="wetter"></span>Wetter
+    </div>
+    <div class="mobile-menu-item" data-page="lager">
+      <span class="menu-icon" data-icon="lager"></span>Lagerbestände
     </div>
   </div>
 </div>
@@ -405,6 +431,18 @@
 
   <!-- ========== STOFFSTROM ========== -->
   <div class="page" id="page-stoffstrom"></div>
+
+  <!-- ========== WETTER ========== -->
+  <div class="page" id="page-wetter"></div>
+
+  <!-- ========== BODENPROBEN ========== -->
+  <div class="page" id="page-bodenproben"></div>
+
+  <!-- ========== FRUCHTFOLGE ========== -->
+  <div class="page" id="page-fruchtfolge"></div>
+
+  <!-- ========== LAGER ========== -->
+  <div class="page" id="page-lager"></div>
 
 </div>
 
@@ -739,6 +777,118 @@
   </div>
 </div>
 
+<!-- Bodenprobe Modal -->
+<div class="modal-backdrop" id="bodenprobeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="bpModalTitle">Neue Bodenprobe</h2>
+      <button class="modal-close" onclick="closeModal('bodenprobeModal')">✕</button>
+    </div>
+    <form id="bodenprobeForm" onsubmit="event.preventDefault(); Bodenproben.save()">
+      <div class="modal-body">
+        <div class="form-row">
+          <label class="form-label">Schlag *</label>
+          <select class="form-select" id="bpSchlag" required></select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Datum *</label>
+          <input class="form-input" type="date" id="bpDatum" required>
+        </div>
+        <div class="form-row">
+          <label class="form-label">pH-Wert</label>
+          <input class="form-input" type="number" step="0.1" min="3" max="10" id="bpPh" placeholder="z.B. 6.2">
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem">
+          <div>
+            <label class="form-label">P (mg/100g)</label>
+            <input class="form-input" type="number" step="0.1" min="0" id="bpP" placeholder="z.B. 8">
+          </div>
+          <div>
+            <label class="form-label">K (mg/100g)</label>
+            <input class="form-input" type="number" step="0.1" min="0" id="bpK" placeholder="z.B. 12">
+          </div>
+          <div>
+            <label class="form-label">Mg (mg/100g)</label>
+            <input class="form-input" type="number" step="0.1" min="0" id="bpMg" placeholder="z.B. 7">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Humus (%)</label>
+          <input class="form-input" type="number" step="0.1" min="0" max="20" id="bpHumus" placeholder="z.B. 2.5">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Bemerkung</label>
+          <input class="form-input" type="text" id="bpBemerkung" placeholder="Optional...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('bodenprobeModal')">Abbrechen</button>
+        <button type="submit" class="btn btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Lager Modal -->
+<div class="modal-backdrop" id="lagerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="lagerModalTitle">Neuer Lagerartikel</h2>
+      <button class="modal-close" onclick="closeModal('lagerModal')">✕</button>
+    </div>
+    <form id="lagerForm" onsubmit="event.preventDefault(); Lager.saveArtikel()">
+      <div class="modal-body">
+        <div class="form-row">
+          <label class="form-label">Kategorie *</label>
+          <select class="form-select" id="lagerKategorie" name="lagerKategorie" required>
+            <option value="duenger">Dünger</option>
+            <option value="psm">Pflanzenschutzmittel</option>
+            <option value="saatgut">Saatgut</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Produkt *</label>
+          <input class="form-input" type="text" id="lagerProdukt" name="lagerProdukt" required placeholder="Produktname...">
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div>
+            <label class="form-label">Menge</label>
+            <input class="form-input" type="number" step="0.1" min="0" id="lagerMenge" name="lagerMenge" placeholder="0">
+          </div>
+          <div>
+            <label class="form-label">Einheit</label>
+            <select class="form-select" id="lagerEinheit" name="lagerEinheit">
+              <option value="kg">kg</option>
+              <option value="l">Liter</option>
+              <option value="t">Tonnen</option>
+              <option value="Sack">Sack</option>
+              <option value="Stk">Stück</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <div>
+            <label class="form-label">Mindestbestand</label>
+            <input class="form-input" type="number" step="0.1" min="0" id="lagerMindest" name="lagerMindest" placeholder="Optional">
+          </div>
+          <div>
+            <label class="form-label">Preis/Einheit (€)</label>
+            <input class="form-input" type="number" step="0.01" min="0" id="lagerPreis" name="lagerPreis" placeholder="Optional">
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Bemerkung</label>
+          <input class="form-input" type="text" id="lagerBemerkung" name="lagerBemerkung" placeholder="Optional...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('lagerModal')">Abbrechen</button>
+        <button type="submit" class="btn btn-primary">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </div><!-- /appShell -->
 
 <!-- ==================== SCRIPTS ==================== -->
@@ -763,6 +913,10 @@
 <script src="js/stoffstrom.js"></script>
 <script src="js/flaechenimport.js"></script>
 <script src="js/pdfexport.js"></script>
+<script src="js/wetter.js"></script>
+<script src="js/bodenproben.js"></script>
+<script src="js/fruchtfolge.js"></script>
+<script src="js/lager.js"></script>
 <script src="js/app.js"></script>
 
 </body>

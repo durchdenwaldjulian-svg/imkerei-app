@@ -53,7 +53,7 @@ const Humusbilanz = {
         // Suche nach passendem Schlüssel
         for (const [key, val] of Object.entries(this.orgDuengerHumus)) {
           if (mittel.toLowerCase().includes(key.toLowerCase().split(' ')[0].toLowerCase())) {
-            orgHumus += menge * val / 1000; // kg/t * t = kg
+            orgHumus += menge * val; // menge in t/m³ × kg Humus-C/t = kg Humus-C
             break;
           }
         }

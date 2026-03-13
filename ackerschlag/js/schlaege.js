@@ -165,6 +165,7 @@ const Schlaege = {
           <p style="color:var(--text-soft);margin:0.15rem 0 0">${esc(s.flurstueck)}</p>
         </div>
         <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary btn-sm" onclick="PDFExport.exportSchlagbericht('${s.id}')">${Icons.render('pdf', 14)} PDF</button>
           <button class="btn btn-secondary btn-sm" onclick="Schlaege.openModal('${s.id}')">Bearbeiten</button>
           <button class="btn btn-danger btn-sm" onclick="Schlaege.delete('${s.id}')">Löschen</button>
         </div>

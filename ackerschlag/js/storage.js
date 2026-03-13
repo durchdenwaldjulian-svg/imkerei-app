@@ -5,7 +5,7 @@
 
 const Storage = {
   // Lokaler Cache (wird bei jeder Abfrage aktualisiert)
-  _cache: { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null },
+  _cache: { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null, bodenproben: null, lager: null },
 
   _uid() { return currentUser ? currentUser.id : null; },
 
@@ -258,6 +258,76 @@ const Storage = {
     return ssb;
   },
 
+  // =========== BODENPROBEN ===========
+  async getBodenproben() {
+    const { data, error } = await sb.from('ask_bodenproben')
+      .select('*').order('datum', { ascending: false });
+    if (error) { console.error('getBodenproben:', error); return this._cache.bodenproben || []; }
+    this._cache.bodenproben = (data || []).map(b => ({ ...b, schlagId: b.schlag_id }));
+    return this._cache.bodenproben;
+  },
+
+  async saveBodenprobe(bp) {
+    const row = {
+      schlag_id: bp.schlagId, datum: bp.datum,
+      ph_wert: bp.ph_wert || null, p_gehalt: bp.p_gehalt || null,
+      k_gehalt: bp.k_gehalt || null, mg_gehalt: bp.mg_gehalt || null,
+      humus_prozent: bp.humus_prozent || null, bemerkung: bp.bemerkung || ''
+    };
+    if (bp.id) {
+      const { error } = await sb.from('ask_bodenproben').update(row).eq('id', bp.id);
+      if (error) console.error('saveBodenprobe:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_bodenproben').insert(row).select().single();
+      if (error) console.error('saveBodenprobe:', error);
+      if (data) bp.id = data.id;
+    }
+    this._cache.bodenproben = null;
+    return bp;
+  },
+
+  async deleteBodenprobe(id) {
+    await sb.from('ask_bodenproben').delete().eq('id', id);
+    this._cache.bodenproben = null;
+  },
+
+  // =========== LAGER ===========
+  async getLager() {
+    const { data, error } = await sb.from('ask_lager')
+      .select('*').order('produkt');
+    if (error) { console.error('getLager:', error); return this._cache.lager || []; }
+    this._cache.lager = data || [];
+    return this._cache.lager;
+  },
+
+  async saveLagerArtikel(item) {
+    const row = {
+      kategorie: item.kategorie, produkt: item.produkt,
+      menge: item.menge || 0, einheit: item.einheit || 'kg',
+      mindestbestand: item.mindestbestand || null,
+      preis_pro_einheit: item.preis_pro_einheit || null,
+      bemerkung: item.bemerkung || '',
+      letzte_aenderung: new Date().toISOString()
+    };
+    if (item.id) {
+      const { error } = await sb.from('ask_lager').update(row).eq('id', item.id);
+      if (error) console.error('saveLagerArtikel:', error);
+    } else {
+      row.user_id = this._uid();
+      const { data, error } = await sb.from('ask_lager').insert(row).select().single();
+      if (error) console.error('saveLagerArtikel:', error);
+      if (data) item.id = data.id;
+    }
+    this._cache.lager = null;
+    return item;
+  },
+
+  async deleteLagerArtikel(id) {
+    await sb.from('ask_lager').delete().eq('id', id);
+    this._cache.lager = null;
+  },
+
   // =========== EXPORT / IMPORT ===========
   async exportAll() {
     const [schlaege, kulturen, massnahmen] = await Promise.all([
@@ -314,7 +384,7 @@ const Storage = {
     }
 
     // Cache invalidieren
-    this._cache = { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null };
+    this._cache = { schlaege: null, kulturen: null, massnahmen: null, duengeplanung: null, pflanzenschutz: null, marktpreise: null, stoffstrom: null, bodenproben: null, lager: null };
   },
 
   async saveMassnahme(m) {

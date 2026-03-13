@@ -43,22 +43,11 @@ const Stoffstrom = {
       const jKulturen = kulturen.filter(k => parseInt(k.jahr) === y);
       const jMassnahmen = massnahmen.filter(m => new Date(m.datum).getFullYear() === y);
 
-      // Zufuhr = Düngung
-      let nZufuhr = 0, pZufuhr = 0;
-      jMassnahmen.filter(m => m.typ === 'duengung').forEach(d => {
-        nZufuhr += parseFloat(d.n_gehalt) || 0;
-        pZufuhr += parseFloat(d.p_gehalt) || 0;
-      });
-
-      // Pro Schlag mit Fläche multiplizieren
+      // Zufuhr = Düngung (n_gehalt/p_gehalt sind absolute Werte in kg pro Maßnahme)
       let nZufuhrGesamt = 0, pZufuhrGesamt = 0;
-      schlaege.forEach(s => {
-        const ha = parseFloat(s.groesse) || 0;
-        const sDuengungen = jMassnahmen.filter(m => m.schlagId === s.id && m.typ === 'duengung');
-        sDuengungen.forEach(d => {
-          nZufuhrGesamt += (parseFloat(d.n_gehalt) || 0) * ha;
-          pZufuhrGesamt += (parseFloat(d.p_gehalt) || 0) * ha;
-        });
+      jMassnahmen.filter(m => m.typ === 'duengung').forEach(d => {
+        nZufuhrGesamt += parseFloat(d.n_gehalt) || 0;
+        pZufuhrGesamt += parseFloat(d.p_gehalt) || 0;
       });
 
       // Abfuhr = Ernte × Entzugskoeffizient

@@ -118,6 +118,14 @@ const Icons = {
 
   importIcon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" opacity="0.06"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l3 3 3-3" opacity="0.6"/><path d="M12 12v6" opacity="0.6"/></svg>`,
 
+  wetter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.15"/><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" opacity="0.5"/></svg>`,
+
+  bodenproben: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v6l3 3v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-8l3-3V2z" fill="currentColor" opacity="0.08"/><path d="M9 2h6v6l3 3v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-8l3-3V2z"/><path d="M6 14h12" opacity="0.4"/><circle cx="10" cy="17" r="1" fill="currentColor" opacity="0.3"/><circle cx="14" cy="16" r="1.2" fill="currentColor" opacity="0.2"/></svg>`,
+
+  fruchtfolge: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" fill="currentColor" opacity="0.05"/><path d="M4 4h16v16H4z"/><path d="M4 10h16M4 16h16M10 4v16M16 4v16" opacity="0.3"/><circle cx="7" cy="7" r="1.5" fill="#4ade80"/><circle cx="13" cy="7" r="1.5" fill="#fbbf24"/><circle cx="7" cy="13" r="1.5" fill="#60a5fa"/><circle cx="13" cy="13" r="1.5" fill="#c084fc"/></svg>`,
+
+  lager: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l8-4 8 4v2l-8 4-8-4V6z" fill="currentColor" opacity="0.08"/><path d="M4 6l8-4 8 4v2l-8 4-8-4V6z"/><path d="M4 10v2l8 4 8-4v-2" opacity="0.6"/><path d="M4 14v2l8 4 8-4v-2" opacity="0.4"/></svg>`,
+
   pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" opacity="0.06"/><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h2a1 1 0 001-1v-1a1 1 0 00-1-1H8v4" stroke-width="1.3"/><path d="M13 12h1.5a1.5 1.5 0 010 3H13v-3v4" stroke-width="1.3"/></svg>`,
 
   // Helper: render icon with size

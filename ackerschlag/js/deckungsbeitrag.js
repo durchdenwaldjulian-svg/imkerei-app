@@ -186,14 +186,14 @@ const Deckungsbeitrag = {
     for (const input of inputs) {
       const kultur = input.dataset.kultur;
       const val = parseFloat(input.value);
-      const existingId = input.dataset.preisId;
+      const existingId = input.dataset.preisId || null;
 
       if (val && val > 0) {
         await Storage.saveMarktpreis({
           id: existingId || undefined,
           kultur, jahr: this.selectedJahr, preis_pro_dt: val
         });
-      } else if (existingId) {
+      } else if (existingId && existingId !== '') {
         await Storage.deleteMarktpreis(existingId);
       }
     }

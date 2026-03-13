@@ -4,7 +4,7 @@
 
 const App = {
   currentPage: 'dashboard',
-  pages: ['dashboard', 'schlaege', 'karte', 'kulturen', 'massnahmen', 'auswertung', 'duengeplaner', 'pflanzenschutz', 'humusbilanz', 'deckungsbeitrag', 'stoffstrom'],
+  pages: ['dashboard', 'schlaege', 'karte', 'kulturen', 'massnahmen', 'auswertung', 'duengeplaner', 'pflanzenschutz', 'humusbilanz', 'deckungsbeitrag', 'stoffstrom', 'wetter', 'bodenproben', 'fruchtfolge', 'lager'],
   mobileMenuOpen: false,
 
   init() {
@@ -81,6 +81,10 @@ const App = {
       case 'humusbilanz': await Humusbilanz.render(); break;
       case 'deckungsbeitrag': await Deckungsbeitrag.render(); break;
       case 'stoffstrom': await Stoffstrom.render(); break;
+      case 'wetter': await Wetter.render(); break;
+      case 'bodenproben': await Bodenproben.render(); break;
+      case 'fruchtfolge': await Fruchtfolge.render(); break;
+      case 'lager': await Lager.render(); break;
     }
   },
 
