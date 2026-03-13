@@ -8,6 +8,13 @@
     var currentFile = window.location.pathname.split('/').pop() || 'app.html';
     if (currentFile === '') currentFile = 'app.html';
 
+    // === Theme-Helper: Icon je nach Modus ===
+    var isPro = (typeof themeManager !== 'undefined') && themeManager.isPro();
+    function ti(emoji) {
+        if (!isPro || typeof themeManager === 'undefined') return emoji;
+        return themeManager.icon(emoji);
+    }
+
     var sections = [
         { title: 'Übersicht', items: [
             { href: 'app.html#heute', icon: '📅', label: 'Heute' },
@@ -52,39 +59,71 @@
         return currentFile === href;
     }
 
+    // === Theme Toggle HTML ===
+    function buildThemeToggle() {
+        var label = isPro ? 'Standard-Ansicht' : 'Profi-Ansicht';
+        return '<button class="theme-toggle" onclick="themeManager.toggle()" title="Design wechseln">' +
+            '<span class="toggle-track"><span class="toggle-knob"></span></span>' +
+            '<span>' + label + '</span>' +
+            '</button>';
+    }
+
     // === DESKTOP SIDEBAR ===
     function buildDesktopNav() {
         var h = '';
         h += '<div class="nav-brand">';
-        h += '<img src="Logo.svg" alt="BienenPlan" style="width:100%;max-width:100%;height:auto;margin-bottom:.25rem">';
-        h += '<div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>';
+        if (isPro) {
+            h += '<div style="font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-.02em;padding:.25rem 0">BienenPlan</div>';
+            h += '<div style="font-size:.65rem;color:#8888a8;font-weight:500;letter-spacing:.05em">CLOUD v6.0 PRO</div>';
+        } else {
+            h += '<img src="Logo.svg" alt="BienenPlan" style="width:100%;max-width:100%;height:auto;margin-bottom:.25rem">';
+            h += '<div style="font-size:.7rem;color:#7A6652">Cloud v6.0</div>';
+        }
         h += '</div>';
 
         sections.forEach(function(s) {
             h += '<div class="nav-section">' + s.title + '</div>';
             s.items.forEach(function(item) {
                 var cls = isActive(item.href) ? ' active' : '';
-                h += '<a href="' + item.href + '" class="nav-item' + cls + '">' + item.icon + ' ' + item.label + '</a>';
+                h += '<a href="' + item.href + '" class="nav-item' + cls + '">' + ti(item.icon) + ' ' + item.label + '</a>';
             });
         });
 
         h += '<div style="flex:1"></div>';
 
+        // Theme Toggle
+        h += buildThemeToggle();
+
         // Plan-Badge + Upgrade/Abo-Button
-        h += '<div class="nav-plan-box" id="navPlanBox" style="margin:0 .75rem .5rem;padding:.6rem .75rem;background:rgba(245,166,35,.08);border-radius:.5rem;text-align:center;display:none">';
-        h += '<div id="navPlanBadge" style="font-size:.8rem;font-weight:700;color:#8B7355;margin-bottom:.4rem">🐝 Starter</div>';
-        h += '<a href="upgrade.html" id="navUpgradeBtn" class="nav-item" style="background:#F5A623;color:#1C1410;border-radius:100px;text-align:center;font-weight:700;font-size:.8rem;padding:.5rem .75rem;margin:0">⭐ Upgraden</a>';
-        h += '<button id="navPortalBtn" onclick="openCustomerPortal()" class="nav-item" style="display:none;font-size:.75rem;padding:.4rem .75rem;color:#8B7355;margin-top:.3rem">Abo verwalten →</button>';
+        if (isPro) {
+            h += '<div class="nav-plan-box" id="navPlanBox" style="margin:.5rem .75rem;padding:.6rem .75rem;background:rgba(196,160,82,.08);border-radius:6px;text-align:center;display:none">';
+            h += '<div id="navPlanBadge" style="font-size:.8rem;font-weight:700;color:#c4a052;margin-bottom:.4rem">Starter</div>';
+            h += '<a href="upgrade.html" id="navUpgradeBtn" class="nav-item" style="background:#c4a052;color:#1a1a2e;border-radius:6px;text-align:center;font-weight:700;font-size:.8rem;padding:.5rem .75rem;margin:0">' + ti('⭐') + ' Upgraden</a>';
+            h += '<button id="navPortalBtn" onclick="openCustomerPortal()" class="nav-item" style="display:none;font-size:.75rem;padding:.4rem .75rem;color:#8888a8;margin-top:.3rem">Abo verwalten →</button>';
+        } else {
+            h += '<div class="nav-plan-box" id="navPlanBox" style="margin:0 .75rem .5rem;padding:.6rem .75rem;background:rgba(245,166,35,.08);border-radius:.5rem;text-align:center;display:none">';
+            h += '<div id="navPlanBadge" style="font-size:.8rem;font-weight:700;color:#8B7355;margin-bottom:.4rem">🐝 Starter</div>';
+            h += '<a href="upgrade.html" id="navUpgradeBtn" class="nav-item" style="background:#F5A623;color:#1C1410;border-radius:100px;text-align:center;font-weight:700;font-size:.8rem;padding:.5rem .75rem;margin:0">⭐ Upgraden</a>';
+            h += '<button id="navPortalBtn" onclick="openCustomerPortal()" class="nav-item" style="display:none;font-size:.75rem;padding:.4rem .75rem;color:#8B7355;margin-top:.3rem">Abo verwalten →</button>';
+        }
         h += '</div>';
 
-        h += '<div style="margin-top:auto;padding:1rem;border-top:2px solid rgba(245,166,35,0.12);font-size:.7rem;color:#A69580;display:flex;flex-wrap:wrap;gap:.5rem .75rem">';
-        h += '<a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>';
-        h += '<a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>';
-        h += '<a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>';
-        h += '</div>';
+        if (isPro) {
+            h += '<div style="margin-top:auto;padding:.75rem 1rem;border-top:1px solid #2d2d4a;font-size:.65rem;color:#6b6b8a;display:flex;flex-wrap:wrap;gap:.5rem .75rem">';
+            h += '<a href="impressum.html" style="color:#6b6b8a;text-decoration:none">Impressum</a>';
+            h += '<a href="datenschutz.html" style="color:#6b6b8a;text-decoration:none">Datenschutz</a>';
+            h += '<a href="agb.html" style="color:#6b6b8a;text-decoration:none">AGB</a>';
+            h += '</div>';
+        } else {
+            h += '<div style="margin-top:auto;padding:1rem;border-top:2px solid rgba(245,166,35,0.12);font-size:.7rem;color:#A69580;display:flex;flex-wrap:wrap;gap:.5rem .75rem">';
+            h += '<a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>';
+            h += '<a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>';
+            h += '<a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>';
+            h += '</div>';
+        }
 
-        h += '<a href="app.html#einstellungen" class="nav-item' + (isActive('app.html#einstellungen') ? ' active' : '') + '">⚙️ Einstellungen</a>';
-        h += '<button class="nav-item" style="color:#ef4444" onclick="if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';">🚪 Abmelden</button>';
+        h += '<a href="app.html#einstellungen" class="nav-item' + (isActive('app.html#einstellungen') ? ' active' : '') + '">' + ti('⚙️') + ' Einstellungen</a>';
+        h += '<button class="nav-item" style="color:#ef4444" onclick="if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';">' + ti('🚪') + ' Abmelden</button>';
         return h;
     }
 
@@ -92,21 +131,19 @@
     function buildMobileBar() {
         var h = '';
         var isIndex = (currentFile === 'app.html');
-        
+
         if (isIndex) {
-            // Auf app.html: Buttons die app.page steuern
-            h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">📅</span>Heute</button>';
-            h += '<a href="voelker.html" class="mobile-nav-btn"><span class="mn-icon">📍</span>Völker</a>';
+            h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">' + ti('📅') + '</span>Heute</button>';
+            h += '<a href="voelker.html" class="mobile-nav-btn"><span class="mn-icon">' + ti('📍') + '</span>Völker</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-            h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">📝</span>Aufgaben</button>';
-            h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">⚙️</span>Mehr</button>';
+            h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">' + ti('📝') + '</span>Aufgaben</button>';
+            h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">' + ti('⚙️') + '</span>Mehr</button>';
         } else {
-            // Auf eigenständigen Seiten: alles als Links
-            h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">📅</span>Heute</a>';
-            h += '<a href="voelker.html" class="mobile-nav-btn'+(currentFile==='voelker.html'?' active':'')+'"><span class="mn-icon">📍</span>Völker</a>';
+            h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">' + ti('📅') + '</span>Heute</a>';
+            h += '<a href="voelker.html" class="mobile-nav-btn'+(currentFile==='voelker.html'?' active':'')+'"><span class="mn-icon">' + ti('📍') + '</span>Völker</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-            h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">📝</span>Aufgaben</a>';
-            h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">⚙️</span>Mehr</a>';
+            h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">' + ti('📝') + '</span>Aufgaben</a>';
+            h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">' + ti('⚙️') + '</span>Mehr</a>';
         }
         return h;
     }
@@ -151,7 +188,11 @@
         ];
 
         var h = '<div class="mobile-menu-box">';
-        h += '<div class="mobile-menu-header"><h2><img src="Logo.svg" alt="BienenPlan" style="height:120px;vertical-align:middle;margin-right:.5rem"> Navigation</h2>';
+        if (isPro) {
+            h += '<div class="mobile-menu-header"><h2 style="font-family:Outfit,sans-serif;font-weight:700">BienenPlan</h2>';
+        } else {
+            h += '<div class="mobile-menu-header"><h2><img src="Logo.svg" alt="BienenPlan" style="height:120px;vertical-align:middle;margin-right:.5rem"> Navigation</h2>';
+        }
         h += '<button class="mobile-menu-close" onclick="mobileMenuClose()">✕</button></div>';
 
         groups.forEach(function(g) {
@@ -159,30 +200,35 @@
             h += '<div class="mobile-menu-grid">';
             g.items.forEach(function(item) {
                 var st = item.small ? ' style="font-size:.7rem"' : '';
+                var iconHtml = '<span class="mm-icon">' + ti(item.icon) + '</span>';
                 if (item.special === 'logout') {
-                    h += '<button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                    h += '<button class="mobile-menu-item mm-danger" onclick="mobileMenuClose();if(typeof doLogout===\'function\')doLogout();else window.location.href=\'app.html\';">' + iconHtml + item.label + '</button>';
                 } else if (item.special === 'portal') {
-                    h += '<button class="mobile-menu-item" id="' + (item.id||'') + '" onclick="mobileMenuClose();openCustomerPortal();" style="display:none"><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                    h += '<button class="mobile-menu-item" id="' + (item.id||'') + '" onclick="mobileMenuClose();openCustomerPortal();" style="display:none">' + iconHtml + item.label + '</button>';
                 } else if (item.id) {
-                    h += '<a href="' + item.href + '" class="mobile-menu-item" id="' + item.id + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
+                    h += '<a href="' + item.href + '" class="mobile-menu-item" id="' + item.id + '"' + st + '>' + iconHtml + item.label + '</a>';
                 } else if (item.page) {
-                    // Auf app.html: Button der app.page setzt
-                    // Auf anderen Seiten: Link zu app.html#page
                     if (isIndex) {
-                        h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</button>';
+                        h += '<button class="mobile-menu-item" data-mmpage="' + item.page + '"' + st + '>' + iconHtml + item.label + '</button>';
                     } else {
-                        h += '<a href="app.html#' + item.page + '" class="mobile-menu-item"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
+                        h += '<a href="app.html#' + item.page + '" class="mobile-menu-item"' + st + '>' + iconHtml + item.label + '</a>';
                     }
                 } else {
-                    h += '<a href="' + item.href + '" class="mobile-menu-item"' + st + '><span class="mm-icon">' + item.icon + '</span>' + item.label + '</a>';
+                    h += '<a href="' + item.href + '" class="mobile-menu-item"' + st + '>' + iconHtml + item.label + '</a>';
                 }
             });
             h += '</div>';
         });
-        h += '<div style="padding:.75rem 1rem;border-top:1px solid #E8DFD4;font-size:.7rem;color:#A69580;display:flex;gap:.75rem;justify-content:center">';
-        h += '<a href="impressum.html" style="color:#A69580;text-decoration:none">Impressum</a>';
-        h += '<a href="datenschutz.html" style="color:#A69580;text-decoration:none">Datenschutz</a>';
-        h += '<a href="agb.html" style="color:#A69580;text-decoration:none">AGB</a>';
+
+        // Theme Toggle im Mobile Menu
+        h += '<div style="padding:.75rem 0;text-align:center">';
+        h += buildThemeToggle();
+        h += '</div>';
+
+        h += '<div style="padding:.75rem 1rem;border-top:1px solid ' + (isPro ? '#e0e0e0' : '#E8DFD4') + ';font-size:.7rem;color:' + (isPro ? '#9ca3af' : '#A69580') + ';display:flex;gap:.75rem;justify-content:center">';
+        h += '<a href="impressum.html" style="color:' + (isPro ? '#9ca3af' : '#A69580') + ';text-decoration:none">Impressum</a>';
+        h += '<a href="datenschutz.html" style="color:' + (isPro ? '#9ca3af' : '#A69580') + ';text-decoration:none">Datenschutz</a>';
+        h += '<a href="agb.html" style="color:' + (isPro ? '#9ca3af' : '#A69580') + ';text-decoration:none">AGB</a>';
         h += '</div>';
         h += '</div>';
         return h;
@@ -227,9 +273,8 @@
 
     // === MOBILE MENU: Open/Close (global verfügbar) ===
     window.navMobileMenuOpen = function() {
-        // Alles unter dem Overlay unsichtbar machen (Leaflet z-index Problem)
-        document.querySelectorAll('.leaflet-container').forEach(function(el){ 
-            el.style.visibility = 'hidden'; 
+        document.querySelectorAll('.leaflet-container').forEach(function(el){
+            el.style.visibility = 'hidden';
         });
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.add('active');
@@ -242,9 +287,8 @@
     window.navMobileMenuClose = function() {
         var overlay = document.getElementById('mobileMenuOverlay');
         if (overlay) overlay.classList.remove('active');
-        // Leaflet-Karten wieder sichtbar
-        document.querySelectorAll('.leaflet-container').forEach(function(el){ 
-            el.style.visibility = 'visible'; 
+        document.querySelectorAll('.leaflet-container').forEach(function(el){
+            el.style.visibility = 'visible';
         });
     };
 
@@ -275,38 +319,32 @@
     }
 
     // === NAV PLAN UPDATE ===
-    // Wird aufgerufen nachdem planManager.load() fertig ist
     window.navUpdatePlan = function() {
         if (typeof planManager === 'undefined' || !planManager.loaded) return;
         var info = planManager.getPlanInfo();
-        
-        // Desktop Nav
+
         var box = document.getElementById('navPlanBox');
         var badge = document.getElementById('navPlanBadge');
         var upgradeBtn = document.getElementById('navUpgradeBtn');
         var portalBtn = document.getElementById('navPortalBtn');
-        
+
         if (box) box.style.display = 'block';
         if (badge) {
             badge.textContent = info.emoji + ' ' + info.name;
             badge.style.color = info.color;
             if (info.isTrial) badge.textContent += ' (Trial)';
         }
-        
+
         if (info.plan !== 'starter') {
-            // Bezahlter Plan: Upgrade-Button verstecken, Portal zeigen
             if (upgradeBtn) upgradeBtn.style.display = 'none';
             if (portalBtn) portalBtn.style.display = 'block';
-            // Mobile
             var mUpgrade = document.getElementById('mobileUpgradeBtn');
             var mPortal = document.getElementById('mobilePortalBtn');
             if (mUpgrade) mUpgrade.style.display = 'none';
             if (mPortal) mPortal.style.display = 'flex';
         } else {
-            // Starter: Upgrade zeigen, Portal verstecken
             if (upgradeBtn) upgradeBtn.style.display = 'block';
             if (portalBtn) portalBtn.style.display = 'none';
-            // Mobile
             var mUpgrade = document.getElementById('mobileUpgradeBtn');
             var mPortal = document.getElementById('mobilePortalBtn');
             if (mUpgrade) mUpgrade.style.display = 'flex';
@@ -322,7 +360,7 @@
                 alert('Bitte zuerst einloggen.');
                 return;
             }
-            
+
             var response = await fetch(
                 'https://reyswuedptkyfdkmdpft.supabase.co/functions/v1/create-portal-session',
                 {
@@ -335,7 +373,7 @@
                     body: '{}'
                 }
             );
-            
+
             var data = await response.json();
             if (data.url) {
                 window.location.href = data.url;

@@ -188,3 +188,135 @@ textarea.input{min-height:100px;resize:vertical}
     .leaflet-top,.leaflet-bottom{z-index:2!important}
     .leaflet-container{z-index:1!important}
 }
+
+/* ============================================
+   PROFI-THEME (.theme-pro auf <html>)
+   Clean, flat, professionelle Optik
+   ============================================ */
+
+/* --- Pro Icon Style --- */
+.theme-pro .pro-icon{vertical-align:middle;margin-right:2px;flex-shrink:0}
+
+/* --- Pro: Grundfarben & Typografie --- */
+.theme-pro body{background:#f0f2f5!important;font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.theme-pro h1{font-family:'Outfit',sans-serif!important;font-weight:700;color:#1a1a2e;letter-spacing:-.02em}
+.theme-pro h2{color:#1a1a2e;font-weight:700}
+.theme-pro h3{color:#1a1a2e;font-weight:600}
+
+/* --- Pro: Cards --- */
+.theme-pro .card{background:#fff;border-radius:8px;border:1px solid #e0e0e0;box-shadow:none}
+
+/* --- Pro: Buttons --- */
+.theme-pro .btn{border-radius:6px;font-weight:600;letter-spacing:.01em}
+.theme-pro .btn:hover{opacity:.9;transform:none}
+.theme-pro .btn-primary{background:#2d3436;color:#fff;box-shadow:none}
+.theme-pro .btn-primary:hover{background:#1a1a2e}
+.theme-pro .btn-success{background:#059669;border-radius:6px}
+.theme-pro .btn-danger{background:#dc2626;border-radius:6px}
+.theme-pro .btn-blue{background:#2563eb;border-radius:6px}
+
+/* --- Pro: Forms --- */
+.theme-pro .form-label{color:#374151;font-weight:600}
+.theme-pro .input{border:1.5px solid #d1d5db;border-radius:6px}
+.theme-pro .input:focus{border-color:#2d3436;box-shadow:0 0 0 3px rgba(45,52,54,.08)}
+
+/* --- Pro: Info/Warn Boxes --- */
+.theme-pro .info-box{background:#eff6ff;border-color:#bfdbfe}
+.theme-pro .warn-box{background:#fef3c7;border-color:#fbbf24;color:#78350f}
+
+/* --- Pro: Badges --- */
+.theme-pro .badge{border-radius:4px;font-weight:700;letter-spacing:.02em}
+
+/* --- Pro: Modals --- */
+.theme-pro .modal-content{border-radius:12px 0 0 12px;box-shadow:-4px 0 24px rgba(0,0,0,.12)}
+.theme-pro .modal-center .modal-content{border-radius:12px}
+.theme-pro .modal-header{background:#f8f9fa;border-bottom:1px solid #e0e0e0}
+.theme-pro .close-btn{color:#6b7280}
+.theme-pro .close-btn:hover{color:#1a1a2e}
+
+/* --- Pro: Toast --- */
+.theme-pro .toast{border-radius:6px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+
+/* --- Pro: Option Buttons --- */
+.theme-pro .option-btn{border:1.5px solid #d1d5db;border-radius:6px;background:#fff}
+.theme-pro .option-btn:hover{border-color:#2d3436;background:#f8f9fa;transform:none;box-shadow:none}
+.theme-pro .option-btn.selected{border-color:#2d3436;background:#2d3436;color:#fff}
+
+/* --- Pro: Counter --- */
+.theme-pro .counter-btn{border:1.5px solid #d1d5db;border-radius:6px}
+.theme-pro .counter-btn:hover{border-color:#2d3436;background:#f8f9fa;transform:none}
+
+/* --- Pro: Priority Buttons --- */
+.theme-pro .priority-btn{border:1.5px solid #d1d5db;border-radius:6px}
+
+/* --- Pro: Tab Bar --- */
+.theme-pro .tab-bar{background:#e5e7eb;border-radius:6px}
+.theme-pro .tab-btn{border-radius:4px;color:#6b7280}
+.theme-pro .tab-btn.active{background:#fff;color:#1a1a2e;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* --- Pro: Topbar --- */
+.theme-pro .topbar{background:#1a1a2e;color:#c4a052}
+.theme-pro .topbar a{color:#c4a052}
+.theme-pro .topbar h1{font-family:'Outfit',sans-serif!important;color:#f0f2f5;font-weight:700}
+
+/* --- Pro: Chart Bars --- */
+.theme-pro .chart-col .bar{background:linear-gradient(to top,#2d3436,#636e72);border-radius:3px 3px 0 0}
+.theme-pro .chart-col .label{color:#6b7280}
+.theme-pro .chart-col .value{color:#1a1a2e}
+
+/* --- Pro: Desktop Sidebar Nav --- */
+.theme-pro .nav{background:#1a1a2e;border-right:1px solid #2d2d4a}
+.theme-pro .nav-brand{border-bottom:1px solid #2d2d4a}
+.theme-pro .nav-section{color:#8888a8;letter-spacing:.1em}
+.theme-pro .nav-item{color:#b0b0cc;border-left:3px solid transparent;font-size:.84rem;display:flex;align-items:center;gap:8px}
+.theme-pro .nav-item:hover{background:rgba(255,255,255,.06);color:#e0e0f0}
+.theme-pro .nav-item.active{color:#fff;font-weight:600;border-left-color:#c4a052;background:rgba(196,160,82,.1)}
+
+/* --- Pro: Mobile Nav Bar --- */
+.theme-pro .mobile-nav{background:#1a1a2e;border-top:1px solid #2d2d4a;box-shadow:0 -2px 12px rgba(0,0,0,.15)}
+.theme-pro .mobile-nav-btn{color:#8888a8;border-top-color:transparent}
+.theme-pro .mobile-nav-btn .mn-icon{font-size:1.3rem}
+.theme-pro .mobile-nav-btn.active{color:#fff;border-top-color:#c4a052;background:rgba(196,160,82,.1)}
+.theme-pro .mobile-nav-btn:active{background:rgba(255,255,255,.08)}
+.theme-pro .mobile-nav-btn.menu-btn{background:#c4a052;color:#1a1a2e;border-radius:6px}
+.theme-pro .mobile-nav-btn.menu-btn:active{background:#a8873f}
+
+/* --- Pro: Mobile Fullscreen Menu --- */
+.theme-pro .mobile-menu-overlay{background:rgba(0,0,0,.6)}
+.theme-pro .mobile-menu-box{background:#f8f9fa;border-radius:12px}
+.theme-pro .mobile-menu-header{border-bottom:1px solid #e0e0e0}
+.theme-pro .mobile-menu-header h2{color:#1a1a2e}
+.theme-pro .mobile-menu-close{background:#e5e7eb;color:#6b7280;border-radius:6px}
+.theme-pro .mobile-menu-close:active{background:#d1d5db}
+.theme-pro .mobile-menu-section{color:#6b7280;letter-spacing:.1em}
+.theme-pro .mobile-menu-item{border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#1a1a2e}
+.theme-pro .mobile-menu-item:active{border-color:#2d3436;background:#f0f2f5;transform:scale(0.97)}
+.theme-pro .mobile-menu-item.mm-active{border-color:#c4a052;background:rgba(196,160,82,.08);color:#1a1a2e;font-weight:700}
+.theme-pro .mobile-menu-item .mm-icon{font-size:1.3rem}
+.theme-pro .mobile-menu-item.mm-danger{color:#dc2626;border-color:#fecaca}
+.theme-pro .mobile-menu-item.mm-danger:active{background:#fef2f2}
+
+/* --- Pro: Theme Toggle Button --- */
+.theme-toggle{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;margin:.5rem .75rem;border:1.5px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.05);cursor:pointer;color:#b0b0cc;font-size:.8rem;font-weight:500;transition:all .2s;font-family:inherit}
+.theme-toggle:hover{background:rgba(255,255,255,.1);color:#fff}
+.theme-toggle .toggle-track{width:36px;height:20px;border-radius:10px;background:#3d3d5c;position:relative;transition:background .2s;flex-shrink:0}
+.theme-toggle .toggle-knob{width:16px;height:16px;border-radius:50%;background:#8888a8;position:absolute;top:2px;left:2px;transition:all .2s}
+.theme-pro .theme-toggle .toggle-track{background:#c4a052}
+.theme-pro .theme-toggle .toggle-knob{left:18px;background:#fff}
+
+/* Standard-Theme Toggle (in heller Sidebar) */
+html:not(.theme-pro) .theme-toggle{border-color:rgba(245,166,35,.15);background:rgba(245,166,35,.04);color:#7A6652}
+html:not(.theme-pro) .theme-toggle:hover{background:rgba(245,166,35,.08);color:#1C1410}
+html:not(.theme-pro) .theme-toggle .toggle-track{background:#E8DFD4}
+html:not(.theme-pro) .theme-toggle .toggle-knob{background:#7A6652}
+
+/* --- Pro: Allgemeine Inline-Style Overrides --- */
+.theme-pro [style*="background:#FFFBF0"],.theme-pro [style*="background: #FFFBF0"]{background:#f0f2f5!important}
+.theme-pro [style*="background:#FFF8EE"],.theme-pro [style*="background: #FFF8EE"]{background:#f8f9fa!important}
+.theme-pro [style*="background:#FFF3D6"],.theme-pro [style*="background: #FFF3D6"]{background:#fef3c7!important}
+.theme-pro [style*="color:#7A6652"],.theme-pro [style*="color: #7A6652"]{color:#6b7280!important}
+.theme-pro [style*="color:#A69580"],.theme-pro [style*="color: #A69580"]{color:#9ca3af!important}
+.theme-pro [style*="color:#92400E"],.theme-pro [style*="color: #92400E"]{color:#78350f!important}
+.theme-pro [style*="color:#F5A623"],.theme-pro [style*="color: #F5A623"]{color:#c4a052!important}
+.theme-pro [style*="border-color:rgba(245,166,35"]{border-color:#e0e0e0!important}
+.theme-pro [style*="border:2px solid rgba(245,166,35"]{border-color:#e0e0e0!important}
