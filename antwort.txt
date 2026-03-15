@@ -1,3 +1,1 @@
-﻿GET https://bienenplan.de/icon192.png 404 (Not Found)Understand this error
-VM140 app.html:1 Uncaught ReferenceError: themeManager is not defined
-    at HTMLButtonElement.onclick (VM140 app.html:1:1)
+﻿Fehler (500): No such price: 'price_1T7C58FZmkJ9EVA4nRaBX2s1'

@@ -67,7 +67,7 @@ function renderDurchsicht() {
             html += '<div style="display:flex;justify-content:space-between;align-items:flex-start">';
             html += '<div style="flex:1">';
             html += '<div style="font-weight:600;font-size:.95rem;display:flex;align-items:center;gap:.35rem">🐝 ' + v.name;
-            html += ' <button onclick="event.stopPropagation();openVolkModal(\'' + v.id + '\')" style="padding:.1rem .3rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.3rem;cursor:pointer;font-size:.65rem" title="Name bearbeiten">✏️</button>';
+            html += ' <button onclick="event.stopPropagation();renameVolk(\'' + v.id + '\')" style="padding:.1rem .3rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.3rem;cursor:pointer;font-size:.65rem" title="Name bearbeiten">✏️</button>';
             html += ' <span style="font-size:.7rem;color:#7A6652;transform:rotate(' + (isOpen?'90':'0') + 'deg);transition:transform .2s;display:inline-block">▶</span>';
             html += '</div>';
 

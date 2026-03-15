@@ -2633,32 +2633,46 @@ document.addEventListener('click', function(e){
     var swipePages = ['heute','standorte','aufgaben','behandlung','tracht','packliste','kosten','einstellungen'];
     var touchStartX = 0;
     var touchStartY = 0;
-    var touchEndX = 0;
-    var touchEndY = 0;
-    var minSwipe = 80;
+    var minSwipe = 120;
 
     document.addEventListener('touchstart', function(e){
+        // Nicht swipen wenn Finger auf interaktiven Elementen startet
+        var tag = e.target.tagName.toLowerCase();
+        var el = e.target;
+        // Karten, Widgets, Slider, Inputs, Canvas etc. ignorieren
+        while (el && el !== document.body) {
+            var cls = (el.className || '').toString().toLowerCase();
+            var id = (el.id || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'canvas') return;
+            if (cls.indexOf('leaflet') > -1 || cls.indexOf('map') > -1) return;
+            if (cls.indexOf('weather') > -1 || cls.indexOf('wetter') > -1) return;
+            if (cls.indexOf('swiper') > -1 || cls.indexOf('slider') > -1 || cls.indexOf('carousel') > -1) return;
+            if (cls.indexOf('modal') > -1) return;
+            if (id.indexOf('map') > -1 || id.indexOf('wetter') > -1 || id.indexOf('weather') > -1) return;
+            if (el.scrollWidth > el.clientWidth) return; // horizontal scrollbare Elemente
+            el = el.parentElement;
+        }
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
     }, {passive:true});
 
     document.addEventListener('touchend', function(e){
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        var diffX = touchEndX - touchStartX;
-        var diffY = Math.abs(touchEndY - touchStartY);
-        if (Math.abs(diffX) < minSwipe || diffY > Math.abs(diffX)) return;
+        if (!touchStartX) return;
+        var diffX = e.changedTouches[0].screenX - touchStartX;
+        var diffY = Math.abs(e.changedTouches[0].screenY - touchStartY);
+        touchStartX = 0;
+        // Nur bei deutlich horizontalem Wisch (>120px, mehr horizontal als vertikal)
+        if (Math.abs(diffX) < minSwipe || diffY > Math.abs(diffX) * 0.7) return;
         if (document.querySelector('.modal.active')) return;
         if (document.getElementById('mobileMenuOverlay').classList.contains('active')) return;
-        
+
         var current = app.page;
         var idx = swipePages.indexOf(current);
         if (idx === -1) return;
-        
-        var newIdx;
-        if (diffX < 0) { newIdx = idx + 1; } else { newIdx = idx - 1; }
+
+        var newIdx = diffX < 0 ? idx + 1 : idx - 1;
         if (newIdx < 0 || newIdx >= swipePages.length) return;
-        
+
         document.querySelectorAll('.nav .nav-item').forEach(function(b){b.classList.remove('active');});
         var btn = document.querySelector('.nav .nav-item[href="app.html#'+swipePages[newIdx]+'"]');
         if (btn) btn.classList.add('active');
@@ -2667,6 +2681,7 @@ document.addEventListener('click', function(e){
         updateMobileNav(swipePages[newIdx]);
     }, {passive:true});
 })();
+
 </script>
 
 </body>
