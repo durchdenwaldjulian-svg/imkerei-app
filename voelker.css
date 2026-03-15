@@ -199,7 +199,7 @@ body.modal-open{overflow:hidden}
     .taetig-grid{grid-template-columns:repeat(3,1fr);gap:.4rem}
     .taetig-chip{font-size:.72rem;padding:.5rem .35rem}
     #speechPanel{width:100%;top:0}
-    #speechFab{bottom:10rem;right:1.25rem}
+    #speechFab{bottom:10rem!important;right:1.25rem!important}
     #scanFab{bottom:5.5rem!important;right:1.25rem!important}
 }
 
