@@ -410,6 +410,17 @@ function deleteVolk() {
     toast('🗑️ Volk gelöscht', 'info');
 }
 
+function renameVolk(volkId) {
+    var v = voelker.find(function(x){return x.id === volkId;});
+    if (!v) return;
+    var neuerName = prompt('Neuer Name für "' + v.name + '":', v.name);
+    if (neuerName === null || neuerName.trim() === '') return;
+    v.name = neuerName.trim();
+    db.update('voelker', {name: v.name}, v.id);
+    render();
+    toast('✓ Name geändert!', 'success');
+}
+
 function quickAddVolk(standortId, typ) {
     typ = typ || 'volk';
     var sVoelker = voelker.filter(function(v){return v.standortId === standortId;});
@@ -583,7 +594,7 @@ function renderStandortDetails() {
         '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
         '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+v.name+typBadge+'</h3>'+
         '<div style="display:flex;align-items:center;gap:.4rem">'+
-        '<button onclick="event.stopPropagation();openVolkModal(\''+v.id+'\')" style="padding:.15rem .4rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.7rem" title="Volk bearbeiten">✏️</button>'+
+        '<button onclick="event.stopPropagation();renameVolk(\''+v.id+'\')" style="padding:.15rem .4rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.7rem" title="Name bearbeiten">✏️</button>'+
         '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div>'+
         '</div></div>'+
         '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.25rem">'+v.beutensystem+'</div>'+
