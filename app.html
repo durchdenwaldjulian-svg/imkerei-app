@@ -2638,18 +2638,15 @@ document.addEventListener('click', function(e){
     document.addEventListener('touchstart', function(e){
         // Nicht swipen wenn Finger auf interaktiven Elementen startet
         var tag = e.target.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'canvas') return;
+        // Eltern prüfen: Karten, Wetter-Widgets, Slider ignorieren
         var el = e.target;
-        // Karten, Widgets, Slider, Inputs, Canvas etc. ignorieren
         while (el && el !== document.body) {
             var cls = (el.className || '').toString().toLowerCase();
             var id = (el.id || '').toLowerCase();
-            if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'canvas') return;
             if (cls.indexOf('leaflet') > -1 || cls.indexOf('map') > -1) return;
             if (cls.indexOf('weather') > -1 || cls.indexOf('wetter') > -1) return;
-            if (cls.indexOf('swiper') > -1 || cls.indexOf('slider') > -1 || cls.indexOf('carousel') > -1) return;
-            if (cls.indexOf('modal') > -1) return;
             if (id.indexOf('map') > -1 || id.indexOf('wetter') > -1 || id.indexOf('weather') > -1) return;
-            if (el.scrollWidth > el.clientWidth) return; // horizontal scrollbare Elemente
             el = el.parentElement;
         }
         touchStartX = e.changedTouches[0].screenX;
