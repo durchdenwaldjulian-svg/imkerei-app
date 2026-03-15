@@ -200,7 +200,7 @@ body.modal-open{overflow:hidden}
     .taetig-chip{font-size:.72rem;padding:.5rem .35rem}
     #speechPanel{width:100%;top:0}
     #speechFab{bottom:10rem;right:1rem}
-    #scanFab{bottom:6.5rem;right:1.5rem}
+    #scanFab{bottom:8rem;right:1.5rem}
 }
 
 /* === QR SCANNER === */

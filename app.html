@@ -2636,10 +2636,9 @@ document.addEventListener('click', function(e){
     var minSwipe = 120;
 
     document.addEventListener('touchstart', function(e){
-        // Nicht swipen wenn Finger auf interaktiven Elementen startet
         var tag = e.target.tagName.toLowerCase();
         if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'canvas') return;
-        // Eltern prüfen: Karten, Wetter-Widgets, Slider ignorieren
+        // Karten und Wetter-Widgets ignorieren
         var el = e.target;
         while (el && el !== document.body) {
             var cls = (el.className || '').toString().toLowerCase();
