@@ -2638,14 +2638,14 @@ document.addEventListener('click', function(e){
     document.addEventListener('touchstart', function(e){
         var tag = e.target.tagName.toLowerCase();
         if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'canvas') return;
-        // Karten und Wetter-Widgets ignorieren
+        // Horizontal scrollbare Elemente, Karten etc. ignorieren
         var el = e.target;
         while (el && el !== document.body) {
+            var style = window.getComputedStyle(el);
+            var overX = style.overflowX;
+            if ((overX === 'auto' || overX === 'scroll') && el.scrollWidth > el.clientWidth + 5) return;
             var cls = (el.className || '').toString().toLowerCase();
-            var id = (el.id || '').toLowerCase();
-            if (cls.indexOf('leaflet') > -1 || cls.indexOf('map') > -1) return;
-            if (cls.indexOf('weather') > -1 || cls.indexOf('wetter') > -1) return;
-            if (id.indexOf('map') > -1 || id.indexOf('wetter') > -1 || id.indexOf('weather') > -1) return;
+            if (cls.indexOf('leaflet') > -1) return;
             el = el.parentElement;
         }
         touchStartX = e.changedTouches[0].screenX;
