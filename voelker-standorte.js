@@ -582,7 +582,10 @@ function renderStandortDetails() {
         html += '<div class="volk-card'+(istAbleger ? ' ableger' : '')+'" onclick="goToVolk(\''+v.id+'\')">'+
         '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
         '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+v.name+typBadge+'</h3>'+
-        '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div></div>'+
+        '<div style="display:flex;align-items:center;gap:.4rem">'+
+        '<button onclick="event.stopPropagation();openVolkModal(\''+v.id+'\')" style="padding:.15rem .4rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.7rem" title="Volk bearbeiten">✏️</button>'+
+        '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div>'+
+        '</div></div>'+
         '<div style="font-size:.75rem;color:#7A6652;margin-bottom:.25rem">'+v.beutensystem+'</div>'+
         '<div style="font-size:.75rem;margin-bottom:.5rem">'+sl+'</div>'+
         '<div style="background:#FFF8EE;padding:.5rem;border-radius:.5rem;font-size:.75rem">🍯 '+(v.honigertrag||0).toFixed(1)+' kg</div></div>';
