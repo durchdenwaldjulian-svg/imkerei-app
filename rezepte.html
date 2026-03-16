@@ -135,6 +135,46 @@
         /* === ANIMATIONS === */
         @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .anim-in{animation:cardIn .35s ease forwards}
+
+        /* === PRO THEME OVERRIDES === */
+        .theme-pro .rezepte-header{background:linear-gradient(135deg,#1a1a2e 0%,#2d2d4a 100%);border-radius:8px}
+        .theme-pro .rezepte-header::before{background:radial-gradient(circle,rgba(196,160,82,0.1) 0%,transparent 70%)}
+        .theme-pro .rezepte-header h1{color:#c4a052;font-family:'Outfit',sans-serif!important;font-weight:700}
+        .theme-pro .rezepte-header p{color:#8888a8}
+        .theme-pro .kat-card{border:1.5px solid #d1d5db;border-radius:8px;background:#fff}
+        .theme-pro .kat-card:hover{border-color:#c4a052;box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-1px)}
+        .theme-pro .kat-card .name{color:#1a1a2e}
+        .theme-pro .kat-card .desc{color:#6b7280}
+        .theme-pro .kat-card .count{background:#fef3c7;color:#78350f}
+        .theme-pro .rezept-item{border:1px solid #e0e0e0;border-radius:6px}
+        .theme-pro .rezept-item:hover{border-color:#c4a052;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+        .theme-pro .rezept-item .r-title{color:#1a1a2e}
+        .theme-pro .rezept-item .r-meta{color:#9ca3af}
+        .theme-pro .rezept-item .r-desc{color:#374151}
+        .theme-pro .rezept-detail{border:1px solid #e0e0e0;border-radius:8px;box-shadow:none}
+        .theme-pro .rezept-detail .info-row{color:#6b7280}
+        .theme-pro .rezept-detail .beschreibung{color:#374151;border-bottom-color:#e0e0e0}
+        .theme-pro .zutaten-list li::before{background:#c4a052}
+        .theme-pro .zutaten-list .menge{color:#1a1a2e}
+        .theme-pro .zutaten-list .zutat{color:#374151}
+        .theme-pro .zutaten-list li{border-bottom-color:#f0f2f5}
+        .theme-pro .schritte-list li::before{background:#2d3436;color:#fff}
+        .theme-pro .schritte-list li{border-bottom-color:#f0f2f5;color:#374151}
+        .theme-pro .diff-badge.leicht{background:#d1fae5;color:#065f46}
+        .theme-pro .diff-badge.mittel{background:#fef3c7;color:#78350f}
+        .theme-pro .diff-badge.fortgeschritten{background:#fee2e2;color:#991b1b}
+        .theme-pro .filter-btn{border-color:#d1d5db;color:#6b7280;border-radius:4px}
+        .theme-pro .filter-btn.active{background:#2d3436;color:#fff;border-color:#2d3436}
+        .theme-pro .filter-btn:hover:not(.active){background:#f8f9fa;border-color:#2d3436}
+        .theme-pro .search-box input{border:1.5px solid #d1d5db;border-radius:6px}
+        .theme-pro .search-box input:focus{border-color:#2d3436;box-shadow:0 0 0 3px rgba(45,52,54,.08)}
+        .theme-pro .breadcrumb{color:#6b7280}
+        .theme-pro .breadcrumb a{color:#c4a052}
+        .theme-pro .breadcrumb .sep{color:#9ca3af}
+        .theme-pro .preview-banner{background:linear-gradient(135deg,#2563eb,#4f46e5);border-radius:6px}
+        .theme-pro .schritt-row .nr{background:#2d3436;color:#fff}
+        .theme-pro .zutat-row input,.theme-pro .schritt-row textarea{border-color:#d1d5db;border-radius:4px}
+        .theme-pro .zutat-row input:focus,.theme-pro .schritt-row textarea:focus{border-color:#2d3436}
     </style>
 </head>
 <body>
@@ -212,6 +252,7 @@
 
 <script src="config.js"></script>
 <script src="plan.js"></script>
+<script src="rezepte-data.js"></script>
 <script src="presence.js" defer></script>
 <script>
 // ============================================
@@ -238,73 +279,7 @@ var KATEGORIEN = [
     {id: 'hausmittel', name: 'Hausmittel', emoji: '🏥', desc: 'Bewährte Hausmittel mit Honig & Propolis'}
 ];
 
-// ============================================
-// VORGEFERTIGTE REZEPTE
-// ============================================
-var PRESET_REZEPTE = [
-    // === ESSEN & TRINKEN ===
-    {id:'p1', kategorie:'essen', titel:'Klassischer Honigkuchen', beschreibung:'Saftiger Honigkuchen mit Gewürzen – perfekt zur Kaffeezeit.', schwierigkeit:'leicht', zeitaufwand:60, is_preset:true,
-     zutaten:[{menge:'250',einheit:'g',zutat:'Honig'},{menge:'200',einheit:'g',zutat:'Mehl'},{menge:'100',einheit:'g',zutat:'Butter'},{menge:'3',einheit:'',zutat:'Eier'},{menge:'1',einheit:'TL',zutat:'Backpulver'},{menge:'1',einheit:'TL',zutat:'Zimt'},{menge:'1',einheit:'Prise',zutat:'Nelken (gemahlen)'}],
-     schritte:['Backofen auf 170°C vorheizen. Butter und Honig in einem Topf sanft erwärmen, bis die Butter geschmolzen ist.','Eier schaumig schlagen und die Honig-Butter-Mischung unterrühren.','Mehl, Backpulver und Gewürze mischen, dann vorsichtig unter die Masse heben.','In eine gefettete Kastenform füllen und ca. 45 Minuten backen. Stäbchenprobe machen!','Auskühlen lassen – der Kuchen wird am nächsten Tag noch saftiger.']},
-
-    {id:'p2', kategorie:'essen', titel:'Honig-Senf-Dressing', beschreibung:'Schnelles Salatdressing mit der perfekten Honig-Senf-Balance.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
-     zutaten:[{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'EL',zutat:'Senf (mittelscharf)'},{menge:'3',einheit:'EL',zutat:'Olivenöl'},{menge:'2',einheit:'EL',zutat:'Apfelessig'},{menge:'1',einheit:'Prise',zutat:'Salz & Pfeffer'}],
-     schritte:['Alle Zutaten in ein Schraubglas geben.','Deckel drauf und kräftig schütteln, bis eine cremige Emulsion entsteht.','Sofort über den Salat geben oder bis zu 1 Woche im Kühlschrank aufbewahren.']},
-
-    {id:'p3', kategorie:'essen', titel:'Met (Honigwein)', beschreibung:'Traditioneller Honigwein – das Getränk der Wikinger, selbst gebraut.', schwierigkeit:'fortgeschritten', zeitaufwand:30, is_preset:true,
-     zutaten:[{menge:'1,5',einheit:'kg',zutat:'Blütenhonig'},{menge:'5',einheit:'L',zutat:'Wasser (chlorfrei)'},{menge:'1',einheit:'Pck',zutat:'Weinhefe (Reinzuchthefe)'},{menge:'3',einheit:'g',zutat:'Hefenährsalz'},{menge:'1',einheit:'',zutat:'Zitrone (Saft)'}],
-     schritte:['Honig in lauwarmem Wasser auflösen (max. 30°C). Zitronensaft hinzufügen.','Hefe laut Packungsanleitung aktivieren und zum Honigwasser geben. Hefenährsalz einrühren.','In einen Gärballon füllen und Gärröhrchen aufsetzen.','4-6 Wochen bei 18-22°C gären lassen, bis keine Blasen mehr aufsteigen.','Vom Bodensatz abziehen (umschlauchen) und weitere 2-3 Monate reifen lassen. In Flaschen abfüllen.']},
-
-    {id:'p4', kategorie:'essen', titel:'Honig-Nuss-Müsli', beschreibung:'Knuspriges Granola mit Honig und gemischten Nüssen.', schwierigkeit:'leicht', zeitaufwand:35, is_preset:true,
-     zutaten:[{menge:'300',einheit:'g',zutat:'Haferflocken'},{menge:'100',einheit:'g',zutat:'Honig'},{menge:'80',einheit:'g',zutat:'gemischte Nüsse'},{menge:'50',einheit:'g',zutat:'Kokosöl'},{menge:'50',einheit:'g',zutat:'Rosinen'},{menge:'1',einheit:'TL',zutat:'Vanilleextrakt'}],
-     schritte:['Backofen auf 160°C vorheizen. Kokosöl und Honig sanft erwärmen.','Haferflocken und grob gehackte Nüsse in einer Schüssel mischen.','Honig-Öl-Mischung und Vanille dazugeben, gut vermengen.','Auf einem Backblech verteilen und 20-25 Min. backen, zwischendurch wenden.','Abkühlen lassen, Rosinen untermischen. In einem Glas luftdicht lagern.']},
-
-    {id:'p5', kategorie:'essen', titel:'Honig-Ingwer-Tee', beschreibung:'Wärmender Tee mit frischem Ingwer und Honig – ideal im Winter.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
-     zutaten:[{menge:'1',einheit:'Stück',zutat:'Ingwer (daumengroß)'},{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'500',einheit:'ml',zutat:'heißes Wasser'},{menge:'1',einheit:'',zutat:'Zitrone (Saft)'}],
-     schritte:['Ingwer schälen und in dünne Scheiben schneiden.','Mit heißem Wasser (nicht kochend!) übergießen und 5-8 Minuten ziehen lassen.','Auf Trinktemperatur abkühlen lassen, dann Honig und Zitronensaft einrühren.','Wichtig: Honig nie in kochendes Wasser geben – die wertvollen Enzyme gehen sonst verloren!']},
-
-    // === KOSMETIK & PFLEGE ===
-    {id:'p6', kategorie:'kosmetik', titel:'Honig-Lippenbalsam', beschreibung:'Natürlicher Lippenbalsam mit Bienenwachs und Honig.', schwierigkeit:'mittel', zeitaufwand:20, is_preset:true,
-     zutaten:[{menge:'10',einheit:'g',zutat:'Bienenwachs'},{menge:'15',einheit:'g',zutat:'Kokosöl'},{menge:'5',einheit:'g',zutat:'Honig'},{menge:'5',einheit:'Tropfen',zutat:'Vitamin-E-Öl'},{menge:'3',einheit:'Tropfen',zutat:'ätherisches Öl (optional)'}],
-     schritte:['Bienenwachs und Kokosöl im Wasserbad schmelzen.','Vom Herd nehmen und auf ca. 40°C abkühlen lassen.','Honig und Vitamin-E-Öl unterrühren. Bei Bedarf ätherisches Öl dazugeben.','Schnell in kleine Dosen oder leere Lippenpflege-Hülsen füllen.','Vollständig aushärten lassen (ca. 1 Stunde). Hält sich 6-12 Monate.']},
-
-    {id:'p7', kategorie:'kosmetik', titel:'Honig-Gesichtsmaske', beschreibung:'Feuchtigkeitsspendende Gesichtsmaske für strahlende Haut.', schwierigkeit:'leicht', zeitaufwand:25, is_preset:true,
-     zutaten:[{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'EL',zutat:'Naturjoghurt'},{menge:'1',einheit:'TL',zutat:'Kurkuma'}],
-     schritte:['Alle Zutaten in einer kleinen Schüssel glatt rühren.','Auf das gereinigte Gesicht auftragen (Augenpartie aussparen).','15-20 Minuten einwirken lassen.','Mit lauwarmem Wasser abspülen und eine Feuchtigkeitscreme auftragen.']},
-
-    {id:'p8', kategorie:'kosmetik', titel:'Honig-Haarspülung', beschreibung:'Natürliche Haarkur für glänzendes, geschmeidiges Haar.', schwierigkeit:'leicht', zeitaufwand:30, is_preset:true,
-     zutaten:[{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'EL',zutat:'Olivenöl'},{menge:'1',einheit:'',zutat:'Eigelb'}],
-     schritte:['Honig leicht erwärmen (nicht über 40°C), bis er flüssig wird.','Olivenöl und Eigelb unterrühren.','In das feuchte Haar einmassieren, besonders in die Spitzen.','Mit einem Handtuch umwickeln und 20 Minuten einwirken lassen.','Gründlich mit lauwarmem Wasser ausspülen, dann normal waschen.']},
-
-    {id:'p9', kategorie:'kosmetik', titel:'Propolis-Salbe', beschreibung:'Heilsame Salbe mit Propolis – das natürliche Antibiotikum der Bienen.', schwierigkeit:'mittel', zeitaufwand:45, is_preset:true,
-     zutaten:[{menge:'20',einheit:'g',zutat:'Bienenwachs'},{menge:'80',einheit:'ml',zutat:'Olivenöl'},{menge:'10',einheit:'ml',zutat:'Propolis-Tinktur (30%)'},{menge:'5',einheit:'Tropfen',zutat:'Vitamin-E-Öl'}],
-     schritte:['Bienenwachs im Olivenöl im Wasserbad langsam schmelzen.','Vom Herd nehmen und auf ca. 50°C abkühlen lassen.','Propolis-Tinktur tropfenweise einrühren (gut vermischen!).','Vitamin-E-Öl hinzufügen und in saubere Tiegel abfüllen.','Aushärten lassen. Kühl und dunkel lagern, hält ca. 12 Monate.']},
-
-    {id:'p10', kategorie:'kosmetik', titel:'Bienenwachs-Handcreme', beschreibung:'Reichhaltige Handcreme mit Bienenwachs – ideal für raue Imkerhände.', schwierigkeit:'mittel', zeitaufwand:30, is_preset:true,
-     zutaten:[{menge:'15',einheit:'g',zutat:'Bienenwachs'},{menge:'50',einheit:'ml',zutat:'Mandelöl'},{menge:'30',einheit:'ml',zutat:'Rosenwasser'},{menge:'1',einheit:'TL',zutat:'Honig'},{menge:'5',einheit:'Tropfen',zutat:'Lavendelöl'}],
-     schritte:['Bienenwachs und Mandelöl im Wasserbad schmelzen.','In einem zweiten Gefäß Rosenwasser und Honig leicht erwärmen.','Die Rosenwasser-Mischung langsam in die Öl-Wachs-Mischung einrühren (Mixer hilft!).','Lavendelöl dazugeben und weiterrühren, bis die Masse cremig wird.','In Tiegel füllen und abkühlen lassen. Hält sich 3-6 Monate.']},
-
-    // === HAUSMITTEL ===
-    {id:'p11', kategorie:'hausmittel', titel:'Honig-Zwiebel-Hustensaft', beschreibung:'Das bewährte Hausmittel gegen Husten – einfach und wirksam.', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
-     zutaten:[{menge:'1',einheit:'',zutat:'große Zwiebel'},{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Einmachglas'}],
-     schritte:['Zwiebel schälen und in kleine Würfel schneiden.','Abwechselnd Zwiebelwürfel und Honig in das Glas schichten.','Mindestens 6 Stunden (am besten über Nacht) ziehen lassen.','Den entstandenen Sirup 3x täglich je 1 EL einnehmen.','Hält sich im Kühlschrank ca. 3 Tage.']},
-
-    {id:'p12', kategorie:'hausmittel', titel:'Honig-Quark-Wickel', beschreibung:'Kühlender Wickel bei Sonnenbrand oder leichten Verbrennungen.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
-     zutaten:[{menge:'3',einheit:'EL',zutat:'Quark (kühlschrankkalt)'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Baumwolltuch'}],
-     schritte:['Quark und Honig glatt verrühren.','Die Mischung fingerdick auf ein Baumwolltuch streichen.','Auf die betroffene Stelle legen (mit der bestrichenen Seite nach oben).','20-30 Minuten einwirken lassen, bis der Quark warm wird.','Abnehmen und Haut vorsichtig reinigen. Bei Bedarf wiederholen.']},
-
-    {id:'p13', kategorie:'hausmittel', titel:'Propolis-Tinktur', beschreibung:'Konzentrierte Propolis-Lösung – das Allround-Hausmittel aus dem Bienenstock.', schwierigkeit:'mittel', zeitaufwand:20, is_preset:true,
-     zutaten:[{menge:'30',einheit:'g',zutat:'Rohpropolis (gereinigt)'},{menge:'100',einheit:'ml',zutat:'Alkohol (70%, Apotheke)'},{menge:'1',einheit:'',zutat:'dunkle Flasche mit Pipette'}],
-     schritte:['Rohpropolis im Gefrierschrank hart werden lassen, dann fein zerkleinern.','In eine dunkle Flasche füllen und mit Alkohol übergießen.','2-3 Wochen an einem dunklen Ort ziehen lassen. Täglich schütteln!','Durch einen Kaffeefilter oder feines Tuch abseihen.','In eine Pipettenflasche füllen. Hält sich jahrelang. Innerlich: 10-20 Tropfen in Wasser.']},
-
-    {id:'p14', kategorie:'hausmittel', titel:'Honig-Zimt bei Erkältung', beschreibung:'Wärmende Honig-Zimt-Paste – stärkt die Abwehrkräfte.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
-     zutaten:[{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1/4',einheit:'TL',zutat:'Ceylon-Zimt'},{menge:'1',einheit:'Prise',zutat:'schwarzer Pfeffer'}],
-     schritte:['Honig und Zimt in einer kleinen Schale glatt verrühren.','Schwarzen Pfeffer dazugeben (verbessert die Aufnahme der Wirkstoffe).','Morgens auf nüchternen Magen 1 TL einnehmen.','Alternativ in lauwarmen Tee einrühren.','Wichtig: Nur Ceylon-Zimt verwenden, nicht Cassia-Zimt!']},
-
-    {id:'p15', kategorie:'hausmittel', titel:'Honigwasser am Morgen', beschreibung:'Einfaches Morgenritual – ein Glas Honigwasser für den Start in den Tag.', schwierigkeit:'leicht', zeitaufwand:3, is_preset:true,
-     zutaten:[{menge:'1',einheit:'Glas',zutat:'lauwarmes Wasser (250ml)'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'Spritzer',zutat:'Zitronensaft (optional)'}],
-     schritte:['Ein Glas lauwarmes Wasser vorbereiten (nicht über 40°C).','Honig einrühren, bis er sich vollständig aufgelöst hat.','Optional einen Spritzer Zitronensaft hinzufügen.','Morgens auf nüchternen Magen trinken, 30 Min. vor dem Frühstück.','Fördert die Verdauung, stärkt das Immunsystem und liefert schnelle Energie.']}
-];
+// PRESET_REZEPTE werden aus rezepte-data.js geladen
 
 // ============================================
 // INIT
@@ -412,14 +387,15 @@ function renderKategorien() {
     });
     html += '</div>';
 
-    // Neueste Rezepte
+    // Beliebte Rezepte (je 2 pro Kategorie)
     html += '<h2 style="margin-top:2rem;display:flex;align-items:center;gap:.5rem">Beliebte Rezepte</h2>';
     var beliebte = [
         rezepte.find(function(r){return r.id==='p1';}),
+        rezepte.find(function(r){return r.id==='p19';}),
         rezepte.find(function(r){return r.id==='p6';}),
+        rezepte.find(function(r){return r.id==='p45';}),
         rezepte.find(function(r){return r.id==='p11';}),
-        rezepte.find(function(r){return r.id==='p3';}),
-        rezepte.find(function(r){return r.id==='p9';})
+        rezepte.find(function(r){return r.id==='p77';})
     ].filter(Boolean);
 
     beliebte.forEach(function(r) {
