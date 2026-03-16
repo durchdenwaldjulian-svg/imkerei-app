@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="Logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍯 Honig-Rezepte – bienenplan.de</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <script src="theme.js?v=2"></script>
+    <link rel="stylesheet" href="/fonts/fonts.css">
+    <script src="vendor/supabase.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css?v=2">
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+        /* === NAV === */
+        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
+        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
+        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
+        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
+        .nav-item:hover{background:rgba(245,166,35,0.06)}
+        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
+
+        .toast{z-index:10001!important}
+
+        /* === REZEPTE HEADER === */
+        .rezepte-header{background:linear-gradient(135deg,#1C1410 0%,#3D2E1F 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+        .rezepte-header::before{content:'';position:absolute;top:-30%;right:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);border-radius:50%}
+        .rezepte-header h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.5rem;position:relative}
+        .rezepte-header p{color:#C4A882;font-size:.9rem;position:relative}
+
+        /* === PREVIEW BANNER === */
+        .preview-banner{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;padding:.75rem 1rem;border-radius:.75rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;font-size:.85rem;font-weight:500}
+        .preview-banner .icon{font-size:1.2rem}
+
+        /* === BREADCRUMB === */
+        .breadcrumb{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;font-size:.85rem;color:#7A6652;flex-wrap:wrap}
+        .breadcrumb a{color:#F5A623;text-decoration:none;font-weight:600;cursor:pointer}
+        .breadcrumb a:hover{text-decoration:underline}
+        .breadcrumb .sep{color:#C4A882}
+
+        /* === KATEGORIE GRID === */
+        .kat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+        .kat-card{background:#fff;border:2px solid rgba(245,166,35,0.08);border-radius:1rem;padding:1.25rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;text-align:center}
+        .kat-card:hover{border-color:#F5A623;transform:translateY(-2px);box-shadow:0 8px 24px rgba(245,166,35,0.12)}
+        .kat-card .emoji{font-size:2.5rem;margin-bottom:.5rem;display:block}
+        .kat-card .name{font-weight:700;font-size:1.05rem;color:#1C1410;margin-bottom:.25rem}
+        .kat-card .desc{font-size:.75rem;color:#7A6652;line-height:1.4}
+        .kat-card .count{position:absolute;top:.75rem;right:.75rem;background:#FFF3D6;color:#92400e;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:1rem}
+
+        /* === REZEPT KARTEN === */
+        .rezept-item{background:#fff;border:1px solid rgba(245,166,35,0.08);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:.5rem;cursor:pointer;transition:all .15s;display:flex;gap:1rem;align-items:center}
+        .rezept-item:hover{border-color:#F5A623;box-shadow:0 2px 12px rgba(245,166,35,0.08)}
+        .rezept-item .r-emoji{font-size:2rem;flex-shrink:0}
+        .rezept-item .r-body{flex:1;min-width:0}
+        .rezept-item .r-title{font-weight:700;font-size:1rem;color:#1C1410;margin-bottom:.2rem;display:flex;align-items:center;gap:.5rem}
+        .rezept-item .r-meta{font-size:.75rem;color:#A69580;display:flex;gap:.75rem;flex-wrap:wrap}
+        .rezept-item .r-desc{font-size:.85rem;color:#5C4A3A;line-height:1.4;margin-top:.25rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .rezept-item .r-actions{display:flex;flex-direction:column;gap:.25rem;flex-shrink:0}
+
+        /* === FAV BUTTON === */
+        .fav-btn{background:none;border:none;font-size:1.2rem;cursor:pointer;padding:.25rem;transition:transform .15s}
+        .fav-btn:hover{transform:scale(1.2)}
+        .fav-btn.active{color:#ef4444}
+
+        /* === DIFF BADGES === */
+        .diff-badge{display:inline-block;padding:.15rem .5rem;border-radius:1rem;font-size:.65rem;font-weight:700}
+        .diff-badge.leicht{background:#d1fae5;color:#065f46}
+        .diff-badge.mittel{background:#FFF3D6;color:#92400e}
+        .diff-badge.fortgeschritten{background:#fee2e2;color:#991b1b}
+
+        /* === REZEPT DETAIL === */
+        .rezept-detail{background:#fff;border-radius:1rem;padding:1.5rem;margin-bottom:1rem;box-shadow:0 2px 8px rgba(28,20,16,0.04);border:1px solid rgba(245,166,35,0.08)}
+        .rezept-detail .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+        .rezept-detail .header h2{margin:0;font-size:1.3rem;display:flex;align-items:center;gap:.5rem}
+        .rezept-detail .info-row{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;font-size:.85rem;color:#7A6652}
+        .rezept-detail .info-row span{display:flex;align-items:center;gap:.3rem}
+        .rezept-detail .beschreibung{font-size:.95rem;color:#3D2E1F;line-height:1.6;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid rgba(245,166,35,0.08)}
+
+        /* === ZUTATEN === */
+        .zutaten-list{list-style:none;margin-bottom:1.5rem}
+        .zutaten-list li{padding:.5rem 0;border-bottom:1px solid rgba(245,166,35,0.06);display:flex;align-items:center;gap:.5rem;font-size:.95rem}
+        .zutaten-list li::before{content:'';width:8px;height:8px;border-radius:50%;background:#F5A623;flex-shrink:0}
+        .zutaten-list .menge{font-weight:600;color:#1C1410;min-width:80px}
+        .zutaten-list .zutat{color:#3D2E1F}
+
+        /* === SCHRITTE === */
+        .schritte-list{counter-reset:schritt;list-style:none;margin-bottom:1.5rem}
+        .schritte-list li{padding:.75rem 0 .75rem 3rem;border-bottom:1px solid rgba(245,166,35,0.06);position:relative;font-size:.95rem;line-height:1.6;color:#3D2E1F}
+        .schritte-list li::before{counter-increment:schritt;content:counter(schritt);position:absolute;left:0;top:.75rem;width:2rem;height:2rem;background:#F5A623;color:#1C1410;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+
+        /* === FILTER BAR === */
+        .filter-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:.5rem;flex-wrap:wrap}
+        .filter-bar .filter-btns{display:flex;gap:.25rem}
+        .filter-btn{padding:.4rem .75rem;border:1px solid #E8DFD4;border-radius:.5rem;background:#fff;cursor:pointer;font-size:.8rem;color:#7A6652;transition:all .15s}
+        .filter-btn.active{background:#F5A623;color:#1C1410;border-color:#F5A623;font-weight:600}
+        .filter-btn:hover:not(.active){background:#FFF8EE;border-color:#F5A623}
+
+        /* === SEARCH === */
+        .search-box{position:relative;margin-bottom:1rem}
+        .search-box input{width:100%;padding:.75rem 1rem .75rem 2.5rem;border:2px solid #E8DFD4;border-radius:.75rem;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .15s}
+        .search-box input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+        .search-box .search-icon{position:absolute;left:.875rem;top:50%;transform:translateY(-50%);font-size:1rem;color:#A69580}
+
+        /* === EMPTY STATE === */
+        .empty-state{text-align:center;padding:3rem 1rem;color:#A69580}
+        .empty-state .emoji{font-size:3rem;margin-bottom:1rem;display:block}
+        .empty-state .text{font-size:1rem;margin-bottom:1rem}
+
+        /* === ZUTAT ROW (Modal) === */
+        .zutat-row{display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center}
+        .zutat-row input{font-family:inherit;font-size:.9rem}
+        .zutat-row .menge-input{width:80px;padding:.5rem;border:2px solid #d1d5db;border-radius:.5rem;outline:none}
+        .zutat-row .einheit-input{width:70px;padding:.5rem;border:2px solid #d1d5db;border-radius:.5rem;outline:none}
+        .zutat-row .zutat-input{flex:1;padding:.5rem;border:2px solid #d1d5db;border-radius:.5rem;outline:none}
+        .zutat-row .remove-btn{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.2rem;padding:.25rem}
+
+        /* === SCHRITT ROW (Modal) === */
+        .schritt-row{display:flex;gap:.5rem;margin-bottom:.5rem;align-items:flex-start}
+        .schritt-row .nr{background:#F5A623;color:#1C1410;width:1.75rem;height:1.75rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0;margin-top:.35rem}
+        .schritt-row textarea{flex:1;padding:.5rem;border:2px solid #d1d5db;border-radius:.5rem;font-size:.9rem;font-family:inherit;resize:vertical;min-height:50px;outline:none}
+        .schritt-row .remove-btn{background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.2rem;padding:.25rem;margin-top:.35rem}
+
+        /* === MOBILE === */
+        @media(max-width:768px){
+            body{padding-left:0;padding-bottom:90px}
+            .nav{display:none}
+            .mobile-nav{display:flex}
+            .kat-grid{grid-template-columns:1fr}
+            .rezepte-header{padding:1.5rem 1rem}
+            .rezepte-header h1{font-size:1.35rem}
+            .rezept-item .r-desc{display:none}
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .anim-in{animation:cardIn .35s ease forwards}
+    </style>
+</head>
+<body>
+
+<!-- === SIDEBAR NAVIGATION === -->
+<nav class="nav" id="mainNav"></nav>
+<div class="mobile-nav" id="mobileNavBar"></div>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="if(event.target===this)mobileMenuClose()"></div>
+<script src="nav.js?v=2"></script>
+
+<!-- === LOADING === -->
+<div id="loadingOverlay" style="display:flex;justify-content:center;align-items:center;min-height:50vh">
+    <div style="text-align:center;color:#7A6652">
+        <div style="font-size:3rem;margin-bottom:1rem">🍯</div>
+        <div>Lade Rezepte...</div>
+    </div>
+</div>
+
+<!-- === MAIN APP === -->
+<div id="app" class="container" style="display:none"></div>
+
+<!-- === TOAST === -->
+<div id="toast" class="toast"></div>
+
+<!-- === NEUES REZEPT MODAL === -->
+<div id="rezeptModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">🍯 Neues Rezept</h2>
+            <button class="close-btn" onclick="closeModal()">&#10005;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Kategorie</label>
+                <select id="rezeptKat" class="input">
+                    <option value="essen">Essen & Trinken</option>
+                    <option value="kosmetik">Kosmetik & Pflege</option>
+                    <option value="hausmittel">Hausmittel</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Titel</label>
+                <input id="rezeptTitel" class="input" placeholder="Name des Rezepts" maxlength="120">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kurzbeschreibung</label>
+                <textarea id="rezeptBeschreibung" class="input" placeholder="Worum geht es?" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Schwierigkeit</label>
+                <div class="priority-btns">
+                    <button type="button" class="priority-btn" onclick="setSchwierigkeit('leicht')" id="diffLeicht">Leicht</button>
+                    <button type="button" class="priority-btn" onclick="setSchwierigkeit('mittel')" id="diffMittel">Mittel</button>
+                    <button type="button" class="priority-btn" onclick="setSchwierigkeit('fortgeschritten')" id="diffFort">Fortgeschritten</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Zeitaufwand (Minuten)</label>
+                <input type="number" id="rezeptZeit" class="input" placeholder="z.B. 30" min="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Zutaten</label>
+                <div id="zutatenList"></div>
+                <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4;margin-top:.25rem" onclick="addZutatRow()">+ Zutat</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Zubereitung</label>
+                <div id="schritteList"></div>
+                <button type="button" class="btn btn-sm" style="background:#FFF8EE;border:1px solid #E8DFD4;margin-top:.25rem" onclick="addSchrittRow()">+ Schritt</button>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="saveRezept()">Rezept speichern</button>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="plan.js"></script>
+<script src="presence.js" defer></script>
+<script>
+// ============================================
+// HONIG-REZEPTE – Hauptlogik
+// ============================================
+
+var isPreview = false;
+var rezepte = [];
+var favoriten = [];
+var currentView = 'kategorien'; // kategorien | liste | detail
+var currentKat = null;
+var currentRezept = null;
+var currentFilter = 'alle'; // alle | favoriten
+var searchQuery = '';
+var editId = null;
+var modalSchwierigkeit = 'leicht';
+
+// ============================================
+// KATEGORIEN
+// ============================================
+var KATEGORIEN = [
+    {id: 'essen', name: 'Essen & Trinken', emoji: '🍽️', desc: 'Honigkuchen, Met, Dressings und mehr'},
+    {id: 'kosmetik', name: 'Kosmetik & Pflege', emoji: '💆', desc: 'Lippenbalsam, Masken, Cremes mit Honig'},
+    {id: 'hausmittel', name: 'Hausmittel', emoji: '🏥', desc: 'Bewährte Hausmittel mit Honig & Propolis'}
+];
+
+// ============================================
+// VORGEFERTIGTE REZEPTE
+// ============================================
+var PRESET_REZEPTE = [
+    // === ESSEN & TRINKEN ===
+    {id:'p1', kategorie:'essen', titel:'Klassischer Honigkuchen', beschreibung:'Saftiger Honigkuchen mit Gewürzen – perfekt zur Kaffeezeit.', schwierigkeit:'leicht', zeitaufwand:60, is_preset:true,
+     zutaten:[{menge:'250',einheit:'g',zutat:'Honig'},{menge:'200',einheit:'g',zutat:'Mehl'},{menge:'100',einheit:'g',zutat:'Butter'},{menge:'3',einheit:'',zutat:'Eier'},{menge:'1',einheit:'TL',zutat:'Backpulver'},{menge:'1',einheit:'TL',zutat:'Zimt'},{menge:'1',einheit:'Prise',zutat:'Nelken (gemahlen)'}],
+     schritte:['Backofen auf 170°C vorheizen. Butter und Honig in einem Topf sanft erwärmen, bis die Butter geschmolzen ist.','Eier schaumig schlagen und die Honig-Butter-Mischung unterrühren.','Mehl, Backpulver und Gewürze mischen, dann vorsichtig unter die Masse heben.','In eine gefettete Kastenform füllen und ca. 45 Minuten backen. Stäbchenprobe machen!','Auskühlen lassen – der Kuchen wird am nächsten Tag noch saftiger.']},
+
+    {id:'p2', kategorie:'essen', titel:'Honig-Senf-Dressing', beschreibung:'Schnelles Salatdressing mit der perfekten Honig-Senf-Balance.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
+     zutaten:[{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'EL',zutat:'Senf (mittelscharf)'},{menge:'3',einheit:'EL',zutat:'Olivenöl'},{menge:'2',einheit:'EL',zutat:'Apfelessig'},{menge:'1',einheit:'Prise',zutat:'Salz & Pfeffer'}],
+     schritte:['Alle Zutaten in ein Schraubglas geben.','Deckel drauf und kräftig schütteln, bis eine cremige Emulsion entsteht.','Sofort über den Salat geben oder bis zu 1 Woche im Kühlschrank aufbewahren.']},
+
+    {id:'p3', kategorie:'essen', titel:'Met (Honigwein)', beschreibung:'Traditioneller Honigwein – das Getränk der Wikinger, selbst gebraut.', schwierigkeit:'fortgeschritten', zeitaufwand:30, is_preset:true,
+     zutaten:[{menge:'1,5',einheit:'kg',zutat:'Blütenhonig'},{menge:'5',einheit:'L',zutat:'Wasser (chlorfrei)'},{menge:'1',einheit:'Pck',zutat:'Weinhefe (Reinzuchthefe)'},{menge:'3',einheit:'g',zutat:'Hefenährsalz'},{menge:'1',einheit:'',zutat:'Zitrone (Saft)'}],
+     schritte:['Honig in lauwarmem Wasser auflösen (max. 30°C). Zitronensaft hinzufügen.','Hefe laut Packungsanleitung aktivieren und zum Honigwasser geben. Hefenährsalz einrühren.','In einen Gärballon füllen und Gärröhrchen aufsetzen.','4-6 Wochen bei 18-22°C gären lassen, bis keine Blasen mehr aufsteigen.','Vom Bodensatz abziehen (umschlauchen) und weitere 2-3 Monate reifen lassen. In Flaschen abfüllen.']},
+
+    {id:'p4', kategorie:'essen', titel:'Honig-Nuss-Müsli', beschreibung:'Knuspriges Granola mit Honig und gemischten Nüssen.', schwierigkeit:'leicht', zeitaufwand:35, is_preset:true,
+     zutaten:[{menge:'300',einheit:'g',zutat:'Haferflocken'},{menge:'100',einheit:'g',zutat:'Honig'},{menge:'80',einheit:'g',zutat:'gemischte Nüsse'},{menge:'50',einheit:'g',zutat:'Kokosöl'},{menge:'50',einheit:'g',zutat:'Rosinen'},{menge:'1',einheit:'TL',zutat:'Vanilleextrakt'}],
+     schritte:['Backofen auf 160°C vorheizen. Kokosöl und Honig sanft erwärmen.','Haferflocken und grob gehackte Nüsse in einer Schüssel mischen.','Honig-Öl-Mischung und Vanille dazugeben, gut vermengen.','Auf einem Backblech verteilen und 20-25 Min. backen, zwischendurch wenden.','Abkühlen lassen, Rosinen untermischen. In einem Glas luftdicht lagern.']},
+
+    {id:'p5', kategorie:'essen', titel:'Honig-Ingwer-Tee', beschreibung:'Wärmender Tee mit frischem Ingwer und Honig – ideal im Winter.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
+     zutaten:[{menge:'1',einheit:'Stück',zutat:'Ingwer (daumengroß)'},{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'500',einheit:'ml',zutat:'heißes Wasser'},{menge:'1',einheit:'',zutat:'Zitrone (Saft)'}],
+     schritte:['Ingwer schälen und in dünne Scheiben schneiden.','Mit heißem Wasser (nicht kochend!) übergießen und 5-8 Minuten ziehen lassen.','Auf Trinktemperatur abkühlen lassen, dann Honig und Zitronensaft einrühren.','Wichtig: Honig nie in kochendes Wasser geben – die wertvollen Enzyme gehen sonst verloren!']},
+
+    // === KOSMETIK & PFLEGE ===
+    {id:'p6', kategorie:'kosmetik', titel:'Honig-Lippenbalsam', beschreibung:'Natürlicher Lippenbalsam mit Bienenwachs und Honig.', schwierigkeit:'mittel', zeitaufwand:20, is_preset:true,
+     zutaten:[{menge:'10',einheit:'g',zutat:'Bienenwachs'},{menge:'15',einheit:'g',zutat:'Kokosöl'},{menge:'5',einheit:'g',zutat:'Honig'},{menge:'5',einheit:'Tropfen',zutat:'Vitamin-E-Öl'},{menge:'3',einheit:'Tropfen',zutat:'ätherisches Öl (optional)'}],
+     schritte:['Bienenwachs und Kokosöl im Wasserbad schmelzen.','Vom Herd nehmen und auf ca. 40°C abkühlen lassen.','Honig und Vitamin-E-Öl unterrühren. Bei Bedarf ätherisches Öl dazugeben.','Schnell in kleine Dosen oder leere Lippenpflege-Hülsen füllen.','Vollständig aushärten lassen (ca. 1 Stunde). Hält sich 6-12 Monate.']},
+
+    {id:'p7', kategorie:'kosmetik', titel:'Honig-Gesichtsmaske', beschreibung:'Feuchtigkeitsspendende Gesichtsmaske für strahlende Haut.', schwierigkeit:'leicht', zeitaufwand:25, is_preset:true,
+     zutaten:[{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'EL',zutat:'Naturjoghurt'},{menge:'1',einheit:'TL',zutat:'Kurkuma'}],
+     schritte:['Alle Zutaten in einer kleinen Schüssel glatt rühren.','Auf das gereinigte Gesicht auftragen (Augenpartie aussparen).','15-20 Minuten einwirken lassen.','Mit lauwarmem Wasser abspülen und eine Feuchtigkeitscreme auftragen.']},
+
+    {id:'p8', kategorie:'kosmetik', titel:'Honig-Haarspülung', beschreibung:'Natürliche Haarkur für glänzendes, geschmeidiges Haar.', schwierigkeit:'leicht', zeitaufwand:30, is_preset:true,
+     zutaten:[{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'EL',zutat:'Olivenöl'},{menge:'1',einheit:'',zutat:'Eigelb'}],
+     schritte:['Honig leicht erwärmen (nicht über 40°C), bis er flüssig wird.','Olivenöl und Eigelb unterrühren.','In das feuchte Haar einmassieren, besonders in die Spitzen.','Mit einem Handtuch umwickeln und 20 Minuten einwirken lassen.','Gründlich mit lauwarmem Wasser ausspülen, dann normal waschen.']},
+
+    {id:'p9', kategorie:'kosmetik', titel:'Propolis-Salbe', beschreibung:'Heilsame Salbe mit Propolis – das natürliche Antibiotikum der Bienen.', schwierigkeit:'mittel', zeitaufwand:45, is_preset:true,
+     zutaten:[{menge:'20',einheit:'g',zutat:'Bienenwachs'},{menge:'80',einheit:'ml',zutat:'Olivenöl'},{menge:'10',einheit:'ml',zutat:'Propolis-Tinktur (30%)'},{menge:'5',einheit:'Tropfen',zutat:'Vitamin-E-Öl'}],
+     schritte:['Bienenwachs im Olivenöl im Wasserbad langsam schmelzen.','Vom Herd nehmen und auf ca. 50°C abkühlen lassen.','Propolis-Tinktur tropfenweise einrühren (gut vermischen!).','Vitamin-E-Öl hinzufügen und in saubere Tiegel abfüllen.','Aushärten lassen. Kühl und dunkel lagern, hält ca. 12 Monate.']},
+
+    {id:'p10', kategorie:'kosmetik', titel:'Bienenwachs-Handcreme', beschreibung:'Reichhaltige Handcreme mit Bienenwachs – ideal für raue Imkerhände.', schwierigkeit:'mittel', zeitaufwand:30, is_preset:true,
+     zutaten:[{menge:'15',einheit:'g',zutat:'Bienenwachs'},{menge:'50',einheit:'ml',zutat:'Mandelöl'},{menge:'30',einheit:'ml',zutat:'Rosenwasser'},{menge:'1',einheit:'TL',zutat:'Honig'},{menge:'5',einheit:'Tropfen',zutat:'Lavendelöl'}],
+     schritte:['Bienenwachs und Mandelöl im Wasserbad schmelzen.','In einem zweiten Gefäß Rosenwasser und Honig leicht erwärmen.','Die Rosenwasser-Mischung langsam in die Öl-Wachs-Mischung einrühren (Mixer hilft!).','Lavendelöl dazugeben und weiterrühren, bis die Masse cremig wird.','In Tiegel füllen und abkühlen lassen. Hält sich 3-6 Monate.']},
+
+    // === HAUSMITTEL ===
+    {id:'p11', kategorie:'hausmittel', titel:'Honig-Zwiebel-Hustensaft', beschreibung:'Das bewährte Hausmittel gegen Husten – einfach und wirksam.', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
+     zutaten:[{menge:'1',einheit:'',zutat:'große Zwiebel'},{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Einmachglas'}],
+     schritte:['Zwiebel schälen und in kleine Würfel schneiden.','Abwechselnd Zwiebelwürfel und Honig in das Glas schichten.','Mindestens 6 Stunden (am besten über Nacht) ziehen lassen.','Den entstandenen Sirup 3x täglich je 1 EL einnehmen.','Hält sich im Kühlschrank ca. 3 Tage.']},
+
+    {id:'p12', kategorie:'hausmittel', titel:'Honig-Quark-Wickel', beschreibung:'Kühlender Wickel bei Sonnenbrand oder leichten Verbrennungen.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
+     zutaten:[{menge:'3',einheit:'EL',zutat:'Quark (kühlschrankkalt)'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Baumwolltuch'}],
+     schritte:['Quark und Honig glatt verrühren.','Die Mischung fingerdick auf ein Baumwolltuch streichen.','Auf die betroffene Stelle legen (mit der bestrichenen Seite nach oben).','20-30 Minuten einwirken lassen, bis der Quark warm wird.','Abnehmen und Haut vorsichtig reinigen. Bei Bedarf wiederholen.']},
+
+    {id:'p13', kategorie:'hausmittel', titel:'Propolis-Tinktur', beschreibung:'Konzentrierte Propolis-Lösung – das Allround-Hausmittel aus dem Bienenstock.', schwierigkeit:'mittel', zeitaufwand:20, is_preset:true,
+     zutaten:[{menge:'30',einheit:'g',zutat:'Rohpropolis (gereinigt)'},{menge:'100',einheit:'ml',zutat:'Alkohol (70%, Apotheke)'},{menge:'1',einheit:'',zutat:'dunkle Flasche mit Pipette'}],
+     schritte:['Rohpropolis im Gefrierschrank hart werden lassen, dann fein zerkleinern.','In eine dunkle Flasche füllen und mit Alkohol übergießen.','2-3 Wochen an einem dunklen Ort ziehen lassen. Täglich schütteln!','Durch einen Kaffeefilter oder feines Tuch abseihen.','In eine Pipettenflasche füllen. Hält sich jahrelang. Innerlich: 10-20 Tropfen in Wasser.']},
+
+    {id:'p14', kategorie:'hausmittel', titel:'Honig-Zimt bei Erkältung', beschreibung:'Wärmende Honig-Zimt-Paste – stärkt die Abwehrkräfte.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
+     zutaten:[{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1/4',einheit:'TL',zutat:'Ceylon-Zimt'},{menge:'1',einheit:'Prise',zutat:'schwarzer Pfeffer'}],
+     schritte:['Honig und Zimt in einer kleinen Schale glatt verrühren.','Schwarzen Pfeffer dazugeben (verbessert die Aufnahme der Wirkstoffe).','Morgens auf nüchternen Magen 1 TL einnehmen.','Alternativ in lauwarmen Tee einrühren.','Wichtig: Nur Ceylon-Zimt verwenden, nicht Cassia-Zimt!']},
+
+    {id:'p15', kategorie:'hausmittel', titel:'Honigwasser am Morgen', beschreibung:'Einfaches Morgenritual – ein Glas Honigwasser für den Start in den Tag.', schwierigkeit:'leicht', zeitaufwand:3, is_preset:true,
+     zutaten:[{menge:'1',einheit:'Glas',zutat:'lauwarmes Wasser (250ml)'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'Spritzer',zutat:'Zitronensaft (optional)'}],
+     schritte:['Ein Glas lauwarmes Wasser vorbereiten (nicht über 40°C).','Honig einrühren, bis er sich vollständig aufgelöst hat.','Optional einen Spritzer Zitronensaft hinzufügen.','Morgens auf nüchternen Magen trinken, 30 Min. vor dem Frühstück.','Fördert die Verdauung, stärkt das Immunsystem und liefert schnelle Energie.']}
+];
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    try {
+        var user = await checkAuth({preview: true});
+        if (!user) {
+            isPreview = true;
+            rezepte = PRESET_REZEPTE.slice();
+        } else {
+            await planManager.load();
+            await loadFromSupabase();
+        }
+    } catch(e) {
+        console.warn('Auth/DB Fehler, lade Preview:', e);
+        isPreview = true;
+        rezepte = PRESET_REZEPTE.slice();
+    }
+
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+}
+
+async function loadFromSupabase() {
+    var [rezRes, favRes] = await Promise.all([
+        sb.from('rezepte').select('*').order('created_at', {ascending: false}),
+        sb.from('rezept_favoriten').select('rezept_id').eq('user_id', currentUser.id)
+    ]);
+
+    var dbRezepte = (rezRes.data || []).map(function(r) {
+        return {
+            id: r.id, user_id: r.user_id, kategorie: r.kategorie, titel: r.titel,
+            beschreibung: r.beschreibung, zutaten: r.zutaten || [], schritte: r.schritte || [],
+            zeitaufwand: r.zeitaufwand, schwierigkeit: r.schwierigkeit, is_preset: r.is_preset,
+            created_at: r.created_at
+        };
+    });
+
+    // Preset-Rezepte + DB-Rezepte zusammenführen
+    rezepte = PRESET_REZEPTE.slice();
+    dbRezepte.forEach(function(r) {
+        if (!r.is_preset) rezepte.push(r);
+    });
+
+    favoriten = (favRes.data || []).map(function(f) { return f.rezept_id; });
+}
+
+// ============================================
+// RENDER ENGINE
+// ============================================
+function render() {
+    var app = document.getElementById('app');
+    var html = '';
+
+    if (isPreview) {
+        html += '<div class="preview-banner"><span class="icon">&#128065;</span> Vorschau-Modus – Melde dich an, um eigene Rezepte zu erstellen und Favoriten zu speichern.</div>';
+    }
+
+    if (currentView === 'kategorien') {
+        html += renderKategorien();
+    } else if (currentView === 'liste') {
+        html += renderListe();
+    } else if (currentView === 'detail') {
+        html += renderDetail();
+    }
+
+    app.innerHTML = html;
+
+    // Animations
+    requestAnimationFrame(function() {
+        app.querySelectorAll('.anim-target').forEach(function(el, i) {
+            el.style.animationDelay = (i * 0.06) + 's';
+            el.classList.add('anim-in');
+        });
+    });
+}
+
+// ============================================
+// VIEW 1: KATEGORIEN-ÜBERSICHT
+// ============================================
+function renderKategorien() {
+    var html = '';
+    html += '<div class="rezepte-header">';
+    html += '<h1>Honig-Rezepte</h1>';
+    html += '<p>Entdecke leckere Rezepte, Pflegeprodukte und Hausmittel rund um Honig, Bienenwachs und Propolis.</p>';
+    html += '</div>';
+
+    if (!isPreview) {
+        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">';
+        html += '<button class="btn btn-primary" onclick="openNewRezept()">+ Eigenes Rezept</button>';
+        html += '</div>';
+    }
+
+    html += '<div class="kat-grid">';
+    KATEGORIEN.forEach(function(kat) {
+        var count = rezepte.filter(function(r) { return r.kategorie === kat.id; }).length;
+        html += '<div class="kat-card anim-target" onclick="openKategorie(\'' + kat.id + '\')">';
+        html += '<span class="emoji">' + kat.emoji + '</span>';
+        html += '<div class="name">' + esc(kat.name) + '</div>';
+        html += '<div class="desc">' + esc(kat.desc) + '</div>';
+        html += '<span class="count">' + count + '</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    // Neueste Rezepte
+    html += '<h2 style="margin-top:2rem;display:flex;align-items:center;gap:.5rem">Beliebte Rezepte</h2>';
+    var beliebte = [
+        rezepte.find(function(r){return r.id==='p1';}),
+        rezepte.find(function(r){return r.id==='p6';}),
+        rezepte.find(function(r){return r.id==='p11';}),
+        rezepte.find(function(r){return r.id==='p3';}),
+        rezepte.find(function(r){return r.id==='p9';})
+    ].filter(Boolean);
+
+    beliebte.forEach(function(r) {
+        html += renderRezeptItem(r);
+    });
+
+    return html;
+}
+
+// ============================================
+// VIEW 2: REZEPT-LISTE (pro Kategorie)
+// ============================================
+function renderListe() {
+    var kat = KATEGORIEN.find(function(k) { return k.id === currentKat; });
+    if (!kat) return '<p>Kategorie nicht gefunden.</p>';
+
+    var html = '';
+    html += '<div class="breadcrumb">';
+    html += '<a onclick="goToKategorien()">Rezepte</a>';
+    html += '<span class="sep">&rsaquo;</span>';
+    html += '<span>' + kat.emoji + ' ' + esc(kat.name) + '</span>';
+    html += '</div>';
+
+    // Search
+    html += '<div class="search-box">';
+    html += '<span class="search-icon">&#128269;</span>';
+    html += '<input type="text" placeholder="Rezept suchen..." value="' + esc(searchQuery) + '" oninput="searchQuery=this.value;render()">';
+    html += '</div>';
+
+    // Filter Bar
+    html += '<div class="filter-bar">';
+    html += '<div style="font-size:1.1rem;font-weight:700;color:#1C1410">' + kat.emoji + ' ' + esc(kat.name) + '</div>';
+    html += '<div class="filter-btns">';
+    html += '<button class="filter-btn' + (currentFilter === 'alle' ? ' active' : '') + '" onclick="setFilter(\'alle\')">Alle</button>';
+    if (!isPreview) html += '<button class="filter-btn' + (currentFilter === 'favoriten' ? ' active' : '') + '" onclick="setFilter(\'favoriten\')">Favoriten</button>';
+    html += '</div>';
+    html += '</div>';
+
+    if (!isPreview) {
+        html += '<button class="btn btn-primary btn-sm" onclick="openNewRezept(\'' + kat.id + '\')" style="margin-bottom:1rem">+ Eigenes Rezept</button>';
+    }
+
+    var items = rezepte.filter(function(r) { return r.kategorie === currentKat; });
+
+    // Search filter
+    if (searchQuery) {
+        var q = searchQuery.toLowerCase();
+        items = items.filter(function(r) {
+            return r.titel.toLowerCase().indexOf(q) > -1 || (r.beschreibung && r.beschreibung.toLowerCase().indexOf(q) > -1);
+        });
+    }
+
+    // Favoriten filter
+    if (currentFilter === 'favoriten') {
+        items = items.filter(function(r) { return favoriten.indexOf(r.id) > -1; });
+    }
+
+    if (items.length === 0) {
+        html += '<div class="empty-state"><span class="emoji">&#127859;</span><div class="text">' +
+            (searchQuery ? 'Keine Rezepte gefunden.' : currentFilter === 'favoriten' ? 'Noch keine Favoriten in dieser Kategorie.' : 'Noch keine Rezepte in dieser Kategorie.') +
+            '</div></div>';
+    }
+
+    items.forEach(function(r) {
+        html += renderRezeptItem(r, true);
+    });
+
+    return html;
+}
+
+function renderRezeptItem(r, showAnim) {
+    var katObj = KATEGORIEN.find(function(k) { return k.id === r.kategorie; });
+    var isFav = favoriten.indexOf(r.id) > -1;
+    var html = '';
+    html += '<div class="rezept-item' + (showAnim ? ' anim-target' : '') + '" onclick="openRezept(\'' + r.id + '\')">';
+    html += '<div class="r-emoji">' + (katObj ? katObj.emoji : '') + '</div>';
+    html += '<div class="r-body">';
+    html += '<div class="r-title">' + esc(r.titel);
+    if (r.is_preset) html += ' <span class="diff-badge leicht" style="font-size:.6rem">Vorgefertigt</span>';
+    html += '</div>';
+    html += '<div class="r-meta">';
+    if (r.zeitaufwand) html += '<span>&#9200; ' + r.zeitaufwand + ' Min.</span>';
+    if (r.schwierigkeit) html += '<span class="diff-badge ' + r.schwierigkeit + '">' + r.schwierigkeit.charAt(0).toUpperCase() + r.schwierigkeit.slice(1) + '</span>';
+    if (r.zutaten) html += '<span>' + r.zutaten.length + ' Zutaten</span>';
+    html += '</div>';
+    if (r.beschreibung) html += '<div class="r-desc">' + esc(r.beschreibung) + '</div>';
+    html += '</div>';
+    html += '<div class="r-actions">';
+    if (!isPreview) {
+        html += '<button class="fav-btn' + (isFav ? ' active' : '') + '" onclick="event.stopPropagation();toggleFav(\'' + r.id + '\')">' + (isFav ? '&#10084;' : '&#9825;') + '</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+// ============================================
+// VIEW 3: REZEPT-DETAIL
+// ============================================
+function renderDetail() {
+    var r = rezepte.find(function(x) { return x.id === currentRezept; });
+    if (!r) return '<p>Rezept nicht gefunden.</p>';
+
+    var katObj = KATEGORIEN.find(function(k) { return k.id === r.kategorie; });
+    var isFav = favoriten.indexOf(r.id) > -1;
+
+    var html = '';
+
+    // Breadcrumb
+    html += '<div class="breadcrumb">';
+    html += '<a onclick="goToKategorien()">Rezepte</a>';
+    html += '<span class="sep">&rsaquo;</span>';
+    if (katObj) html += '<a onclick="openKategorie(\'' + katObj.id + '\')">' + katObj.emoji + ' ' + esc(katObj.name) + '</a><span class="sep">&rsaquo;</span>';
+    html += '<span>' + esc(r.titel) + '</span>';
+    html += '</div>';
+
+    // Detail Card
+    html += '<div class="rezept-detail">';
+    html += '<div class="header">';
+    html += '<h2>' + (katObj ? katObj.emoji : '') + ' ' + esc(r.titel) + '</h2>';
+    html += '<div style="display:flex;gap:.5rem;align-items:center">';
+    if (!isPreview) {
+        html += '<button class="fav-btn' + (isFav ? ' active' : '') + '" onclick="toggleFav(\'' + r.id + '\')" style="font-size:1.5rem">' + (isFav ? '&#10084;' : '&#9825;') + '</button>';
+    }
+    if (!isPreview && !r.is_preset && currentUser && r.user_id === currentUser.id) {
+        html += '<button class="btn btn-blue btn-xs" onclick="editRezept(\'' + r.id + '\')">&#9998; Bearbeiten</button>';
+        html += '<button class="btn btn-danger btn-xs" onclick="deleteRezept(\'' + r.id + '\')">&#128465; L&ouml;schen</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    // Info Row
+    html += '<div class="info-row">';
+    if (r.zeitaufwand) html += '<span>&#9200; ' + r.zeitaufwand + ' Minuten</span>';
+    if (r.schwierigkeit) html += '<span class="diff-badge ' + r.schwierigkeit + '">' + r.schwierigkeit.charAt(0).toUpperCase() + r.schwierigkeit.slice(1) + '</span>';
+    if (r.zutaten) html += '<span>' + r.zutaten.length + ' Zutaten</span>';
+    if (r.schritte) html += '<span>' + r.schritte.length + ' Schritte</span>';
+    html += '</div>';
+
+    // Beschreibung
+    if (r.beschreibung) {
+        html += '<div class="beschreibung">' + esc(r.beschreibung) + '</div>';
+    }
+
+    // Zutaten
+    if (r.zutaten && r.zutaten.length > 0) {
+        html += '<h3 style="margin-bottom:.75rem">Zutaten</h3>';
+        html += '<ul class="zutaten-list">';
+        r.zutaten.forEach(function(z) {
+            html += '<li>';
+            html += '<span class="menge">' + esc(z.menge) + ' ' + esc(z.einheit) + '</span>';
+            html += '<span class="zutat">' + esc(z.zutat) + '</span>';
+            html += '</li>';
+        });
+        html += '</ul>';
+    }
+
+    // Zubereitung
+    if (r.schritte && r.schritte.length > 0) {
+        html += '<h3 style="margin-bottom:.75rem">Zubereitung</h3>';
+        html += '<ol class="schritte-list">';
+        var schritte = r.schritte;
+        // Handle both string arrays and direct strings
+        schritte.forEach(function(s) {
+            var text = typeof s === 'string' ? s : (s.text || s);
+            html += '<li>' + esc(text) + '</li>';
+        });
+        html += '</ol>';
+    }
+
+    html += '</div>';
+
+    return html;
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function goToKategorien() {
+    currentView = 'kategorien';
+    currentKat = null;
+    currentRezept = null;
+    searchQuery = '';
+    currentFilter = 'alle';
+    render();
+    window.scrollTo(0, 0);
+}
+
+function openKategorie(id) {
+    currentView = 'liste';
+    currentKat = id;
+    currentRezept = null;
+    searchQuery = '';
+    currentFilter = 'alle';
+    render();
+    window.scrollTo(0, 0);
+}
+
+function openRezept(id) {
+    currentView = 'detail';
+    currentRezept = id;
+    render();
+    window.scrollTo(0, 0);
+}
+
+function setFilter(f) {
+    currentFilter = f;
+    render();
+}
+
+// ============================================
+// FAVORITEN
+// ============================================
+async function toggleFav(rezeptId) {
+    if (isPreview) { showToast('Bitte einloggen', 'error'); return; }
+
+    var idx = favoriten.indexOf(rezeptId);
+    if (idx > -1) {
+        // Entfernen
+        favoriten.splice(idx, 1);
+        await sb.from('rezept_favoriten').delete().eq('user_id', currentUser.id).eq('rezept_id', rezeptId);
+        showToast('Aus Favoriten entfernt', '');
+    } else {
+        // Hinzufügen
+        favoriten.push(rezeptId);
+        await sb.from('rezept_favoriten').insert({user_id: currentUser.id, rezept_id: rezeptId});
+        showToast('Zu Favoriten hinzugefügt', 'success');
+    }
+    render();
+}
+
+// ============================================
+// NEUES REZEPT
+// ============================================
+function openNewRezept(katId) {
+    if (isPreview) { showToast('Bitte einloggen um Rezepte zu erstellen', 'error'); return; }
+    if (!planManager.can('rezepte_schreiben')) {
+        planManager.showUpgradeHint('rezepte_schreiben');
+        return;
+    }
+    editId = null;
+    modalSchwierigkeit = 'leicht';
+    document.getElementById('modalTitle').textContent = 'Neues Rezept';
+    document.getElementById('rezeptKat').value = katId || 'essen';
+    document.getElementById('rezeptTitel').value = '';
+    document.getElementById('rezeptBeschreibung').value = '';
+    document.getElementById('rezeptZeit').value = '';
+    updateSchwierigkeitUI();
+    resetZutaten();
+    resetSchritte();
+    document.getElementById('rezeptModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('rezeptModal').classList.remove('active');
+    editId = null;
+}
+
+function setSchwierigkeit(s) {
+    modalSchwierigkeit = s;
+    updateSchwierigkeitUI();
+}
+
+function updateSchwierigkeitUI() {
+    document.getElementById('diffLeicht').className = 'priority-btn' + (modalSchwierigkeit === 'leicht' ? ' selected low' : '');
+    document.getElementById('diffMittel').className = 'priority-btn' + (modalSchwierigkeit === 'mittel' ? ' selected medium' : '');
+    document.getElementById('diffFort').className = 'priority-btn' + (modalSchwierigkeit === 'fortgeschritten' ? ' selected high' : '');
+}
+
+// === Zutaten Rows ===
+function resetZutaten() {
+    document.getElementById('zutatenList').innerHTML = '';
+    addZutatRow();
+    addZutatRow();
+    addZutatRow();
+}
+
+function addZutatRow(menge, einheit, zutat) {
+    var div = document.createElement('div');
+    div.className = 'zutat-row';
+    div.innerHTML = '<input class="menge-input" placeholder="Menge" value="' + esc(menge || '') + '">' +
+        '<input class="einheit-input" placeholder="Einheit" value="' + esc(einheit || '') + '">' +
+        '<input class="zutat-input" placeholder="Zutat" value="' + esc(zutat || '') + '">' +
+        '<button class="remove-btn" onclick="this.parentElement.remove()">&#10005;</button>';
+    document.getElementById('zutatenList').appendChild(div);
+}
+
+function getZutaten() {
+    var rows = document.querySelectorAll('#zutatenList .zutat-row');
+    var result = [];
+    rows.forEach(function(row) {
+        var m = row.querySelector('.menge-input').value.trim();
+        var e = row.querySelector('.einheit-input').value.trim();
+        var z = row.querySelector('.zutat-input').value.trim();
+        if (z) result.push({menge: m, einheit: e, zutat: z});
+    });
+    return result;
+}
+
+// === Schritte Rows ===
+function resetSchritte() {
+    document.getElementById('schritteList').innerHTML = '';
+    addSchrittRow();
+    addSchrittRow();
+}
+
+function addSchrittRow(text) {
+    var list = document.getElementById('schritteList');
+    var nr = list.children.length + 1;
+    var div = document.createElement('div');
+    div.className = 'schritt-row';
+    div.innerHTML = '<div class="nr">' + nr + '</div>' +
+        '<textarea placeholder="Schritt beschreiben...">' + esc(text || '') + '</textarea>' +
+        '<button class="remove-btn" onclick="removeSchritt(this)">&#10005;</button>';
+    list.appendChild(div);
+}
+
+function removeSchritt(btn) {
+    btn.parentElement.remove();
+    // Renumber
+    var rows = document.querySelectorAll('#schritteList .schritt-row');
+    rows.forEach(function(row, i) {
+        row.querySelector('.nr').textContent = i + 1;
+    });
+}
+
+function getSchritte() {
+    var rows = document.querySelectorAll('#schritteList .schritt-row');
+    var result = [];
+    rows.forEach(function(row) {
+        var t = row.querySelector('textarea').value.trim();
+        if (t) result.push(t);
+    });
+    return result;
+}
+
+// ============================================
+// SAVE REZEPT
+// ============================================
+async function saveRezept() {
+    if (isPreview) return;
+
+    var titel = document.getElementById('rezeptTitel').value.trim();
+    var beschreibung = document.getElementById('rezeptBeschreibung').value.trim();
+    var kategorie = document.getElementById('rezeptKat').value;
+    var zeitaufwand = parseInt(document.getElementById('rezeptZeit').value) || null;
+    var zutaten = getZutaten();
+    var schritte = getSchritte();
+
+    if (!titel) { showToast('Bitte Titel eingeben', 'error'); return; }
+    if (zutaten.length === 0) { showToast('Bitte mindestens eine Zutat', 'error'); return; }
+    if (schritte.length === 0) { showToast('Bitte mindestens einen Schritt', 'error'); return; }
+
+    var data = {
+        user_id: currentUser.id,
+        kategorie: kategorie,
+        titel: titel,
+        beschreibung: beschreibung,
+        schwierigkeit: modalSchwierigkeit,
+        zeitaufwand: zeitaufwand,
+        zutaten: zutaten,
+        schritte: schritte,
+        is_preset: false
+    };
+
+    if (editId) {
+        var res = await sb.from('rezepte').update(data).eq('id', editId);
+        if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
+        showToast('Rezept aktualisiert!', 'success');
+    } else {
+        data.id = crypto.randomUUID();
+        var res = await db.insert('rezepte', data);
+        if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
+        showToast('Rezept erstellt!', 'success');
+    }
+
+    closeModal();
+    await loadFromSupabase();
+    render();
+}
+
+// ============================================
+// EDIT REZEPT
+// ============================================
+function editRezept(id) {
+    var r = rezepte.find(function(x) { return x.id === id; });
+    if (!r || r.is_preset) return;
+
+    editId = id;
+    modalSchwierigkeit = r.schwierigkeit || 'leicht';
+    document.getElementById('modalTitle').textContent = 'Rezept bearbeiten';
+    document.getElementById('rezeptKat').value = r.kategorie;
+    document.getElementById('rezeptTitel').value = r.titel;
+    document.getElementById('rezeptBeschreibung').value = r.beschreibung || '';
+    document.getElementById('rezeptZeit').value = r.zeitaufwand || '';
+    updateSchwierigkeitUI();
+
+    // Zutaten füllen
+    document.getElementById('zutatenList').innerHTML = '';
+    (r.zutaten || []).forEach(function(z) { addZutatRow(z.menge, z.einheit, z.zutat); });
+    if ((r.zutaten || []).length === 0) addZutatRow();
+
+    // Schritte füllen
+    document.getElementById('schritteList').innerHTML = '';
+    (r.schritte || []).forEach(function(s) {
+        var text = typeof s === 'string' ? s : (s.text || s);
+        addSchrittRow(text);
+    });
+    if ((r.schritte || []).length === 0) addSchrittRow();
+
+    document.getElementById('rezeptModal').classList.add('active');
+}
+
+// ============================================
+// DELETE REZEPT
+// ============================================
+async function deleteRezept(id) {
+    if (isPreview) return;
+    if (!confirm('Dieses Rezept wirklich löschen?')) return;
+
+    // Favoriten löschen
+    await sb.from('rezept_favoriten').delete().eq('rezept_id', id);
+    // Rezept löschen
+    var res = await sb.from('rezepte').delete().eq('id', id);
+    if (res.error) { showToast('Fehler: ' + res.error.message, 'error'); return; }
+
+    showToast('Rezept gelöscht', 'success');
+    await loadFromSupabase();
+    goToKategorien();
+}
+
+// ============================================
+// HELPERS
+// ============================================
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function showToast(msg, typ) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'toast' + (typ ? ' ' + typ : '');
+    requestAnimationFrame(function() { el.classList.add('show'); });
+    setTimeout(function() { el.classList.remove('show'); }, 2500);
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+</body>
+</html>

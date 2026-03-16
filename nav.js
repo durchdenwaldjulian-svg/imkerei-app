@@ -58,6 +58,7 @@
         ]},
         { title: 'Ernte & Planung', items: [
             { href: 'ernte.html', icon: '🍯', label: 'Honigernte' },
+            { href: 'rezepte.html', icon: '📖', label: 'Honig-Rezepte' },
             { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
             { href: 'trachtmonitor.html', icon: '🗺️', label: 'Tracht-Radar' },
             { href: 'packliste.html', icon: '📦', label: 'Packliste' }
@@ -196,6 +197,7 @@
                 { href: 'ernte.html', icon: '🍯', label: 'Ernte' }
             ]},
             { title: 'Ernte & Planung', items: [
+                { href: 'rezepte.html', icon: '📖', label: 'Rezepte' },
                 { href: 'tracht.html', icon: '🌸', label: 'Tracht' },
                 { href: 'trachtmonitor.html', icon: '🗺️', label: 'Tracht-Radar' },
                 { href: 'packliste.html', icon: '📦', label: 'Packliste' },

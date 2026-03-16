@@ -25,7 +25,7 @@ var planManager = (function() {
             standorte: 1,
             wetter_tage: 3,
             kosten_eintraege: 10,
-            features: ['aufgaben', 'packliste', 'behandlung_manuell', 'trachtkarte_teaser', 'forum_lesen']
+            features: ['aufgaben', 'packliste', 'behandlung_manuell', 'trachtkarte_teaser', 'forum_lesen', 'rezepte_lesen']
         },
         pro: {
             voelker: Infinity,
@@ -37,6 +37,7 @@ var planManager = (function() {
                 'trachtkarte_voll', 'trachtkarte_teilen',
                 'zucht', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
+                'rezepte_lesen', 'rezepte_schreiben',
                 'datenexport', 'backup'
             ]
         },
@@ -51,6 +52,7 @@ var planManager = (function() {
                 'zucht', 'zuchtberater', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
+                'rezepte_lesen', 'rezepte_schreiben',
                 'datenexport', 'backup'
             ]
         },
@@ -66,6 +68,7 @@ var planManager = (function() {
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
                 'mitglieder_codes', 'rollen_management',
+                'rezepte_lesen', 'rezepte_schreiben',
                 'datenexport', 'backup'
             ]
         }
@@ -81,6 +84,7 @@ var planManager = (function() {
         trachtkarte_voll: 'Trachtkarte (voll)',
         trachtkarte_teilen: 'Trachten teilen',
         forum_schreiben: 'Forum (schreiben)',
+        rezepte_schreiben: 'Eigene Rezepte erstellen',
         kosten_unbegrenzt: 'Unbegrenztes Kosten-Tracking',
         bestandsbuch_einfach: 'Bestandsbuch',
         bestandsbuch_veterinaer: 'Veterinäramt-Bestandsbuch',
@@ -100,6 +104,7 @@ var planManager = (function() {
         trachtkarte_voll: 'pro',
         trachtkarte_teilen: 'pro',
         forum_schreiben: 'pro',
+        rezepte_schreiben: 'pro',
         kosten_unbegrenzt: 'pro',
         bestandsbuch_einfach: 'pro',
         datenexport: 'pro',
