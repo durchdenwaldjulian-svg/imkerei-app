@@ -15,26 +15,26 @@ let currentUser = null;
 const db = {
     async upsert(table, data) {
         var result = await sb.from(table).upsert(data);
-        if (result.error) console.error('DB upsert error:', table, result.error);
-        if (typeof showSaved === 'function') showSaved();
+        if (result.error) { console.error('DB upsert error:', table, result.error); }
+        else if (typeof showSaved === 'function') showSaved();
         return result;
     },
     async insert(table, data) {
         var result = await sb.from(table).insert(data);
-        if (result.error) console.error('DB insert error:', table, result.error);
-        if (typeof showSaved === 'function') showSaved();
+        if (result.error) { console.error('DB insert error:', table, result.error); }
+        else if (typeof showSaved === 'function') showSaved();
         return result;
     },
     async update(table, data, id) {
         var result = await sb.from(table).update(data).eq('id', id);
-        if (result.error) console.error('DB update error:', table, result.error);
-        if (typeof showSaved === 'function') showSaved();
+        if (result.error) { console.error('DB update error:', table, result.error); }
+        else if (typeof showSaved === 'function') showSaved();
         return result;
     },
     async del(table, id) {
         var result = await sb.from(table).delete().eq('id', id);
-        if (result.error) console.error('DB delete error:', table, result.error);
-        if (typeof showSaved === 'function') showSaved();
+        if (result.error) { console.error('DB delete error:', table, result.error); }
+        else if (typeof showSaved === 'function') showSaved();
         return result;
     },
     async delWhere(table, col, val) {
@@ -74,6 +74,16 @@ async function checkAuth(opts) {
 }
 
 // ============================================
+// HTML ESCAPING (XSS-Schutz, zentral für alle Seiten)
+// ============================================
+function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+// ============================================
 // TOAST HELPER (funktioniert in allen Seiten)
 // ============================================
 function showToast(msg, typ, dauer) {
@@ -83,7 +93,8 @@ function showToast(msg, typ, dauer) {
     if (!el) return;
     el.textContent = msg;
     el.className = 'toast show' + (typ ? ' ' + typ : '');
-    setTimeout(function(){ el.classList.remove('show'); }, dauer);
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(function(){ el.classList.remove('show'); }, dauer);
 }
 
 // ============================================

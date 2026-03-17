@@ -13,13 +13,13 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'250',einheit:'g',zutat:'Honig'},{menge:'320',einheit:'g',zutat:'Mehl'},{menge:'100',einheit:'g',zutat:'Butter'},{menge:'100',einheit:'g',zutat:'brauner Zucker'},{menge:'2',einheit:'',zutat:'Eier'},{menge:'3',einheit:'EL',zutat:'Milch'},{menge:'1',einheit:'TL',zutat:'Backpulver'},{menge:'1',einheit:'TL',zutat:'Zimt'},{menge:'2',einheit:'TL',zutat:'Lebkuchengewürz'},{menge:'1',einheit:'Prise',zutat:'Nelken (gemahlen)'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
  schritte:['Backofen auf 180°C Ober-/Unterhitze vorheizen. Kastenform einfetten und mit Mehl bestäuben.','Butter, Honig und braunen Zucker in einem Topf bei niedriger Hitze schmelzen und etwas abkühlen lassen.','Eier schaumig schlagen und die Honig-Butter-Mischung unterrühren.','Mehl, Backpulver, Lebkuchengewürz, Zimt, Nelken und Salz mischen, dann vorsichtig unter die Masse heben. Milch einrühren.','In die Kastenform füllen und ca. 50–55 Minuten backen. Stäbchenprobe machen!','10 Minuten in der Form abkühlen lassen, dann stürzen. Der Kuchen wird am nächsten Tag noch saftiger.']},
 
-{id:'p2', kategorie:'essen', titel:'Honig-Senf-Dressing', beschreibung:'Schnelles Salatdressing mit perfekter Honig-Senf-Balance im klassischen 3:1 Öl-Essig-Verhältnis.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
+{id:'p2', kategorie:'essen', titel:'Honig-Senf-Dressing', beschreibung:'Schnelles Salatdressing mit perfekter Honig-Senf-Balance.', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
  zutaten:[{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'EL',zutat:'Dijon-Senf'},{menge:'5',einheit:'EL',zutat:'Olivenöl'},{menge:'2',einheit:'EL',zutat:'Apfelessig'},{menge:'1',einheit:'Prise',zutat:'Salz & Pfeffer'}],
  schritte:['Honig, Senf und Apfelessig in ein Schraubglas geben und verrühren.','Olivenöl in einem dünnen Strahl dazugeben.','Deckel drauf und kräftig schütteln, bis eine cremige Emulsion entsteht.','Mit Salz und Pfeffer abschmecken.','Sofort über den Salat geben oder bis zu 1 Woche im Kühlschrank aufbewahren.']},
 
 {id:'p3', kategorie:'essen', titel:'Met (Honigwein)', beschreibung:'Traditioneller Honigwein – das Getränk der Wikinger, selbst gebraut. Gärzeit ca. 4 Wochen, Reifezeit mindestens 3 Monate.', schwierigkeit:'fortgeschritten', zeitaufwand:45, is_preset:true,
- zutaten:[{menge:'1,5',einheit:'kg',zutat:'Blütenhonig'},{menge:'2,5',einheit:'L',zutat:'Wasser (chlorfrei)'},{menge:'1',einheit:'L',zutat:'naturtrüber Apfelsaft'},{menge:'1',einheit:'Pck',zutat:'Weinhefe (Reinzuchthefe)'},{menge:'3',einheit:'g',zutat:'Hefenährsalz'},{menge:'15',einheit:'ml',zutat:'Milchsäure (80%)'}],
- schritte:['Honig in lauwarmem Wasser (max. 40°C) auflösen. Apfelsaft und Milchsäure hinzufügen.','Hefe laut Packungsanleitung aktivieren und zum Honigwasser geben. Hefenährsalz einrühren.','In einen Gärballon füllen und Gärröhrchen aufsetzen.','3–6 Wochen bei 20–25°C gären lassen, bis keine Blasen mehr aufsteigen. Unter 20°C kann die Gärung ins Stocken geraten.','Vom Bodensatz abziehen (umschlauchen) und mindestens 3–6 Monate reifen lassen. Met wird mit der Zeit deutlich besser.','In Flaschen abfüllen. Tipp: Geduld lohnt sich – nach 6–12 Monaten Reife schmeckt der Met am besten.']},
+ zutaten:[{menge:'1,5',einheit:'kg',zutat:'Blütenhonig'},{menge:'2,5',einheit:'L',zutat:'Wasser (chlorfrei)'},{menge:'1',einheit:'L',zutat:'naturtrüber Apfelsaft'},{menge:'1',einheit:'Pck',zutat:'Weinhefe (Reinzuchthefe)'},{menge:'3',einheit:'g',zutat:'Hefenährsalz (Brauerei-Fachhandel oder online)'}],
+ schritte:['Honig in lauwarmem Wasser (max. 40°C) auflösen. Apfelsaft hinzufügen – er liefert die nötige Säure für eine gute Gärung.','Hefe laut Packungsanleitung aktivieren und zum Honigwasser geben. Hefenährsalz einrühren.','In einen Gärballon füllen und Gärröhrchen aufsetzen.','3–6 Wochen bei 20–25°C gären lassen, bis keine Blasen mehr aufsteigen. Unter 20°C kann die Gärung ins Stocken geraten.','Vom Bodensatz abziehen (umschlauchen) und mindestens 3–6 Monate reifen lassen. Met wird mit der Zeit deutlich besser.','In Flaschen abfüllen. Tipp: Geduld lohnt sich – nach 6–12 Monaten Reife schmeckt der Met am besten.']},
 
 {id:'p4', kategorie:'essen', titel:'Honig-Nuss-Müsli (Granola)', beschreibung:'Knuspriges Granola mit Honig und gemischten Nüssen – selbstgemacht und ohne Industriezucker.', schwierigkeit:'leicht', zeitaufwand:35, is_preset:true,
  zutaten:[{menge:'300',einheit:'g',zutat:'Haferflocken'},{menge:'100',einheit:'g',zutat:'Honig'},{menge:'80',einheit:'g',zutat:'gemischte Nüsse'},{menge:'75',einheit:'g',zutat:'Kokosöl'},{menge:'50',einheit:'g',zutat:'Rosinen'},{menge:'1',einheit:'TL',zutat:'Vanilleextrakt'},{menge:'0,5',einheit:'TL',zutat:'Salz'}],
@@ -53,7 +53,7 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'1',einheit:'',zutat:'große Zwiebel'},{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Einmachglas'}],
  schritte:['Zwiebel schälen und in kleine Würfel schneiden.','Abwechselnd Zwiebelwürfel und Honig in das Glas schichten.','Mindestens 8–12 Stunden (am besten über Nacht) ziehen lassen.','Den entstandenen Sirup durch ein feines Sieb abseihen.','3x täglich je 1 EL einnehmen. Hält sich im Kühlschrank 3–5 Tage.','Wichtig: Nicht für Kinder unter 1 Jahr geeignet (Botulismus-Risiko durch Honig)! Alternativ Zucker verwenden.']},
 
-{id:'p12', kategorie:'hausmittel', titel:'Honig-Quark-Wickel', beschreibung:'Kühlender Wickel bei leichtem Sonnenbrand, Insektenstichen oder Gelenkschmerzen.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
+{id:'p12', kategorie:'hausmittel', titel:'Honig-Quark-Wickel', beschreibung:'Kühlender Wickel bei leichtem Sonnenbrand, Insektenstichen oder Gelenkschmerzen. Bei Blasenbildung oder anhaltenden Schmerzen zum Arzt!', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
  zutaten:[{menge:'3',einheit:'EL',zutat:'Quark (kühlschrankkalt)'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Baumwolltuch'},{menge:'1',einheit:'',zutat:'Schal oder Fixiertuch'}],
  schritte:['Quark und Honig glatt verrühren.','Die Mischung fingerdick auf ein Baumwolltuch streichen.','Tuch mit der bestrichenen Seite auf die Haut legen – der Quark muss direkten Hautkontakt haben!','Ränder einklappen und mit Schal oder Fixiertuch befestigen.','Abnehmen, sobald der Quark antrocknet und bröckelig wird (ca. 20–30 Min.). Nicht länger drauflassen!','Haut vorsichtig reinigen. Bei Bedarf wiederholen.']},
 
@@ -92,8 +92,8 @@ var PRESET_REZEPTE = [
  schritte:['Honig und Senf verrühren, Hähnchen damit 15 Min. marinieren.','Zwiebel und Knoblauch fein hacken.','Öl erhitzen, Hähnchen von beiden Seiten je 3–4 Min. goldbraun braten. Herausnehmen.','Zwiebel und Knoblauch glasig dünsten.','Mit Brühe ablöschen, Sahne und Thymian einrühren.','Hähnchen zurücklegen und 10–12 Min. köcheln. Mit Reis servieren.']},
 
 {id:'p21', kategorie:'essen', titel:'Honig-Waffeln', beschreibung:'Fluffige Waffeln mit Honig statt Zucker nach Südtiroler Art.', schwierigkeit:'leicht', zeitaufwand:25, is_preset:true,
- zutaten:[{menge:'150',einheit:'g',zutat:'weiche Butter'},{menge:'4',einheit:'EL',zutat:'Honig'},{menge:'3',einheit:'',zutat:'Eier'},{menge:'250',einheit:'g',zutat:'Mehl'},{menge:'250',einheit:'ml',zutat:'Milch'},{menge:'1',einheit:'TL',zutat:'Natron'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
- schritte:['Weiche Butter mit Honig cremig rühren.','Eier einzeln unterrühren.','Mehl mit Natron und Salz mischen und abwechselnd mit Milch unterrühren.','Waffeleisen vorheizen und leicht einfetten.','Pro Waffel ca. 2 EL Teig einfüllen und goldbraun backen.','Mit Früchten, Sahne oder Honig servieren.']},
+ zutaten:[{menge:'150',einheit:'g',zutat:'weiche Butter'},{menge:'4',einheit:'EL',zutat:'Honig'},{menge:'3',einheit:'',zutat:'Eier'},{menge:'250',einheit:'g',zutat:'Mehl'},{menge:'250',einheit:'ml',zutat:'Milch'},{menge:'1',einheit:'Pck',zutat:'Backpulver'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
+ schritte:['Weiche Butter mit Honig cremig rühren.','Eier einzeln unterrühren.','Mehl mit Backpulver und Salz mischen und abwechselnd mit Milch unterrühren.','Waffeleisen vorheizen und leicht einfetten.','Pro Waffel ca. 2 EL Teig einfüllen und goldbraun backen.','Mit Früchten, Sahne oder Honig servieren.']},
 
 {id:'p22', kategorie:'essen', titel:'Honig-Limonade', beschreibung:'Erfrischende selbstgemachte Limonade mit Honig als natürlichem Süßungsmittel.', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
  zutaten:[{menge:'4',einheit:'',zutat:'Zitronen (Saft)'},{menge:'4',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'L',zutat:'kaltes Mineralwasser'},{menge:'1',einheit:'Handvoll',zutat:'frische Minzblätter'},{menge:'',einheit:'',zutat:'Eiswürfel'}],
@@ -112,7 +112,7 @@ var PRESET_REZEPTE = [
  schritte:['Balsamico, Honig und Senf mit einem Schneebesen glatt verrühren.','Olivenöl in dünnem Strahl unter ständigem Rühren einlaufen lassen.','Mit Salz und Pfeffer abschmecken. Bis zu 7 Tage im Kühlschrank haltbar.']},
 
 {id:'p26', kategorie:'essen', titel:'Honig-Karamell-Bonbons', beschreibung:'Selbstgemachte Karamellbonbons mit Honig – perfekt als Geschenk aus der Küche.', schwierigkeit:'mittel', zeitaufwand:45, is_preset:true,
- zutaten:[{menge:'450',einheit:'g',zutat:'Zucker'},{menge:'3',einheit:'EL',zutat:'Honig'},{menge:'60',einheit:'g',zutat:'Butter'},{menge:'8',einheit:'EL',zutat:'Schlagsahne'},{menge:'4',einheit:'EL',zutat:'Wasser'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
+ zutaten:[{menge:'250',einheit:'g',zutat:'Zucker'},{menge:'150',einheit:'g',zutat:'Honig'},{menge:'60',einheit:'g',zutat:'Butter'},{menge:'8',einheit:'EL',zutat:'Schlagsahne'},{menge:'4',einheit:'EL',zutat:'Wasser'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
  schritte:['Backblech mit Backpapier auslegen und einfetten.','Zucker, Honig, Butter, Sahne und Wasser bei mittlerer Hitze unter Rühren erwärmen.','Nach dem Auflösen Temperatur erhöhen und aufkochen.','15–18 Min. köcheln bis goldbraun (ca. 150°C mit Zuckerthermometer).','Auf das Backpapier gießen. Noch warm in Stücke schneiden.','Auskühlen lassen und in Zellophan einwickeln.']},
 
 {id:'p27', kategorie:'essen', titel:'Honig-Pancakes', beschreibung:'Fluffige Pfannkuchen mit Honig und steifem Eischnee für extra Luftigkeit.', schwierigkeit:'leicht', zeitaufwand:25, is_preset:true,
@@ -135,7 +135,7 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'750',einheit:'ml',zutat:'Rotwein'},{menge:'100',einheit:'ml',zutat:'Orangensaft'},{menge:'4',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Zimtstange'},{menge:'3',einheit:'',zutat:'Sternanis'},{menge:'4',einheit:'',zutat:'Nelken'},{menge:'1',einheit:'',zutat:'Orange (Bio, Scheiben)'}],
  schritte:['Rotwein und Orangensaft in einen Topf geben.','Gewürze und Orangenscheiben hinzufügen.','Langsam auf ca. 70°C erhitzen – nicht kochen (Alkohol erhalten!).','Honig einrühren. Zugedeckt 20 Min. ziehen lassen.','Gewürze entfernen und heiß servieren.']},
 
-{id:'p32', kategorie:'essen', titel:'Honig-Eis', beschreibung:'Cremiges Honig-Eis mit griechischem Joghurt – auch ohne Eismaschine machbar.', schwierigkeit:'leicht', zeitaufwand:30, is_preset:true,
+{id:'p32', kategorie:'essen', titel:'Honig-Eis', beschreibung:'Cremiges Honig-Eis mit griechischem Joghurt – auch ohne Eismaschine machbar. Aktive Zeit ca. 15 Min., Gefrierzeit 4–6 Stunden.', schwierigkeit:'mittel', zeitaufwand:360, is_preset:true,
  zutaten:[{menge:'300',einheit:'g',zutat:'griechischer Joghurt'},{menge:'100',einheit:'g',zutat:'Kondensmilch'},{menge:'75',einheit:'g',zutat:'Honig'},{menge:'200',einheit:'ml',zutat:'Schlagsahne'},{menge:'1',einheit:'Prise',zutat:'Salz'}],
  schritte:['Joghurt, Kondensmilch, Honig und Salz glatt verrühren.','Sahne steif schlagen und vorsichtig unterheben.','In gefriergeeignete Form füllen. 4–6 Stunden gefrieren.','In den ersten 2 Stunden alle 30 Min. durchrühren (verhindert Kristalle).','10 Min. vor dem Servieren aus dem Gefrierfach nehmen.']},
 
@@ -195,7 +195,7 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'20',einheit:'g',zutat:'Bienenwachs-Pastillen pro Tuch'},{menge:'1',einheit:'',zutat:'Baumwollstoff (25x25cm, 100% Baumwolle)'},{menge:'2',einheit:'Bogen',zutat:'Backpapier'}],
  schritte:['Backofen auf 85°C vorheizen.','Stoff auf Backpapier legen, Wachspastillen darauf verteilen.','Zweiten Bogen Backpapier darüber. 5 Min. im Ofen bis Wachs geschmolzen.','Alternativ: Mit Bügeleisen über Backpapier verteilen.','Zum Trocknen aufhängen. Pflege: Mit kaltem Wasser und Spülmittel reinigen. Nicht in Mikrowelle/Spülmaschine.']},
 
-{id:'p46', kategorie:'kosmetik', titel:'Propolis-Zahnpasta', beschreibung:'Natürliche Zahnpasta mit Kokosöl, Natron und Propolis. Allergietest vorher!', schwierigkeit:'mittel', zeitaufwand:15, is_preset:true,
+{id:'p46', kategorie:'kosmetik', titel:'Propolis-Zahnpasta', beschreibung:'Natürliche Zahnpasta mit Kokosöl, Natron und Propolis – ohne Fluorid. Propolis-Allergietest vorher durchführen!', schwierigkeit:'mittel', zeitaufwand:15, is_preset:true,
  zutaten:[{menge:'3',einheit:'EL',zutat:'Kokosöl (nativ)'},{menge:'2',einheit:'EL',zutat:'Natron'},{menge:'1',einheit:'TL',zutat:'Xylit (Birkenzucker)'},{menge:'10',einheit:'Tropfen',zutat:'Propolis-Tinktur (10–20%)'},{menge:'5',einheit:'Tropfen',zutat:'Pfefferminzöl'}],
  schritte:['Kokosöl im Wasserbad schmelzen. Natron und Xylit einrühren.','Etwas abkühlen lassen, dann Propolis-Tinktur und Pfefferminzöl einrühren.','In ein sauberes Schraubglas füllen.','Erbsengroße Menge auf die Zahnbürste. Allergietest vorher! Haltbarkeit ca. 3 Monate.']},
 
@@ -317,7 +317,7 @@ var PRESET_REZEPTE = [
 
 {id:'p75', kategorie:'hausmittel', titel:'Honig-Kartoffelwickel bei Husten', beschreibung:'Wärmender Wickel mit Kartoffeln und Honig – löst festsitzenden Schleim.', schwierigkeit:'leicht', zeitaufwand:40, is_preset:true,
  zutaten:[{menge:'3',einheit:'',zutat:'mittelgroße Kartoffeln'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Geschirrtuch'},{menge:'1',einheit:'',zutat:'Wollschal'}],
- schritte:['Kartoffeln weich kochen, etwas abkühlen und grob zerdrücken.','Honig darüber verteilen, in Tuch einschlagen.','Temperatur am Unterarm prüfen – angenehm warm, nicht heiß!','Auf die Brust legen, mit Schal fixieren. 30–60 Min. Nicht bei Fieber über 38,5°C!']},
+ schritte:['Kartoffeln weich kochen, etwas abkühlen und grob zerdrücken.','Honig darüber verteilen, in Tuch einschlagen.','Temperatur am Unterarm prüfen – angenehm warm, nicht heiß!','Auf die Brust legen, mit Schal fixieren. 30–60 Min. Nicht bei Fieber über 38,5°C! Bei anhaltendem Husten über 2 Wochen zum Arzt.']},
 
 {id:'p76', kategorie:'hausmittel', titel:'Ingwer-Honig-Shot', beschreibung:'Scharfer Immun-Shot für die Erkältungszeit. Nicht für Kinder unter 1 Jahr!', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
  zutaten:[{menge:'50',einheit:'g',zutat:'frischer Ingwer'},{menge:'2',einheit:'',zutat:'Zitronen (Saft)'},{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'100',einheit:'ml',zutat:'Wasser'}],
@@ -329,7 +329,7 @@ var PRESET_REZEPTE = [
 
 {id:'p78', kategorie:'hausmittel', titel:'Honig-Salbei-Bonbons', beschreibung:'Hustenbonbons mit Salbei und Honig. Honig wird kurz erhitzt – ein Teil der Enzyme geht verloren.', schwierigkeit:'mittel', zeitaufwand:45, is_preset:true,
  zutaten:[{menge:'100',einheit:'g',zutat:'Zucker'},{menge:'2',einheit:'EL',zutat:'Honig'},{menge:'5',einheit:'',zutat:'frische Salbeiblätter'},{menge:'50',einheit:'ml',zutat:'Wasser'},{menge:'',einheit:'',zutat:'Puderzucker'}],
- schritte:['Salbei in 50ml Wasser aufkochen, 15 Min. ziehen, abseihen.','Sud mit Zucker aufkochen bis goldbraun (ca. 150°C, Tropfprobe).','Vom Herd, kurz abkühlen und Honig einrühren.','Mit Teelöffel kleine Portionen auf Backpapier setzen. In Puderzucker wälzen.']},
+ schritte:['Salbei in 50ml Wasser aufkochen, 15 Min. ziehen, abseihen.','Sud mit Zucker aufkochen bis goldbraun (ca. 150°C, Tropfprobe).','Vom Herd, kurz abkühlen und Honig einrühren.','Mit Teelöffel kleine Portionen auf Backpapier setzen. In Puderzucker wälzen.','Dosierung: Max. 3–5 Bonbons pro Tag. Nicht für Kinder unter 1 Jahr (Botulismus-Risiko durch Honig)! Bei anhaltendem Husten über 2 Wochen zum Arzt.']},
 
 {id:'p79', kategorie:'hausmittel', titel:'Honig-Meerrettich bei Blasenentzündung', beschreibung:'Meerrettich enthält antibakterielle Senföle. Nur bei leichten Beschwerden! Nicht für Kinder unter 1 Jahr!', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
  zutaten:[{menge:'1',einheit:'EL',zutat:'frischer Meerrettich (fein gerieben)'},{menge:'2',einheit:'EL',zutat:'Honig'}],
@@ -340,7 +340,7 @@ var PRESET_REZEPTE = [
  schritte:['Hände waschen. 2–3 Tropfen Propolis auf Wattestäbchen.','Vorsichtig auf die entzündete Stelle tupfen. 5–10 Min. einwirken.','2–3x täglich. Allergietest vorher! Ersetzt keine Parodontose-Behandlung.']},
 
 {id:'p81', kategorie:'hausmittel', titel:'Propolis-Inhalation', beschreibung:'Dampfinhalation mit Propolis bei verstopfter Nase und Nebenhöhlen. Allergietest vorher!', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
- zutaten:[{menge:'500',einheit:'ml',zutat:'heißes Wasser (70–80°C)'},{menge:'15–20',einheit:'Tropfen',zutat:'Propolis-Tinktur (alkoholfrei)'},{menge:'1',einheit:'',zutat:'Schüssel'},{menge:'1',einheit:'',zutat:'großes Handtuch'}],
+ zutaten:[{menge:'500',einheit:'ml',zutat:'heißes Wasser (70–80°C)'},{menge:'5–10',einheit:'Tropfen',zutat:'Propolis-Tinktur (alkoholfrei)'},{menge:'1',einheit:'',zutat:'Schüssel'},{menge:'1',einheit:'',zutat:'großes Handtuch'}],
  schritte:['Heißes Wasser in Schüssel, Propolis dazutropfen.','Kopf über die Schüssel, Handtuch über Kopf und Schüssel.','10–15 Min. durch die Nase ein-, durch den Mund ausatmen. Augen geschlossen!','1–2x täglich. Abstand halten (Verbrühungsgefahr!). Allergietest vorher!']},
 
 {id:'p82', kategorie:'hausmittel', titel:'Honig bei Magenbeschwerden', beschreibung:'Manuka-Honig kann bei Magenschleimhautreizung lindernd wirken. Kein Ersatz für ärztliche Behandlung!', schwierigkeit:'leicht', zeitaufwand:5, is_preset:true,
@@ -351,7 +351,7 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'20',einheit:'g',zutat:'getrocknete Beinwellwurzel'},{menge:'100',einheit:'ml',zutat:'Olivenöl'},{menge:'10',einheit:'g',zutat:'Bienenwachs'},{menge:'5',einheit:'Tropfen',zutat:'ätherisches Rosmarinöl (optional)'}],
  schritte:['Beinwellwurzel in Olivenöl bei max. 70°C im Wasserbad 30 Min. erwärmen.','Durch Tuch oder Kaffeefilter abseihen.','Bienenwachs schmelzen und Beinwell-Öl einrühren. Optional Rosmarinöl dazu.','In Tiegel füllen und abkühlen lassen. Nur äußerlich! Nicht auf offene Wunden, nicht bei Kindern unter 12.']},
 
-{id:'p84', kategorie:'hausmittel', titel:'Honig-Leinsamen bei Verdauung', beschreibung:'Sanftes Hausmittel bei träger Verdauung. Viel trinken! Nicht für Kinder unter 1 Jahr!', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
+{id:'p84', kategorie:'hausmittel', titel:'Honig-Leinsamen bei Verdauung', beschreibung:'Sanftes Hausmittel bei träger Verdauung. Viel trinken! Nicht für Kinder unter 1 Jahr! Bei anhaltenden Beschwerden zum Arzt.', schwierigkeit:'leicht', zeitaufwand:15, is_preset:true,
  zutaten:[{menge:'1',einheit:'EL',zutat:'geschrotete Leinsamen'},{menge:'250',einheit:'ml',zutat:'lauwarmes Wasser'},{menge:'1',einheit:'TL',zutat:'Honig'}],
  schritte:['Leinsamen in lauwarmem Wasser 10–15 Min. quellen lassen.','Honig einrühren (Wasser unter 40°C!). Die ganze Mischung trinken.','Morgens vor dem Frühstück. Wichtig: Zusätzlich mind. 1,5L Wasser am Tag trinken!']},
 
@@ -367,16 +367,16 @@ var PRESET_REZEPTE = [
  zutaten:[{menge:'1',einheit:'Liter',zutat:'lauwarmes Wasser (2°C unter Körpertemp.)'},{menge:'2',einheit:'EL',zutat:'Apfelessig'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'2',einheit:'',zutat:'Baumwolltücher'},{menge:'2',einheit:'',zutat:'trockene Handtücher'}],
  schritte:['Wasser, Essig und Honig mischen.','Tücher eintauchen, auswringen. Um beide Waden wickeln, trockene Tücher darüber.','Abnehmen wenn körperwarm (ca. 10–15 Min.).','Keine Wadenwickel bei kalten Füßen oder Schüttelfrost! Nicht bei Kindern unter 6 Monaten. Bei Fieber über 39,5°C oder länger als 3 Tage zum Arzt.']},
 
-{id:'p88', kategorie:'hausmittel', titel:'Oxymel – Honig-Essig-Trunk', beschreibung:'Sauerhonig – Jahrtausende altes Hausmittel. Nicht für Kinder unter 1 Jahr und bei Sodbrennen!', schwierigkeit:'leicht', zeitaufwand:20, is_preset:true,
+{id:'p88', kategorie:'hausmittel', titel:'Einfacher Sauerhonig (Basis-Oxymel)', beschreibung:'Schnelle Version ohne Kräuter – Honig und Apfelessig als täglicher Trunk. Für die Kräuter-Variante siehe Rezept unter Essen. Nicht für Kinder unter 1 Jahr und bei Sodbrennen!', schwierigkeit:'leicht', zeitaufwand:20, is_preset:true,
  zutaten:[{menge:'3',einheit:'Teile',zutat:'Honig (flüssig)'},{menge:'1',einheit:'Teil',zutat:'naturtrüber Bio-Apfelessig'}],
  schritte:['Honig und Essig 3:1 in sauberem Glas verrühren.','Kühl und dunkel lagern – hält sich mehrere Monate.','Täglich 1–2 EL in lauwarmem Wasser (unter 40°C) vor dem Frühstück.','Nicht bei Sodbrennen anwenden. Nicht für Kinder unter 1 Jahr.']},
 
-{id:'p89', kategorie:'hausmittel', titel:'Honig-Thymian-Dampfbad', beschreibung:'Dampfinhalation mit Thymian und Honig bei Erkältung – befreit die Atemwege.', schwierigkeit:'leicht', zeitaufwand:20, is_preset:true,
- zutaten:[{menge:'500',einheit:'ml',zutat:'heißes Wasser (70–80°C)'},{menge:'2',einheit:'EL',zutat:'getrockneter Thymian'},{menge:'1',einheit:'EL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Schüssel und Handtuch'}],
- schritte:['Thymian mit heißem Wasser aufgießen, 5 Min. ziehen lassen.','Honig einrühren.','Kopf über die Schüssel, Handtuch darüber. 10 Min. einatmen. Augen geschlossen!','Abstand halten (Verbrühungsgefahr!). 1–2x täglich bei Erkältung.']},
+{id:'p89', kategorie:'hausmittel', titel:'Thymian-Dampfbad bei Erkältung', beschreibung:'Dampfinhalation mit Thymian bei verstopfter Nase – befreit die Atemwege. Nach der Inhalation Honig-Tee trinken. Nicht für Kinder unter 6 Jahren!', schwierigkeit:'leicht', zeitaufwand:20, is_preset:true,
+ zutaten:[{menge:'500',einheit:'ml',zutat:'heißes Wasser (70–80°C)'},{menge:'2',einheit:'EL',zutat:'getrockneter Thymian'},{menge:'1',einheit:'',zutat:'Schüssel und Handtuch'},{menge:'1',einheit:'EL',zutat:'Honig (für den Tee danach)'}],
+ schritte:['Thymian mit heißem Wasser aufgießen, 5 Min. ziehen lassen.','Kopf über die Schüssel, Handtuch darüber. 10 Min. langsam durch die Nase einatmen. Augen geschlossen!','Abstand zur Wasseroberfläche halten (Verbrühungsgefahr!). 1–2x täglich.','Nach der Inhalation den Rest als Tee abkühlen lassen (unter 40°C) und mit Honig gesüßt trinken.','Nicht für Kinder unter 6 Jahren (Verbrühungsgefahr)! Bei anhaltendem Husten oder Fieber zum Arzt.']},
 
-{id:'p90', kategorie:'hausmittel', titel:'Honig-Quark-Maske bei Insektenstichen', beschreibung:'Kühlende Honig-Quark-Auflage bei Insektenstichen – lindert Schwellung und Juckreiz.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
- zutaten:[{menge:'2',einheit:'EL',zutat:'Quark (kühlschrankkalt)'},{menge:'1',einheit:'TL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Mullkompresse'}],
- schritte:['Quark und Honig verrühren.','Auf eine Mullkompresse streichen und auf den Stich legen.','15–20 Min. einwirken lassen. Bei Bedarf wiederholen.','Bei allergischer Reaktion (Atemnot, Schwellung im Gesicht) sofort Notruf 112!']}
+{id:'p90', kategorie:'hausmittel', titel:'Honig-Spitzwegerich-Umschlag bei Insektenstichen', beschreibung:'Spitzwegerich mit Honig – das Erste-Hilfe-Mittel aus der Natur bei Bienen- und Wespenstichen.', schwierigkeit:'leicht', zeitaufwand:10, is_preset:true,
+ zutaten:[{menge:'3–4',einheit:'',zutat:'frische Spitzwegerich-Blätter'},{menge:'1',einheit:'TL',zutat:'Honig'},{menge:'1',einheit:'',zutat:'Mullbinde oder Pflaster'}],
+ schritte:['Spitzwegerich-Blätter waschen und zwischen den Fingern zerreiben, bis der Saft austritt.','Zerriebene Blätter mit Honig vermischen.','Direkt auf den Insektenstich auflegen und mit Mullbinde oder Pflaster fixieren.','30 Min. einwirken lassen. Bei Bedarf wiederholen.','Bei allergischer Reaktion (Atemnot, Schwellung im Gesicht/Hals, Kreislaufprobleme) sofort Notruf 112!']}
 
 ];

@@ -1207,18 +1207,57 @@ async function deleteAllTrachten() {
 }
 
 async function deleteUserData(userId, email) {
-    if (!confirm('ACHTUNG: Alle Daten von "'+email+'" werden gelöscht!\n\n(Standorte, Völker, Aufgaben, Trachten, Behandlungen, Kosten, Packliste)\n\nDer Account selbst bleibt bestehen. Um den Account zu löschen, gehe in Supabase → Authentication → Users.\n\nFortfahren?')) return;
-    
-    await sb.from('packliste').delete().eq('user_id', userId);
-    await sb.from('behandlungen').delete().eq('user_id', userId);
-    await sb.from('trachten').delete().eq('user_id', userId);
-    await sb.from('trachten_shared').delete().eq('user_id', userId);
-    await sb.from('aufgaben').delete().eq('user_id', userId);
-    await sb.from('kosten').delete().eq('user_id', userId);
-    await sb.from('voelker').delete().eq('user_id', userId);
-    await sb.from('standorte').delete().eq('user_id', userId);
-    
-    alert('Alle Daten von "'+email+'" wurden gelöscht.');
+    if (!confirm('ACHTUNG: Alle Daten von "'+email+'" werden unwiderruflich gelöscht!\n\n• Standorte, Völker, Aufgaben\n• Trachten (privat + geteilt)\n• Behandlungen, Kosten, Ernten\n• Zuchtpläne, Bewertungen, Durchsichten\n• Forum-Beiträge, Antworten, Likes\n• Packliste, Trachtquellen\n• Rezepte, Favoriten\n• Login-Historie\n• Profil\n\nDer Auth-Account bleibt bestehen (Supabase → Authentication → Users).\n\nFortfahren?')) return;
+
+    if (!confirm('Wirklich ALLES von "'+email+'" löschen? Diese Aktion kann NICHT rückgängig gemacht werden!')) return;
+
+    var errors = [];
+
+    // Forum: Erst Likes, dann Antworten, dann Beiträge (wegen Foreign Keys)
+    var forumBeitraege = await sb.from('forum_beitraege').select('id').eq('user_id', userId);
+    if (forumBeitraege.data) {
+        for (var i = 0; i < forumBeitraege.data.length; i++) {
+            var bid = forumBeitraege.data[i].id;
+            await sb.from('forum_likes').delete().eq('beitrag_id', bid);
+            await sb.from('forum_antworten').delete().eq('beitrag_id', bid);
+        }
+    }
+    await sb.from('forum_likes').delete().eq('user_id', userId);
+    await sb.from('forum_antworten').delete().eq('user_id', userId);
+    await sb.from('forum_beitraege').delete().eq('user_id', userId);
+
+    // Alle Datentabellen löschen
+    var tables = [
+        'rezept_favoriten', 'rezepte',
+        'packliste', 'durchsichten', 'bewertungen',
+        'behandlungen', 'ernten', 'zuchtplaene',
+        'trachten_ausgeblendet', 'trachtquellen',
+        'trachten', 'trachten_shared',
+        'aufgaben', 'kosten',
+        'voelker', 'standorte',
+        'login_historie'
+    ];
+
+    for (var t = 0; t < tables.length; t++) {
+        var res = await sb.from(tables[t]).delete().eq('user_id', userId);
+        if (res.error) {
+            console.warn('Fehler bei ' + tables[t] + ':', res.error.message);
+            errors.push(tables[t] + ': ' + res.error.message);
+        }
+    }
+
+    // Profil zuletzt löschen
+    var profRes = await sb.from('profiles').delete().eq('id', userId);
+    if (profRes.error) {
+        console.warn('Fehler bei profiles:', profRes.error.message);
+        errors.push('profiles: ' + profRes.error.message);
+    }
+
+    if (errors.length > 0) {
+        alert('Daten von "'+email+'" gelöscht, aber mit Fehlern:\n\n' + errors.join('\n') + '\n\nManche Tabellen existieren evtl. noch nicht oder RLS blockiert.');
+    } else {
+        alert('Alle Daten von "'+email+'" wurden vollständig gelöscht.\n\nUm den Auth-Account zu entfernen: Supabase Dashboard → Authentication → Users.');
+    }
     loadAdmin();
 }
 

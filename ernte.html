@@ -14,13 +14,6 @@
     <style>
         /* === ERNTE-SPECIFIC STYLES === */
         body{padding-left:220px;padding-bottom:2rem}
-        /* === NAV === */
-        .nav{position:fixed;left:0;top:0;bottom:0;width:220px;background:#FFFBF0;border-right:2px solid rgba(245,166,35,0.12);display:flex;flex-direction:column;padding:0;z-index:50;overflow-y:auto}
-        .nav-brand{padding:1.25rem 1rem;border-bottom:2px solid rgba(245,166,35,0.12)}
-        .nav-section{font-size:.65rem;font-weight:700;color:#A69580;text-transform:uppercase;letter-spacing:.08em;padding:.75rem 1rem .25rem}
-        .nav-item{display:block;padding:.625rem 1rem;text-align:left;cursor:pointer;border:none;background:none;color:#7A6652;font-size:.85rem;border-left:4px solid transparent;transition:all .15s;width:100%;text-decoration:none;font-family:inherit}
-        .nav-item:hover{background:rgba(245,166,35,0.06)}
-        .nav-item.active{color:#92400E;font-weight:600;border-left-color:#F5A623;background:#FFF8EE}
         .container{max-width:800px;margin:0 auto;padding:1rem}
         
         /* Toast kommt aus shared-styles.css */
@@ -202,7 +195,7 @@ function renderErfassung() {
             var kg = nachStandort[name];
             var pct = gesamt > 0 ? (kg/gesamt*100) : 0;
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
-            html += '<div style="flex:1"><div style="font-weight:600">📍 '+name+'</div>';
+            html += '<div style="flex:1"><div style="font-weight:600">📍 '+esc(name)+'</div>';
             html += '<div style="background:#E8DFD4;height:.375rem;border-radius:.25rem;margin-top:.25rem;max-width:200px">';
             html += '<div style="background:#F5A623;height:100%;border-radius:.25rem;width:'+pct+'%"></div></div></div>';
             html += '<div style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</div>';
@@ -222,9 +215,9 @@ function renderErfassung() {
             var datum = new Date(e.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.625rem 0;border-bottom:1px solid #FFFBF0">';
             html += '<div>';
-            html += '<div style="font-weight:600">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+e.sorte:'')+'</div>';
-            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · 📍 '+(e.standortName||'?')+(e.volkName?' · 🐝 '+e.volkName:'')+'</div>';
-            if (e.notizen) html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.125rem">'+e.notizen+'</div>';
+            html += '<div style="font-weight:600">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+esc(e.sorte):'')+'</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · 📍 '+esc(e.standortName||'?')+(e.volkName?' · 🐝 '+esc(e.volkName):'')+'</div>';
+            if (e.notizen) html += '<div style="font-size:.75rem;color:#94a3b8;margin-top:.125rem">'+esc(e.notizen)+'</div>';
             html += '</div>';
             html += '<div style="display:flex;gap:.25rem">';
             html += '<button class="btn btn-blue btn-xs" onclick="editErnte(\''+e.id+'\')">✏️</button>';
@@ -312,7 +305,7 @@ function renderArchiv() {
             var kg = nachStandort[name];
             var pct = (kg/maxStandort*100);
             html += '<div style="margin-bottom:.75rem">';
-            html += '<div style="display:flex;justify-content:space-between;margin-bottom:.25rem"><span style="font-weight:600;font-size:.9rem">'+name+'</span><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</span></div>';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:.25rem"><span style="font-weight:600;font-size:.9rem">'+esc(name)+'</span><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</span></div>';
             html += '<div style="background:#E8DFD4;height:.75rem;border-radius:.375rem"><div style="background:linear-gradient(90deg,#F5A623,#f7bc5e);height:100%;border-radius:.375rem;width:'+pct+'%;transition:width .5s"></div></div>';
             html += '</div>';
         });
@@ -333,7 +326,7 @@ function renderArchiv() {
             var kg = nachSorte[name];
             var pct = gesamt > 0 ? (kg/gesamt*100) : 0;
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
-            html += '<div style="font-weight:500">'+name+'</div>';
+            html += '<div style="font-weight:500">'+esc(name)+'</div>';
             html += '<div><span style="font-weight:bold;color:#F5A623">'+kg.toFixed(1)+' kg</span> <span style="font-size:.75rem;color:#7A6652">('+pct.toFixed(0)+'%)</span></div>';
             html += '</div>';
         });
@@ -368,8 +361,8 @@ function renderArchiv() {
         erntenJahr.sort(function(a,b){return b.datum.localeCompare(a.datum);}).forEach(function(e){
             var datum = new Date(e.datum).toLocaleDateString('de-DE',{day:'2-digit',month:'short'});
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid #FFFBF0">';
-            html += '<div><div style="font-weight:500;font-size:.9rem">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+e.sorte:'')+'</div>';
-            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · '+(e.standortName||'?')+(e.volkName?' · '+e.volkName:'')+'</div></div>';
+            html += '<div><div style="font-weight:500;font-size:.9rem">'+e.menge.toFixed(1)+' kg'+(e.sorte?' · '+esc(e.sorte):'')+'</div>';
+            html += '<div style="font-size:.75rem;color:#7A6652">'+datum+' · '+esc(e.standortName||'?')+(e.volkName?' · '+esc(e.volkName):'')+'</div></div>';
             html += '<div style="display:flex;gap:.25rem">';
             html += '<button class="btn btn-blue btn-xs" onclick="editErnte(\''+e.id+'\')">✏️</button>';
             html += '<button class="btn btn-danger btn-xs" onclick="deleteErnte(\''+e.id+'\')">🗑️</button>';
@@ -400,7 +393,7 @@ function openModal(id) {
     var sel = document.getElementById('ernteStandort');
     sel.innerHTML = '<option value="">-- Standort wählen --</option>';
     standorte.forEach(function(s){
-        sel.innerHTML += '<option value="'+s.id+'">'+s.name+'</option>';
+        sel.innerHTML += '<option value="'+s.id+'">'+esc(s.name)+'</option>';
     });
     
     document.getElementById('ernteVolk').innerHTML = '<option value="">-- Ganzer Standort --</option>';
@@ -435,7 +428,7 @@ function updateVoelkerSelect() {
     sel.innerHTML = '<option value="">-- Ganzer Standort --</option>';
     if (standortId) {
         voelker.filter(function(v){return v.standortId===standortId;}).forEach(function(v){
-            sel.innerHTML += '<option value="'+v.id+'">'+v.name+'</option>';
+            sel.innerHTML += '<option value="'+v.id+'">'+esc(v.name)+'</option>';
         });
     }
 }

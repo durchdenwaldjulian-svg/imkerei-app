@@ -1,1 +1,1115 @@
-﻿Fehler (500): No such price: 'price_1T7C58FZmkJ9EVA4nRaBX2s1'
+﻿admins
+RLS Disabled
+
+Enable RLS
+
+Create policy
+
+This table can be accessed by anyone via the Data API as RLS is disabled.
+
+Name	Command	Applied to	Actions
+
+Admins can delete admins
+DELETE	
+public
+
+
+Admins can insert admins
+INSERT	
+public
+
+
+Admins can read admins
+SELECT	
+public
+
+ask_bodenproben
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own bodenproben
+ALL	
+public
+
+ask_duengeplanung
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own duengeplanung
+ALL	
+public
+
+
+Users can read own duengeplanung
+SELECT	
+public
+
+ask_kulturen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+ask_kulturen_user
+ALL	
+public
+
+ask_lager
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own lager
+ALL	
+public
+
+ask_marktpreise
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own marktpreise
+ALL	
+public
+
+ask_massnahmen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+ask_massnahmen_user
+ALL	
+public
+
+ask_pflanzenschutz_db
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can delete own PSM
+DELETE	
+public
+
+
+Users can manage own PSM
+INSERT	
+public
+
+
+Users can read default and own PSM
+SELECT	
+public
+
+
+Users can update own PSM
+UPDATE	
+public
+
+ask_schlaege
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+ask_schlaege_user
+ALL	
+public
+
+ask_stoffstrombilanz
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own stoffstrombilanz
+ALL	
+public
+
+aufgaben
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all aufgaben
+SELECT	
+public
+
+
+Anon can delete aufgaben
+DELETE	
+anon
+
+
+Anon can read aufgaben
+SELECT	
+anon
+
+
+Users can delete own aufgaben
+DELETE	
+public
+
+
+Users can insert own aufgaben
+INSERT	
+public
+
+
+Users can update own aufgaben
+UPDATE	
+public
+
+
+Users can view own aufgaben
+SELECT	
+public
+
+behandlungen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all behandlungen
+SELECT	
+public
+
+
+Anon can delete behandlungen
+DELETE	
+anon
+
+
+Anon can read behandlungen
+SELECT	
+anon
+
+
+Users can delete own behandlungen
+DELETE	
+public
+
+
+Users can insert own behandlungen
+INSERT	
+public
+
+
+Users can update own behandlungen
+UPDATE	
+public
+
+
+Users can view own behandlungen
+SELECT	
+public
+
+bewertungen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can delete own bewertungen
+DELETE	
+public
+
+
+Users can insert own bewertungen
+INSERT	
+public
+
+
+Users can update own bewertungen
+UPDATE	
+public
+
+
+Users can view own bewertungen
+SELECT	
+public
+
+durchsichten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can manage own durchsichten
+ALL	
+public
+
+ernten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can delete own ernten
+DELETE	
+public
+
+
+Users can insert own ernten
+INSERT	
+public
+
+
+Users can update own ernten
+UPDATE	
+public
+
+
+Users can view own ernten
+SELECT	
+public
+
+forum_antworten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Antworten ändern
+UPDATE	
+authenticated
+
+
+Antworten erstellen
+INSERT	
+authenticated
+
+
+Antworten lesen
+SELECT	
+anon, authenticated
+
+
+Antworten löschen
+DELETE	
+authenticated
+
+forum_beitraege
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Beiträge ändern
+UPDATE	
+authenticated
+
+
+Beiträge erstellen
+INSERT	
+authenticated
+
+
+Beiträge lesen
+SELECT	
+anon, authenticated
+
+
+Beiträge löschen
+DELETE	
+authenticated
+
+forum_kategorien
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Kategorien lesen
+SELECT	
+anon, authenticated
+
+forum_likes
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Likes erstellen
+INSERT	
+authenticated
+
+
+Likes lesen
+SELECT	
+anon, authenticated
+
+
+Likes löschen
+DELETE	
+authenticated
+
+hornissen_bestaetigungen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+best_delete_own
+DELETE	
+public
+
+
+best_insert_auth
+INSERT	
+public
+
+
+best_select_public
+SELECT	
+public
+
+hornissen_meldungen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Alle können lesen
+SELECT	
+public
+
+
+Eigene löschen
+DELETE	
+public
+
+
+Eingeloggte können bestätigen
+UPDATE	
+public
+
+
+Eingeloggte können melden
+INSERT	
+public
+
+
+hornissen_delete_own
+DELETE	
+public
+
+
+hornissen_insert_auth
+INSERT	
+public
+
+
+hornissen_select_public
+SELECT	
+public
+
+
+hornissen_update_own
+UPDATE	
+public
+
+kosten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all kosten
+SELECT	
+public
+
+
+Anon can delete kosten
+DELETE	
+anon
+
+
+Anon can read kosten
+SELECT	
+anon
+
+
+Users can delete own kosten
+DELETE	
+public
+
+
+Users can insert own kosten
+INSERT	
+public
+
+
+Users can update own kosten
+UPDATE	
+public
+
+
+Users can view own kosten
+SELECT	
+public
+
+login_historie
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all logins
+SELECT	
+public
+
+
+Users can insert own login
+INSERT	
+public
+
+
+Users can read own logins
+SELECT	
+public
+
+packliste
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all packliste
+SELECT	
+public
+
+
+Anon can delete packliste
+DELETE	
+anon
+
+
+Anon can read packliste
+SELECT	
+anon
+
+
+Users can delete own packliste
+DELETE	
+public
+
+
+Users can insert own packliste
+INSERT	
+public
+
+
+Users can update own packliste
+UPDATE	
+public
+
+
+Users can view own packliste
+SELECT	
+public
+
+pedigrees
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users own pedigrees
+ALL	
+public
+
+profiles
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all profiles
+SELECT	
+public
+
+
+Admins can update all profiles
+UPDATE	
+public
+
+
+Anyone can view profiles
+SELECT	
+public
+
+
+Users can insert own profile
+INSERT	
+public
+
+
+Users can update own profile
+UPDATE	
+public
+
+rezept_favoriten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Eigene Favoriten erstellen
+INSERT	
+public
+
+
+Eigene Favoriten lesen
+SELECT	
+public
+
+
+Eigene Favoriten löschen
+DELETE	
+public
+
+rezepte
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Eigene Rezepte bearbeiten
+UPDATE	
+public
+
+
+Eigene Rezepte erstellen
+INSERT	
+public
+
+
+Eigene Rezepte löschen
+DELETE	
+public
+
+
+Rezepte lesen
+SELECT	
+public
+
+standorte
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all standorte
+SELECT	
+public
+
+
+Anon can delete standorte
+DELETE	
+anon
+
+
+Anon can read standorte
+SELECT	
+anon
+
+
+Users can delete own standorte
+DELETE	
+public
+
+
+Users can insert own standorte
+INSERT	
+public
+
+
+Users can update own standorte
+UPDATE	
+public
+
+
+Users can view own standorte
+SELECT	
+public
+
+trachten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all trachten
+SELECT	
+public
+
+
+Anon can delete trachten
+DELETE	
+anon
+
+
+Anon can read trachten
+SELECT	
+anon
+
+
+Users can delete own trachten
+DELETE	
+public
+
+
+Users can insert own trachten
+INSERT	
+public
+
+
+Users can update own trachten
+UPDATE	
+public
+
+
+Users can view own trachten
+SELECT	
+public
+
+trachten_ausgeblendet
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users can delete own ausgeblendet
+DELETE	
+public
+
+
+Users can insert own ausgeblendet
+INSERT	
+public
+
+
+Users can view own ausgeblendet
+SELECT	
+public
+
+trachten_shared
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all trachten_shared
+SELECT	
+public
+
+
+Anyone can view shared trachten
+SELECT	
+anon, authenticated
+
+
+Users can delete own shared trachten
+DELETE	
+authenticated
+
+
+Users can insert own shared trachten
+INSERT	
+anon, authenticated
+
+
+Users can update own shared trachten
+UPDATE	
+anon, authenticated
+
+trachtquellen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Users own trachtquellen
+ALL	
+public
+
+verein_aufloesungen
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all verein_aufloesungen
+SELECT	
+public
+
+
+Admins can see all requests
+SELECT	
+public
+
+
+Admins can update requests
+UPDATE	
+public
+
+
+Admins can update verein_aufloesungen
+UPDATE	
+public
+
+
+Users can insert own requests
+INSERT	
+public
+
+
+Users can see own requests
+SELECT	
+public
+
+verein_mitglieder
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can manage verein_mitglieder
+ALL	
+public
+
+
+Mitglied entfernen
+DELETE	
+authenticated
+
+
+Mitglieder sehen Vereinsmitglieder
+SELECT	
+authenticated
+
+
+User können Verein beitreten
+INSERT	
+authenticated
+
+
+Vorsitzender kann Rollen aendern
+UPDATE	
+authenticated
+
+verein_tracht_kommentare
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Eigene Kommentare loeschen oder Admin
+DELETE	
+authenticated
+
+
+Mitglieder schreiben Kommentare
+INSERT	
+authenticated
+
+
+Mitglieder sehen Kommentare
+SELECT	
+authenticated
+
+verein_trachten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can manage verein_trachten
+ALL	
+public
+
+
+Mitglieder melden Trachten
+INSERT	
+authenticated
+
+
+Mitglieder sehen Vereins-Trachten
+SELECT	
+authenticated
+
+
+Trachten bearbeiten
+UPDATE	
+authenticated
+
+
+Trachten loeschen
+DELETE	
+authenticated
+
+vereine
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admin kann Verein bearbeiten
+UPDATE	
+public
+
+
+Admins can delete vereine
+DELETE	
+public
+
+
+Admins can read all vereine
+SELECT	
+public
+
+
+User können Verein erstellen
+INSERT	
+authenticated
+
+
+Verein lesen
+SELECT	
+authenticated
+
+voelker
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all voelker
+SELECT	
+public
+
+
+Anon can delete voelker
+DELETE	
+anon
+
+
+Anon can read voelker
+SELECT	
+anon
+
+
+Users can delete own voelker
+DELETE	
+public
+
+
+Users can insert own voelker
+INSERT	
+public
+
+
+Users can update own voelker
+UPDATE	
+public
+
+
+Users can view own voelker
+SELECT	
+public
+
+wochenmarkt_live_standort
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_live_standort_all
+ALL	
+public
+
+wochenmarkt_mitarbeiter
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_mitarbeiter_all
+ALL	
+public
+
+wochenmarkt_nachrichten
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_nachrichten_all
+ALL	
+public
+
+wochenmarkt_produkte
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_produkte_all
+ALL	
+public
+
+wochenmarkt_tagesabschluss
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_tagesabschluss_all
+ALL	
+public
+
+wochenmarkt_verkauf
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+wochenmarkt_verkauf_all
+ALL	
+public
+
+zuchtplaene
+
+Disable RLS
+
+Create policy
+
+Name	Command	Applied to	Actions
+
+Admins can read all zuchtplaene
+SELECT	
+public
+
+
+Users can delete own zuchtplaene
+DELETE	
+authenticated
+
+
+Users can insert own zuchtplaene
+INSERT	
+authenticated
+
+
+Users can read own zuchtplaene
+SELECT	
+authenticated
+
+
+Users can update own zuchtplaene
+UPDATE	
+authenticated
+
+
+Users can view own zuchtplaene
+SELECT	
+public
+

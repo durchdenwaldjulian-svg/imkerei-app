@@ -509,17 +509,26 @@ async function startApp() {
     }
     
     // Load all data in parallel
-    var results = await Promise.all([
-        sb.from('standorte').select('*').eq('user_id', currentUser.id),
-        sb.from('voelker').select('*').eq('user_id', currentUser.id),
-        sb.from('aufgaben').select('*').eq('user_id', currentUser.id),
-        sb.from('kosten').select('*').eq('user_id', currentUser.id),
-        sb.from('zuchtplaene').select('*').eq('user_id', currentUser.id),
-        sb.from('trachten').select('*').eq('user_id', currentUser.id),
-        sb.from('behandlungen').select('*').eq('user_id', currentUser.id),
-        sb.from('packliste').select('*').eq('user_id', currentUser.id),
-        sb.from('trachten_ausgeblendet').select('*').eq('user_id', currentUser.id)
-    ]);
+    var results;
+    try {
+        results = await Promise.all([
+            sb.from('standorte').select('*').eq('user_id', currentUser.id),
+            sb.from('voelker').select('*').eq('user_id', currentUser.id),
+            sb.from('aufgaben').select('*').eq('user_id', currentUser.id),
+            sb.from('kosten').select('*').eq('user_id', currentUser.id),
+            sb.from('zuchtplaene').select('*').eq('user_id', currentUser.id),
+            sb.from('trachten').select('*').eq('user_id', currentUser.id),
+            sb.from('behandlungen').select('*').eq('user_id', currentUser.id),
+            sb.from('packliste').select('*').eq('user_id', currentUser.id),
+            sb.from('trachten_ausgeblendet').select('*').eq('user_id', currentUser.id)
+        ]);
+    } catch(e) {
+        console.error('Daten laden fehlgeschlagen:', e);
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        showToast('Verbindungsfehler – bitte Seite neu laden', 'error', 5000);
+        return;
+    }
     
     // Map DB rows to app format
     app.data.standorte = (results[0].data || []).map(function(r) {
