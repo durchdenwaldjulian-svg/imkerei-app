@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="Logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐝 Bienen-Zähler – bienenplan.de</title>
+    <meta name="theme-color" content="#F5A623">
+    <link rel="manifest" href="manifest.json">
+    <script src="theme.js?v=2"></script>
+    <link rel="stylesheet" href="/fonts/fonts.css">
+    <script src="vendor/supabase.min.js"></script>
+    <link rel="stylesheet" href="shared-styles.css?v=2">
+    <!-- ONNX Runtime für Browser -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.0/dist/ort.min.js"></script>
+    <style>
+        body{padding-left:220px;padding-bottom:2rem}
+        .toast{z-index:10001!important}
+
+        /* === HEADER === */
+        .zaehler-header{background:linear-gradient(135deg,#1C1410 0%,#3D2E1F 100%);border-radius:1rem;padding:2rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+        .zaehler-header::before{content:'';position:absolute;top:-30%;right:-10%;width:200px;height:200px;background:radial-gradient(circle,rgba(245,166,35,0.15) 0%,transparent 70%);border-radius:50%}
+        .zaehler-header h1{color:#F5A623;font-family:'DM Serif Display',serif;font-size:1.75rem;margin-bottom:.5rem;position:relative}
+        .zaehler-header p{color:#C4A882;font-size:.9rem;position:relative}
+
+        /* === KAMERA BEREICH === */
+        .camera-area{background:#fff;border:2px dashed rgba(245,166,35,0.3);border-radius:1rem;padding:2rem;text-align:center;margin-bottom:1.5rem;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+        .camera-area.has-image{border-style:solid;border-color:#F5A623;padding:0}
+        .camera-area video,
+        .camera-area canvas,
+        .camera-area img{max-width:100%;border-radius:.75rem}
+
+        .camera-placeholder{color:#A69580}
+        .camera-placeholder .icon{font-size:3rem;margin-bottom:1rem;display:block}
+        .camera-placeholder p{font-size:.9rem;margin-bottom:1rem}
+
+        /* === BUTTONS === */
+        .btn-primary{background:#F5A623;color:#1C1410;border:none;padding:.75rem 1.5rem;border-radius:100px;font-weight:700;font-size:.95rem;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;transition:all .15s}
+        .btn-primary:hover{background:#e6951a;transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+        .btn-secondary{background:#fff;color:#1C1410;border:2px solid rgba(245,166,35,0.3);padding:.65rem 1.25rem;border-radius:100px;font-weight:600;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;transition:all .15s}
+        .btn-secondary:hover{border-color:#F5A623}
+
+        .btn-row{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+
+        /* === ERGEBNIS === */
+        .result-card{background:#fff;border:2px solid #F5A623;border-radius:1rem;padding:1.5rem;margin-bottom:1.5rem;display:none}
+        .result-card.show{display:block}
+        .result-header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+        .result-count{font-size:3rem;font-weight:800;color:#F5A623;line-height:1}
+        .result-label{font-size:1rem;color:#1C1410;font-weight:600}
+        .result-sub{font-size:.8rem;color:#7A6652}
+
+        .result-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:1rem}
+        .detail-box{background:#FFFBF0;border-radius:.75rem;padding:.75rem;text-align:center}
+        .detail-box .val{font-size:1.25rem;font-weight:700;color:#1C1410}
+        .detail-box .lbl{font-size:.7rem;color:#7A6652;margin-top:.25rem}
+
+        /* Volkstärke-Bewertung */
+        .strength-badge{display:inline-block;padding:.35rem .75rem;border-radius:100px;font-weight:700;font-size:.85rem;margin-top:.5rem}
+        .strength-stark{background:#dcfce7;color:#166534}
+        .strength-mittel{background:#fef9c3;color:#854d0e}
+        .strength-schwach{background:#fee2e2;color:#991b1b}
+
+        /* === CANVAS OVERLAY === */
+        .canvas-container{position:relative;display:inline-block;width:100%}
+        .canvas-container canvas{display:block;width:100%;border-radius:.75rem}
+
+        /* === LOADING === */
+        .loading-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:.75rem;z-index:10}
+        .spinner{width:48px;height:48px;border:4px solid #F5A623;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading-text{margin-top:1rem;font-weight:600;color:#1C1410;font-size:.9rem}
+        .loading-sub{color:#7A6652;font-size:.8rem;margin-top:.25rem}
+
+        /* === TIPPS === */
+        .tipps{background:#FFFBF0;border-radius:1rem;padding:1.25rem;margin-bottom:1.5rem}
+        .tipps h3{font-size:.9rem;color:#1C1410;margin-bottom:.75rem}
+        .tipps ul{list-style:none;padding:0;margin:0}
+        .tipps li{font-size:.8rem;color:#7A6652;padding:.35rem 0;padding-left:1.5rem;position:relative}
+        .tipps li::before{content:'✓';position:absolute;left:0;color:#F5A623;font-weight:700}
+
+        /* === HISTORY === */
+        .history-section{margin-top:2rem}
+        .history-section h3{font-size:1rem;color:#1C1410;margin-bottom:.75rem}
+        .history-item{background:#fff;border:1px solid rgba(245,166,35,0.08);border-radius:.75rem;padding:.75rem 1rem;margin-bottom:.5rem;display:flex;align-items:center;gap:1rem}
+        .history-item .h-count{font-size:1.25rem;font-weight:700;color:#F5A623;min-width:60px}
+        .history-item .h-info{flex:1}
+        .history-item .h-date{font-size:.75rem;color:#A69580}
+        .history-item .h-volk{font-size:.85rem;font-weight:600;color:#1C1410}
+
+        /* === RESPONSIVE === */
+        @media(max-width:900px){
+            body{padding-left:0;padding-bottom:80px}
+        }
+        @media(max-width:600px){
+            .result-details{grid-template-columns:1fr 1fr}
+            .zaehler-header{padding:1.25rem}
+            .zaehler-header h1{font-size:1.35rem}
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar"></div>
+    <div id="mobile-nav"></div>
+
+    <main style="max-width:800px;margin:0 auto;padding:1.5rem">
+        <div id="toast" class="toast"></div>
+
+        <!-- HEADER -->
+        <div class="zaehler-header">
+            <h1>🐝 Bienen-Zähler</h1>
+            <p>Fotografiere eine Wabe und lass die KI die Bienen zählen</p>
+        </div>
+
+        <!-- TIPPS -->
+        <div class="tipps">
+            <h3>📸 Tipps für genaue Ergebnisse</h3>
+            <ul>
+                <li>Foto möglichst senkrecht von oben auf die Wabe</li>
+                <li>Gute Beleuchtung (Tageslicht ideal)</li>
+                <li>Wabe möglichst formatfüllend fotografieren</li>
+                <li>Ruhig halten – Bienen sollten nicht zu stark verwischt sein</li>
+            </ul>
+        </div>
+
+        <!-- KAMERA BEREICH -->
+        <div class="camera-area" id="cameraArea">
+            <div class="camera-placeholder" id="placeholder">
+                <span class="icon">📷</span>
+                <p>Foto aufnehmen oder hochladen</p>
+            </div>
+            <!-- Wird dynamisch befüllt: Video-Stream, Bild, Canvas -->
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="btn-row">
+            <button class="btn-primary" id="btnCapture" onclick="startCamera()">
+                📷 Foto aufnehmen
+            </button>
+            <label class="btn-secondary" for="fileInput">
+                📁 Bild hochladen
+            </label>
+            <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+
+        <!-- ERGEBNIS -->
+        <div class="result-card" id="resultCard">
+            <div class="result-header">
+                <div>
+                    <div class="result-count" id="resultCount">0</div>
+                    <div class="result-label">Bienen erkannt</div>
+                </div>
+                <div style="flex:1"></div>
+                <div id="strengthBadge" class="strength-badge"></div>
+            </div>
+            <div class="result-details">
+                <div class="detail-box">
+                    <div class="val" id="detailBees">0</div>
+                    <div class="lbl">Arbeiterinnen</div>
+                </div>
+                <div class="detail-box">
+                    <div class="val" id="detailDrones">0</div>
+                    <div class="lbl">Drohnen</div>
+                </div>
+                <div class="detail-box">
+                    <div class="val" id="detailQueens">0</div>
+                    <div class="lbl">Königinnen</div>
+                </div>
+            </div>
+            <div class="result-details" style="grid-template-columns:1fr 1fr;margin-top:.5rem">
+                <div class="detail-box">
+                    <div class="val" id="detailPollen">0</div>
+                    <div class="lbl">mit Pollen</div>
+                </div>
+                <div class="detail-box">
+                    <div class="val" id="detailConf">0%</div>
+                    <div class="lbl">Ø Konfidenz</div>
+                </div>
+            </div>
+
+            <div class="btn-row" style="margin-top:1rem;margin-bottom:0">
+                <button class="btn-secondary" onclick="resetCamera()">🔄 Neues Foto</button>
+                <button class="btn-secondary" onclick="downloadResult()">💾 Bild speichern</button>
+            </div>
+        </div>
+
+        <!-- VERLAUF -->
+        <div class="history-section" id="historySection" style="display:none">
+            <h3>📊 Letzte Zählungen</h3>
+            <div id="historyList"></div>
+        </div>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="plan.js"></script>
+    <script src="nav.js?v=6"></script>
+    <script>
+    // ============================================
+    // BIENEN-ZÄHLER – ONNX Runtime im Browser
+    // ============================================
+
+    var session = null;
+    var MODEL_URL = 'models/bienen-v1.onnx';
+    var MODEL_INPUT_SIZE = 640;
+    var CONFIDENCE_THRESHOLD = 0.35;
+    var IOU_THRESHOLD = 0.45;
+    var CLASS_NAMES = ['bee', 'drone', 'pollenbee', 'queen'];
+    var CLASS_COLORS = ['#F5A623', '#3b82f6', '#22c55e', '#ef4444'];
+    var videoStream = null;
+    var history = JSON.parse(localStorage.getItem('bp_bee_history') || '[]');
+
+    // Modell laden
+    async function loadModel() {
+        if (session) return session;
+        try {
+            session = await ort.InferenceSession.create(MODEL_URL, {
+                executionProviders: ['wasm'],
+                graphOptimizationLevel: 'all'
+            });
+            console.log('ONNX Modell geladen');
+            return session;
+        } catch(e) {
+            console.error('Modell-Ladefehler:', e);
+            showToast('KI-Modell konnte nicht geladen werden', 'error', 4000);
+            return null;
+        }
+    }
+
+    // Kamera starten
+    async function startCamera() {
+        var area = document.getElementById('cameraArea');
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+            });
+            area.innerHTML = '<video id="videoEl" autoplay playsinline style="width:100%;border-radius:.75rem"></video>';
+            area.classList.add('has-image');
+            document.getElementById('videoEl').srcObject = videoStream;
+
+            document.getElementById('btnCapture').textContent = '📸 Foto machen';
+            document.getElementById('btnCapture').onclick = capturePhoto;
+        } catch(e) {
+            // Kamera nicht verfügbar - Fallback auf File Upload
+            showToast('Kamera nicht verfügbar – bitte Bild hochladen', 'error', 3000);
+            document.getElementById('fileInput').click();
+        }
+    }
+
+    // Foto aus Video aufnehmen
+    function capturePhoto() {
+        var video = document.getElementById('videoEl');
+        if (!video) return;
+
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        // Video stoppen
+        if (videoStream) {
+            videoStream.getTracks().forEach(function(t) { t.stop(); });
+            videoStream = null;
+        }
+
+        processImage(canvas);
+    }
+
+    // Bild hochladen
+    function handleFileUpload(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            processImage(canvas);
+        };
+        img.src = URL.createObjectURL(file);
+    }
+
+    // Bild verarbeiten (Preprocessing + Inference + Postprocessing)
+    async function processImage(sourceCanvas) {
+        var area = document.getElementById('cameraArea');
+
+        // Loading anzeigen
+        area.innerHTML = '<div class="canvas-container"><canvas id="displayCanvas"></canvas>'
+            + '<div class="loading-overlay" id="loadingOverlay">'
+            + '<div class="spinner"></div>'
+            + '<div class="loading-text">KI analysiert Wabe...</div>'
+            + '<div class="loading-sub" id="loadingStatus">Modell wird geladen</div>'
+            + '</div></div>';
+        area.classList.add('has-image');
+
+        var displayCanvas = document.getElementById('displayCanvas');
+        displayCanvas.width = sourceCanvas.width;
+        displayCanvas.height = sourceCanvas.height;
+        displayCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0);
+
+        // Modell laden
+        document.getElementById('loadingStatus').textContent = 'Modell wird geladen...';
+        var model = await loadModel();
+        if (!model) {
+            document.getElementById('loadingOverlay').remove();
+            return;
+        }
+
+        document.getElementById('loadingStatus').textContent = 'Bienen werden erkannt...';
+
+        // Preprocessing: Bild auf 640x640, normalisieren, NCHW Format
+        var inputTensor = preprocessImage(sourceCanvas);
+
+        // Inference
+        try {
+            var feeds = {};
+            var inputName = model.inputNames[0];
+            feeds[inputName] = inputTensor;
+            var results = await model.run(feeds);
+            var output = results[model.outputNames[0]];
+
+            // Postprocessing
+            var detections = postprocess(output, sourceCanvas.width, sourceCanvas.height);
+
+            // Ergebnis zeichnen und anzeigen
+            drawDetections(displayCanvas, detections);
+            showResults(detections);
+
+            // Loading entfernen
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.remove();
+
+        } catch(e) {
+            console.error('Inferenz-Fehler:', e);
+            document.getElementById('loadingOverlay').remove();
+            showToast('Fehler bei der Analyse: ' + e.message, 'error', 4000);
+        }
+
+        // Button zurücksetzen
+        document.getElementById('btnCapture').textContent = '📷 Foto aufnehmen';
+        document.getElementById('btnCapture').onclick = startCamera;
+    }
+
+    // Preprocessing: Bild → Float32 Tensor [1, 3, 640, 640]
+    function preprocessImage(canvas) {
+        var ctx = canvas.getContext('2d');
+        // Resize auf 640x640
+        var tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = MODEL_INPUT_SIZE;
+        tmpCanvas.height = MODEL_INPUT_SIZE;
+        var tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx.drawImage(canvas, 0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE);
+
+        var imageData = tmpCtx.getImageData(0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE);
+        var pixels = imageData.data;
+
+        // NCHW Format: [1, 3, 640, 640], normalisiert auf 0-1
+        var size = MODEL_INPUT_SIZE * MODEL_INPUT_SIZE;
+        var float32Data = new Float32Array(3 * size);
+
+        for (var i = 0; i < size; i++) {
+            float32Data[i] = pixels[i * 4] / 255.0;             // R
+            float32Data[size + i] = pixels[i * 4 + 1] / 255.0;  // G
+            float32Data[2 * size + i] = pixels[i * 4 + 2] / 255.0; // B
+        }
+
+        return new ort.Tensor('float32', float32Data, [1, 3, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE]);
+    }
+
+    // Postprocessing: YOLOv8 Output → Detections
+    function postprocess(output, origW, origH) {
+        var data = output.data;
+        var dims = output.dims; // [1, 4+nc, num_detections]
+        var numClasses = CLASS_NAMES.length;
+        var numDetections = dims[2];
+
+        var detections = [];
+        var scaleX = origW / MODEL_INPUT_SIZE;
+        var scaleY = origH / MODEL_INPUT_SIZE;
+
+        for (var i = 0; i < numDetections; i++) {
+            // YOLOv8 Output: [cx, cy, w, h, cls0, cls1, ...]
+            var cx = data[0 * numDetections + i];
+            var cy = data[1 * numDetections + i];
+            var w  = data[2 * numDetections + i];
+            var h  = data[3 * numDetections + i];
+
+            // Beste Klasse finden
+            var maxConf = 0;
+            var maxClass = 0;
+            for (var c = 0; c < numClasses; c++) {
+                var conf = data[(4 + c) * numDetections + i];
+                if (conf > maxConf) {
+                    maxConf = conf;
+                    maxClass = c;
+                }
+            }
+
+            if (maxConf >= CONFIDENCE_THRESHOLD) {
+                // cx,cy,w,h → x1,y1,x2,y2 und auf Originalgröße skalieren
+                var x1 = (cx - w / 2) * scaleX;
+                var y1 = (cy - h / 2) * scaleY;
+                var x2 = (cx + w / 2) * scaleX;
+                var y2 = (cy + h / 2) * scaleY;
+
+                detections.push({
+                    x1: x1, y1: y1, x2: x2, y2: y2,
+                    confidence: maxConf,
+                    classId: maxClass,
+                    className: CLASS_NAMES[maxClass]
+                });
+            }
+        }
+
+        // NMS (Non-Maximum Suppression)
+        detections = nms(detections, IOU_THRESHOLD);
+        return detections;
+    }
+
+    // Non-Maximum Suppression
+    function nms(detections, iouThreshold) {
+        detections.sort(function(a, b) { return b.confidence - a.confidence; });
+        var keep = [];
+
+        while (detections.length > 0) {
+            var best = detections.shift();
+            keep.push(best);
+            detections = detections.filter(function(d) {
+                return iou(best, d) < iouThreshold;
+            });
+        }
+        return keep;
+    }
+
+    function iou(a, b) {
+        var x1 = Math.max(a.x1, b.x1);
+        var y1 = Math.max(a.y1, b.y1);
+        var x2 = Math.min(a.x2, b.x2);
+        var y2 = Math.min(a.y2, b.y2);
+        var intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+        var areaA = (a.x2 - a.x1) * (a.y2 - a.y1);
+        var areaB = (b.x2 - b.x1) * (b.y2 - b.y1);
+        return intersection / (areaA + areaB - intersection);
+    }
+
+    // Detections auf Canvas zeichnen
+    function drawDetections(canvas, detections) {
+        var ctx = canvas.getContext('2d');
+        var scale = canvas.width / 1280; // Skalierung für Liniendicke
+        if (scale < 0.5) scale = 0.5;
+
+        detections.forEach(function(d) {
+            var color = CLASS_COLORS[d.classId] || '#F5A623';
+
+            // Box zeichnen
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2 * scale;
+            ctx.strokeRect(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1);
+
+            // Label
+            var label = d.className + ' ' + Math.round(d.confidence * 100) + '%';
+            ctx.font = 'bold ' + Math.round(11 * scale) + 'px sans-serif';
+            var textW = ctx.measureText(label).width;
+
+            ctx.fillStyle = color;
+            ctx.fillRect(d.x1, d.y1 - 16 * scale, textW + 8 * scale, 16 * scale);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(label, d.x1 + 4 * scale, d.y1 - 4 * scale);
+        });
+    }
+
+    // Ergebnisse anzeigen
+    function showResults(detections) {
+        var bees = 0, drones = 0, queens = 0, pollen = 0, totalConf = 0;
+
+        detections.forEach(function(d) {
+            totalConf += d.confidence;
+            switch(d.className) {
+                case 'bee': bees++; break;
+                case 'drone': drones++; break;
+                case 'queen': queens++; break;
+                case 'pollenbee': pollen++; break;
+            }
+        });
+
+        var total = detections.length;
+        var avgConf = total > 0 ? Math.round((totalConf / total) * 100) : 0;
+
+        document.getElementById('resultCount').textContent = total;
+        document.getElementById('detailBees').textContent = bees;
+        document.getElementById('detailDrones').textContent = drones;
+        document.getElementById('detailQueens').textContent = queens;
+        document.getElementById('detailPollen').textContent = pollen;
+        document.getElementById('detailConf').textContent = avgConf + '%';
+
+        // Volkstärke-Bewertung
+        var badge = document.getElementById('strengthBadge');
+        if (total >= 50) {
+            badge.textContent = '💪 Starkes Volk';
+            badge.className = 'strength-badge strength-stark';
+        } else if (total >= 20) {
+            badge.textContent = '👌 Mittleres Volk';
+            badge.className = 'strength-badge strength-mittel';
+        } else {
+            badge.textContent = '⚠️ Schwaches Volk';
+            badge.className = 'strength-badge strength-schwach';
+        }
+
+        document.getElementById('resultCard').classList.add('show');
+
+        // In History speichern
+        history.unshift({
+            date: new Date().toISOString(),
+            total: total,
+            bees: bees,
+            drones: drones,
+            queens: queens,
+            pollen: pollen,
+            confidence: avgConf
+        });
+        if (history.length > 20) history.pop();
+        localStorage.setItem('bp_bee_history', JSON.stringify(history));
+        renderHistory();
+    }
+
+    // Reset
+    function resetCamera() {
+        if (videoStream) {
+            videoStream.getTracks().forEach(function(t) { t.stop(); });
+            videoStream = null;
+        }
+        var area = document.getElementById('cameraArea');
+        area.innerHTML = '<div class="camera-placeholder" id="placeholder">'
+            + '<span class="icon">📷</span>'
+            + '<p>Foto aufnehmen oder hochladen</p></div>';
+        area.classList.remove('has-image');
+        document.getElementById('resultCard').classList.remove('show');
+        document.getElementById('btnCapture').textContent = '📷 Foto aufnehmen';
+        document.getElementById('btnCapture').onclick = startCamera;
+        document.getElementById('fileInput').value = '';
+    }
+
+    // Ergebnis-Bild speichern
+    function downloadResult() {
+        var canvas = document.querySelector('#cameraArea canvas');
+        if (!canvas) return;
+        var link = document.createElement('a');
+        link.download = 'bienenzaehlung_' + new Date().toISOString().slice(0,10) + '.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+    }
+
+    // History rendern
+    function renderHistory() {
+        if (history.length === 0) {
+            document.getElementById('historySection').style.display = 'none';
+            return;
+        }
+        document.getElementById('historySection').style.display = 'block';
+        var html = '';
+        history.forEach(function(h) {
+            var d = new Date(h.date);
+            var dateStr = d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
+            html += '<div class="history-item">'
+                + '<div class="h-count">' + h.total + ' 🐝</div>'
+                + '<div class="h-info">'
+                + '<div class="h-volk">' + h.bees + ' Bienen, ' + h.drones + ' Drohnen' + (h.queens > 0 ? ', ' + h.queens + ' Königin!' : '') + '</div>'
+                + '<div class="h-date">' + dateStr + ' · Konfidenz: ' + h.confidence + '%</div>'
+                + '</div></div>';
+        });
+        document.getElementById('historyList').innerHTML = html;
+    }
+
+    // === INIT ===
+    (async function() {
+        await checkAuth();
+        renderHistory();
+        // Modell im Hintergrund vorladen
+        loadModel();
+    })();
+    </script>
+</body>
+</html>
