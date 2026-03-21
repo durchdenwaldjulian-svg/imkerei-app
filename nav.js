@@ -164,14 +164,14 @@
         if (isIndex) {
             h += '<button class="mobile-nav-btn active" data-mpage="heute"><span class="mn-icon">' + ti('📅') + '</span>Heute</button>';
             h += '<a href="voelker.html" class="mobile-nav-btn"><span class="mn-icon">' + ti('📍') + '</span>Völker</a>';
+            h += '<a href="bienenzaehler.html" class="mobile-nav-btn"><span class="mn-icon">' + ti('🐝') + '</span>Zähler</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-            h += '<button class="mobile-nav-btn" data-mpage="aufgaben"><span class="mn-icon">' + ti('📝') + '</span>Aufgaben</button>';
             h += '<button class="mobile-nav-btn" data-mpage="einstellungen"><span class="mn-icon">' + ti('⚙️') + '</span>Mehr</button>';
         } else {
             h += '<a href="app.html#heute" class="mobile-nav-btn"><span class="mn-icon">' + ti('📅') + '</span>Heute</a>';
             h += '<a href="voelker.html" class="mobile-nav-btn'+(currentFile==='voelker.html'?' active':'')+'"><span class="mn-icon">' + ti('📍') + '</span>Völker</a>';
+            h += '<a href="bienenzaehler.html" class="mobile-nav-btn'+(currentFile==='bienenzaehler.html'?' active':'')+'"><span class="mn-icon">' + ti('🐝') + '</span>Zähler</a>';
             h += '<button class="mobile-nav-btn menu-btn" onclick="mobileMenuOpen()"><span class="mn-icon">☰</span>Menü</button>';
-            h += '<a href="app.html#aufgaben" class="mobile-nav-btn"><span class="mn-icon">' + ti('📝') + '</span>Aufgaben</a>';
             h += '<a href="app.html#einstellungen" class="mobile-nav-btn"><span class="mn-icon">' + ti('⚙️') + '</span>Mehr</a>';
         }
         return h;
