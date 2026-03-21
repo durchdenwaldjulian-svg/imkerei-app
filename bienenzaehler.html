@@ -137,12 +137,16 @@
         <!-- BUTTONS -->
         <div class="btn-row">
             <button class="btn-primary" id="btnCapture" onclick="startCamera()">
-                📷 Foto aufnehmen
+                📷 Kamera öffnen
             </button>
             <label class="btn-secondary" for="fileInput">
-                📁 Bild hochladen
+                📁 Bild aus Galerie
             </label>
-            <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileUpload(event)">
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+            <label class="btn-secondary" for="cameraInput">
+                📸 Foto machen
+            </label>
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFileUpload(event)">
         </div>
 
         <!-- ERGEBNIS -->
