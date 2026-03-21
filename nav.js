@@ -49,6 +49,7 @@
             { href: 'app.html#aufgaben', icon: '📝', label: 'Aufgaben' }
         ]},
         { title: 'Völker', items: [
+            { href: 'bienenzaehler.html', icon: '🔢', label: 'Bienen-Zähler' },
             { href: 'zuchtplan.html', icon: '👑', label: 'Königinnenzucht' },
             { href: 'zuchtberater.html', icon: '🧬', label: 'Zuchtberater' },
             { href: 'inzuchtrechner.html', icon: '🔬', label: 'Inzuchtrechner' },
