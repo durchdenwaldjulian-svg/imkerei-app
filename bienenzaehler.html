@@ -208,12 +208,12 @@
     var session = null;
     var MODEL_URL = 'models/bienen-v1.onnx';
     var MODEL_INPUT_SIZE = 640;
-    var CONFIDENCE_THRESHOLD = 0.35;
+    var CONFIDENCE_THRESHOLD = 0.20;
     var IOU_THRESHOLD = 0.45;
     var CLASS_NAMES = ['bee', 'drone', 'pollenbee', 'queen'];
     var CLASS_COLORS = ['#F5A623', '#3b82f6', '#22c55e', '#ef4444'];
     var videoStream = null;
-    var history = JSON.parse(localStorage.getItem('bp_bee_history') || '[]');
+    var beeHistory = JSON.parse(localStorage.getItem('bp_bee_history') || '[]');
 
     // Modell laden
     async function loadModel() {
@@ -516,7 +516,7 @@
         document.getElementById('resultCard').classList.add('show');
 
         // In History speichern
-        history.unshift({
+        beeHistory.unshift({
             date: new Date().toISOString(),
             total: total,
             bees: bees,
@@ -525,8 +525,8 @@
             pollen: pollen,
             confidence: avgConf
         });
-        if (history.length > 20) history.pop();
-        localStorage.setItem('bp_bee_history', JSON.stringify(history));
+        if (beeHistory.length > 20) beeHistory.pop();
+        localStorage.setItem('bp_bee_history', JSON.stringify(beeHistory));
         renderHistory();
     }
 
@@ -559,13 +559,13 @@
 
     // History rendern
     function renderHistory() {
-        if (history.length === 0) {
+        if (beeHistory.length === 0) {
             document.getElementById('historySection').style.display = 'none';
             return;
         }
         document.getElementById('historySection').style.display = 'block';
         var html = '';
-        history.forEach(function(h) {
+        beeHistory.forEach(function(h) {
             var d = new Date(h.date);
             var dateStr = d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
             html += '<div class="history-item">'
