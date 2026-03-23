@@ -514,8 +514,8 @@ function renderStandortList() {
             var sVoelker = voelker.filter(function(v){return v.standortId === s.id;});
             html += '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem;cursor:pointer;transition:all .2s" onclick="showDetails(\''+s.id+'\')">'+
             '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem">'+
-            '<div style="flex:1"><h3 style="margin:0;font-family:DM Serif Display,serif">'+s.name+'</h3>'+
-            (s.notizen ? '<div style="font-size:.85rem;color:#7A6652;margin-top:.25rem">'+s.notizen+'</div>' : '')+'</div>'+
+            '<div style="flex:1"><h3 style="margin:0;font-family:DM Serif Display,serif">'+esc(s.name)+'</h3>'+
+            (s.notizen ? '<div style="font-size:.85rem;color:#7A6652;margin-top:.25rem">'+esc(s.notizen)+'</div>' : '')+'</div>'+
             '<div style="display:flex;gap:.5rem">'+
             '<button onclick="event.stopPropagation();openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️</button>'+
             '<button onclick="event.stopPropagation();delStandort(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.75rem">🗑️</button>'+
@@ -558,11 +558,11 @@ function renderStandortDetails() {
 
     var html = '<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">'+
     '<button onclick="selectedStandortId=null;render()" style="padding:.4rem .8rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.5rem;cursor:pointer;font-size:.85rem;font-weight:600">← Zurück</button>'+
-    '<h1 style="margin:0">'+s.name+'</h1></div>'+
+    '<h1 style="margin:0">'+esc(s.name)+'</h1></div>'+
 
     '<div style="background:#fff;border:2px solid #E8DFD4;border-radius:.75rem;padding:1.25rem;margin-bottom:1rem">'+
     '<div style="display:flex;justify-content:space-between;align-items:start">'+
-    '<div>'+(s.notizen ? '<p style="color:#7A6652;margin-bottom:.5rem">'+s.notizen+'</p>' : '')+'</div>'+
+    '<div>'+(s.notizen ? '<p style="color:#7A6652;margin-bottom:.5rem">'+esc(s.notizen)+'</p>' : '')+'</div>'+
     '<button onclick="openStandortModal(\''+s.id+'\')" style="padding:.25rem .5rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.75rem">✏️ Bearbeiten</button>'+
     '</div></div>'+
 
@@ -592,7 +592,7 @@ function renderStandortDetails() {
         var typBadge = istAbleger ? '<span style="font-size:.7rem;background:#E8F5EC;color:#059669;padding:.1rem .4rem;border-radius:999px;margin-left:.35rem">🌱 Ableger</span>' : '';
         html += '<div class="volk-card'+(istAbleger ? ' ableger' : '')+'" onclick="goToVolk(\''+v.id+'\')">'+
         '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem">'+
-        '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+v.name+typBadge+'</h3>'+
+        '<h3 style="margin:0;font-size:.95rem">'+(istAbleger ? '🌱 ' : '🐝 ')+esc(v.name)+typBadge+'</h3>'+
         '<div style="display:flex;align-items:center;gap:.4rem">'+
         '<button onclick="event.stopPropagation();renameVolk(\''+v.id+'\')" style="padding:.15rem .4rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.7rem" title="Name bearbeiten">✏️</button>'+
         '<div style="width:12px;height:12px;border-radius:50%;background:'+sc+'"></div>'+

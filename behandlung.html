@@ -412,17 +412,17 @@ function renderCard(beh, jetzt, isAbgeschlossen) {
     var opacity = isAbgeschlossen ? 'opacity:.85;' : '';
 
     return '<div class="behandlung-card" style="border-color:'+farbe+';'+opacity+'"><div class="behandlung-header"><div>'+
-        '<div class="behandlung-title">'+(methode?methode.emoji:'💉')+' '+beh.methodeName+'</div>'+
+        '<div class="behandlung-title">'+(methode?methode.emoji:'💉')+' '+esc(beh.methodeName)+'</div>'+
         '<div style="margin-top:.5rem"><span class="badge badge-repeat">'+(beh.intervallLabel||'Einmalig')+'</span>'+
         (naechster ? '<span class="badge badge-'+naechster.status+'" style="margin-left:.3rem">'+naechster.label+'</span>' : '<span class="badge badge-completed" style="margin-left:.3rem">Abgeschlossen</span>')+
         '</div></div><div style="display:flex;gap:.35rem"><button onclick="editBehandlung(\''+beh.id+'\')" style="padding:.3rem .6rem;background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.35rem;cursor:pointer;font-size:.8rem">✏️</button><button onclick="deleteBehandlung(\''+beh.id+'\')" style="padding:.3rem .6rem;background:#FEE2E2;border:1.5px solid #FECACA;border-radius:.35rem;cursor:pointer;font-size:.8rem">🗑️</button></div></div>'+
-        '<div class="behandlung-info">🐝 <strong>Völker:</strong> '+beh.voelkerLabel+'<br>📅 <strong>Erste Behandlung:</strong> '+formatDatum(beh.datum)+
-        (beh.menge?'<br>💊 <strong>Menge:</strong> '+beh.menge:'')+
-        (beh.verabreichung?'<br>🔧 <strong>Verdunster:</strong> '+beh.verabreichung:'')+
-        (beh.lieferant?'<br>🏪 <strong>Lieferant:</strong> '+beh.lieferant:'')+
-        (beh.wartezeit?'<br>⏳ <strong>Wartezeit:</strong> '+beh.wartezeit:'')+
-        (beh.behandler?'<br>👤 <strong>Behandler:</strong> '+beh.behandler:'')+
-        (beh.notizen?'<br>💭 '+beh.notizen:'')+
+        '<div class="behandlung-info">🐝 <strong>Völker:</strong> '+esc(beh.voelkerLabel)+'<br>📅 <strong>Erste Behandlung:</strong> '+formatDatum(beh.datum)+
+        (beh.menge?'<br>💊 <strong>Menge:</strong> '+esc(beh.menge):'')+
+        (beh.verabreichung?'<br>🔧 <strong>Verdunster:</strong> '+esc(beh.verabreichung):'')+
+        (beh.lieferant?'<br>🏪 <strong>Lieferant:</strong> '+esc(beh.lieferant):'')+
+        (beh.wartezeit?'<br>⏳ <strong>Wartezeit:</strong> '+esc(beh.wartezeit):'')+
+        (beh.behandler?'<br>👤 <strong>Behandler:</strong> '+esc(beh.behandler):'')+
+        (beh.notizen?'<br>💭 '+esc(beh.notizen):'')+
         '</div>'+
         termineHtml+'</div>';
 }
@@ -549,11 +549,11 @@ function filterVolkDropdown(query) {
         gefiltert.forEach(function(v) {
             if (v.standort !== letzterStandort) {
                 letzterStandort = v.standort;
-                html += '<div style="padding:.4rem .75rem;font-size:.7rem;font-weight:700;color:#A69580;background:#f5f0eb;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">📍 ' + v.standort + '</div>';
+                html += '<div style="padding:.4rem .75rem;font-size:.7rem;font-weight:700;color:#A69580;background:#f5f0eb;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0">📍 ' + esc(v.standort) + '</div>';
             }
             var selected = document.getElementById('behandlungVolk').value === v.id;
             html += '<div onclick="selectVolk(\'' + v.id + '\',\'' + v.name.replace(/'/g,"\\'") + '\',\'' + v.standort.replace(/'/g,"\\'") + '\')" style="padding:.5rem .75rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;' + (selected?'background:#FFF8EE;':'') + '" onmouseover="this.style.background=\'#FFF8EE\'" onmouseout="this.style.background=\'' + (selected?'#FFF8EE':'#fff') + '\'">';
-            html += '<span style="font-weight:500">🐝 ' + v.name + '</span>';
+            html += '<span style="font-weight:500">🐝 ' + esc(v.name) + '</span>';
             html += '<span style="font-size:.72rem;color:#7A6652">' + v.standort + '</span>';
             html += '</div>';
         });
@@ -593,7 +593,7 @@ function updateVolkAuswahl(typ) {
         select.innerHTML = '<option value="">-- Bitte wählen --</option>';
         standorte.forEach(function(s) {
             var count = voelker.filter(function(v){return v.standortId===s.id;}).length;
-            select.innerHTML += '<option value="'+s.id+'">📍 '+s.name+' ('+count+' Völker)</option>';
+            select.innerHTML += '<option value="'+s.id+'">📍 '+esc(s.name)+' ('+count+' Völker)</option>';
         });
     }
 }
@@ -604,7 +604,7 @@ function updateStandortInfo() {
     if (!sid) { info.innerHTML = ''; return; }
     var sv = voelker.filter(function(v){return v.standortId===sid;});
     if (sv.length === 0) { info.innerHTML = '⚠️ Keine Völker an diesem Standort'; return; }
-    info.innerHTML = '✓ <strong>'+sv.length+' Völker</strong> werden behandelt: ' + sv.map(function(v){return v.name;}).join(', ');
+    info.innerHTML = '✓ <strong>'+sv.length+' Völker</strong> werden behandelt: ' + sv.map(function(v){return esc(v.name);}).join(', ');
 }
 
 function updateWiederholung() {

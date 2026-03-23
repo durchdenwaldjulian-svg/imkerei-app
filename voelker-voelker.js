@@ -28,7 +28,7 @@ function renderVoelkerTab() {
         if (!cnt) return;
         html += '<div class="standort-card' + (selectedStandortFilter===s.id?' selected':'') + '" onclick="selectedStandortFilter=\'' + s.id + '\';render()">';
         html += '<div style="font-size:1.5rem;margin-bottom:.25rem">📍</div>';
-        html += '<div style="font-weight:600;font-size:.85rem">' + s.name + '</div>';
+        html += '<div style="font-weight:600;font-size:.85rem">' + esc(s.name) + '</div>';
         html += '<div style="font-size:.75rem;color:#7A6652">' + cnt + ' Völker</div>';
         html += '<button onclick="event.stopPropagation();druckeAlleQR(\'' + s.id + '\')" style="background:none;border:1px solid #E8DFD4;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#7A6652;margin-top:.35rem" title="Alle QR-Codes drucken">🏷️ QR-Etiketten</button>';
         html += '</div>';
@@ -66,8 +66,8 @@ function renderVolkKarte(v) {
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">';
     html += '<div>';
     if (v.typ === 'ableger') html += '<span style="font-size:.65rem;background:#D1FAE5;color:#065F46;padding:.1rem .4rem;border-radius:.25rem;font-weight:600;display:inline-block;margin-bottom:.2rem">🌱 Ableger</span>';
-    html += '<div style="font-weight:700;font-size:1rem">🐝 ' + v.name + '</div>';
-    if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + s.name + '</div>';
+    html += '<div style="font-weight:700;font-size:1rem">🐝 ' + esc(v.name) + '</div>';
+    if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + esc(s.name) + '</div>';
     html += '</div>';
     if (kInfo.jahrgang) {
         var farbDot = kInfo.markiert ? getColorDot(kInfo.farbe) : '';
@@ -90,7 +90,7 @@ function renderVolkKarte(v) {
         html += '<div style="font-size:.72rem;color:#92400E;background:#FFFBF0;padding:.3rem .5rem;border-radius:.35rem;margin-bottom:.35rem">';
         if (kInfo.muttervolk_id) {
             var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
-            if (mv) html += '👑 ' + mv.name + ' ';
+            if (mv) html += '👑 ' + esc(mv.name) + ' ';
         }
         if (kInfo.drohnenvolk_id) {
             var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
@@ -139,12 +139,12 @@ function renderSuchergebnisse() {
     if (!treffer.length) {
         html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">';
         html += '<div style="font-size:2rem;margin-bottom:.5rem">🔍</div>';
-        html += '<p>Kein Volk gefunden für "<strong>' + suchBegriff + '</strong>"</p>';
+        html += '<p>Kein Volk gefunden für "<strong>' + esc(suchBegriff) + '</strong>"</p>';
         html += '</div>';
         return html;
     }
 
-    html += '<div style="font-size:.8rem;color:#7A6652;margin-bottom:.5rem">' + treffer.length + ' Ergebnis' + (treffer.length>1?'se':'') + ' für "<strong>' + suchBegriff + '</strong>"</div>';
+    html += '<div style="font-size:.8rem;color:#7A6652;margin-bottom:.5rem">' + treffer.length + ' Ergebnis' + (treffer.length>1?'se':'') + ' für "<strong>' + esc(suchBegriff) + '</strong>"</div>';
 
     if (treffer.length === 1) {
         html += renderVolkProfil(treffer[0]);
@@ -170,8 +170,8 @@ function renderVolkProfil(v) {
     html += '<div class="such-ergebnis">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">';
     html += '<div>';
-    html += '<h2 style="margin:0;font-size:1.2rem">🐝 ' + v.name + '</h2>';
-    if (s) html += '<div style="font-size:.85rem;color:#7A6652">📍 ' + s.name + '</div>';
+    html += '<h2 style="margin:0;font-size:1.2rem">🐝 ' + esc(v.name) + '</h2>';
+    if (s) html += '<div style="font-size:.85rem;color:#7A6652">📍 ' + esc(s.name) + '</div>';
     html += '</div>';
     html += '<div style="display:flex;gap:.5rem">';
     html += '<button class="btn btn-sm" onclick="selectedVerlaufVolk=\'' + v.id + '\';suchBegriff=\'\';switchTab(\'historie\')" style="padding:.3rem .6rem;background:#F5A623;color:#fff;border:none;border-radius:.5rem;font-size:.75rem;cursor:pointer">📜 Historie</button>';
@@ -187,15 +187,15 @@ function renderVolkProfil(v) {
         if (kInfo.jahrgang) html += '<div><span style="color:#7A6652">Jahrgang:</span> <strong>' + kInfo.jahrgang + '</strong> ' + (kInfo.markiert?getColorDot(kInfo.farbe):'') + '</div>';
         if (kInfo.begattung) html += '<div><span style="color:#7A6652">Begattung:</span> <strong>' + kInfo.begattung + '</strong></div>';
         if (kInfo.herkunft) html += '<div><span style="color:#7A6652">Herkunft:</span> <strong>' + formatHerkunft(kInfo.herkunft) + '</strong></div>';
-        if (kInfo.zuchtbuchNr) html += '<div><span style="color:#7A6652">Zuchtbuch:</span> <strong>' + kInfo.zuchtbuchNr + '</strong></div>';
-        if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + kInfo.belegstelle + '</strong></div>';
+        if (kInfo.zuchtbuchNr) html += '<div><span style="color:#7A6652">Zuchtbuch:</span> <strong>' + esc(kInfo.zuchtbuchNr) + '</strong></div>';
+        if (kInfo.belegstelle) html += '<div style="grid-column:1/-1"><span style="color:#7A6652">Belegstelle:</span> <strong>' + esc(kInfo.belegstelle) + '</strong></div>';
         if (kInfo.muttervolk_id) {
             var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
-            if (mv) html += '<div><span style="color:#7A6652">Muttervolk:</span> <strong>' + mv.name + '</strong></div>';
+            if (mv) html += '<div><span style="color:#7A6652">Muttervolk:</span> <strong>' + esc(mv.name) + '</strong></div>';
         }
         if (kInfo.drohnenvolk_id) {
             var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
-            if (dv) html += '<div><span style="color:#7A6652">Drohnenvolk:</span> <strong>' + dv.name + '</strong></div>';
+            if (dv) html += '<div><span style="color:#7A6652">Drohnenvolk:</span> <strong>' + esc(dv.name) + '</strong></div>';
         }
         html += '</div>';
 
@@ -237,7 +237,7 @@ function renderVolkProfil(v) {
             tags.forEach(function(t) { html += '<span class="historie-tag">' + t + '</span>'; });
             html += '</div>';
         }
-        if (letzte.notizen) html += '<div style="font-size:.78rem;color:#7A6652;margin-top:.3rem;font-style:italic">"' + letzte.notizen + '"</div>';
+        if (letzte.notizen) html += '<div style="font-size:.78rem;color:#7A6652;margin-top:.3rem;font-style:italic">"' + esc(letzte.notizen) + '"</div>';
         html += '</div>';
     }
 
@@ -283,7 +283,7 @@ function druckeStockkarte(volkId) {
 
     var w = window.open('','_blank');
     var h = '';
-    h += '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + v.name + '</title>';
+    h += '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stockkarte ' + esc(v.name) + '</title>';
     h += '<script src="vendor/qrcode.min.js"><\/script>';
     h += '<style>';
     h += '*{margin:0;padding:0;box-sizing:border-box}';
@@ -313,7 +313,7 @@ function druckeStockkarte(volkId) {
     h += '</style></head><body>';
 
     var typIcon = (v.typ === 'ableger') ? '🌱' : '🐝';
-    h += '<h1>' + typIcon + ' ' + v.name + '</h1>';
+    h += '<h1>' + typIcon + ' ' + esc(v.name) + '</h1>';
     h += '<div class="subtitle">📍 ' + (s ? s.name : 'Unbekannt') + ' | Status: ' + (v.status || 'ok') + (v.typ === 'ableger' ? ' | Ableger' : '') + ' | Erstellt: ' + new Date().toLocaleDateString('de-DE') + '</div>';
 
     h += '<h2>👑 Königin</h2>';
@@ -321,19 +321,19 @@ function druckeStockkarte(volkId) {
     h += '<div class="box"><h3>Stammdaten</h3>';
     if (kInfo.begattung) {
         h += '<p>Begattung: <strong>' + kInfo.begattung + '</strong></p>';
-        if (kInfo.herkunft) h += '<p>Herkunft: ' + kInfo.herkunft + '</p>';
+        if (kInfo.herkunft) h += '<p>Herkunft: ' + esc(kInfo.herkunft) + '</p>';
         if (kInfo.jahrgang) h += '<p>Jahrgang: ' + kInfo.jahrgang + '</p>';
-        if (kInfo.farbe) h += '<p>Markierung: ' + kInfo.farbe + (kInfo.markiert ? ' ✓' : '') + '</p>';
-        if (kInfo.belegstelle) h += '<p>Belegstelle: ' + kInfo.belegstelle + '</p>';
-        if (kInfo.zuchtbuchNr) h += '<p>Zuchtbuch: <strong>' + kInfo.zuchtbuchNr + '</strong></p>';
-        if (kInfo.nummer) h += '<p>Nummer: ' + kInfo.nummer + '</p>';
+        if (kInfo.farbe) h += '<p>Markierung: ' + esc(kInfo.farbe) + (kInfo.markiert ? ' ✓' : '') + '</p>';
+        if (kInfo.belegstelle) h += '<p>Belegstelle: ' + esc(kInfo.belegstelle) + '</p>';
+        if (kInfo.zuchtbuchNr) h += '<p>Zuchtbuch: <strong>' + esc(kInfo.zuchtbuchNr) + '</strong></p>';
+        if (kInfo.nummer) h += '<p>Nummer: ' + esc(kInfo.nummer) + '</p>';
         if (kInfo.muttervolk_id) {
             var mv = voelker.find(function(x){return x.id===kInfo.muttervolk_id;});
-            if (mv) h += '<p>Muttervolk: ' + mv.name + '</p>';
+            if (mv) h += '<p>Muttervolk: ' + esc(mv.name) + '</p>';
         }
         if (kInfo.drohnenvolk_id) {
             var dv = voelker.find(function(x){return x.id===kInfo.drohnenvolk_id;});
-            if (dv) h += '<p>Drohnenvolk: ' + dv.name + '</p>';
+            if (dv) h += '<p>Drohnenvolk: ' + esc(dv.name) + '</p>';
         }
     } else {
         h += '<p style="color:#9CA3AF">Keine Königin-Daten</p>';
@@ -397,14 +397,14 @@ function druckeStockkarte(volkId) {
             h += '<p>🔬 Varroa: <strong>' + milbenTag + ' Milben/Tag</strong> (' + ds.varroa.methode + ')</p>';
         }
         if (ds.notizen) {
-            h += '<p>💬 ' + ds.notizen + '</p>';
+            h += '<p>💬 ' + esc(ds.notizen) + '</p>';
         }
         h += '</div>';
     });
 
     h += '<div class="qr-section"><div class="footer"><div class="footer-left">';
     h += '<p>QR-Code scannen um dieses Volk in der App zu öffnen</p>';
-    h += '<p style="font-size:.6rem;color:#A69580">bienenplan.de | ' + v.name + ' | ' + (s ? s.name : '') + '</p>';
+    h += '<p style="font-size:.6rem;color:#A69580">bienenplan.de | ' + esc(v.name) + ' | ' + (s ? s.name : '') + '</p>';
     h += '</div><div id="printQR"></div></div></div>';
 
     h += '<script>new QRCode(document.getElementById("printQR"),{text:"https://www.bienenplan.de/voelker.html?volk=' + volkId + '",width:120,height:120,colorDark:"#1C1410",colorLight:"#ffffff"});setTimeout(function(){window.print();},600);<\/script>';
@@ -441,7 +441,7 @@ function druckeAlleQR(standortId) {
 
     sVoelker.forEach(function(v) {
         w.document.write('<div class="etikett">');
-        w.document.write('<h3>🐝 ' + v.name + '</h3>');
+        w.document.write('<h3>🐝 ' + esc(v.name) + '</h3>');
         w.document.write('<div class="standort">' + (s?s.name:'') + '</div>');
         w.document.write('<div class="qr" id="qr-' + v.id + '"></div>');
         w.document.write('<div class="url">bienenplan.de</div>');

@@ -116,7 +116,6 @@ function toggleStep(id,field){
 function getPhase(p){if(p.zusetzen_done)return'✅ Abgeschlossen';if(p.umlarven_done)return'🔬 Nach Umlarven';if(p.sammelbrut_done)return'📦 Sammelbrut läuft';if(Date.now()<p.sammelbrut)return'📋 Geplant';return'⏳ Fällig'}
 function getTageVerbleibend(d){var t=Math.ceil((d-Date.now())/(864e5));if(t<0)return null;if(t===0)return'Heute!';if(t===1)return'Morgen';return'In '+t+' Tagen'}
 function formatDatum(ts){return new Date(ts).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
-function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function showToast(m,t){var e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(function(){e.className='toast'},2500)}
 function setFilter(f){currentFilter=f;render()}
 

@@ -18,11 +18,11 @@ function renderStammbaum() {
     standorte.forEach(function(s) {
         var sV = voelker.filter(function(v){return v.standortId===s.id;});
         if (!sV.length) return;
-        html += '<optgroup label="📍 ' + s.name + '">';
+        html += '<optgroup label="📍 ' + esc(s.name) + '">';
         sV.forEach(function(v) {
             var kI = koeniginnen[v.id];
             var hatAbstammung = kI && (kI.muttervolk_id || kI.drohnenvolk_id);
-            html += '<option value="' + v.id + '"' + (selectedStammbaumVolk===v.id?' selected':'') + '>' + v.name + (hatAbstammung?' 🌳':'') + '</option>';
+            html += '<option value="' + v.id + '"' + (selectedStammbaumVolk===v.id?' selected':'') + '>' + esc(v.name) + (hatAbstammung?' 🌳':'') + '</option>';
         });
         html += '</optgroup>';
     });
@@ -43,11 +43,11 @@ function renderStammbaum() {
                 var mv = kI.muttervolk_id ? voelker.find(function(x){return x.id===kI.muttervolk_id;}) : null;
                 var dv = kI.drohnenvolk_id ? voelker.find(function(x){return x.id===kI.drohnenvolk_id;}) : null;
                 html += '<div class="volk-grid-card" onclick="selectedStammbaumVolk=\'' + v.id + '\';render()" style="cursor:pointer">';
-                html += '<div style="font-weight:700">🐝 ' + v.name + '</div>';
-                if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + s.name + '</div>';
+                html += '<div style="font-weight:700">🐝 ' + esc(v.name) + '</div>';
+                if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + esc(s.name) + '</div>';
                 html += '<div style="margin-top:.35rem;font-size:.78rem">';
-                if (mv) html += '<div style="color:#D4930D">👑 Mutter: ' + mv.name + '</div>';
-                if (dv) html += '<div style="color:#3B82F6">🐝♂ Drohne: ' + dv.name + '</div>';
+                if (mv) html += '<div style="color:#D4930D">👑 Mutter: ' + esc(mv.name) + '</div>';
+                if (dv) html += '<div style="color:#3B82F6">🐝♂ Drohne: ' + esc(dv.name) + '</div>';
                 html += '</div></div>';
             });
             html += '</div></div>';
@@ -98,12 +98,12 @@ function renderBaumKnoten(volkId, tiefe) {
     html += '<div style="font-weight:700;font-size:' + (tiefe===0?'1.15rem':'1rem') + ';margin-bottom:.25rem">';
     if (tiefe===0) html += '👑 ';
     html += v.name + '</div>';
-    if (s) html += '<div style="font-size:.72rem;color:#7A6652;margin-bottom:.35rem">📍 ' + s.name + '</div>';
+    if (s) html += '<div style="font-size:.72rem;color:#7A6652;margin-bottom:.35rem">📍 ' + esc(s.name) + '</div>';
 
     var chips = [];
     if (kInfo.jahrgang) chips.push('<span class="stammbaum-badge" style="background:#FFF8EE;color:#92400E">' + kInfo.jahrgang + '</span>');
     if (kInfo.begattung) chips.push('<span class="stammbaum-badge" style="background:#f5f0eb;color:#7A6652">' + kInfo.begattung + '</span>');
-    if (kInfo.zuchtbuchNr) chips.push('<span class="stammbaum-badge" style="background:#EEF2FF;color:#5B21B6;font-family:monospace">' + kInfo.zuchtbuchNr + '</span>');
+    if (kInfo.zuchtbuchNr) chips.push('<span class="stammbaum-badge" style="background:#EEF2FF;color:#5B21B6;font-family:monospace">' + esc(kInfo.zuchtbuchNr) + '</span>');
     if (chips.length) html += '<div style="display:flex;flex-wrap:wrap;gap:.25rem;justify-content:center;margin-bottom:.25rem">' + chips.join('') + '</div>';
 
     if (kInfo.zuchtwerte && kInfo.zuchtwerte.gesamt) {
@@ -162,7 +162,7 @@ function exportStammbaumPDF() {
     var datum = new Date().toLocaleDateString('de-DE');
 
     var printWin = window.open('', '_blank');
-    printWin.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stammbaum – ' + volkName + '</title>');
+    printWin.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stammbaum – ' + esc(volkName) + '</title>');
     printWin.document.write('<style>');
     printWin.document.write('*{margin:0;padding:0;box-sizing:border-box}');
     printWin.document.write('body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:2rem;color:#1C1410;max-width:900px;margin:auto}');
@@ -187,7 +187,7 @@ function exportStammbaumPDF() {
     printWin.document.write('.legende{margin-top:2rem;padding-top:1rem;border-top:1px solid #E8DFD4;font-size:.8rem;color:#7A6652;display:flex;gap:1rem;align-items:center}');
     printWin.document.write('@media print{body{padding:.5rem}@page{margin:1.5cm;size:landscape}}');
     printWin.document.write('</style></head><body>');
-    printWin.document.write('<div class="header"><h1>🌳 Stammbaum – ' + volkName + '</h1>');
+    printWin.document.write('<div class="header"><h1>🌳 Stammbaum – ' + esc(volkName) + '</h1>');
     printWin.document.write('<p>Erstellt am ' + datum + ' · Imkerei Tagesplaner</p></div>');
     printWin.document.write(container.innerHTML);
     printWin.document.write('<div class="legende"><strong>Legende:</strong> <span class="stammbaum-label mutter">👑 Muttervolk</span> <span class="stammbaum-label drohne">🐝 Drohnenvolk</span></div>');

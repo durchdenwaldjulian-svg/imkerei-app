@@ -703,12 +703,6 @@ async function likeAntwort(id) {
 // ============================================
 // HELPERS
 // ============================================
-function esc(s) {
-    if (!s) return '';
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-}
 
 function zeitAgo(dateStr) {
     var d = new Date(dateStr);
