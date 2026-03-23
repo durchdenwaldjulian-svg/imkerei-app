@@ -25,7 +25,7 @@ var planManager = (function() {
             standorte: 1,
             wetter_tage: 3,
             kosten_eintraege: 10,
-            features: ['aufgaben', 'packliste', 'behandlung_manuell', 'trachtkarte_teaser', 'forum_lesen', 'rezepte_lesen']
+            features: ['aufgaben', 'packliste', 'behandlung_manuell', 'trachtkarte_teaser', 'forum_lesen', 'rezepte_lesen', 'zaehler_basis']
         },
         pro: {
             voelker: Infinity,
@@ -38,7 +38,8 @@ var planManager = (function() {
                 'zucht', 'ernte', 'kosten_unbegrenzt',
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'rezepte_lesen', 'rezepte_schreiben',
-                'datenexport', 'backup'
+                'datenexport', 'backup',
+                'zaehler_basis', 'zaehler_pro'
             ]
         },
         meister: {
@@ -53,7 +54,8 @@ var planManager = (function() {
                 'bewertung', 'forum_schreiben', 'bestandsbuch_einfach',
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
                 'rezepte_lesen', 'rezepte_schreiben',
-                'datenexport', 'backup'
+                'datenexport', 'backup',
+                'zaehler_basis', 'zaehler_pro'
             ]
         },
         verein: {
@@ -69,7 +71,8 @@ var planManager = (function() {
                 'bestandsbuch_veterinaer', 'multi_user', 'prio_support',
                 'mitglieder_codes', 'rollen_management',
                 'rezepte_lesen', 'rezepte_schreiben',
-                'datenexport', 'backup'
+                'datenexport', 'backup',
+                'zaehler_basis', 'zaehler_pro'
             ]
         }
     };
@@ -80,6 +83,7 @@ var planManager = (function() {
         zuchtberater: 'Zuchtberater',
         ernte: 'Ernte-Dokumentation',
         bewertung: 'Stockkarte',
+        zaehler_pro: 'Bienen-Zähler Pro (Volk-Zuordnung, Fotos, Verlauf)',
         behandlung_auto: 'Auto-Termine Behandlung',
         trachtkarte_voll: 'Trachtkarte (voll)',
         trachtkarte_teilen: 'Trachten teilen',
@@ -109,6 +113,7 @@ var planManager = (function() {
         bestandsbuch_einfach: 'pro',
         datenexport: 'pro',
         backup: 'pro',
+        zaehler_pro: 'pro',
         bestandsbuch_veterinaer: 'meister',
         multi_user: 'meister',
         prio_support: 'meister',

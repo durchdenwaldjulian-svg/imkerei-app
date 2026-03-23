@@ -340,6 +340,8 @@ function openVolkModal(id) {
     document.getElementById('volkName').value = v.name;
     document.getElementById('volkBeute').value = v.beutensystem || 'Dadant';
     document.getElementById('volkNotizen').value = v.notizen || '';
+    var rasseEl = document.getElementById('volkRasse');
+    if (rasseEl) rasseEl.value = v.rasse || '';
 
     // Typ-Buttons setzen
     document.querySelectorAll('#volkTypGrid .option-btn').forEach(function(btn){ btn.classList.remove('selected'); });
@@ -394,7 +396,9 @@ function saveVolk() {
     v.status = selectedVolkStatus;
     v.typ = selectedVolkTyp;
     v.notizen = document.getElementById('volkNotizen').value.trim();
-    db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, typ:v.typ, notizen:v.notizen}, v.id);
+    var rasseEl = document.getElementById('volkRasse');
+    v.rasse = rasseEl ? rasseEl.value : '';
+    db.update('voelker', {name:v.name, beutensystem:v.beutensystem, status:v.status, typ:v.typ, notizen:v.notizen, rasse:v.rasse}, v.id);
     closeModal('volkModal');
     render();
     toast('✓ Volk aktualisiert!', 'success');

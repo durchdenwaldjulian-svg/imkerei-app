@@ -86,7 +86,7 @@ async function init() {
     }).sort(function(a,b){ return a.name.localeCompare(b.name); });
 
     voelker = (results[1].data || []).map(function(r){
-        return {id:r.id, standortId:r.standort_id, name:r.name, beutensystem:r.beutensystem, status:r.status, typ:r.typ||'volk', notizen:r.notizen, honigertrag:parseFloat(r.honigertrag)||0, created:r.created_at};
+        return {id:r.id, standortId:r.standort_id, name:r.name, beutensystem:r.beutensystem, status:r.status, typ:r.typ||'volk', notizen:r.notizen, rasse:r.rasse||'', honigertrag:parseFloat(r.honigertrag)||0, created:r.created_at};
     }).sort(function(a,b){ return a.name.localeCompare(b.name); });
 
     bewertungen = (results[2].data || []).map(function(r){

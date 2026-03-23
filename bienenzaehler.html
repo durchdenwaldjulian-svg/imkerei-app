@@ -89,6 +89,19 @@
         .history-item .h-info{flex:1}
         .history-item .h-date{font-size:.75rem;color:#A69580}
         .history-item .h-volk{font-size:.85rem;font-weight:600;color:#1C1410}
+        .history-item .h-delete{background:none;border:none;color:#dc2626;cursor:pointer;font-size:1rem;padding:.25rem;opacity:.5;transition:opacity .15s}
+        .history-item .h-delete:hover{opacity:1}
+
+        /* === VOLK AUSWAHL === */
+        .volk-select-area{background:#FFFBF0;border-radius:1rem;padding:1rem 1.25rem;margin-bottom:1.5rem;display:none}
+        .volk-select-area label{font-weight:600;font-size:.85rem;color:#1C1410;display:block;margin-bottom:.5rem}
+        .volk-select-area select{width:100%;padding:.6rem .75rem;border:2px solid rgba(245,166,35,0.3);border-radius:.5rem;font-size:.9rem;background:#fff;color:#1C1410}
+        .volk-select-area select:focus{border-color:#F5A623;outline:none}
+        .pro-badge{display:inline-block;background:#F5A623;color:#1C1410;font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:.25rem;margin-left:.35rem}
+        .upgrade-hint{background:linear-gradient(135deg,#FFF8EE,#FFFBF0);border:2px solid #F5A623;border-radius:1rem;padding:1.25rem;margin-bottom:1.5rem;text-align:center}
+        .upgrade-hint h4{color:#1C1410;margin-bottom:.5rem}
+        .upgrade-hint p{font-size:.85rem;color:#7A6652;margin-bottom:.75rem}
+        .upgrade-hint .btn-upgrade{background:#F5A623;color:#1C1410;border:none;padding:.6rem 1.5rem;border-radius:100px;font-weight:700;cursor:pointer}
 
         /* === RESPONSIVE === */
         @media(max-width:900px){
@@ -123,6 +136,21 @@
                 <li>Wabe möglichst formatfüllend fotografieren</li>
                 <li>Ruhig halten – Bienen sollten nicht zu stark verwischt sein</li>
             </ul>
+        </div>
+
+        <!-- PRO: VOLK AUSWAHL -->
+        <div class="volk-select-area" id="volkSelectArea">
+            <label>🐝 Zählung einem Volk zuordnen <span class="pro-badge">PRO</span></label>
+            <select id="volkSelect">
+                <option value="">– Kein Volk (nur zählen) –</option>
+            </select>
+        </div>
+
+        <!-- UPGRADE HINT (für Free-User) -->
+        <div id="upgradeHint" style="display:none" class="upgrade-hint">
+            <h4>🔓 Bienen-Zähler Pro</h4>
+            <p>Ordne Zählungen deinen Völkern zu, speichere Fotos und verfolge die Entwicklung über Zeit.</p>
+            <button class="btn-upgrade" onclick="window.location.href='app.html#upgrade'">Jetzt upgraden</button>
         </div>
 
         <!-- KAMERA BEREICH -->
@@ -187,6 +215,7 @@
             <div class="btn-row" style="margin-top:1rem;margin-bottom:0">
                 <button class="btn-secondary" onclick="resetCamera()">🔄 Neues Foto</button>
                 <button class="btn-secondary" onclick="downloadResult()">💾 Bild speichern</button>
+                <button class="btn-primary" id="btnSaveToVolk" onclick="saveToVolk()" style="display:none">📋 Zum Volk speichern</button>
             </div>
         </div>
 
@@ -214,6 +243,10 @@
     var CLASS_COLORS = ['#F5A623', '#3b82f6', '#22c55e', '#ef4444'];
     var videoStream = null;
     var beeHistory = JSON.parse(localStorage.getItem('bp_bee_history') || '[]');
+    var userVoelker = [];
+    var isPro = false;
+    var lastDetections = null;
+    var lastSourceCanvas = null;
 
     // Modell laden
     async function loadModel() {
@@ -478,6 +511,7 @@
 
     // Ergebnisse anzeigen
     function showResults(detections) {
+        lastDetections = detections;
         var bees = 0, drones = 0, queens = 0, pollen = 0, totalConf = 0;
 
         detections.forEach(function(d) {
@@ -514,6 +548,14 @@
         }
 
         document.getElementById('resultCard').classList.add('show');
+
+        // "Zum Volk speichern" Button nur für Pro
+        if (isPro && document.getElementById('volkSelect').value) {
+            document.getElementById('btnSaveToVolk').style.display = '';
+        } else if (isPro) {
+            document.getElementById('btnSaveToVolk').style.display = '';
+            document.getElementById('btnSaveToVolk').textContent = '📋 In Supabase speichern';
+        }
 
         // In History speichern
         beeHistory.unshift({
@@ -578,10 +620,189 @@
         document.getElementById('historyList').innerHTML = html;
     }
 
+    // === VÖLKER LADEN (Pro-Feature) ===
+    async function loadVoelker() {
+        if (!currentUser) return;
+        try {
+            var res = await sb.from('voelker').select('id, name, standort_id').eq('user_id', currentUser.id).order('name');
+            if (res.data) {
+                userVoelker = res.data;
+                var sel = document.getElementById('volkSelect');
+                sel.innerHTML = '<option value="">– Kein Volk (nur zählen) –</option>';
+                // Standorte laden für Gruppierung
+                var sRes = await sb.from('standorte').select('id, name').eq('user_id', currentUser.id);
+                var standorte = sRes.data || [];
+                var standortMap = {};
+                standorte.forEach(function(s) { standortMap[s.id] = s.name; });
+
+                userVoelker.forEach(function(v) {
+                    var sName = standortMap[v.standort_id] || '';
+                    var opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = '🐝 ' + v.name + (sName ? ' (📍 ' + sName + ')' : '');
+                    sel.appendChild(opt);
+                });
+            }
+        } catch(e) { console.error('Völker laden:', e); }
+    }
+
+    // === ZU VOLK SPEICHERN (Supabase + Foto-Upload) ===
+    async function saveToVolk() {
+        if (!isPro) {
+            planManager.showUpgradeHint('zaehler_pro');
+            return;
+        }
+        if (!lastDetections) return;
+
+        var volkId = document.getElementById('volkSelect').value || null;
+        var btn = document.getElementById('btnSaveToVolk');
+        btn.disabled = true;
+        btn.textContent = '⏳ Speichere...';
+
+        try {
+            // Zählergebnis berechnen
+            var bees = 0, drones = 0, queens = 0, pollen = 0, totalConf = 0;
+            lastDetections.forEach(function(d) {
+                totalConf += d.confidence;
+                switch(d.className) {
+                    case 'bee': bees++; break;
+                    case 'drone': drones++; break;
+                    case 'queen': queens++; break;
+                    case 'pollenbee': pollen++; break;
+                }
+            });
+            var total = lastDetections.length;
+            var avgConf = total > 0 ? Math.round((totalConf / total) * 100) : 0;
+
+            // Foto hochladen
+            var fotoUrl = null;
+            var canvas = document.querySelector('#cameraArea canvas');
+            if (canvas) {
+                try {
+                    var blob = await new Promise(function(resolve) {
+                        canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                    });
+                    var fileName = currentUser.id + '/zaehlung_' + Date.now() + '.jpg';
+                    var uploadRes = await sb.storage.from('voelker-fotos').upload(fileName, blob, {
+                        contentType: 'image/jpeg'
+                    });
+                    if (uploadRes.data) {
+                        var urlRes = sb.storage.from('voelker-fotos').getPublicUrl(fileName);
+                        fotoUrl = urlRes.data.publicUrl;
+                    }
+                } catch(e) { console.warn('Foto-Upload fehlgeschlagen:', e); }
+            }
+
+            // In Supabase speichern
+            var res = await sb.from('bienen_zaehlungen').insert({
+                user_id: currentUser.id,
+                volk_id: volkId,
+                total: total,
+                bienen: bees,
+                drohnen: drones,
+                koeniginnen: queens,
+                pollenbienen: pollen,
+                konfidenz: avgConf,
+                foto_url: fotoUrl
+            });
+
+            if (res.error) throw res.error;
+
+            showToast('Zählung gespeichert!' + (volkId ? ' (Volk zugeordnet)' : ''), 'success', 3000);
+            btn.textContent = '✅ Gespeichert';
+            loadHistory();
+        } catch(e) {
+            console.error('Speichern fehlgeschlagen:', e);
+            showToast('Fehler beim Speichern: ' + e.message, 'error', 4000);
+            btn.textContent = '📋 Zum Volk speichern';
+            btn.disabled = false;
+        }
+    }
+
+    // === ZÄHLUNG LÖSCHEN ===
+    async function deleteZaehlung(id, fotoUrl) {
+        if (!confirm('Zählung wirklich löschen?')) return;
+        try {
+            // Foto aus Storage löschen
+            if (fotoUrl) {
+                var parts = fotoUrl.split('/voelker-fotos/');
+                if (parts[1]) {
+                    await sb.storage.from('voelker-fotos').remove([decodeURIComponent(parts[1])]);
+                }
+            }
+            // DB-Eintrag löschen
+            var res = await sb.from('bienen_zaehlungen').delete().eq('id', id);
+            if (res.error) throw res.error;
+            showToast('Zählung gelöscht', 'success', 2000);
+            loadHistory();
+        } catch(e) {
+            showToast('Fehler beim Löschen: ' + e.message, 'error', 3000);
+        }
+    }
+
+    // === HISTORY AUS SUPABASE LADEN (Pro) oder localStorage (Free) ===
+    async function loadHistory() {
+        if (isPro && currentUser) {
+            try {
+                var res = await sb.from('bienen_zaehlungen')
+                    .select('id, datum, total, bienen, drohnen, koeniginnen, pollenbienen, konfidenz, foto_url, volk_id')
+                    .eq('user_id', currentUser.id)
+                    .order('datum', { ascending: false })
+                    .limit(50);
+                if (res.data && res.data.length > 0) {
+                    renderSupabaseHistory(res.data);
+                    return;
+                }
+            } catch(e) { console.warn('Supabase History laden:', e); }
+        }
+        renderHistory();
+    }
+
+    function renderSupabaseHistory(data) {
+        if (!data.length) {
+            document.getElementById('historySection').style.display = 'none';
+            return;
+        }
+        document.getElementById('historySection').style.display = 'block';
+        var html = '';
+        data.forEach(function(h) {
+            var d = new Date(h.datum);
+            var dateStr = d.toLocaleDateString('de-DE') + ' ' + d.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
+            var volkName = '';
+            if (h.volk_id) {
+                var volk = userVoelker.find(function(v) { return v.id === h.volk_id; });
+                volkName = volk ? ' · 🐝 ' + volk.name : '';
+            }
+            html += '<div class="history-item">';
+            if (h.foto_url) {
+                html += '<img src="' + h.foto_url + '" style="width:50px;height:50px;object-fit:cover;border-radius:.5rem" loading="lazy">';
+            }
+            html += '<div class="h-count">' + h.total + ' 🐝</div>'
+                + '<div class="h-info">'
+                + '<div class="h-volk">' + h.bienen + ' Bienen, ' + h.drohnen + ' Drohnen' + (h.koeniginnen > 0 ? ', ' + h.koeniginnen + ' Königin!' : '') + volkName + '</div>'
+                + '<div class="h-date">' + dateStr + ' · Konfidenz: ' + h.konfidenz + '%</div>'
+                + '</div>'
+                + '<button class="h-delete" onclick="deleteZaehlung(\'' + h.id + '\', ' + (h.foto_url ? '\'' + h.foto_url + '\'' : 'null') + ')" title="Löschen">🗑️</button>'
+                + '</div>';
+        });
+        document.getElementById('historyList').innerHTML = html;
+    }
+
     // === INIT ===
     (async function() {
         await checkAuth();
-        renderHistory();
+        await planManager.load();
+        isPro = planManager.can('zaehler_pro');
+
+        if (isPro) {
+            document.getElementById('volkSelectArea').style.display = 'block';
+            await loadVoelker();
+            loadHistory();
+        } else {
+            document.getElementById('upgradeHint').style.display = 'block';
+            renderHistory();
+        }
+
         // Modell im Hintergrund vorladen
         loadModel();
     })();

@@ -68,6 +68,7 @@ function renderVolkKarte(v) {
     if (v.typ === 'ableger') html += '<span style="font-size:.65rem;background:#D1FAE5;color:#065F46;padding:.1rem .4rem;border-radius:.25rem;font-weight:600;display:inline-block;margin-bottom:.2rem">🌱 Ableger</span>';
     html += '<div style="font-weight:700;font-size:1rem">🐝 ' + esc(v.name) + '</div>';
     if (s) html += '<div style="font-size:.72rem;color:#7A6652">📍 ' + esc(s.name) + '</div>';
+    if (v.rasse) html += '<div style="font-size:.7rem;color:#92400E;margin-top:.15rem">🧬 ' + esc(v.rasse) + '</div>';
     html += '</div>';
     if (kInfo.jahrgang) {
         var farbDot = kInfo.markiert ? getColorDot(kInfo.farbe) : '';
