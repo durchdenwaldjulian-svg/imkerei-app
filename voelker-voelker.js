@@ -566,7 +566,7 @@ function _qr3d_textPixelSize(label, maxBreiteMm) {
 // Rueckgabe: {basis: [triangles], code: [triangles]} fuer Zwei-Farb-Druck
 function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     opts = Object.assign({
-        groesseMm: 40, basisMm: 2, pixelMm: 1, randMm: 3,
+        groesseMm: 40, basisMm: 2, pixelMm: 1.5, randMm: 3,
         textMm: 10, aufhMm: 10,
         lochDurchMm: 5, lochAbstandMm: 5,
         label: ''
@@ -731,54 +731,53 @@ function _qr3d_trianglesToMeshXml(triangles) {
     return xml;
 }
 
-// Baut komplette 3MF-Datei (als Uint8Array) mit zwei Objekten
-// Bambu-kompatibel: mit <part>-Elementen und .model.rels fuer Multi-Filament
+// Baut komplette 3MF-Datei (Uint8Array) als EIN Objekt mit zwei Parts
+// Damit bleibt der Z-Abstand (Code ueber Basis) erhalten — Bambu verschiebt nicht
 function _qr3d_make3MF(basisTri, codeTri) {
     var contentTypes = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
         + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         + '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
         + '<Default Extension="config" ContentType="application/vnd.bambulab-package.3dmanufacturing-cfg+xml"/>'
-        + '<Default Extension="png" ContentType="image/png"/>'
         + '</Types>';
     var rels = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
         + '</Relationships>';
-    // Relationship zur Bambu-Config (kritisch fuer BambuStudio!)
     var modelRels = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + '<Relationship Target="/Metadata/model_settings.config" Id="rel-1" Type="http://schemas.bambulab.com/package/2021/model-config"/>'
         + '</Relationships>';
+    // id 2 = Basis-Mesh, id 3 = Code-Mesh, id 1 = Container mit Components (baut beide als EIN Objekt)
     var model = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<model unit="millimeter" xml:lang="en-US" '
         + 'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
         + 'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021">'
         + '<resources>'
-        + '<object id="1" type="model">' + _qr3d_trianglesToMeshXml(basisTri) + '</object>'
-        + '<object id="2" type="model">' + _qr3d_trianglesToMeshXml(codeTri) + '</object>'
+        + '<object id="2" type="model">' + _qr3d_trianglesToMeshXml(basisTri) + '</object>'
+        + '<object id="3" type="model">' + _qr3d_trianglesToMeshXml(codeTri) + '</object>'
+        + '<object id="1" type="model">'
+        +   '<components>'
+        +     '<component objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
+        +     '<component objectid="3" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
+        +   '</components>'
+        + '</object>'
         + '</resources>'
         + '<build>'
         + '<item objectid="1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
-        + '<item objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
         + '</build>'
         + '</model>';
-    // Bambu model_settings.config mit <part> und extruder-Zuweisung
+    // In Bambus model_settings.config werden die PARTS (2 und 3) mit Filament zugewiesen
     var bambuConfig = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<config>'
         + '<object id="1">'
-        +   '<metadata key="name" value="Basis_weiss"/>'
-        +   '<metadata key="extruder" value="1"/>'
-        +   '<part id="1" subtype="normal_part">'
+        +   '<metadata key="name" value="QR_Tag"/>'
+        +   '<part id="2" subtype="normal_part">'
         +     '<metadata key="name" value="Basis_weiss"/>'
         +     '<metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>'
         +     '<metadata key="extruder" value="1"/>'
         +   '</part>'
-        + '</object>'
-        + '<object id="2">'
-        +   '<metadata key="name" value="Code_schwarz"/>'
-        +   '<metadata key="extruder" value="2"/>'
-        +   '<part id="2" subtype="normal_part">'
+        +   '<part id="3" subtype="normal_part">'
         +     '<metadata key="name" value="Code_schwarz"/>'
         +     '<metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>'
         +     '<metadata key="extruder" value="2"/>'
