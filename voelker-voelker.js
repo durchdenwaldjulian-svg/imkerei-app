@@ -619,6 +619,166 @@ function _qr3d_downloadStl(content, filename) {
     setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
 }
 
+// ============================================================
+// 3MF-WRITER (Bambu-Lab / Prusa kompatibel)
+// ============================================================
+// Minimaler ZIP-Writer ohne Kompression (STORED) + 3MF-XML
+// Baut eine .3mf Datei mit zwei Objekten (basis weiss, code schwarz)
+
+var _qr3d_crcTable = null;
+function _qr3d_crc32(buf) {
+    if (!_qr3d_crcTable) {
+        _qr3d_crcTable = new Uint32Array(256);
+        for (var i=0; i<256; i++) {
+            var c = i;
+            for (var k=0; k<8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            _qr3d_crcTable[i] = c >>> 0;
+        }
+    }
+    var c = 0xFFFFFFFF;
+    for (var i=0; i<buf.length; i++) c = _qr3d_crcTable[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function _qr3d_strToBytes(s) {
+    var enc = new TextEncoder();
+    return enc.encode(s);
+}
+
+function _qr3d_u16(n) { return new Uint8Array([n & 0xFF, (n>>>8) & 0xFF]); }
+function _qr3d_u32(n) { return new Uint8Array([n & 0xFF, (n>>>8) & 0xFF, (n>>>16) & 0xFF, (n>>>24) & 0xFF]); }
+
+function _qr3d_concatArrays(arrs) {
+    var total = 0;
+    for (var i=0; i<arrs.length; i++) total += arrs[i].length;
+    var out = new Uint8Array(total);
+    var p = 0;
+    for (var i=0; i<arrs.length; i++) { out.set(arrs[i], p); p += arrs[i].length; }
+    return out;
+}
+
+// files: array of {name: 'path/file.ext', data: Uint8Array}
+function _qr3d_makeZip(files) {
+    var parts = [];
+    var cds = [];
+    var offset = 0;
+    for (var i=0; i<files.length; i++) {
+        var f = files[i];
+        var name = _qr3d_strToBytes(f.name);
+        var data = f.data;
+        var crc = _qr3d_crc32(data);
+        var size = data.length;
+        // Local File Header
+        var lfh = _qr3d_concatArrays([
+            _qr3d_u32(0x04034b50), _qr3d_u16(20), _qr3d_u16(0), _qr3d_u16(0),
+            _qr3d_u16(0), _qr3d_u16(0),
+            _qr3d_u32(crc), _qr3d_u32(size), _qr3d_u32(size),
+            _qr3d_u16(name.length), _qr3d_u16(0),
+            name
+        ]);
+        parts.push(lfh);
+        parts.push(data);
+        // Central Directory
+        var cd = _qr3d_concatArrays([
+            _qr3d_u32(0x02014b50), _qr3d_u16(20), _qr3d_u16(20), _qr3d_u16(0),
+            _qr3d_u16(0), _qr3d_u16(0), _qr3d_u16(0),
+            _qr3d_u32(crc), _qr3d_u32(size), _qr3d_u32(size),
+            _qr3d_u16(name.length), _qr3d_u16(0), _qr3d_u16(0),
+            _qr3d_u16(0), _qr3d_u16(0), _qr3d_u32(0),
+            _qr3d_u32(offset), name
+        ]);
+        cds.push(cd);
+        offset += lfh.length + data.length;
+    }
+    var cdStart = offset;
+    var cdSize = 0;
+    for (var i=0; i<cds.length; i++) { parts.push(cds[i]); cdSize += cds[i].length; }
+    // End of Central Directory
+    parts.push(_qr3d_concatArrays([
+        _qr3d_u32(0x06054b50), _qr3d_u16(0), _qr3d_u16(0),
+        _qr3d_u16(files.length), _qr3d_u16(files.length),
+        _qr3d_u32(cdSize), _qr3d_u32(cdStart), _qr3d_u16(0)
+    ]));
+    return _qr3d_concatArrays(parts);
+}
+
+// Triangles → 3MF mesh XML (mit vertex-dedup)
+function _qr3d_trianglesToMeshXml(triangles) {
+    var vertexMap = {};
+    var vertices = [];
+    var tris = [];
+    function addVertex(v) {
+        var key = v[0].toFixed(4) + '_' + v[1].toFixed(4) + '_' + v[2].toFixed(4);
+        if (vertexMap[key] === undefined) {
+            vertexMap[key] = vertices.length;
+            vertices.push(v);
+        }
+        return vertexMap[key];
+    }
+    for (var i=0; i<triangles.length; i++) {
+        var t = triangles[i];
+        tris.push([addVertex(t[0]), addVertex(t[1]), addVertex(t[2])]);
+    }
+    var xml = '<mesh><vertices>';
+    for (var i=0; i<vertices.length; i++) {
+        xml += '<vertex x="' + vertices[i][0].toFixed(4) + '" y="' + vertices[i][1].toFixed(4) + '" z="' + vertices[i][2].toFixed(4) + '"/>';
+    }
+    xml += '</vertices><triangles>';
+    for (var i=0; i<tris.length; i++) {
+        xml += '<triangle v1="' + tris[i][0] + '" v2="' + tris[i][1] + '" v3="' + tris[i][2] + '"/>';
+    }
+    xml += '</triangles></mesh>';
+    return xml;
+}
+
+// Baut komplette 3MF-Datei (als Uint8Array) mit zwei Objekten
+function _qr3d_make3MF(basisTri, codeTri) {
+    var contentTypes = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
+        + '<Default Extension="config" ContentType="application/vnd.bambulab-package.3dmanufacturing-cfg+xml"/>'
+        + '</Types>';
+    var rels = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
+        + '</Relationships>';
+    var model = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+        + '<resources>'
+        + '<object id="1" type="model" name="Basis_weiss">' + _qr3d_trianglesToMeshXml(basisTri) + '</object>'
+        + '<object id="2" type="model" name="Code_schwarz">' + _qr3d_trianglesToMeshXml(codeTri) + '</object>'
+        + '</resources>'
+        + '<build>'
+        + '<item objectid="1"/>'
+        + '<item objectid="2"/>'
+        + '</build>'
+        + '</model>';
+    // Bambu-spezifisch: Filament-Zuweisung pro Objekt (Slot 1 = weiss, Slot 2 = schwarz)
+    var bambuConfig = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<config>'
+        + '<object id="1"><metadata key="extruder" value="1"/></object>'
+        + '<object id="2"><metadata key="extruder" value="2"/></object>'
+        + '</config>';
+    return _qr3d_makeZip([
+        {name: '[Content_Types].xml', data: _qr3d_strToBytes(contentTypes)},
+        {name: '_rels/.rels',          data: _qr3d_strToBytes(rels)},
+        {name: '3D/3dmodel.model',     data: _qr3d_strToBytes(model)},
+        {name: 'Metadata/model_settings.config', data: _qr3d_strToBytes(bambuConfig)}
+    ]);
+}
+
+function _qr3d_download3MF(uint8arr, filename) {
+    var blob = new Blob([uint8arr], {type: 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
 // Helper: Rendert QR auf temporaeren Canvas und liefert Matrix zurueck
 async function _qr3d_renderMatrixFor(url) {
     var div = document.createElement('div');
@@ -660,9 +820,10 @@ async function druckeQR3D(volkId, event) {
         var label = _qr3d_extractLabel(v.name, v.typ);
         var safeName = v.name.replace(/[^a-zA-Z0-9_-]/g, '_');
         var parts = _qr3d_volkTagTriangles(matrix, 0, 0, {label: label});
-        var stl = _qr3d_zweiTeilStl(parts.basis, parts.code, safeName);
-        _qr3d_downloadStl(stl, 'QR_' + safeName + '_2farben.stl');
-        toast('🧊 Zwei-Farben-STL: ' + safeName + ' (Label "' + label + '" · Basis weiß / Code schwarz)', 'success');
+        // 3MF-Datei mit 2 Objekten (Basis weiss/Filament 1, Code schwarz/Filament 2)
+        var buf = _qr3d_make3MF(parts.basis, parts.code);
+        _qr3d_download3MF(buf, 'QR_' + safeName + '.3mf');
+        toast('🧊 3MF: ' + safeName + ' — Filament 1 (weiß) + Filament 2 (schwarz) vorbelegt, direkt in BambuStudio öffnen!', 'success');
     } catch (e) {
         console.error('druckeQR3D Fehler:', e);
         toast('❌ STL-Erzeugung fehlgeschlagen: ' + e.message, 'error');
@@ -709,9 +870,10 @@ async function druckeQR3DStandort(standortId, event) {
         }
         if (!allBasis.length) { toast('❌ Keine Tags erzeugt', 'error'); return; }
         var safeName = (s.name || 'Standort').replace(/[^a-zA-Z0-9_-]/g, '_');
-        var stl = _qr3d_zweiTeilStl(allBasis, allCode, 'standort_' + safeName);
-        _qr3d_downloadStl(stl, 'QR_Standort_' + safeName + '_' + sVoelker.length + 'Tags_2farben.stl');
-        toast('🧊 Standort 2-Farben-STL: ' + sVoelker.length + ' Tags (' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm, Basis weiß / Code schwarz)', 'success');
+        // 3MF mit 2 Objekten (Basis weiss, Code schwarz) - Bambu-Filament-Zuweisung inkludiert
+        var buf = _qr3d_make3MF(allBasis, allCode);
+        _qr3d_download3MF(buf, 'QR_Standort_' + safeName + '_' + sVoelker.length + 'Tags.3mf');
+        toast('🧊 3MF: ' + sVoelker.length + ' Tags (' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm, Filament 1 weiß + 2 schwarz vorbelegt)', 'success');
     } catch (e) {
         console.error('druckeQR3DStandort Fehler:', e);
         toast('❌ Fehler: ' + e.message, 'error');
