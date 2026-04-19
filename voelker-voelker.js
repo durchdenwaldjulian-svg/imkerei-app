@@ -362,6 +362,13 @@ function _qr3d_trianglesToStl(triangles, name) {
     return lines.join('\n');
 }
 
+// Zwei-Teil-STL: Basis (weiss) und Code (schwarz) als separate solid-Bloecke
+// BambuStudio erkennt das als zwei Objekte -> jedem kann man eine Filament-Farbe zuweisen
+function _qr3d_zweiTeilStl(basisTri, codeTri, basisName) {
+    return _qr3d_trianglesToStl(basisTri, basisName + '_basis_weiss') + '\n'
+         + _qr3d_trianglesToStl(codeTri, basisName + '_code_schwarz');
+}
+
 function _qr3d_getMatrix(canvas) {
     var ctx = canvas.getContext('2d');
     var W = canvas.width;
@@ -556,6 +563,7 @@ function _qr3d_textPixelSize(label, maxBreiteMm) {
 //   y =  0..40  : QR-Bereich (40x40)
 //   y = 40..50  : Text-Bereich (Label erhaben)
 //   y = 50..60  : Aufhaenge-Lasche mit Loch
+// Rueckgabe: {basis: [triangles], code: [triangles]} fuer Zwei-Farb-Druck
 function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     opts = Object.assign({
         groesseMm: 40, basisMm: 2, pixelMm: 1, randMm: 3,
@@ -568,10 +576,11 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     var lochX = totalW / 2;
     var lochY = totalD - opts.lochAbstandMm;
     var lochR = opts.lochDurchMm / 2;
-    // Basis mit Loch
-    var triangles = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
-                                         lochX, lochY, lochR, 32);
-    // QR-Pixel-Quader
+    // BASIS (weiss): Platte mit Loch
+    var basisTri = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
+                                        lochX, lochY, lochR, 32);
+    // CODE (schwarz): QR-Pixel + Text-Label
+    var codeTri = [];
     var n = matrix.length;
     var innereGroesse = opts.groesseMm - 2*opts.randMm;
     var modulMm = innereGroesse / n;
@@ -580,14 +589,13 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
             if (matrix[r][c]) {
                 var x = offX + opts.randMm + c*modulMm;
                 var y = offY + opts.randMm + (n-1-r)*modulMm;
-                Array.prototype.push.apply(triangles,
+                Array.prototype.push.apply(codeTri,
                     _qr3d_makeCubeTriangles(x, y, opts.basisMm, modulMm, modulMm, opts.pixelMm));
             }
         }
     }
-    // Text-Label im Text-Bereich (y = groesse..groesse+textMm)
     if (opts.label) {
-        var labelY0 = opts.groesseMm + 1;  // 1mm Rand unten
+        var labelY0 = opts.groesseMm + 1;
         var maxTextBreite = totalW - 4;
         var ps = _qr3d_textPixelSize(opts.label, maxTextBreite);
         var textBreite = opts.label.length * 6 * ps;
@@ -595,9 +603,9 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
         var textStartY = offY + labelY0 + (opts.textMm - 2 - 7*ps) / 2;
         var textTris = _qr3d_textToTriangles(opts.label, textStartX, textStartY,
                                               opts.basisMm, ps, opts.pixelMm);
-        Array.prototype.push.apply(triangles, textTris);
+        Array.prototype.push.apply(codeTri, textTris);
     }
-    return triangles;
+    return {basis: basisTri, code: codeTri};
 }
 
 function _qr3d_downloadStl(content, filename) {
@@ -651,10 +659,10 @@ async function druckeQR3D(volkId, event) {
         if (!matrix) { toast('QR-Matrix konnte nicht gelesen werden', 'error'); return; }
         var label = _qr3d_extractLabel(v.name, v.typ);
         var safeName = v.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-        var triangles = _qr3d_volkTagTriangles(matrix, 0, 0, {label: label});
-        var stl = _qr3d_trianglesToStl(triangles, 'qr_' + safeName);
-        _qr3d_downloadStl(stl, 'QR_' + safeName + '.stl');
-        toast('🧊 STL: ' + safeName + ' (40×60×3mm, Label "' + label + '", 5mm Loch)', 'success');
+        var parts = _qr3d_volkTagTriangles(matrix, 0, 0, {label: label});
+        var stl = _qr3d_zweiTeilStl(parts.basis, parts.code, safeName);
+        _qr3d_downloadStl(stl, 'QR_' + safeName + '_2farben.stl');
+        toast('🧊 Zwei-Farben-STL: ' + safeName + ' (Label "' + label + '" · Basis weiß / Code schwarz)', 'success');
     } catch (e) {
         console.error('druckeQR3D Fehler:', e);
         toast('❌ STL-Erzeugung fehlgeschlagen: ' + e.message, 'error');
@@ -684,7 +692,7 @@ async function druckeQR3DStandort(standortId, event) {
 
     toast('Erzeuge ' + sVoelker.length + ' QR-Codes... (dauert ' + sVoelker.length + '-' + (sVoelker.length*2) + ' Sek)', 'info');
     try {
-        var allTriangles = [];
+        var allBasis = [], allCode = [];
         for (var i=0; i<sVoelker.length; i++) {
             var v = sVoelker[i];
             var url = 'https://www.bienenplan.de/voelker.html?volk=' + v.id;
@@ -693,16 +701,17 @@ async function druckeQR3DStandort(standortId, event) {
             var col = i % spalten;
             var row = Math.floor(i / spalten);
             var offX = col * (tagW + abstand);
-            var offY = (zeilen - 1 - row) * (tagD + abstand);  // Zeile 0 oben
+            var offY = (zeilen - 1 - row) * (tagD + abstand);
             var label = _qr3d_extractLabel(v.name, v.typ);
-            var tris = _qr3d_volkTagTriangles(matrix, offX, offY, {label: label});
-            Array.prototype.push.apply(allTriangles, tris);
+            var parts = _qr3d_volkTagTriangles(matrix, offX, offY, {label: label});
+            Array.prototype.push.apply(allBasis, parts.basis);
+            Array.prototype.push.apply(allCode, parts.code);
         }
-        if (!allTriangles.length) { toast('❌ Keine Tags erzeugt', 'error'); return; }
+        if (!allBasis.length) { toast('❌ Keine Tags erzeugt', 'error'); return; }
         var safeName = (s.name || 'Standort').replace(/[^a-zA-Z0-9_-]/g, '_');
-        var stl = _qr3d_trianglesToStl(allTriangles, 'qr_standort_' + safeName);
-        _qr3d_downloadStl(stl, 'QR_Standort_' + safeName + '_' + sVoelker.length + 'Tags.stl');
-        toast('🧊 Standort-STL: ' + sVoelker.length + ' Tags (' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm)', 'success');
+        var stl = _qr3d_zweiTeilStl(allBasis, allCode, 'standort_' + safeName);
+        _qr3d_downloadStl(stl, 'QR_Standort_' + safeName + '_' + sVoelker.length + 'Tags_2farben.stl');
+        toast('🧊 Standort 2-Farben-STL: ' + sVoelker.length + ' Tags (' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm, Basis weiß / Code schwarz)', 'success');
     } catch (e) {
         console.error('druckeQR3DStandort Fehler:', e);
         toast('❌ Fehler: ' + e.message, 'error');
