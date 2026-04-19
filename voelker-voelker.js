@@ -315,6 +315,7 @@ function renderVolkProfil(v) {
     html += '<div id="qrcode-' + v.id + '" style="display:inline-block;background:#fff;padding:.75rem;border-radius:.5rem"></div>';
     html += '<div style="margin-top:.75rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">';
     html += '<button class="btn btn-sm btn-primary" onclick="druckeStockkarte(\'' + v.id + '\')">🖨️ Stockkarte drucken</button>';
+    html += '<button class="btn btn-sm" style="background:#2563EB;color:#fff" onclick="druckeQR3D(\'' + v.id + '\', event)">🧊 3D-Druck STL</button>';
     html += '</div>';
     html += '</div>';
 
