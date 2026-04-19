@@ -34,7 +34,10 @@ function renderVoelkerTab() {
         html += '<div style="font-size:1.5rem;margin-bottom:.25rem">📍</div>';
         html += '<div style="font-weight:600;font-size:.85rem">' + esc(s.name) + '</div>';
         html += '<div style="font-size:.75rem;color:#7A6652">' + cnt + ' Völker</div>';
-        html += '<button onclick="event.stopPropagation();druckeAlleQR(\'' + s.id + '\')" style="background:none;border:1px solid #E8DFD4;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#7A6652;margin-top:.35rem" title="Alle QR-Codes drucken">🏷️ QR-Etiketten</button>';
+        html += '<div style="display:flex;gap:.25rem;margin-top:.35rem;flex-wrap:wrap;justify-content:center">';
+        html += '<button onclick="event.stopPropagation();druckeAlleQR(\'' + s.id + '\')" style="background:none;border:1px solid #E8DFD4;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.72rem;color:#7A6652" title="Alle QR-Codes als PDF drucken">🏷️ PDF</button>';
+        html += '<button onclick="event.stopPropagation();druckeQR3DStandort(\'' + s.id + '\', event)" style="background:none;border:1px solid #2563EB;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.72rem;color:#2563EB" title="Alle QR-Codes als STL (3D-Druck, mit Bohrloch)">🧊 3D-STL</button>';
+        html += '</div>';
         html += '</div>';
     });
     // Archiv-Kachel wenn vorhanden
@@ -144,6 +147,9 @@ function renderVolkKarte(v) {
     html += '<button onclick="event.stopPropagation();druckeStockkarte(\'' + v.id + '\')" '
          + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#7A6652;padding:.2rem" '
          + 'title="Stockkarte drucken">🖨️</button>';
+    html += '<button onclick="druckeQR3D(\'' + v.id + '\', event)" '
+         + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#2563EB;padding:.2rem" '
+         + 'title="QR-Code als 3D-Druck-Vorlage (STL)">🧊</button>';
     if (v.archiviert) {
         html += '<button onclick="unarchiveVolk(\'' + v.id + '\', event)" '
              + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#059669;padding:.2rem" '
@@ -317,6 +323,391 @@ function renderVolkProfil(v) {
 }
 
 // === DRUCK-FUNKTIONEN ===
+// ============================================================
+// QR-CODE ALS STL FUER 3D-DRUCK (18.04.2026)
+// ============================================================
+// Erzeugt STL-Datei (40x40mm Tag mit 2mm Basis + 1mm erhabenen QR-Pixeln)
+// Laesst sich direkt in BambuStudio/Cura/PrusaSlicer oeffnen.
+
+function _qr3d_makeCubeTriangles(x, y, z, w, d, h) {
+    var x2=x+w, y2=y+d, z2=z+h;
+    return [
+        [[x,y,z],[x2,y,z],[x2,y2,z]], [[x,y,z],[x2,y2,z],[x,y2,z]],       // Boden
+        [[x,y,z2],[x2,y2,z2],[x2,y,z2]], [[x,y,z2],[x,y2,z2],[x2,y2,z2]], // Deckel
+        [[x,y,z],[x2,y,z2],[x2,y,z]], [[x,y,z],[x,y,z2],[x2,y,z2]],       // Front
+        [[x,y2,z],[x2,y2,z],[x2,y2,z2]], [[x,y2,z],[x2,y2,z2],[x,y2,z2]], // Back
+        [[x,y,z],[x,y2,z2],[x,y2,z]], [[x,y,z],[x,y,z2],[x,y2,z2]],       // Left
+        [[x2,y,z],[x2,y2,z],[x2,y2,z2]], [[x2,y,z],[x2,y2,z2],[x2,y,z2]]  // Right
+    ];
+}
+
+function _qr3d_trianglesToStl(triangles, name) {
+    var lines = ['solid ' + name];
+    for (var t=0; t<triangles.length; t++) {
+        var tri = triangles[t];
+        var ux=tri[1][0]-tri[0][0], uy=tri[1][1]-tri[0][1], uz=tri[1][2]-tri[0][2];
+        var vx=tri[2][0]-tri[0][0], vy=tri[2][1]-tri[0][1], vz=tri[2][2]-tri[0][2];
+        var nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+        var len = Math.sqrt(nx*nx+ny*ny+nz*nz) || 1;
+        lines.push('  facet normal ' + (nx/len).toFixed(6) + ' ' + (ny/len).toFixed(6) + ' ' + (nz/len).toFixed(6));
+        lines.push('    outer loop');
+        lines.push('      vertex ' + tri[0][0].toFixed(4) + ' ' + tri[0][1].toFixed(4) + ' ' + tri[0][2].toFixed(4));
+        lines.push('      vertex ' + tri[1][0].toFixed(4) + ' ' + tri[1][1].toFixed(4) + ' ' + tri[1][2].toFixed(4));
+        lines.push('      vertex ' + tri[2][0].toFixed(4) + ' ' + tri[2][1].toFixed(4) + ' ' + tri[2][2].toFixed(4));
+        lines.push('    endloop');
+        lines.push('  endfacet');
+    }
+    lines.push('endsolid ' + name);
+    return lines.join('\n');
+}
+
+function _qr3d_getMatrix(canvas) {
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width;
+    var px = ctx.getImageData(0, 0, W, W).data;
+    function isBlack(x, y) {
+        if (x<0||x>=W||y<0||y>=W) return false;
+        var i=(y*W+x)*4;
+        return (px[i]+px[i+1]+px[i+2])/3 < 128;
+    }
+    // Finder-Pattern-Höhe als Referenz: Scan ab 5% nach unten nach erstem Schwarz
+    var y0 = Math.floor(W*0.05);
+    var firstBlack = -1;
+    for (var x=0; x<W; x++) if (isBlack(x, y0)) { firstBlack=x; break; }
+    if (firstBlack < 0) return null;
+    var blackEnd = firstBlack;
+    while (blackEnd<W && isBlack(blackEnd, y0)) blackEnd++;
+    var modulePx = blackEnd - firstBlack;
+    if (modulePx < 2) return null;
+    var n = Math.round(W / modulePx);
+    var matrix = [];
+    for (var r=0; r<n; r++) {
+        var row = [];
+        var yy = Math.round((r+0.5)*modulePx);
+        for (var c=0; c<n; c++) {
+            var xx = Math.round((c+0.5)*modulePx);
+            row.push(isBlack(xx, yy));
+        }
+        matrix.push(row);
+    }
+    return matrix;
+}
+
+function _qr3d_matrixToStl(matrix, name, opts) {
+    opts = Object.assign({groesseMm:40, basisMm:2, pixelMm:1, randMm:3}, opts||{});
+    var n = matrix.length;
+    var innereGroesse = opts.groesseMm - 2*opts.randMm;
+    var modulMm = innereGroesse / n;
+    var triangles = [];
+    // Basis
+    Array.prototype.push.apply(triangles, _qr3d_makeCubeTriangles(0,0,0,opts.groesseMm,opts.groesseMm,opts.basisMm));
+    // Pixel-Quader
+    for (var r=0; r<n; r++) {
+        for (var c=0; c<n; c++) {
+            if (matrix[r][c]) {
+                var x = opts.randMm + c*modulMm;
+                var y = opts.randMm + (n-1-r)*modulMm;
+                Array.prototype.push.apply(triangles,
+                    _qr3d_makeCubeTriangles(x, y, opts.basisMm, modulMm, modulMm, opts.pixelMm));
+            }
+        }
+    }
+    return _qr3d_trianglesToStl(triangles, name);
+}
+
+// ============================================================
+// PLATTE MIT RUNDEM BOHRLOCH (fuer Aufhaenger)
+// ============================================================
+// Erzeugt Triangles fuer einen flachen Quader (w x d x h) mit einem zylindrischen
+// Loch (holeX, holeY, holeR) das die gesamte Hoehe durchdringt.
+function _qr3d_plateWithHole(offX, offY, offZ, w, d, h, holeX, holeY, holeR, seg) {
+    seg = seg || 24;
+    var triangles = [];
+    var TAU = 2*Math.PI;
+    var cx = offX + holeX, cy = offY + holeY;
+
+    // Kreis-Punkte (innen)
+    var cp = [];
+    for (var i=0; i<seg; i++) {
+        var a = TAU*i/seg;
+        cp.push([cx + holeR*Math.cos(a), cy + holeR*Math.sin(a)]);
+    }
+    // Rand-Punkte: Strahl vom Zentrum -> Schnittpunkt mit Rechteck
+    var ex = offX + w, ey = offY + d;
+    var rp = [];
+    for (var i=0; i<seg; i++) {
+        var ang = TAU*i/seg;
+        var dx = Math.cos(ang), dy = Math.sin(ang);
+        var ts = [];
+        if (dx > 1e-9) ts.push((ex - cx) / dx);
+        else if (dx < -1e-9) ts.push((offX - cx) / dx);
+        if (dy > 1e-9) ts.push((ey - cy) / dy);
+        else if (dy < -1e-9) ts.push((offY - cy) / dy);
+        ts = ts.filter(function(t){return t > 0 && isFinite(t);});
+        var t = ts.length ? Math.min.apply(null, ts) : holeR*2;
+        rp.push([cx + t*dx, cy + t*dy]);
+    }
+    var z0 = offZ, z1 = offZ + h;
+
+    // Top (z1, normal +Z) — CCW von oben = inner i -> outer i -> outer i+1 -> inner i+1
+    for (var i=0; i<seg; i++) {
+        var ni = (i+1)%seg;
+        triangles.push([[cp[i][0],cp[i][1],z1], [rp[i][0],rp[i][1],z1], [rp[ni][0],rp[ni][1],z1]]);
+        triangles.push([[cp[i][0],cp[i][1],z1], [rp[ni][0],rp[ni][1],z1], [cp[ni][0],cp[ni][1],z1]]);
+    }
+    // Bottom (z0, normal -Z) — umgekehrte Reihenfolge
+    for (var i=0; i<seg; i++) {
+        var ni = (i+1)%seg;
+        triangles.push([[cp[i][0],cp[i][1],z0], [rp[ni][0],rp[ni][1],z0], [rp[i][0],rp[i][1],z0]]);
+        triangles.push([[cp[i][0],cp[i][1],z0], [cp[ni][0],cp[ni][1],z0], [rp[ni][0],rp[ni][1],z0]]);
+    }
+    // Inner Zylinder-Mantel (Normale zeigt ins Loch = aus dem Material raus)
+    for (var i=0; i<seg; i++) {
+        var ni = (i+1)%seg;
+        // CCW von innerhalb des Lochs gesehen: i(z0) -> ni(z0) -> ni(z1), dann i(z0) -> ni(z1) -> i(z1)
+        // → Normale zeigt RAUS aus dem Material (ins Loch)
+        triangles.push([[cp[i][0],cp[i][1],z0], [cp[ni][0],cp[ni][1],z0], [cp[ni][0],cp[ni][1],z1]]);
+        triangles.push([[cp[i][0],cp[i][1],z0], [cp[ni][0],cp[ni][1],z1], [cp[i][0],cp[i][1],z1]]);
+    }
+    // Außenseiten (4 Rechteck-Seiten) — gleich wie normaler Quader
+    // Front y=offY, Back y=ey, Left x=offX, Right x=ex
+    // Front (normal 0,-1,0)
+    triangles.push([[offX,offY,z0],[ex,offY,z1],[ex,offY,z0]]);
+    triangles.push([[offX,offY,z0],[offX,offY,z1],[ex,offY,z1]]);
+    // Back (normal 0,+1,0)
+    triangles.push([[offX,ey,z0],[ex,ey,z0],[ex,ey,z1]]);
+    triangles.push([[offX,ey,z0],[ex,ey,z1],[offX,ey,z1]]);
+    // Left (normal -1,0,0)
+    triangles.push([[offX,offY,z0],[offX,ey,z1],[offX,ey,z0]]);
+    triangles.push([[offX,offY,z0],[offX,offY,z1],[offX,ey,z1]]);
+    // Right (normal +1,0,0)
+    triangles.push([[ex,offY,z0],[ex,ey,z0],[ex,ey,z1]]);
+    triangles.push([[ex,offY,z0],[ex,ey,z1],[ex,offY,z1]]);
+    return triangles;
+}
+
+// 5x7 Pixel-Font fuer Text auf Tag (Ziffern + Buchstaben)
+var QR3D_FONT = {
+    '0':'01110/10001/10011/10101/11001/10001/01110','1':'00100/01100/00100/00100/00100/00100/01110',
+    '2':'01110/10001/00001/00110/01000/10000/11111','3':'01110/10001/00001/00110/00001/10001/01110',
+    '4':'00010/00110/01010/10010/11111/00010/00010','5':'11111/10000/11110/00001/00001/10001/01110',
+    '6':'00110/01000/10000/11110/10001/10001/01110','7':'11111/00001/00010/00100/01000/01000/01000',
+    '8':'01110/10001/10001/01110/10001/10001/01110','9':'01110/10001/10001/01111/00001/00010/01100',
+    'A':'01110/10001/10001/11111/10001/10001/10001','B':'11110/10001/10001/11110/10001/10001/11110',
+    'C':'01110/10001/10000/10000/10000/10001/01110','D':'11110/10001/10001/10001/10001/10001/11110',
+    'E':'11111/10000/10000/11110/10000/10000/11111','F':'11111/10000/10000/11110/10000/10000/10000',
+    'G':'01110/10001/10000/10111/10001/10001/01110','H':'10001/10001/10001/11111/10001/10001/10001',
+    'I':'01110/00100/00100/00100/00100/00100/01110','J':'11111/00010/00010/00010/00010/10010/01100',
+    'K':'10001/10010/10100/11000/10100/10010/10001','L':'10000/10000/10000/10000/10000/10000/11111',
+    'M':'10001/11011/10101/10001/10001/10001/10001','N':'10001/10001/11001/10101/10011/10001/10001',
+    'O':'01110/10001/10001/10001/10001/10001/01110','P':'11110/10001/10001/11110/10000/10000/10000',
+    'Q':'01110/10001/10001/10001/10101/10010/01101','R':'11110/10001/10001/11110/10100/10010/10001',
+    'S':'01110/10001/10000/01110/00001/10001/01110','T':'11111/00100/00100/00100/00100/00100/00100',
+    'U':'10001/10001/10001/10001/10001/10001/01110','V':'10001/10001/10001/10001/10001/01010/00100',
+    'W':'10001/10001/10001/10001/10101/10101/01010','X':'10001/10001/01010/00100/01010/10001/10001',
+    'Y':'10001/10001/01010/00100/00100/00100/00100','Z':'11111/00001/00010/00100/01000/10000/11111',
+    '-':'00000/00000/00000/11111/00000/00000/00000',' ':'00000/00000/00000/00000/00000/00000/00000'
+};
+
+function _qr3d_textToTriangles(text, startX, startY, z, pixelMm, hoeheMm) {
+    var triangles = [];
+    var x = startX;
+    for (var i=0; i<text.length; i++) {
+        var c = text[i].toUpperCase();
+        var def = QR3D_FONT[c];
+        if (!def) { x += 6*pixelMm; continue; }
+        var rows = def.split('/');
+        for (var r=0; r<7; r++) {
+            for (var k=0; k<5; k++) {
+                if (rows[r].charAt(k) === '1') {
+                    var px = x + k*pixelMm;
+                    var py = startY + (6-r)*pixelMm;
+                    Array.prototype.push.apply(triangles,
+                        _qr3d_makeCubeTriangles(px, py, z, pixelMm, pixelMm, hoeheMm));
+                }
+            }
+        }
+        x += 6*pixelMm;  // 5 Pixel + 1 Pixel Abstand
+    }
+    return triangles;
+}
+
+// Label aus Volkname extrahieren: "Volk 3" -> "V3", "Ableger 5" -> "A5",
+// sonst erste 6 Zeichen gross
+function _qr3d_extractLabel(volkName, typ) {
+    var m = (volkName || '').match(/(\d+)/);
+    if (m) {
+        var prefix = (typ === 'ableger') ? 'A' : 'V';
+        return prefix + m[1];
+    }
+    return (volkName || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+}
+
+function _qr3d_textPixelSize(label, maxBreiteMm) {
+    // Automatisch passende Pixel-Groesse damit Label in maxBreiteMm passt
+    // Jedes Zeichen = 6 Pixel breit (5 + 1 Abstand)
+    var pixCount = label.length * 6;
+    return Math.min(2.0, Math.max(0.6, maxBreiteMm / pixCount));
+}
+
+// Tag fuer ein Volk: Basis mit Bohrloch + QR-Pixel + Textlabel
+// Gesamtgroesse: 40 (breit) x 60mm (lang)
+//   y =  0..40  : QR-Bereich (40x40)
+//   y = 40..50  : Text-Bereich (Label erhaben)
+//   y = 50..60  : Aufhaenge-Lasche mit Loch
+function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
+    opts = Object.assign({
+        groesseMm: 40, basisMm: 2, pixelMm: 1, randMm: 3,
+        textMm: 10, aufhMm: 10,
+        lochDurchMm: 5, lochAbstandMm: 5,
+        label: ''
+    }, opts || {});
+    var totalW = opts.groesseMm;
+    var totalD = opts.groesseMm + opts.textMm + opts.aufhMm;
+    var lochX = totalW / 2;
+    var lochY = totalD - opts.lochAbstandMm;
+    var lochR = opts.lochDurchMm / 2;
+    // Basis mit Loch
+    var triangles = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
+                                         lochX, lochY, lochR, 32);
+    // QR-Pixel-Quader
+    var n = matrix.length;
+    var innereGroesse = opts.groesseMm - 2*opts.randMm;
+    var modulMm = innereGroesse / n;
+    for (var r=0; r<n; r++) {
+        for (var c=0; c<n; c++) {
+            if (matrix[r][c]) {
+                var x = offX + opts.randMm + c*modulMm;
+                var y = offY + opts.randMm + (n-1-r)*modulMm;
+                Array.prototype.push.apply(triangles,
+                    _qr3d_makeCubeTriangles(x, y, opts.basisMm, modulMm, modulMm, opts.pixelMm));
+            }
+        }
+    }
+    // Text-Label im Text-Bereich (y = groesse..groesse+textMm)
+    if (opts.label) {
+        var labelY0 = opts.groesseMm + 1;  // 1mm Rand unten
+        var maxTextBreite = totalW - 4;
+        var ps = _qr3d_textPixelSize(opts.label, maxTextBreite);
+        var textBreite = opts.label.length * 6 * ps;
+        var textStartX = offX + (totalW - textBreite) / 2;
+        var textStartY = offY + labelY0 + (opts.textMm - 2 - 7*ps) / 2;
+        var textTris = _qr3d_textToTriangles(opts.label, textStartX, textStartY,
+                                              opts.basisMm, ps, opts.pixelMm);
+        Array.prototype.push.apply(triangles, textTris);
+    }
+    return triangles;
+}
+
+function _qr3d_downloadStl(content, filename) {
+    var blob = new Blob([content], {type: 'application/sla'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+// Helper: Rendert QR auf temporaeren Canvas und liefert Matrix zurueck
+async function _qr3d_renderMatrixFor(url) {
+    var div = document.createElement('div');
+    div.style.position='absolute'; div.style.left='-9999px'; div.style.top='-9999px';
+    document.body.appendChild(div);
+    try {
+        new QRCode(div, {text:url, width:512, height:512, colorDark:'#000', colorLight:'#fff',
+                         correctLevel: QRCode.CorrectLevel.H});
+        await new Promise(function(r){ setTimeout(r, 150); });
+        var canvas = div.querySelector('canvas');
+        if (!canvas) {
+            var img = div.querySelector('img');
+            if (!img) throw new Error('QR konnte nicht gerendert werden');
+            canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle='#fff'; ctx.fillRect(0,0,512,512);
+            await new Promise(function(resolve, reject){
+                if (img.complete && img.naturalWidth) resolve();
+                else { img.onload = resolve; img.onerror = reject; }
+            });
+            ctx.drawImage(img, 0, 0, 512, 512);
+        }
+        return _qr3d_getMatrix(canvas);
+    } finally {
+        if (div.parentNode) document.body.removeChild(div);
+    }
+}
+
+async function druckeQR3D(volkId, event) {
+    if (event) event.stopPropagation();
+    var v = voelker.find(function(x){return x.id===volkId;});
+    if (!v) return;
+    if (typeof QRCode === 'undefined') { toast('QR-Library nicht geladen', 'error'); return; }
+    try {
+        var url = 'https://www.bienenplan.de/voelker.html?volk=' + volkId;
+        var matrix = await _qr3d_renderMatrixFor(url);
+        if (!matrix) { toast('QR-Matrix konnte nicht gelesen werden', 'error'); return; }
+        var label = _qr3d_extractLabel(v.name, v.typ);
+        var safeName = v.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        var triangles = _qr3d_volkTagTriangles(matrix, 0, 0, {label: label});
+        var stl = _qr3d_trianglesToStl(triangles, 'qr_' + safeName);
+        _qr3d_downloadStl(stl, 'QR_' + safeName + '.stl');
+        toast('🧊 STL: ' + safeName + ' (40×60×3mm, Label "' + label + '", 5mm Loch)', 'success');
+    } catch (e) {
+        console.error('druckeQR3D Fehler:', e);
+        toast('❌ STL-Erzeugung fehlgeschlagen: ' + e.message, 'error');
+    }
+}
+
+// Sammel-STL fuer alle Voelker eines Standorts — alle Tags in einem Grid
+async function druckeQR3DStandort(standortId, event) {
+    if (event) event.stopPropagation();
+    var s = standorte.find(function(x){return x.id===standortId;});
+    if (!s) return;
+    var sVoelker = sortVoelkerNumerisch(voelker.filter(function(v){return v.standortId===standortId && !v.archiviert;}));
+    if (!sVoelker.length) { toast('Keine aktiven Völker an diesem Standort', 'info'); return; }
+    if (typeof QRCode === 'undefined') { toast('QR-Library nicht geladen', 'error'); return; }
+
+    var spalten = Math.min(3, sVoelker.length);
+    var zeilen = Math.ceil(sVoelker.length / spalten);
+    var tagW = 40, tagD = 60, abstand = 5;
+    var druckW = spalten * tagW + (spalten-1) * abstand;
+    var druckD = zeilen * tagD + (zeilen-1) * abstand;
+
+    if (druckW > 250 || druckD > 250) {
+        if (!confirm('⚠️ Gesamtgröße ' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm überschreitet '
+                   + 'typische Druckplatte (256×256mm). Trotzdem fortfahren?\n\n'
+                   + 'Tipp: Du kannst die STL in BambuStudio aufteilen.')) return;
+    }
+
+    toast('Erzeuge ' + sVoelker.length + ' QR-Codes... (dauert ' + sVoelker.length + '-' + (sVoelker.length*2) + ' Sek)', 'info');
+    try {
+        var allTriangles = [];
+        for (var i=0; i<sVoelker.length; i++) {
+            var v = sVoelker[i];
+            var url = 'https://www.bienenplan.de/voelker.html?volk=' + v.id;
+            var matrix = await _qr3d_renderMatrixFor(url);
+            if (!matrix) continue;
+            var col = i % spalten;
+            var row = Math.floor(i / spalten);
+            var offX = col * (tagW + abstand);
+            var offY = (zeilen - 1 - row) * (tagD + abstand);  // Zeile 0 oben
+            var label = _qr3d_extractLabel(v.name, v.typ);
+            var tris = _qr3d_volkTagTriangles(matrix, offX, offY, {label: label});
+            Array.prototype.push.apply(allTriangles, tris);
+        }
+        if (!allTriangles.length) { toast('❌ Keine Tags erzeugt', 'error'); return; }
+        var safeName = (s.name || 'Standort').replace(/[^a-zA-Z0-9_-]/g, '_');
+        var stl = _qr3d_trianglesToStl(allTriangles, 'qr_standort_' + safeName);
+        _qr3d_downloadStl(stl, 'QR_Standort_' + safeName + '_' + sVoelker.length + 'Tags.stl');
+        toast('🧊 Standort-STL: ' + sVoelker.length + ' Tags (' + druckW.toFixed(0) + '×' + druckD.toFixed(0) + 'mm)', 'success');
+    } catch (e) {
+        console.error('druckeQR3DStandort Fehler:', e);
+        toast('❌ Fehler: ' + e.message, 'error');
+    }
+}
+
 function druckeStockkarte(volkId) {
     var v = voelker.find(function(x){return x.id===volkId;});
     if (!v) return;
