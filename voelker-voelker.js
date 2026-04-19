@@ -732,39 +732,65 @@ function _qr3d_trianglesToMeshXml(triangles) {
 }
 
 // Baut komplette 3MF-Datei (als Uint8Array) mit zwei Objekten
+// Bambu-kompatibel: mit <part>-Elementen und .model.rels fuer Multi-Filament
 function _qr3d_make3MF(basisTri, codeTri) {
     var contentTypes = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
         + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         + '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
         + '<Default Extension="config" ContentType="application/vnd.bambulab-package.3dmanufacturing-cfg+xml"/>'
+        + '<Default Extension="png" ContentType="image/png"/>'
         + '</Types>';
     var rels = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
         + '</Relationships>';
+    // Relationship zur Bambu-Config (kritisch fuer BambuStudio!)
+    var modelRels = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Target="/Metadata/model_settings.config" Id="rel-1" Type="http://schemas.bambulab.com/package/2021/model-config"/>'
+        + '</Relationships>';
     var model = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        + '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+        + '<model unit="millimeter" xml:lang="en-US" '
+        + 'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
+        + 'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021">'
         + '<resources>'
-        + '<object id="1" type="model" name="Basis_weiss">' + _qr3d_trianglesToMeshXml(basisTri) + '</object>'
-        + '<object id="2" type="model" name="Code_schwarz">' + _qr3d_trianglesToMeshXml(codeTri) + '</object>'
+        + '<object id="1" type="model">' + _qr3d_trianglesToMeshXml(basisTri) + '</object>'
+        + '<object id="2" type="model">' + _qr3d_trianglesToMeshXml(codeTri) + '</object>'
         + '</resources>'
         + '<build>'
-        + '<item objectid="1"/>'
-        + '<item objectid="2"/>'
+        + '<item objectid="1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
+        + '<item objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>'
         + '</build>'
         + '</model>';
-    // Bambu-spezifisch: Filament-Zuweisung pro Objekt (Slot 1 = weiss, Slot 2 = schwarz)
+    // Bambu model_settings.config mit <part> und extruder-Zuweisung
     var bambuConfig = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<config>'
-        + '<object id="1"><metadata key="extruder" value="1"/></object>'
-        + '<object id="2"><metadata key="extruder" value="2"/></object>'
+        + '<object id="1">'
+        +   '<metadata key="name" value="Basis_weiss"/>'
+        +   '<metadata key="extruder" value="1"/>'
+        +   '<part id="1" subtype="normal_part">'
+        +     '<metadata key="name" value="Basis_weiss"/>'
+        +     '<metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>'
+        +     '<metadata key="extruder" value="1"/>'
+        +   '</part>'
+        + '</object>'
+        + '<object id="2">'
+        +   '<metadata key="name" value="Code_schwarz"/>'
+        +   '<metadata key="extruder" value="2"/>'
+        +   '<part id="2" subtype="normal_part">'
+        +     '<metadata key="name" value="Code_schwarz"/>'
+        +     '<metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>'
+        +     '<metadata key="extruder" value="2"/>'
+        +   '</part>'
+        + '</object>'
         + '</config>';
     return _qr3d_makeZip([
-        {name: '[Content_Types].xml', data: _qr3d_strToBytes(contentTypes)},
-        {name: '_rels/.rels',          data: _qr3d_strToBytes(rels)},
-        {name: '3D/3dmodel.model',     data: _qr3d_strToBytes(model)},
-        {name: 'Metadata/model_settings.config', data: _qr3d_strToBytes(bambuConfig)}
+        {name: '[Content_Types].xml',             data: _qr3d_strToBytes(contentTypes)},
+        {name: '_rels/.rels',                     data: _qr3d_strToBytes(rels)},
+        {name: '3D/3dmodel.model',                data: _qr3d_strToBytes(model)},
+        {name: '3D/_rels/3dmodel.model.rels',     data: _qr3d_strToBytes(modelRels)},
+        {name: 'Metadata/model_settings.config',  data: _qr3d_strToBytes(bambuConfig)}
     ]);
 }
 
