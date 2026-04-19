@@ -16,15 +16,19 @@ function renderVoelkerTab() {
         return html;
     }
 
+    // Aktive (nicht archivierte) Völker zählen
+    var aktiveVoelker = voelker.filter(function(v){return !v.archiviert;});
+    var archivierteVoelker = voelker.filter(function(v){return v.archiviert;});
+
     // Standort-Kacheln
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-bottom:1rem">';
     html += '<div class="standort-card' + (!selectedStandortFilter?' selected':'') + '" onclick="selectedStandortFilter=\'\';render()">';
     html += '<div style="font-size:1.5rem;margin-bottom:.25rem">🐝</div>';
     html += '<div style="font-weight:600;font-size:.85rem">Alle Völker</div>';
-    html += '<div style="font-size:.75rem;color:#7A6652">' + voelker.length + ' Völker</div>';
+    html += '<div style="font-size:.75rem;color:#7A6652">' + aktiveVoelker.length + ' Völker</div>';
     html += '</div>';
     standorte.forEach(function(s) {
-        var cnt = voelker.filter(function(v){return v.standortId===s.id;}).length;
+        var cnt = aktiveVoelker.filter(function(v){return v.standortId===s.id;}).length;
         if (!cnt) return;
         html += '<div class="standort-card' + (selectedStandortFilter===s.id?' selected':'') + '" onclick="selectedStandortFilter=\'' + s.id + '\';render()">';
         html += '<div style="font-size:1.5rem;margin-bottom:.25rem">📍</div>';
@@ -33,12 +37,26 @@ function renderVoelkerTab() {
         html += '<button onclick="event.stopPropagation();druckeAlleQR(\'' + s.id + '\')" style="background:none;border:1px solid #E8DFD4;border-radius:.5rem;padding:.25rem .5rem;cursor:pointer;font-size:.75rem;color:#7A6652;margin-top:.35rem" title="Alle QR-Codes drucken">🏷️ QR-Etiketten</button>';
         html += '</div>';
     });
+    // Archiv-Kachel wenn vorhanden
+    if (archivierteVoelker.length) {
+        html += '<div class="standort-card' + (selectedStandortFilter==='__archiv__'?' selected':'') + '" onclick="selectedStandortFilter=\'__archiv__\';render()" style="background:#FEF3C7;border-color:#D97706">';
+        html += '<div style="font-size:1.5rem;margin-bottom:.25rem">🗄️</div>';
+        html += '<div style="font-weight:600;font-size:.85rem">Archiv</div>';
+        html += '<div style="font-size:.75rem;color:#78350F">' + archivierteVoelker.length + ' archiviert</div>';
+        html += '</div>';
+    }
     html += '</div>';
 
-    // Völker-Grid
-    var filteredVoelker = sortVoelkerNumerisch(selectedStandortFilter
-        ? voelker.filter(function(v){return v.standortId===selectedStandortFilter;})
-        : voelker);
+    // Völker-Grid — Archiv nur wenn explizit ausgewählt
+    var filterQuelle;
+    if (selectedStandortFilter === '__archiv__') {
+        filterQuelle = archivierteVoelker;
+    } else if (selectedStandortFilter) {
+        filterQuelle = aktiveVoelker.filter(function(v){return v.standortId===selectedStandortFilter;});
+    } else {
+        filterQuelle = aktiveVoelker;
+    }
+    var filteredVoelker = sortVoelkerNumerisch(filterQuelle);
 
     if (!filteredVoelker.length) {
         html += '<div class="card" style="text-align:center;padding:2rem;color:#7A6652">Keine Völker an diesem Standort.</div>';
@@ -114,7 +132,31 @@ function renderVolkKarte(v) {
         html += '<div style="font-size:.75rem;color:#A69580;padding-top:.35rem;border-top:1px solid #f5f0eb">Noch keine Durchsicht</div>';
     }
 
-    html += '<div style="margin-top:.5rem;text-align:right"><button onclick="event.stopPropagation();druckeStockkarte(\'' + v.id + '\')" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:#7A6652" title="Stockkarte drucken">🖨️</button></div>';
+    // Archiv-Badge bei archivierten Völkern
+    if (v.archiviert) {
+        var dat = v.archiviert_am ? new Date(v.archiviert_am).toLocaleDateString('de-DE') : '';
+        var grundTxt = v.archiviert_grund ? ' – ' + esc(v.archiviert_grund) : '';
+        html += '<div style="font-size:.7rem;background:#FEF3C7;color:#78350F;padding:.25rem .4rem;border-radius:.25rem;margin-top:.35rem">🗄️ Archiviert ' + dat + grundTxt + '</div>';
+    }
+
+    // Action-Buttons unten rechts
+    html += '<div style="margin-top:.5rem;display:flex;justify-content:flex-end;gap:.35rem;align-items:center">';
+    html += '<button onclick="event.stopPropagation();druckeStockkarte(\'' + v.id + '\')" '
+         + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#7A6652;padding:.2rem" '
+         + 'title="Stockkarte drucken">🖨️</button>';
+    if (v.archiviert) {
+        html += '<button onclick="unarchiveVolk(\'' + v.id + '\', event)" '
+             + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#059669;padding:.2rem" '
+             + 'title="Wiederherstellen (aus Archiv holen)">↩️</button>';
+    } else {
+        html += '<button onclick="archiveVolk(\'' + v.id + '\', event)" '
+             + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#92400E;padding:.2rem" '
+             + 'title="Archivieren (ausblenden, Historie bleibt)">🗄️</button>';
+    }
+    html += '<button onclick="deleteVolkKomplett(\'' + v.id + '\', event)" '
+         + 'style="background:none;border:none;cursor:pointer;font-size:.9rem;color:#DC2626;padding:.2rem" '
+         + 'title="Komplett löschen (inkl. aller Durchsichten, UNWIDERRUFLICH)">🗑️</button>';
+    html += '</div>';
 
     html += '</div>';
     return html;

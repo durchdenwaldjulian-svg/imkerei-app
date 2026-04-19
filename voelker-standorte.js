@@ -414,6 +414,114 @@ function deleteVolk() {
     toast('🗑️ Volk gelöscht', 'info');
 }
 
+// ============================================================
+// NEUE LÖSCH-/ARCHIV-FUNKTIONEN (18.04.2026)
+// ============================================================
+
+// Vollständiges Löschen inkl. aller Durchsichten/Bewertungen/Ernten
+// IRREVERSIBEL — Historie geht komplett verloren
+async function deleteVolkKomplett(volkId, event) {
+    if (event) event.stopPropagation();
+    var v = voelker.find(function(x){return x.id === volkId;});
+    if (!v) return;
+    var label = (v.typ === 'ableger') ? 'Ableger' : 'Volk';
+    var ds = getDurchsichtenFuerVolk(volkId).length;
+
+    var warnung = '⚠️ ACHTUNG: UNWIDERRUFLICH LÖSCHEN\n\n'
+                + label + ' "' + v.name + '" wird komplett gelöscht inkl.:\n'
+                + '• ' + ds + ' Durchsicht(en)\n'
+                + '• alle Bewertungen\n'
+                + '• alle Honig-Erträge\n'
+                + '• Königin-Informationen\n\n'
+                + '→ Historie geht verloren, nicht wiederherstellbar!\n\n'
+                + 'Für dauerhafte Buchführung lieber "Archivieren" nutzen.\n\n'
+                + 'Wirklich komplett löschen?';
+
+    if (!confirm(warnung)) return;
+
+    try {
+        // 1. Child-Tabellen zuerst (sonst Foreign-Key-Fehler)
+        await db.delWhere('durchsichten', 'volk_id', volkId);
+        await db.delWhere('bewertungen', 'volk_id', volkId);
+        await db.delWhere('ernten', 'volk_id', volkId);
+        // 2. Volk selbst
+        await db.del('voelker', volkId);
+
+        // 3. Lokale Arrays bereinigen
+        voelker = voelker.filter(function(x){return x.id !== volkId;});
+        if (typeof durchsichten !== 'undefined') {
+            durchsichten = durchsichten.filter(function(d){return d.volkId !== volkId && d.volk_id !== volkId;});
+        }
+        if (typeof bewertungen !== 'undefined') {
+            bewertungen = bewertungen.filter(function(b){return b.volkId !== volkId && b.volk_id !== volkId;});
+        }
+        if (typeof koeniginnen !== 'undefined') {
+            delete koeniginnen[volkId];
+        }
+
+        render();
+        toast('🗑️ ' + label + ' "' + v.name + '" komplett gelöscht', 'info');
+    } catch (err) {
+        console.error('deleteVolkKomplett Fehler:', err);
+        toast('❌ Fehler beim Löschen: ' + err.message, 'error');
+    }
+}
+
+// Archivieren: Volk bleibt in DB, wird aber standardmäßig ausgeblendet
+// Historie bleibt für Statistiken erhalten
+async function archiveVolk(volkId, event) {
+    if (event) event.stopPropagation();
+    var v = voelker.find(function(x){return x.id === volkId;});
+    if (!v) return;
+    var label = (v.typ === 'ableger') ? 'Ableger' : 'Volk';
+
+    var grund = prompt('ℹ️ ARCHIVIEREN\n\n'
+                      + label + ' "' + v.name + '" wird ausgeblendet, aber ALLE Daten bleiben erhalten '
+                      + '(Durchsichten, Bewertungen, Ernten, Königin-Info).\n\n'
+                      + 'Grund (optional, z.B. "Winterverlust", "verkauft", "vereinigt"):', '');
+    if (grund === null) return;  // Abbruch
+
+    try {
+        var updateData = {
+            archiviert: true,
+            archiviert_am: new Date().toISOString(),
+            archiviert_grund: grund || null
+        };
+        await db.update('voelker', updateData, volkId);
+
+        // Lokales Array aktualisieren
+        v.archiviert = true;
+        v.archiviert_am = updateData.archiviert_am;
+        v.archiviert_grund = updateData.archiviert_grund;
+
+        render();
+        toast('🗄️ ' + label + ' "' + v.name + '" archiviert', 'success');
+    } catch (err) {
+        console.error('archiveVolk Fehler:', err);
+        toast('❌ Fehler beim Archivieren: ' + err.message, 'error');
+    }
+}
+
+// Wiederherstellen: archivierte Völker zurück in den aktiven Bestand
+async function unarchiveVolk(volkId, event) {
+    if (event) event.stopPropagation();
+    var v = voelker.find(function(x){return x.id === volkId;});
+    if (!v) return;
+    if (!confirm('Volk "' + v.name + '" wiederherstellen?')) return;
+
+    try {
+        await db.update('voelker', {archiviert: false, archiviert_am: null, archiviert_grund: null}, volkId);
+        v.archiviert = false;
+        v.archiviert_am = null;
+        v.archiviert_grund = null;
+        render();
+        toast('✓ "' + v.name + '" wiederhergestellt', 'success');
+    } catch (err) {
+        console.error('unarchiveVolk Fehler:', err);
+        toast('❌ Fehler: ' + err.message, 'error');
+    }
+}
+
 function renameVolk(volkId) {
     var v = voelker.find(function(x){return x.id === volkId;});
     if (!v) return;
