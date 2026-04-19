@@ -566,9 +566,9 @@ function _qr3d_textPixelSize(label, maxBreiteMm) {
 // Rueckgabe: {basis: [triangles], code: [triangles]} fuer Zwei-Farb-Druck
 function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     opts = Object.assign({
-        groesseMm: 40, basisMm: 2, pixelMm: 1.5, randMm: 3,
-        textMm: 10, aufhMm: 10,
-        lochDurchMm: 5, lochAbstandMm: 5,
+        groesseMm: 60, basisMm: 2, randMm: 4,
+        textMm: 12, aufhMm: 12,
+        lochDurchMm: 5, lochAbstandMm: 6,
         label: ''
     }, opts || {});
     var totalW = opts.groesseMm;
@@ -576,10 +576,15 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     var lochX = totalW / 2;
     var lochY = totalD - opts.lochAbstandMm;
     var lochR = opts.lochDurchMm / 2;
-    // BASIS (weiss): Platte mit Loch
+    // BASIS (weiss): Platte mit Loch — volle Hoehe
     var basisTri = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
                                         lochX, lochY, lochR, 32);
-    // CODE (schwarz): QR-Pixel + Text-Label
+    // CODE (schwarz): INLAY-Geometrie — gleiche Hoehe wie Basis, eingelassen
+    // Die Code-Quader ueberlappen die Basis komplett von z=0 bis z=basisMm.
+    // Da Code die hoehere Part-ID hat, gewinnt schwarzes Filament im Ueberlappungsbereich.
+    // Ergebnis: Top-Oberflaeche flach, nur Farbunterschied — maximale Druckschaerfe.
+    var codeStartZ = 0;
+    var codeHoehe  = opts.basisMm;
     var codeTri = [];
     var n = matrix.length;
     var innereGroesse = opts.groesseMm - 2*opts.randMm;
@@ -590,7 +595,7 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
                 var x = offX + opts.randMm + c*modulMm;
                 var y = offY + opts.randMm + (n-1-r)*modulMm;
                 Array.prototype.push.apply(codeTri,
-                    _qr3d_makeCubeTriangles(x, y, opts.basisMm, modulMm, modulMm, opts.pixelMm));
+                    _qr3d_makeCubeTriangles(x, y, codeStartZ, modulMm, modulMm, codeHoehe));
             }
         }
     }
@@ -602,7 +607,7 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
         var textStartX = offX + (totalW - textBreite) / 2;
         var textStartY = offY + labelY0 + (opts.textMm - 2 - 7*ps) / 2;
         var textTris = _qr3d_textToTriangles(opts.label, textStartX, textStartY,
-                                              opts.basisMm, ps, opts.pixelMm);
+                                              codeStartZ, ps, codeHoehe);
         Array.prototype.push.apply(codeTri, textTris);
     }
     return {basis: basisTri, code: codeTri};
