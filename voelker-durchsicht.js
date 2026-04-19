@@ -48,7 +48,8 @@ function renderDurchsicht() {
     }
 
     anzuzeigende.forEach(function(s) {
-        var sVoelker = sortVoelkerNumerisch(voelker.filter(function(v){return v.standortId===s.id;}));
+        // Archivierte Voelker im Durchsicht-Tab ausblenden (zum Archivieren muss man in den Voelker-Tab wechseln)
+        var sVoelker = sortVoelkerNumerisch(voelker.filter(function(v){return v.standortId===s.id && !v.archiviert;}));
         if (!sVoelker.length) return;
 
         html += '<div class="card">';
@@ -107,6 +108,8 @@ function renderDurchsicht() {
             html += '<div style="display:flex;gap:.25rem;flex-shrink:0;margin-left:.5rem" onclick="event.stopPropagation()">';
             html += '<button class="btn btn-primary btn-xs" onclick="openDurchsicht(null,\'' + v.id + '\')">📋</button>';
             if (letzte) html += '<button class="btn btn-blue btn-xs" onclick="openDurchsicht(\'' + letzte.id + '\')">✏️</button>';
+            html += '<button onclick="archiveVolk(\'' + v.id + '\', event)" style="background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.3rem;padding:.15rem .35rem;cursor:pointer;font-size:.8rem;color:#92400E" title="Archivieren (ausblenden, Historie bleibt)">🗄️</button>';
+            html += '<button onclick="deleteVolkKomplett(\'' + v.id + '\', event)" style="background:#FFF8EE;border:1.5px solid #E8DFD4;border-radius:.3rem;padding:.15rem .35rem;cursor:pointer;font-size:.8rem;color:#DC2626" title="Komplett löschen (unwiderruflich)">🗑️</button>';
             html += '</div>';
             html += '</div></div>';
 
