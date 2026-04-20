@@ -564,92 +564,53 @@ function _qr3d_textPixelSize(label, maxBreiteMm) {
 //   y = 40..50  : Text-Bereich (Label erhaben)
 //   y = 50..60  : Aufhaenge-Lasche mit Loch
 // Rueckgabe: {basis: [triangles], code: [triangles]} fuer Zwei-Farb-Druck
-// Echte INLAY-Geometrie: Basis und Code teilen sich das Volumen disjoint auf.
-// Jedes Voxel ist eindeutig entweder Basis ODER Code, keine Ueberlappung.
-// Slicer hat keine Mehrdeutigkeit → perfekt scharfe Farbgrenzen.
+// QR-Tag: Basis-Platte + leicht erhabene Code-Pixel (0.5mm, Face-an-Face ohne Overlap)
+// Groesser (80mm) fuer klare Sichtbarkeit und druckbare Pixel-Breite (~2.3mm)
 function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     opts = Object.assign({
-        groesseMm: 60, basisMm: 2, randMm: 4,
-        textMm: 12, aufhMm: 12,
-        lochDurchMm: 5, lochAbstandMm: 6,
+        groesseMm: 80, basisMm: 2, pixelMm: 0.5, randMm: 5,
+        textMm: 14, aufhMm: 14,
+        lochDurchMm: 5, lochAbstandMm: 7,
         label: ''
     }, opts || {});
     var totalW = opts.groesseMm;
     var totalD = opts.groesseMm + opts.textMm + opts.aufhMm;
-    var basisTri = [];
-    var codeTri  = [];
-
-    // --- 1. Aufhaenger (Basis mit Loch) ---
-    var aufhY0 = opts.groesseMm + opts.textMm;
     var lochX = totalW / 2;
-    var lochY = aufhY0 + (opts.aufhMm - opts.lochAbstandMm);
+    var lochY = totalD - opts.lochAbstandMm;
     var lochR = opts.lochDurchMm / 2;
-    Array.prototype.push.apply(basisTri,
-        _qr3d_plateWithHole(offX, offY + aufhY0, 0, totalW, opts.aufhMm, opts.basisMm,
-                             lochX, lochY - aufhY0, lochR, 32));
 
-    // --- 2. Text-Bereich: Basis-Platte, Text als Code-Pixel ausgestanzt ---
-    // Zur einfachheit: Basis fuellt den Text-Bereich komplett; die Text-Pixel werden als
-    // Code-Quader darueber gelegt (hoeher als Basis). Ergibt leicht erhabenen Text.
-    // Das funktioniert weil Text-Pixel GENAU gegenueber der Basis liegen ohne Ueberlapp.
-    // Besser: Text als DISJOINT Inlay, genauso wie QR-Pixel. Machen wir — per gleicher Logik.
+    // BASIS (weiss): komplette Platte mit Loch
+    var basisTri = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
+                                        lochX, lochY, lochR, 32);
 
-    // Text-Bereich: Basis plus Code-Text-Pixel die in Basis versenkt sind
-    var txtY0 = opts.groesseMm;
-    Array.prototype.push.apply(basisTri,
-        _qr3d_makeCubeTriangles(offX, offY + txtY0, 0, totalW, opts.textMm, opts.basisMm));
-
-    // --- 3. Rand um den QR-Bereich ---
-    // QR-Bereich: x=randMm..groesse-randMm, y=randMm..groesse-randMm
-    // Rand-Streifen: links, rechts, unten, oben
-    var rm = opts.randMm;
-    var g = opts.groesseMm;
-    // Unten-Streifen (0..g in x, 0..rm in y)
-    Array.prototype.push.apply(basisTri,
-        _qr3d_makeCubeTriangles(offX, offY, 0, g, rm, opts.basisMm));
-    // Oben-Streifen (0..g in x, g-rm..g in y)
-    Array.prototype.push.apply(basisTri,
-        _qr3d_makeCubeTriangles(offX, offY + g - rm, 0, g, rm, opts.basisMm));
-    // Links-Streifen (0..rm in x, rm..g-rm in y)
-    Array.prototype.push.apply(basisTri,
-        _qr3d_makeCubeTriangles(offX, offY + rm, 0, rm, g - 2*rm, opts.basisMm));
-    // Rechts-Streifen (g-rm..g in x, rm..g-rm in y)
-    Array.prototype.push.apply(basisTri,
-        _qr3d_makeCubeTriangles(offX + g - rm, offY + rm, 0, rm, g - 2*rm, opts.basisMm));
-
-    // --- 4. QR-Bereich: jeder Modul eindeutig Basis ODER Code ---
+    // CODE (schwarz): erhabene QR-Pixel + Text — 0.5mm hoch auf z=basisMm (Face-an-Face, kein Overlap)
+    var codeStartZ = opts.basisMm;
+    var codeHoehe  = opts.pixelMm;
+    var codeTri = [];
     var n = matrix.length;
-    var innereGroesse = g - 2*rm;
+    var innereGroesse = opts.groesseMm - 2*opts.randMm;
     var modulMm = innereGroesse / n;
     for (var r=0; r<n; r++) {
         for (var c=0; c<n; c++) {
-            var x = offX + rm + c*modulMm;
-            var y = offY + rm + (n-1-r)*modulMm;
             if (matrix[r][c]) {
+                var x = offX + opts.randMm + c*modulMm;
+                var y = offY + opts.randMm + (n-1-r)*modulMm;
                 Array.prototype.push.apply(codeTri,
-                    _qr3d_makeCubeTriangles(x, y, 0, modulMm, modulMm, opts.basisMm));
-            } else {
-                Array.prototype.push.apply(basisTri,
-                    _qr3d_makeCubeTriangles(x, y, 0, modulMm, modulMm, opts.basisMm));
+                    _qr3d_makeCubeTriangles(x, y, codeStartZ, modulMm, modulMm, codeHoehe));
             }
         }
     }
-
-    // --- 5. Text-Label als leichtes Relief oben drauf (damit lesbar) ---
     if (opts.label) {
-        var labelY0 = opts.groesseMm + 1;
-        var maxTextBreite = totalW - 4;
+        var labelY0 = opts.groesseMm + 2;
+        var maxTextBreite = totalW - 6;
         var ps = _qr3d_textPixelSize(opts.label, maxTextBreite);
         var textBreite = opts.label.length * 6 * ps;
         var textStartX = offX + (totalW - textBreite) / 2;
-        var textStartY = offY + labelY0 + (opts.textMm - 2 - 7*ps) / 2;
-        // Text 0.4mm in die Basis versenkt: z=basisMm-0.4 bis z=basisMm (flach, aber als Code-Part)
-        // Tatsaechlich: Text als Pixel oben auf der Basis ist klarer — 0.4mm erhaben
+        var textStartY = offY + labelY0 + (opts.textMm - 3 - 7*ps) / 2;
         var textTris = _qr3d_textToTriangles(opts.label, textStartX, textStartY,
-                                              opts.basisMm, ps, 0.4);
+                                              codeStartZ, ps, codeHoehe);
         Array.prototype.push.apply(codeTri, textTris);
     }
-
     return {basis: basisTri, code: codeTri};
 }
 
@@ -911,7 +872,7 @@ async function druckeQR3DStandort(standortId, event) {
 
     var spalten = Math.min(3, sVoelker.length);
     var zeilen = Math.ceil(sVoelker.length / spalten);
-    var tagW = 40, tagD = 60, abstand = 5;
+    var tagW = 80, tagD = 108, abstand = 5;
     var druckW = spalten * tagW + (spalten-1) * abstand;
     var druckD = zeilen * tagD + (zeilen-1) * abstand;
 
