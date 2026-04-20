@@ -564,8 +564,9 @@ function _qr3d_textPixelSize(label, maxBreiteMm) {
 //   y = 40..50  : Text-Bereich (Label erhaben)
 //   y = 50..60  : Aufhaenge-Lasche mit Loch
 // Rueckgabe: {basis: [triangles], code: [triangles]} fuer Zwei-Farb-Druck
-// QR-Tag: Basis-Platte + leicht erhabene Code-Pixel (0.5mm, Face-an-Face ohne Overlap)
-// Groesser (80mm) fuer klare Sichtbarkeit und druckbare Pixel-Breite (~2.3mm)
+// QR-Tag: Disjoint-Inlay — jedes Voxel eindeutig Basis ODER Code
+// Code-Pixel ragen 0.5mm über Basis hinaus (gesamte Code-Hoehe = basisMm + pixelMm)
+// Damit: keine Overlap-Mehrdeutigkeit fuer Slicer, aber QR sichtbar erhaben
 function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     opts = Object.assign({
         groesseMm: 80, basisMm: 2, pixelMm: 0.5, randMm: 5,
@@ -575,31 +576,57 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
     }, opts || {});
     var totalW = opts.groesseMm;
     var totalD = opts.groesseMm + opts.textMm + opts.aufhMm;
-    var lochX = totalW / 2;
-    var lochY = totalD - opts.lochAbstandMm;
+    var basisTri = [];
+    var codeTri  = [];
+
+    // 1. Aufhaenger mit Loch (reine Basis)
+    var aufhY0 = opts.groesseMm + opts.textMm;
+    var lochXA = totalW / 2;
+    var lochYA = opts.aufhMm - opts.lochAbstandMm;
     var lochR = opts.lochDurchMm / 2;
+    Array.prototype.push.apply(basisTri,
+        _qr3d_plateWithHole(offX, offY + aufhY0, 0, totalW, opts.aufhMm, opts.basisMm,
+                             lochXA, lochYA, lochR, 32));
 
-    // BASIS (weiss): komplette Platte mit Loch
-    var basisTri = _qr3d_plateWithHole(offX, offY, 0, totalW, totalD, opts.basisMm,
-                                        lochX, lochY, lochR, 32);
+    // 2. Text-Bereich (Basis, Text-Pixel als erhabener Code oben drauf)
+    var txtY0 = opts.groesseMm;
+    Array.prototype.push.apply(basisTri,
+        _qr3d_makeCubeTriangles(offX, offY + txtY0, 0, totalW, opts.textMm, opts.basisMm));
 
-    // CODE (schwarz): erhabene QR-Pixel + Text — 0.5mm hoch auf z=basisMm (Face-an-Face, kein Overlap)
-    var codeStartZ = opts.basisMm;
-    var codeHoehe  = opts.pixelMm;
-    var codeTri = [];
+    // 3. QR-Rand (4 Streifen aussen rum, komplett Basis)
+    var rm = opts.randMm;
+    var g = opts.groesseMm;
+    Array.prototype.push.apply(basisTri,
+        _qr3d_makeCubeTriangles(offX, offY, 0, g, rm, opts.basisMm));                    // unten
+    Array.prototype.push.apply(basisTri,
+        _qr3d_makeCubeTriangles(offX, offY + g - rm, 0, g, rm, opts.basisMm));           // oben
+    Array.prototype.push.apply(basisTri,
+        _qr3d_makeCubeTriangles(offX, offY + rm, 0, rm, g - 2*rm, opts.basisMm));        // links
+    Array.prototype.push.apply(basisTri,
+        _qr3d_makeCubeTriangles(offX + g - rm, offY + rm, 0, rm, g - 2*rm, opts.basisMm)); // rechts
+
+    // 4. QR-Bereich: jedes Modul DISJOINT als Basis ODER Code
+    //    Basis-Pixel: z=0..basisMm       (flach mit Rand)
+    //    Code-Pixel:  z=0..basisMm+pixelMm (ragt erhaben ueber die Basis-Ebene hinaus)
     var n = matrix.length;
-    var innereGroesse = opts.groesseMm - 2*opts.randMm;
+    var innereGroesse = g - 2*rm;
     var modulMm = innereGroesse / n;
+    var codeHoeheTotal = opts.basisMm + opts.pixelMm;
     for (var r=0; r<n; r++) {
         for (var c=0; c<n; c++) {
+            var x = offX + rm + c*modulMm;
+            var y = offY + rm + (n-1-r)*modulMm;
             if (matrix[r][c]) {
-                var x = offX + opts.randMm + c*modulMm;
-                var y = offY + opts.randMm + (n-1-r)*modulMm;
                 Array.prototype.push.apply(codeTri,
-                    _qr3d_makeCubeTriangles(x, y, codeStartZ, modulMm, modulMm, codeHoehe));
+                    _qr3d_makeCubeTriangles(x, y, 0, modulMm, modulMm, codeHoeheTotal));
+            } else {
+                Array.prototype.push.apply(basisTri,
+                    _qr3d_makeCubeTriangles(x, y, 0, modulMm, modulMm, opts.basisMm));
             }
         }
     }
+
+    // 5. Text-Label als Code-Pixel oben auf Basis (erhaben)
     if (opts.label) {
         var labelY0 = opts.groesseMm + 2;
         var maxTextBreite = totalW - 6;
@@ -608,9 +635,10 @@ function _qr3d_volkTagTriangles(matrix, offX, offY, opts) {
         var textStartX = offX + (totalW - textBreite) / 2;
         var textStartY = offY + labelY0 + (opts.textMm - 3 - 7*ps) / 2;
         var textTris = _qr3d_textToTriangles(opts.label, textStartX, textStartY,
-                                              codeStartZ, ps, codeHoehe);
+                                              opts.basisMm, ps, opts.pixelMm);
         Array.prototype.push.apply(codeTri, textTris);
     }
+
     return {basis: basisTri, code: codeTri};
 }
 
