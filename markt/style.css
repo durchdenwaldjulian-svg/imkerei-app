@@ -1,8 +1,10 @@
 /*
   style.css – Markt-Planer
-  Version 0.1.1 (2026-10-26, markt-dev)
+  Version 0.1.2 (2026-10-27, markt-dev)
 
   Changelog
+  0.1.2  Traffic-light colours (Julian 27.10.): assigned tiles/block headers green, unassigned red,
+         optional ("nur bei Bedarf") days yellow; helper colour only on the name pill and dots; legend entries.
   0.1.1  Continuation header for Mon 21.12. (desktop, QA H8), block warning (QA N1), summary hint (QA H3),
          dialog with three buttons wraps on narrow screens.
   0.1.0  Warm honey / Christmas look, design tokens on :root, dark mode via prefers-color-scheme,
@@ -30,6 +32,8 @@
   --kann: #23824f;
   --kann-hell: #e0f3e7;
   --kannnicht: #c0392b;
+  --gelb: #c99a06;
+  --gelb-hell: #fff3c4;
   --optional-bg: #f6eee0;
   --fokus: #1d6fd8;
   --kopf-text: #fff8e8;
@@ -59,6 +63,8 @@
     --kann: #4fc283;
     --kann-hell: #15301f;
     --kannnicht: #ff7a6b;
+    --gelb: #e8bd2a;
+    --gelb-hell: #3a2f08;
     --optional-bg: #1b150f;
     --fokus: #7fb2ff;
   }
@@ -232,6 +238,8 @@ button, select, input { font: inherit; color: inherit; }
 .leg-rahmen.kann { border-color: var(--kann); }
 .leg-rahmen.kannnicht { border-color: var(--kannnicht); border-style: dashed; }
 .leg-rot { width: 18px; height: 14px; border-radius: 4px; background: var(--rot-hell); border: 1px solid var(--rot); }
+.leg-gruen { width: 18px; height: 14px; border-radius: 4px; background: var(--kann-hell); border: 1px solid var(--kann); }
+.leg-gelb { width: 18px; height: 14px; border-radius: 4px; background: var(--gelb-hell); border: 1px solid var(--gelb); }
 
 /* ---------- calendar ---------- */
 .kalender {
@@ -261,6 +269,8 @@ button, select, input { font: inherit; color: inherit; }
 }
 .block-kopf.geteilt { --bf: var(--honig); border-style: dashed; }
 .block-kopf.unbesetzt { --bf: var(--rot); background: var(--rot-hell); }
+/* 0.1.2 traffic light: a block with one helper is green (the helper colour stays on the name pill) */
+.block-kopf.ganz { background: var(--kann-hell); border-color: var(--kann); }
 .bk-text { display: flex; flex-direction: column; flex: 1 1 160px; min-width: 0; }
 .bk-titel { font-weight: 800; font-size: .92rem; letter-spacing: .01em; }
 .bk-unter { font-size: .76rem; color: var(--text-2); }
@@ -288,7 +298,7 @@ button, select, input { font: inherit; color: inherit; }
 .kachel.im-block::before {
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--bf);
 }
-.kachel.block-ganz { background: color-mix(in srgb, var(--bf) 7%, var(--karte)); }
+.kachel.block-ganz:not(.hat-zug):not(.unbesetzt) { background: color-mix(in srgb, var(--bf) 7%, var(--karte)); }
 .kachel.block-geteilt::before { background: repeating-linear-gradient(90deg, var(--honig) 0 8px, transparent 8px 13px); }
 .kachel.im-block .ich-marke { top: auto; bottom: 8px; }
 
@@ -333,8 +343,17 @@ button.kachel:active { transform: translateY(0) scale(.985); }
 .kachel.ich-kannnicht .ich-marke { background: var(--kannnicht); }
 @media (prefers-color-scheme: dark) { .kachel .ich-marke { color: #10140f; } }
 
-.kachel.unbesetzt.pflicht { background: var(--rot-hell); border-color: color-mix(in srgb, var(--rot) 55%, transparent); }
-.kachel.unbesetzt.pflicht.ich-kann { border-color: var(--kann); }
+/* 0.1.2 traffic light: green = assigned, red = unassigned, yellow = optional day ("nur bei Bedarf") */
+.kachel.optional:not(.hat-zug):not(.unbesetzt) { background: var(--gelb-hell); border-color: var(--gelb); }
+.kachel.unbesetzt { background: var(--rot-hell); border-color: var(--rot); }
+.kachel.hat-zug { background: var(--kann-hell); border-color: var(--kann); }
+.kachel.im-block.hat-zug::before { background: var(--kann); }
+.kachel.im-block.unbesetzt::before { background: var(--rot); }
+.kachel.unbesetzt.ich-kann { border-color: var(--kann); }
+.kachel.hat-zug.ich-kannnicht, .kachel.unbesetzt.ich-kannnicht { border-color: var(--kannnicht); }
+.kachel.optional .punkt { box-shadow: 0 0 0 2px var(--gelb-hell); }
+.kachel.hat-zug .punkt { box-shadow: 0 0 0 2px var(--kann-hell); }
+.kachel.unbesetzt .punkt { box-shadow: 0 0 0 2px var(--rot-hell); }
 
 .k-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 6px; }
 .k-datum { display: flex; align-items: baseline; gap: 5px; }

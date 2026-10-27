@@ -1,7 +1,9 @@
 // app.js – Markt-Planer page logic: URL parameters, loading, planning, rendering, clicks, admin area
-// Version 0.1.1 (2026-10-26, markt-dev)
+// Version 0.1.2 (2026-10-27, markt-dev)
 //
 // Changelog
+// 0.1.2  Traffic-light legend (Julian 27.10.): besetzt = green, unbesetzt = red, nur bei Bedarf = yellow (colours in
+//        style.css). No logic change.
 // 0.1.1  QA N1: fixing a single day inside a block warns "Block n wird dadurch geteilt" and offers "stattdessen ganzen
 //        Block an … vergeben"; block header of a block split by a fixed day shows a warning. QA H2: optional days
 //        with the option on say "niemand kann", no duplicated aria text. QA H3: hint when one person has several
@@ -18,10 +20,10 @@
 // Rules: codes never go into the DOM (except the admin link list) and never into the console. All texts from the
 // database are inserted with textContent. No network calls other than through api.js.
 
-import { erstelleApi } from './api.js?v=0.1.1';
-import { tageImZeitraum, istPflicht, wochentag, tagPlus, planen, folgeAenderungen } from './planer.js?v=0.1.1';
+import { erstelleApi } from './api.js?v=0.1.2';
+import { tageImZeitraum, istPflicht, wochentag, tagPlus, planen, folgeAenderungen } from './planer.js?v=0.1.2';
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const params = new URLSearchParams(location.search);
 const DEMO = params.get('demo') === '1';
 const HCODE = (params.get('h') || '').trim() || null;
@@ -299,6 +301,8 @@ function renderLegende() {
   l.replaceChildren(
     eintrag(el('span', { class: 'badge pflicht', text: 'Block' }), 'Do–So (+ Mo 21.12.), eine Person am Stück'),
     eintrag(el('span', { class: 'badge optional', text: 'optional' }), 'Mo–Mi einzeln'),
+    eintrag(el('span', { class: 'leg-gruen' }), 'besetzt'),
+    eintrag(el('span', { class: 'leg-gelb' }), 'nur bei Bedarf (Mo–Mi, wird nicht verplant)'),
     eintrag(el('span', { class: 'leg-geteilt' }), 'geteilt (keiner kann den ganzen Block)'),
     eintrag(el('span', { class: 'zug vorschau', style: `--f:${demoF};font-size:.75rem;padding:1px 8px` }, 'Name'), 'Vorschau'),
     eintrag(el('span', { class: 'zug', style: `--f:${demoF};font-size:.75rem;padding:1px 8px` }, iconKlein('schloss'), 'Name'), 'fest'),
