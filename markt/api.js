@@ -1,7 +1,9 @@
 // api.js – data access for the Markt-Planer: Supabase REST adapter (fetch) and demo adapter (?demo=1)
-// Version 0.1.1 (2026-10-26, markt-dev)
+// Version 0.2.0 (2026-10-30, markt-dev)
 //
 // Changelog
+// 0.2.0  Julian 30.10.: adminHelferAnlegen(name) -> {id, name, code, sortierung}, adminHelferUmbenennen(id, name),
+//        adminHelferEntfernen(id) in both adapters.
 // 0.1.1  QA H1: demo deadline compares the hour via formatToParts (summer dates were 1 h late); QA H5: timeout also
 //        covers reading the response body; QA H6: version parameter on the config.js / demo-daten.js imports.
 // 0.1.0  erstelleApi({demo, fristAbgelaufen}) with laden(), ich(), setzen(), adminFest(), adminFestBatch(),
@@ -126,6 +128,15 @@ function supabaseApi() {
       const r = await rpc('markt_admin_helfer', { p_admincode: admincode });
       return (r || []).map(({ id, name, code, sortierung }) => ({ id, name, code, sortierung }));
     },
+    async adminHelferAnlegen(admincode, name) {
+      const r = await rpc('markt_admin_helfer_anlegen', { p_admincode: admincode, p_name: name });
+      if (!Array.isArray(r) || r.length !== 1) throw new MarktFehler('fach', 'Person konnte nicht angelegt werden');
+      return r[0];
+    },
+    adminHelferUmbenennen: (admincode, id, name) =>
+      rpc('markt_admin_helfer_umbenennen', { p_admincode: admincode, p_id: id, p_name: name }),
+    adminHelferEntfernen: (admincode, id) =>
+      rpc('markt_admin_helfer_entfernen', { p_admincode: admincode, p_id: id }),
   };
 }
 
@@ -224,7 +235,53 @@ function demoApi({ fristAbgelaufen = false } = {}) {
       pruefeAdmin(admincode);
       return demoLesen().helfer.map(({ id, name, code, sortierung }) => ({ id, name, code, sortierung }));
     },
+    async adminHelferAnlegen(admincode, name) {
+      await warte();
+      pruefeAdmin(admincode);
+      const s = demoLesen();
+      const n = demoName(s, name);
+      const belegt = new Set(s.helfer.map((h) => h.farbe));
+      const farbe = PALETTE.find((f) => !belegt.has(f)) || '#d9921e';
+      const h = { id: 'demo-' + Date.now().toString(36), name: n, farbe,
+        sortierung: Math.max(0, ...s.helfer.map((x) => x.sortierung)) + 1, code: 'demo-' + Math.random().toString(36).slice(2, 10) };
+      s.helfer.push(h);
+      demoSchreiben(s);
+      return { id: h.id, name: h.name, code: h.code, sortierung: h.sortierung };
+    },
+    async adminHelferUmbenennen(admincode, id, name) {
+      await warte();
+      pruefeAdmin(admincode);
+      const s = demoLesen();
+      const h = s.helfer.find((x) => x.id === id);
+      if (!h) throw new MarktFehler('fach', 'Person nicht gefunden');
+      h.name = demoName(s, name, id);
+      demoSchreiben(s);
+    },
+    async adminHelferEntfernen(admincode, id) {
+      await warte();
+      pruefeAdmin(admincode);
+      const s = demoLesen();
+      if (!s.helfer.some((x) => x.id === id)) throw new MarktFehler('fach', 'Person nicht gefunden');
+      s.helfer = s.helfer.filter((x) => x.id !== id);
+      s.verfuegbarkeit = s.verfuegbarkeit.filter((v) => v.helfer_id !== id);
+      s.fest = s.fest.filter((f) => f.helfer_id !== id);
+      demoSchreiben(s);
+    },
   };
+}
+
+// same palette as markt_admin_helfer_anlegen in the SQL
+const PALETTE = ['#9f1239', '#c2410c', '#2e7d4f', '#b7850f', '#1d4ed8', '#0e7490', '#7c3aed', '#be185d',
+  '#4d7c0f', '#a16207', '#475569', '#0f766e'];
+
+/** Demo: validated name (1–40 characters, unique ignoring case), like the SQL functions. */
+function demoName(s, name, eigeneId = null) {
+  const n = String(name ?? '').trim();
+  if (n.length < 1 || n.length > 40) throw new MarktFehler('fach', 'Name muss 1 bis 40 Zeichen haben');
+  if (s.helfer.some((h) => h.id !== eigeneId && h.name.toLowerCase() === n.toLowerCase())) {
+    throw new MarktFehler('fach', 'Diesen Namen gibt es schon');
+  }
+  return n;
 }
 
 /** 23:59:59 Europe/Berlin of an ISO day as UTC ISO string (demo only; the database does this server-side). */

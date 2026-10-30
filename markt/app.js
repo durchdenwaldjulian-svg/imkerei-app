@@ -1,7 +1,10 @@
 // app.js – Markt-Planer page logic: URL parameters, loading, planning, rendering, clicks, admin area
-// Version 0.1.2 (2026-10-27, markt-dev)
+// Version 0.2.0 (2026-10-30, markt-dev)
 //
 // Changelog
+// 0.2.0  Julian 30.10.: card "Personen & Links" in the admin area - add a person (name -> new personal link shown
+//        right away), rename inline (link stays), remove with confirmation (entries and fixings of that person are
+//        deleted, link becomes invalid). neuLaden() also reloads the admin helper list.
 // 0.1.2  Traffic-light legend (Julian 27.10.): besetzt = green, unbesetzt = red, nur bei Bedarf = yellow (colours in
 //        style.css). No logic change.
 // 0.1.1  QA N1: fixing a single day inside a block warns "Block n wird dadurch geteilt" and offers "stattdessen ganzen
@@ -20,10 +23,10 @@
 // Rules: codes never go into the DOM (except the admin link list) and never into the console. All texts from the
 // database are inserted with textContent. No network calls other than through api.js.
 
-import { erstelleApi } from './api.js?v=0.1.2';
-import { tageImZeitraum, istPflicht, wochentag, tagPlus, planen, folgeAenderungen } from './planer.js?v=0.1.2';
+import { erstelleApi } from './api.js?v=0.2.0';
+import { tageImZeitraum, istPflicht, wochentag, tagPlus, planen, folgeAenderungen } from './planer.js?v=0.2.0';
 
-const VERSION = '0.1.2';
+const VERSION = '0.2.0';
 const params = new URLSearchParams(location.search);
 const DEMO = params.get('demo') === '1';
 const HCODE = (params.get('h') || '').trim() || null;
@@ -40,6 +43,7 @@ const z = {
   ichFehler: null,
   admin: false,
   adminHelfer: [],    // [{id, name, code, sortierung}] – only for the link list
+  umbenennenId: null, // admin: id of the person whose name is being edited
   adminFehler: null,
   ladeFehler: null,
   aktionsFehler: null,
@@ -581,9 +585,17 @@ function renderAdmin(b) {
   );
 
   const basis = location.origin + location.pathname;
+  const neuName = el('input', { type: 'text', id: 'neu-name', maxlength: '40', placeholder: 'Vorname', autocomplete: 'off',
+    'aria-label': 'Name der neuen Person', disabled: z.busy });
+  const neuForm = el('form', { class: 'feld', style: 'margin:0 0 12px',
+    onsubmit: (ev) => { ev.preventDefault(); adminHelferNeu(neuName.value); } },
+    el('label', { for: 'neu-name', text: 'Neue Person' }), neuName,
+    el('button', { class: 'knopf klein', type: 'submit', disabled: z.busy, text: 'Hinzufügen' }));
   const links = el('div', { class: 'karte' },
-    el('h3', { text: 'Helfer-Links' }),
-    el('p', { class: 'klein-text', style: 'margin:0 0 10px', text: 'Jeden Link nur an die eine Person per Direktnachricht schicken – wer den Link hat, kann für diesen Namen eintragen.' }),
+    el('h3', { text: 'Personen & Links' }),
+    el('p', { class: 'klein-text', style: 'margin:0 0 10px', text: 'Jeden Link nur an die eine Person per Direktnachricht schicken – wer den Link hat, kann für diesen Namen eintragen. '
+      + 'Neue Personen bekommen sofort einen eigenen Link. Umbenennen ändert den Link nicht.' }),
+    neuForm,
     el('div', { class: 'links' }, ...z.adminHelfer.map((h) => {
       const hf = b.helferNachId.get(h.id);
       const link = basis + '?' + (DEMO ? 'demo=1&' : '') + 'h=' + encodeURIComponent(h.code);
@@ -594,8 +606,28 @@ function renderAdmin(b) {
         knopf.textContent = ok ? 'Kopiert' : 'Bitte markieren';
         setTimeout(() => { knopf.textContent = 'Kopieren'; }, 1800);
       });
-      return el('div', { class: 'link-zeile', style: `--f:${hf?.farbe || 'var(--honig)'}` },
-        el('span', { class: 'avatar', text: initiale(h.name) }), el('span', { class: 'nm', text: h.name }), feld, knopf);
+      let nameTeil;
+      let aktionen;
+      if (z.umbenennenId === h.id) {
+        const eingabe = el('input', { type: 'text', value: h.name, maxlength: '40', 'aria-label': 'Neuer Name für ' + h.name, disabled: z.busy });
+        nameTeil = el('form', { class: 'nm', style: 'display:flex;gap:6px',
+          onsubmit: (ev) => { ev.preventDefault(); adminHelferUmbenennen(h.id, eingabe.value); } },
+          eingabe, el('button', { class: 'knopf klein', type: 'submit', disabled: z.busy, text: 'OK' }),
+          el('button', { class: 'knopf klein zweitrangig', type: 'button', text: 'Abbrechen',
+            onclick: () => { z.umbenennenId = null; render(); } }));
+        setTimeout(() => eingabe.focus(), 0);
+        aktionen = [];
+      } else {
+        nameTeil = el('span', { class: 'nm', text: h.name });
+        aktionen = [
+          el('button', { class: 'knopf klein zweitrangig', type: 'button', disabled: z.busy, text: 'Umbenennen',
+            onclick: () => { z.umbenennenId = h.id; render(); } }),
+          el('button', { class: 'knopf klein zweitrangig', type: 'button', disabled: z.busy, text: 'Entfernen',
+            onclick: () => adminHelferEntfernen(h.id, h.name) }),
+        ];
+      }
+      return el('div', { class: 'link-zeile', style: `--f:${hf?.farbe || 'var(--honig)'};flex-wrap:wrap` },
+        el('span', { class: 'avatar', text: initiale(h.name) }), nameTeil, feld, knopf, ...aktionen);
     })),
   );
 
@@ -637,6 +669,7 @@ async function neuLaden() {
   try {
     z.daten = await api.laden();
     z.ladeFehler = null;
+    if (z.admin && ACODE) z.adminHelfer = await api.adminHelfer(ACODE);
   } catch (f) {
     if (!z.aktionsFehler) z.aktionsFehler = f;
   }
@@ -739,6 +772,28 @@ async function adminEinfrieren(autoTage) {
   if (!ok) return;
   const liste = autoTage.map(([datum, zg]) => ({ datum, helfer_id: zg.helferId }));
   await adminAktion(() => api.adminFestBatch(ACODE, liste), `${liste.length} Tage sind jetzt fest eingetragen.`);
+}
+
+function adminHelferNeu(name) {
+  const n = String(name || '').trim();
+  if (!n) return;
+  return adminAktion(() => api.adminHelferAnlegen(ACODE, n),
+    `${n} ist angelegt. Der persönliche Link steht unten bei „Personen & Links“.`);
+}
+
+async function adminHelferUmbenennen(id, name) {
+  const n = String(name || '').trim();
+  if (!n) return;
+  await adminAktion(() => api.adminHelferUmbenennen(ACODE, id, n), `Name geändert in ${n}. Der Link bleibt gleich.`);
+  if (!z.aktionsFehler) { z.umbenennenId = null; render(); }
+}
+
+async function adminHelferEntfernen(id, name) {
+  const ok = await frage(`${name} entfernen?`,
+    `${name} wird aus dem Plan genommen. Alle Einträge und Festlegungen von ${name} werden gelöscht und der Link funktioniert nicht mehr. `
+    + 'Das lässt sich nicht rückgängig machen (neu anlegen gibt einen neuen Link).', 'Entfernen');
+  if (ok !== true) return;
+  await adminAktion(() => api.adminHelferEntfernen(ACODE, id), `${name} wurde entfernt.`);
 }
 
 function adminSpeichern(werte, erfolg) {
